@@ -25,12 +25,21 @@ HEADER = ("# MACHINE-OWNED: written by `python -m grc collect`. Do not edit by h
 ICON = {PASS: "✅", FAIL: "❌", ERROR: "⚠️", SKIPPED: "⏭️"}
 
 
+ALLOWED_VARS = {"GITHUB_REPOSITORY", "GITHUB_REPOSITORY_OWNER"}
+
+
 def expand(value):
     """Expand ${VAR} from the environment in string params (e.g. ${GITHUB_REPOSITORY})."""
     import os
     import re
     if isinstance(value, str):
-        return re.sub(r"\$\{([A-Z0-9_]+)\}", lambda m: os.environ.get(m.group(1), m.group(0)), value)
+        # Only non-secret variables may be expanded (snapshots and PRs are committed).
+        def sub(m):
+            name = m.group(1)
+            if name in ALLOWED_VARS or name.startswith("GRC_VAR_"):
+                return os.environ.get(name, m.group(0))
+            return m.group(0)
+        return re.sub(r"\$\{([A-Z0-9_]+)\}", sub, value)
     if isinstance(value, list):
         return [expand(v) for v in value]
     if isinstance(value, dict):
@@ -62,7 +71,7 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
         return [], "Collectors are disabled (`enabled: false` in engagement/collectors.yaml).\n"
     defaults = cfg.get("defaults", {}) or {}
     collected_path = edir / "evidence" / "collected.yaml"
-    existing = {e["id"]: e for e in (load_yaml(collected_path).get("evidence", []) if collected_path.exists() else [])}
+    existing = {e["id"]: e for e in ((load_yaml(collected_path).get("evidence") or []) if collected_path.exists() else [])}
     snap_dir = edir / "evidence" / "collected"
     results = []
     for check in cfg.get("checks", []) or []:

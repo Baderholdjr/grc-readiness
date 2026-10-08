@@ -56,7 +56,7 @@ def check_schemas(model: Engagement) -> list[Finding]:
     edir = model.engagement_dir
     run("engagement", model.engagement, edir / "engagement.yaml")
     run("gaps", {"gaps": model.gaps}, edir / "gaps.yaml")
-    n = model.human_evidence_count or len(model.evidence)
+    n = model.human_evidence_count
     run("evidence", {"evidence": model.evidence[:n]}, edir / "evidence" / "index.yaml")
     if len(model.evidence) > n:
         run("evidence", {"evidence": model.evidence[n:]}, edir / "evidence" / "collected.yaml")
@@ -142,9 +142,12 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
         test = c.get("test", {})
         statuses = {k: test.get(k, {}).get("status", "not_started") for k in LEGS}
 
-        # E009 owner required once anything is claimed
-        if any(s != "not_started" for s in statuses.values()) and not (c.get("owner") or "").strip():
-            out.append(Finding("error", "E009", f"{cid} has progress recorded but no accountable owner.", path, cid))
+        # E009 owner required once there is real progress; claims alone only warn
+        if not (c.get("owner") or "").strip():
+            if any(s in ("partial", "verified") for s in statuses.values()):
+                out.append(Finding("error", "E009", f"{cid} has progress recorded but no accountable owner.", path, cid))
+            elif any(s == "claimed" for s in statuses.values()):
+                out.append(Finding("warning", "W110", f"{cid} has client claims but no accountable owner yet.", path, cid))
 
         for k in LEGS:
             leg = test.get(k, {})

@@ -56,6 +56,8 @@ def policies(names: list[str], max_age_days: int | None = None) -> CheckResult:
     today = utcnow().date()
     found: dict[str, dict] = {}
     for p in _all("/policies"):
+        if p.get("status") and p.get("status") != "ACTIVE":  # skip ARCHIVED / REPLACED / OUTDATED versions
+            continue
         w = _match(p.get("name", ""), names)
         if w and w not in found:
             found[w] = p
@@ -87,8 +89,15 @@ def risks(title_contains: list[str] | None = None, min_count: int = 1,
     items = _all("/risks-search")
     if title_contains:
         items = [r for r in items if _match(f"{r.get('title', '')} {r.get('description', '')}", title_contains)]
-    no_owner = [r.get("riskId") for r in items if require_owner and not r.get("owners")]
-    no_treat = [r.get("riskId") for r in items if require_treatment and not r.get("treatmentPlan")]
+    def owner_count(r):
+        o = r.get("owners")
+        if isinstance(o, dict):  # v2 shape: {"data": [...], "totalCount": n}
+            return int(o.get("totalCount") or len(o.get("data") or []))
+        return len(o or [])
+
+    no_owner = [r.get("riskId") for r in items if require_owner and owner_count(r) == 0]
+    no_treat = [r.get("riskId") for r in items
+                if require_treatment and r.get("treatmentPlan") in (None, "", "UNTREATED")]
     status: dict[str, int] = {}
     for r in items:
         status[str(r.get("status"))] = status.get(str(r.get("status")), 0) + 1
@@ -109,7 +118,7 @@ def risks(title_contains: list[str] | None = None, min_count: int = 1,
 def vendors(names: list[str] | None = None, category: str | None = None) -> CheckResult:
     """AI suppliers are in the vendor program and their reviews are current."""
     today = utcnow().date()
-    items = _all("/vendors")
+    items = [v for v in _all("/vendors") if v.get("status") not in ("ARCHIVED", "OFFBOARDED")]
     if category:
         items = [v for v in items if str(v.get("category", "")).upper() == category.upper()]
     selected = [v for v in items if not names or _match(v.get("name", ""), names)]
@@ -126,7 +135,7 @@ def vendors(names: list[str] | None = None, category: str | None = None) -> Chec
                      "renewal_status": v.get("renewalDateStatus")})
         if renewal and renewal < today:
             findings.append(f"'{v.get('name')}' review/renewal overdue since {renewal}")
-        if not v.get("risk"):
+        if not v.get("risk") or v.get("risk") == "NONE":
             findings.append(f"'{v.get('name')}' has no risk rating")
     return CheckResult(FAIL if findings else PASS, f"{len(rows)} vendor(s) checked", {"vendors": rows}, findings)
 

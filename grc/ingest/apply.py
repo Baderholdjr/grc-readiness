@@ -29,9 +29,21 @@ def _valid_date(s) -> str | None:
         return None
 
 
-def _next_id(prefix: str, used: set[str], width: int, start: int = 1) -> str:
-    n = start
-    while f"{prefix}-{n:0{width}d}" in used:
+COLLECTOR_RANGE = range(100, 200)  # EV-100..EV-199 are reserved for collectors
+
+
+def _one_line(s) -> str:
+    """Strip every kind of line break so text can't escape a YAML comment."""
+    return re.sub(r"[\r\n\x0b\x0c\x85\u2028\u2029]+", " ", str(s or "")).strip()
+
+
+def _next_id(prefix: str, used: set[str], width: int, skip: range | None = None) -> str:
+    """Next id after the highest one in use (never reuses freed ids)."""
+    nums = [int(m.group(1)) for u in used if (m := re.fullmatch(rf"{prefix}-(\d+)", u))]
+    if skip:
+        nums = [x for x in nums if x not in skip] or [0]
+    n = max(nums, default=0) + 1
+    while (skip and n in skip) or f"{prefix}-{n:0{width}d}" in used:
         n += 1
     new = f"{prefix}-{n:0{width}d}"
     used.add(new)
@@ -54,7 +66,7 @@ def _append_items(path: Path, key: str, items: list[tuple[dict, str]], header: s
         text += "\n"
     text += "\n  # --- drafted by `grc ingest` " + dt.date.today().isoformat() + " (review before merging)\n"
     for item, source in items:
-        text += f"  # source: {source[:200]}\n" + _dump_item(item)
+        text += f"  # source: {_one_line(source)[:200]}\n" + _dump_item(item)
     path.write_text(text, encoding="utf-8")
 
 
@@ -70,10 +82,18 @@ def replace_top_block(text: str, key: str, value) -> str:
         end += 1
     while end - 1 > start and (not lines[end - 1].strip() or lines[end - 1].startswith("#")):
         end -= 1
-    return "".join(lines[:start]) + new + "".join(lines[end:])
+    # keep full-line comments that lived inside the replaced block
+    kept = "".join(l.lstrip() for l in lines[start + 1:end] if l.lstrip().startswith("#"))
+    return "".join(lines[:start]) + kept + new + "".join(lines[end:])
 
 
-def apply(model: Engagement, d: dict, label: str) -> str:
+def _source_file(source: str, files: list[str]) -> str | None:
+    return next((f for f in files if source.startswith(f) or f in source[:300]), None)
+
+
+def apply(model: Engagement, d: dict, label: str, files: list[str] | None = None) -> str:
+    from .draft import EVIDENCE_TYPES, INVENTORY_KINDS
+    files = files or []
     edir = model.engagement_dir
     req_ids = set(model.requirement_index)
     rep = {"added_gaps": [], "added_evidence": [], "claims": [], "kept": [], "inventory": [], "narrative": [],
@@ -134,7 +154,8 @@ def apply(model: Engagement, d: dict, label: str) -> str:
         if not reqs:
             rep["dropped"].append(f"gap with no valid requirement: {g['area']}: {g['finding'][:80]}")
             continue
-        item = {"id": _next_id("GAP", used_gap, 2), "area": g["area"], "finding": g["finding"], "requirements": reqs}
+        item = {"id": _next_id("GAP", used_gap, 2), "area": _one_line(g["area"]), "finding": _one_line(g["finding"]),
+                "requirements": reqs}
         if g.get("owner"):
             item["owner"] = g["owner"]
         if _valid_date(g.get("due")):
@@ -159,15 +180,21 @@ def apply(model: Engagement, d: dict, label: str) -> str:
                for x in model.evidence + [i for i, _ in new_ev]):
             rep["kept"].append(f"evidence already indexed: {ev['title'][:90]}")
             continue
-        item = {"id": _next_id("EV", used_ev, 3), "title": ev["title"], "type": ev["type"],
-                "location": ev.get("location") or f"intake/{label}", "collected": _valid_date(ev.get("date")) or dt.date.today().isoformat()}
+        etype = str(ev.get("type", "")).strip().lower()
+        if etype not in EVIDENCE_TYPES:
+            rep["dropped"].append(f"evidence '{ev['title'][:60]}': unknown type '{ev.get('type')}'")
+            continue
+        src_file = _source_file(ev["source"], files)
+        item = {"id": _next_id("EV", used_ev, 3, skip=COLLECTOR_RANGE), "title": _one_line(ev["title"]), "type": etype,
+                "location": _one_line(ev.get("location")) or (f"intake/{src_file}" if src_file else "intake/"),
+                "collected": _valid_date(ev.get("date")) or dt.date.today().isoformat()}
         if ev.get("owner"):
             item["owner"] = ev["owner"]
         if ev.get("approved_by"):
             item["approved_by"] = ev["approved_by"]
             if _valid_date(ev.get("approved_on")):
                 item["approved_on"] = _valid_date(ev["approved_on"])
-        if str(ev.get("valid_for_days", "")).isdigit():
+        if str(ev.get("valid_for_days", "")).isdigit() and int(ev["valid_for_days"]) >= 1:
             item["valid_for_days"] = int(ev["valid_for_days"])
         item["notes"] = "Drafted by ingest; confirm location and approval before citing."
         new_ev.append((item, ev["source"]))
@@ -208,11 +235,15 @@ def apply(model: Engagement, d: dict, label: str) -> str:
     for it in d.get("inventory", []):
         if not it.get("name") or it["name"].lower() in names or not it.get("source"):
             continue
-        item = {"id": _next_id("INV", used_inv, 3), "name": it["name"], "kind": it["kind"], "in_scope": True}
+        kind = str(it.get("kind", "")).strip().lower().replace(" ", "_")
+        if kind not in INVENTORY_KINDS:
+            rep["dropped"].append(f"inventory '{it['name'][:60]}': unknown kind '{it.get('kind')}'")
+            continue
+        item = {"id": _next_id("INV", used_inv, 3), "name": _one_line(it["name"]), "kind": kind, "in_scope": True}
         for k in ("owner", "risk_tier", "description"):
             if it.get(k):
                 item[k] = it[k]
-        item["source"] = it["source"][:200]
+        item["source"] = _one_line(it["source"])[:200]
         names.add(it["name"].lower())
         new_inv.append((item, it["source"]))
         rep["inventory"].append(f"{item['id']} {item['name']} ({item['kind']})")

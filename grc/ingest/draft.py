@@ -48,6 +48,7 @@ OUTPUT_SCHEMA = _obj({
                                                  "approved_by": {"type": "string", "description": "only if the document explicitly records approval; else ''"},
                                                  "source": SRC})},
     "claims": {"type": "array", "items": _obj({"requirement": S, "leg": {"enum": ["documented", "implemented", "evidenced", "tested"]},
-                                               "statement": S, "source": SRC})},
+                                               "statement": S, "owner": {"type": "string", "description": "accountable owner named in the document, else ''"},
+                                               "source": SRC})},
     "open_questions": {"type": "array", "items": S, "description": "ambiguities or contradictions an analyst must resolve"},
 })

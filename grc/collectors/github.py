@@ -11,7 +11,7 @@ import datetime as dt
 import os
 
 from . import http
-from .base import FAIL, PASS, CheckResult, MissingCredentials, collector, utcnow
+from .base import FAIL, PASS, SKIPPED, CheckResult, MissingCredentials, collector, utcnow
 
 API = os.environ.get("GITHUB_API_URL", "https://api.github.com")
 
@@ -60,6 +60,12 @@ def branch_protection(repo: str, branch: str = "main", min_approvals: int = 1,
     except http.HTTPError as exc:
         if exc.status not in (403, 404):
             raise
+        if exc.status == 403 and not rules:
+            # Token can't read classic protection; fall back to the branch summary (Contents:read).
+            b = _get(repo, f"/branches/{branch}") or {}
+            if b.get("protected"):
+                return CheckResult(SKIPPED, f"Skipped: {repo}@{branch} uses classic protection; reading its settings "
+                                            "needs Administration:read on the token", {"repo": repo, "branch": branch})
     findings = []
     if approvals < min_approvals:
         findings.append(f"requires {approvals} approval(s); expected >= {min_approvals}")
@@ -135,6 +141,7 @@ def workflow_runs(repo: str, workflow: str, branch: str = "main", days: int = 30
     data = _get(repo, f"/actions/workflows/{workflow}/runs",
                 {"branch": branch, "created": f">={since}", "per_page": 100, "status": "completed"}) or {}
     runs = data.get("workflow_runs", [])
+    runs = [r for r in runs if r.get("conclusion") in ("success", "failure", "timed_out")]  # ignore cancelled/skipped
     conclusions = [r.get("conclusion") for r in runs]
     failures = sum(c == "failure" for c in conclusions)
     rate = failures / len(runs) if runs else 0.0

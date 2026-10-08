@@ -46,7 +46,9 @@ def build_prompt(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps
     parts = [f"Client: {client}\n", "<catalog>\n" + cat + "\n</catalog>\n",
              "<existing_gaps>\n" + gaps + "\n</existing_gaps>\n"]
     for name, text in docs:
-        parts.append(f'<document name="{name}">\n{text}\n</document>\n')
+        safe_name = name.replace('"', "'").replace("<", "(").replace(">", ")")
+        safe_text = text.replace("</document", "<\\/document")
+        parts.append(f'<document name="{safe_name}">\n{safe_text}\n</document>\n')
     parts.append("Extract the engagement draft from these documents.")
     return "\n".join(parts)
 
@@ -63,12 +65,24 @@ def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[
         "messages": [{"role": "user", "content": build_prompt(docs, catalog, existing_gaps, client)}],
         "output_config": {"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
     }
-    if transport:  # tests
-        resp = transport(body)
-    else:
-        resp = http.request("POST", API_URL, headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
-                            body=body, retries=3, timeout=600)
-    if resp.get("stop_reason") == "max_tokens":
+    try:
+        if transport:  # tests
+            resp = transport(body)
+        else:
+            resp = http.request("POST", API_URL, headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
+                                body=body, retries=4, timeout=600)
+    except Exception as exc:  # HTTP 4xx/5xx, timeouts, DNS
+        raise AIUnavailable(f"Anthropic API call failed: {exc}"[:300]) from exc
+    stop = resp.get("stop_reason")
+    if stop == "max_tokens":
         raise AIUnavailable("model output was truncated (max_tokens); ingest fewer documents at once")
+    if stop == "refusal":
+        raise AIUnavailable("the model declined to process these documents")
     text = next((b["text"] for b in resp.get("content", []) if b.get("type") == "text"), "")
-    return json.loads(text)
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise AIUnavailable(f"model output was not valid JSON ({exc})") from exc
+    if not isinstance(data, dict):
+        raise AIUnavailable("model output was not a JSON object")
+    return data

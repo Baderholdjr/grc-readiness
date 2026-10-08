@@ -177,3 +177,57 @@ def test_env_expansion():
     os.environ["GITHUB_REPOSITORY"] = "me/repo"
     assert collect.expand({"repo": "${GITHUB_REPOSITORY}", "x": ["${NOPE_NOT_SET}"]}) == \
         {"repo": "me/repo", "x": ["${NOPE_NOT_SET}"]}
+
+
+# ---------------------------------------------------------------- regressions
+def test_empty_human_index_with_collected_evidence(tmp_path):
+    edir = tmp_path / "engagement"
+    shutil.copytree(FIXTURE, edir)
+    (edir / "evidence" / "index.yaml").write_text("evidence: []\n")
+    for f in (edir / "controls").glob("*.yaml"):  # drop citations to the removed human evidence
+        c = yaml.safe_load(f.read_text())
+        for leg in c["test"].values():
+            leg["evidence"], leg["status"] = [], "not_started"
+        f.write_text(yaml.safe_dump(c))
+    g = yaml.safe_load((edir / "gaps.yaml").read_text())
+    for x in g["gaps"]:
+        x.pop("closure_evidence", None)
+        x["status"] = "open"
+    (edir / "gaps.yaml").write_text(yaml.safe_dump(g))
+    (edir / "collectors.yaml").write_text(yaml.safe_dump({"enabled": True, "checks": [
+        {"evidence": "EV-101", "title": "t", "collector": "github.workflow_runs", "params": {"repo": "o/r", "workflow": "w"}}]}))
+    (edir / "evidence" / "collected.yaml").write_text(yaml.safe_dump({"evidence": [
+        {"id": "EV-101", "title": "t", "type": "record", "location": "x", "collected": "2026-10-08", "result": "pass"}]}))
+    assert "E011" not in {f.code for f in validate(load(edir, today=NOW.date()))}
+
+
+def test_drata_risks_v2_owner_shape_and_untreated():
+    fake = FakeHTTP({"/risks-search": {"data": [
+        {"riskId": "R1", "title": "AI bias", "owners": {"data": [], "totalCount": 0}, "treatmentPlan": "UNTREATED"},
+        {"riskId": "R2", "title": "AI drift", "owners": {"data": [{"id": 1}], "totalCount": 1}, "treatmentPlan": "MITIGATE"}],
+        "pagination": {"cursor": None}}})
+    restore = patched(fake, {"DRATA_API_KEY": "k"})
+    try:
+        r = run_check("drata.risks", {"min_count": 1})
+        assert r.result == "fail"
+        assert r.details["without_owner"] == ["R1"] and r.details["without_treatment"] == ["R1"]
+    finally:
+        restore()
+
+
+def test_classic_protection_unreadable_is_skipped():
+    def protection(u, p):
+        raise http.HTTPError(403, "Resource not accessible by integration")
+    fake = FakeHTTP({"/rules/branches/main": [], "/branches/main/protection": protection,
+                     "/branches/main": {"name": "main", "protected": True}})
+    restore = patched(fake, {"GH_COLLECTOR_TOKEN": "x"})
+    try:
+        assert run_check("github.branch_protection", {"repo": "o/r"}).result == "skipped"
+    finally:
+        restore()
+
+
+def test_secrets_are_not_expanded():
+    import os
+    os.environ["DRATA_API_KEY"] = "secret"
+    assert collect.expand("${DRATA_API_KEY}") == "${DRATA_API_KEY}"

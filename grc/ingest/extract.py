@@ -15,8 +15,14 @@ def rows(path: Path) -> list[list[str]] | None:
     """Tabular content for CSV/XLSX (first sheet with data); None for other types."""
     ext = path.suffix.lower()
     if ext == ".csv":
-        with open(path, newline="", encoding="utf-8-sig") as fh:
-            return [[c.strip() for c in r] for r in csv.reader(fh)]
+        raw = path.read_bytes()
+        for enc in ("utf-8-sig", "cp1252", "latin-1"):
+            try:
+                decoded = raw.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        return [[c.strip() for c in r] for r in csv.reader(io.StringIO(decoded, newline=""))]
     if ext == ".xlsx":
         from openpyxl import load_workbook
         wb = load_workbook(path, read_only=True, data_only=True)
@@ -55,7 +61,7 @@ def text(path: Path) -> str:
                         buf.write("\t".join("" if v is None else str(v) for v in r) + "\n")
             out = buf.getvalue()
         else:
-            out = path.read_text(encoding="utf-8-sig", errors="replace")
+            out = "\n".join("\t".join(r) for r in rows(path) or [])
     else:
         raise ValueError(f"unsupported file type {ext}")
     return out[:MAX_CHARS_PER_FILE]

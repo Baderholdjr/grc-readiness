@@ -36,7 +36,7 @@ def request(method: str, url: str, headers: dict | None = None, params: dict | N
                 raw = resp.read()
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as exc:
-            if exc.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
+            if exc.code in (429, 500, 502, 503, 504, 529) and attempt < retries - 1:
                 time.sleep(2 ** attempt * 2)
                 continue
             raise HTTPError(exc.code, exc.read().decode(errors="replace")) from None

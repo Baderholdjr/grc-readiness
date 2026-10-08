@@ -61,10 +61,8 @@ jobs:
           DRATA_API_BASE: ${{ vars.DRATA_API_BASE }}
         run: |
           python -m grc collect --report report.md
-          {
-            echo; echo "---"
-            python -m grc validate --summary /dev/stdout 2>/dev/null | sed -n '/^## /,$p' || true
-          } >> report.md
+          python -m grc validate --summary validate.md > /dev/null 2>&1 || true
+          { echo; echo "---"; cat validate.md; } >> report.md
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open or update the refresh PR

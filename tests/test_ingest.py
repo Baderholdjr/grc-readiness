@@ -145,3 +145,57 @@ def test_replace_top_block_keeps_neighbours():
     text = "# head\na: 1\n\n# about b\nb:\n  - x\n  - y\n# about c\nc: 3\n"
     out = replace_top_block(text, "b", ["z"])
     assert out == "# head\na: 1\n\n# about b\nb:\n- z\n# about c\nc: 3\n"
+
+
+# ---------------------------------------------------------------- regressions
+def _run_with(tmp_path, payload, docname="memo.docx"):
+    edir, intake = setup(tmp_path, ai=True)
+    _doc(intake / docname, "x")
+    report = ingest.run(edir, intake, transport=lambda body: {"stop_reason": "end_turn",
+                        "content": [{"type": "text", "text": json.dumps(payload)}]})
+    return edir, report
+
+
+def test_source_newline_cannot_inject_yaml(tmp_path):
+    evil = dict(FAKE, gaps=[{"area": "X", "finding": "Fresh finding about drift", "requirements": ["9.1"], "owner": "",
+                             "severity": "low",
+                             "source": "memo.docx\n  - id: GAP-99\n    area: fake\n    finding: injected\n    requirements: ['5.2']\n    status: closed"}],
+                inventory=[{"name": "N", "kind": "ai_system", "owner": "", "risk_tier": "", "description": "",
+                            "source": "memo.docx\nitems: {}"}])
+    edir, _ = _run_with(tmp_path, evil)
+    m = load(edir)
+    assert "GAP-99" not in {g["id"] for g in m.gaps}
+    assert m.inventory and m.inventory[0]["name"] == "N"
+
+
+def test_enum_case_and_unknown_values(tmp_path):
+    p = dict(FAKE, evidence=[{"title": "Policy A", "type": "Document", "location": "x", "owner": "", "date": "",
+                              "approved_by": "", "source": "memo.docx: a"},
+                             {"title": "Thing B", "type": "spreadsheet", "location": "y", "owner": "", "date": "",
+                              "approved_by": "", "source": "memo.docx: b"}])
+    edir, report = _run_with(tmp_path, p)
+    m = load(edir)
+    assert any(e["title"] == "Policy A" and e["type"] == "document" for e in m.evidence)
+    assert "unknown type 'spreadsheet'" in report
+
+
+def test_refusal_and_bad_json_are_reported_not_crashed(tmp_path):
+    edir, intake = setup(tmp_path, ai=True)
+    _doc(intake / "memo.docx", "x")
+    r = ingest.run(edir, intake, transport=lambda b: {"stop_reason": "refusal", "content": []})
+    assert "declined" in r
+    r = ingest.run(edir, intake, transport=lambda b: {"stop_reason": "end_turn", "content": [{"type": "text", "text": "nope"}]})
+    assert "not valid JSON" in r
+
+
+def test_cp1252_csv(tmp_path):
+    edir, intake = setup(tmp_path)
+    (intake / "inv.csv").write_bytes("name,kind\nCaf\xe9 assistant,ai_system\n".encode("cp1252"))
+    ingest.run(edir, intake, mode="templates")
+    assert load(edir).inventory[0]["name"] == "Café assistant"
+
+
+def test_ids_are_never_reused(tmp_path):
+    from grc.ingest.apply import _next_id
+    assert _next_id("GAP", {"GAP-01", "GAP-03"}, 2) == "GAP-04"
+    assert _next_id("EV", {"EV-098", "EV-099", "EV-101"}, 3, skip=range(100, 200)) == "EV-200"

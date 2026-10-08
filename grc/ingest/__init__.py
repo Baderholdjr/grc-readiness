@@ -83,7 +83,7 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
             notes += [f"`{n}`: not processed — {exc}" for n, _, _ in for_ai]
 
     label = ", ".join(sorted(ledger_updates)) or "intake"
-    report = apply.apply(model, combined, label)
+    report = apply.apply(model, combined, label, files=sorted(ledger_updates))
     if ledger_updates:
         lp = intake / LEDGER
         ledger = (yaml.safe_load(lp.read_text()) if lp.exists() else {}) or {}

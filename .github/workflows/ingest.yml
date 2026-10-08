@@ -39,12 +39,13 @@ jobs:
         run: |
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add engagement intake/.processed.yaml
+          git add -A engagement intake
           if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git commit -q -m "Ingest: draft engagement data from intake documents"
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
       - name: Comment the report
+        if: always() && hashFiles('ingest-report.md') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -54,4 +55,5 @@ jobs:
         if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run validate.yml --ref "${{ github.head_ref }}"
+          HEAD_REF: ${{ github.head_ref }}
+        run: gh workflow run validate.yml --ref "$HEAD_REF"
