@@ -1,0 +1,28 @@
+# A.10.3 Suppliers
+# Intent (paraphrased): Ensure supplied services, products or materials align with the organization's responsible AI approach.
+id: A.10.3
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Security & Compliance
+implementation: SOC 2 vendor program exists; AI suppliers not yet reviewed through it.
+reuses:
+- SOC 2 vendor management
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-015
+    note: Procedure lacks AI-specific criteria
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-05
+last_reviewed: 2026-10-07
+reviewer: Analyst

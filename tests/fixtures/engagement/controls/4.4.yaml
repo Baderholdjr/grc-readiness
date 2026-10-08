@@ -1,0 +1,17 @@
+# 4.4 AI management system
+# Intent (paraphrased): Establish, implement, maintain and continually improve the AIMS and its processes.
+id: '4.4'
+owner: VP Engineering
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

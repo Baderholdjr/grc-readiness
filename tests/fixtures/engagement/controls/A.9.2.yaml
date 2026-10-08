@@ -1,0 +1,23 @@
+# A.9.2 Processes for responsible use of AI systems
+# Intent (paraphrased): Define and document processes for responsible use of AI systems.
+id: A.9.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Security & Compliance
+implementation: Company AI Use Policy covers end-user use; producer-side use not addressed.
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-007
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

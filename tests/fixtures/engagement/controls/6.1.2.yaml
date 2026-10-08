@@ -1,0 +1,26 @@
+# 6.1.2 AI risk assessment
+# Intent (paraphrased): A defined, repeatable AI risk assessment process with criteria for acceptance and evaluation.
+id: 6.1.2
+owner: Security & Compliance
+implementation: Enterprise ERM methodology applied to an AI risk category in Drata.
+reuses:
+- SOC 2 enterprise risk process
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-005
+    note: Approved ERM method lacks AI-specific criteria (e.g. harm to individuals)
+  implemented:
+    status: verified
+    evidence:
+    - EV-004
+  evidenced:
+    status: verified
+    evidence:
+    - EV-004
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

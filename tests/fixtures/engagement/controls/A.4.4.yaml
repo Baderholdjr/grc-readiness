@@ -1,0 +1,22 @@
+# A.4.4 Tooling resources
+# Intent (paraphrased): Document tooling resources used by AI systems.
+id: A.4.4
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: 9 SDLC AI tools listed in the inventory workbook.
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

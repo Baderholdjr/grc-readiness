@@ -1,0 +1,19 @@
+# 6.1.4 AI system impact assessment
+# Intent (paraphrased): A defined process to assess potential consequences of AI systems for individuals, groups and society.
+id: 6.1.4
+owner: Head of Responsible AI
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-02

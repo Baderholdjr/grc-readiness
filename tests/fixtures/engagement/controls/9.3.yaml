@@ -1,0 +1,22 @@
+# 9.3 Management review
+# Intent (paraphrased): Top management reviews the AIMS at planned intervals with defined inputs and recorded decisions.
+id: '9.3'
+owner: VP Engineering
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: partial
+    evidence:
+    - EV-016
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-09
+last_reviewed: 2026-10-07
+reviewer: Analyst

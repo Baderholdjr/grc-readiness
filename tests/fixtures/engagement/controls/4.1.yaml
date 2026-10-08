@@ -1,0 +1,24 @@
+# 4.1 Understanding the organization and its context
+# Intent (paraphrased): Know the internal and external issues that affect the AIMS, including the organization's role(s) relative to AI (provider, producer, user, etc.).
+id: '4.1'
+owner: Legal
+implementation: Context analysis drafted inside the scope document; no regulatory mapping yet.
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-001
+    note: Context covered briefly in draft scope
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-07
+last_reviewed: 2026-10-07
+reviewer: Analyst

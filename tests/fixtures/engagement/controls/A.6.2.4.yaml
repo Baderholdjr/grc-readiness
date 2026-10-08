@@ -1,0 +1,31 @@
+# A.6.2.4 AI system verification and validation
+# Intent (paraphrased): Define and document verification and validation measures and criteria.
+id: A.6.2.4
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: CI gate blocks release unless evaluation metrics meet thresholds.
+test:
+  documented:
+    status: claimed
+    evidence: []
+    note: Thresholds live in workflow config, not in an approved procedure
+  implemented:
+    status: verified
+    evidence:
+    - EV-009
+    - EV-010
+  evidenced:
+    status: verified
+    evidence:
+    - EV-010
+    - EV-011
+  tested:
+    status: partial
+    evidence:
+    - EV-022
+    note: Walkthrough done on 2 releases; release-owner interview pending
+gaps:
+- GAP-06
+last_reviewed: 2026-10-07
+reviewer: Analyst

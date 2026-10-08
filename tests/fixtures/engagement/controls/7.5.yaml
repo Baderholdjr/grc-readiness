@@ -1,0 +1,23 @@
+# 7.5 Documented information
+# Intent (paraphrased): Required documented information is created, controlled, versioned and available.
+id: '7.5'
+owner: Security & Compliance
+implementation: SOC 2 document control procedure extends to AIMS documents.
+reuses:
+- SOC 2 document control
+test:
+  documented:
+    status: verified
+    evidence:
+    - EV-020
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

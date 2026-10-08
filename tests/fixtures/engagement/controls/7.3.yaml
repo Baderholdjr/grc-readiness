@@ -1,0 +1,25 @@
+# 7.3 Awareness
+# Intent (paraphrased): People know the AI policy, their contribution, and implications of non-conformance.
+id: '7.3'
+owner: People Operations
+implementation: General security awareness only; AI awareness module planned.
+reuses:
+- SOC 2 security awareness training
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: partial
+    evidence:
+    - EV-021
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-03
+last_reviewed: 2026-10-07
+reviewer: Analyst

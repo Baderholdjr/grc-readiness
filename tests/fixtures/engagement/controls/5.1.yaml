@@ -1,0 +1,24 @@
+# 5.1 Leadership and commitment
+# Intent (paraphrased): Top management demonstrably drives the AIMS - resources, integration into business processes, direction.
+id: '5.1'
+owner: VP Engineering
+implementation: AI is a standing item in quarterly leadership review.
+test:
+  documented:
+    status: claimed
+    evidence: []
+  implemented:
+    status: partial
+    evidence:
+    - EV-016
+    note: AI discussed; no AIMS-specific decisions recorded
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-09
+last_reviewed: 2026-10-07
+reviewer: Analyst

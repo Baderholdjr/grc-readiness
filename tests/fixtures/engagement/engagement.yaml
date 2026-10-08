@@ -1,0 +1,86 @@
+# Engagement definition. This is the source of truth for the analyst brief.
+# Change it through a pull request; CI validates and regenerates every report.
+# "{client}" anywhere in text is replaced with client.name.
+
+framework: iso42001
+
+client:
+  name: "(Example Client)"
+  overview:
+    - "{client} is a 160+ person digital-services company founded in 2017. It researches, designs, builds, and modernizes digital products and services."
+    - Its work spans government, nonprofit, and selected commercial partners, with a strong focus on public-interest technology, healthcare, and Veterans services.
+    - Publicly identified government customers and partners include the Department of Veterans Affairs, CMS/HHS, IRS, OPM, and other federal programs.
+    - The company combines product management, research, design, engineering, strategy, and delivery services.
+
+subtitle: "Analyst Orientation | Certification readiness and gap closure | 2026-2027"
+# tldr: optional override of the playbook's tldr_template
+
+ai_usage:
+  - "{client} is actively adopting and designing AI technology and has published Responsible AI principles centered on stewardship, intentionality, human agency, impact, accountability, privacy, and security."
+  - The certification scope is focused on the Innovation and Platform teams' building and provision of AI products - not the entire company's general end-user AI use.
+  - Their documents describe 4 AI systems, 9 SDLC AI tools, 10 infrastructure services, a model registry, and a 19-item gap register.
+  - Engineering controls already described include gated evaluation metrics, human approval gates, provenance hashing, fail-closed defaults, production telemetry, PR/CI review, prompt/version controls, and immutable image digests.
+
+scope:
+  statement: Design, build, and provision of AI products by the Innovation and Platform teams.
+  in_scope: [Innovation team, Platform team, 4 production AI systems, Model registry, AI SDLC tooling]
+  out_of_scope: [Company-wide end-user AI use (covered by the corporate AI Use Policy)]
+
+in_place:
+  - foundation: "Scope & inventory"
+    examples: Draft AIMS scope; AI systems/tools/infrastructure inventory; model registry.
+    requirements: ["4.3", "A.4.2", "A.4.4", "A.4.5"]
+  - foundation: Risk
+    examples: 20 AI-category risks in Drata with owners, treatments, residual scores, and open actions.
+    requirements: ["6.1.2", "8.2"]
+  - foundation: Engineering
+    examples: Lifecycle testing, monitoring, change controls, human approval, agent authority limits.
+    requirements: ["A.6.2.4", "A.6.2.5", "A.6.2.6", "A.6.2.8"]
+  - foundation: Existing governance
+    examples: SOC 2 policy suite, enterprise risk process, incident management, vendor program, quarterly leadership review.
+    requirements: ["7.5", "10.2", "A.10.3", "9.3"]
+  - foundation: Corporate AI baseline
+    examples: Responsible AI Principles and company-wide AI Use Policy for end-user use.
+    requirements: ["A.6.1.2", "A.9.2"]
+
+budget:
+  hours_total: 200
+  hours_used: 18
+  note: protect time for January testing and certification support.
+
+dates:
+  start: 2026-10-01
+  stage1: 2027-02-22
+  stage2: 2027-04-05
+
+certification_body: TBD
+
+team:
+  engagement_lead: Engagement Lead
+  analysts: [Analyst]
+  client_sponsor: VP Engineering
+
+# Objectives and deliverables default to frameworks/iso42001/playbook.yaml.
+phases:
+  - {id: validate,   label: "OCT 2026",     start: 2026-10-01, end: 2026-10-31}
+  - {id: governance, label: "NOV 2026",     start: 2026-11-01, end: 2026-11-30}
+  - {id: implement,  label: "DEC 2026",     start: 2026-12-01, end: 2026-12-31}
+  - {id: test,       label: "JAN 2027",     start: 2027-01-01, end: 2027-01-31}
+  - {id: stage1,     label: "FEB 2027",     start: 2027-02-01, end: 2027-02-28}
+  - {id: stage2,     label: "MAR–APR 2027", start: 2027-03-01, end: 2027-04-30}
+
+guardrails:
+  - "{client} owns implementation and evidence production; our team structures, reviews, tests, and challenges."
+  - Use existing SOC 2 processes where they genuinely satisfy AIMS requirements rather than creating parallel processes.
+  - Prefer durable, auditable processes over one-time documents created solely for certification.
+  - Escalate scope changes, major control redesign, legal/contract questions, or unsupported high-risk claims to the engagement lead.
+
+key_risks:
+  - Overstated readiness or evidence that reflects design rather than operation.
+  - Late implementation that leaves too little operating history before Stage 2.
+  - Slow SME responses, policy approvals, vendor reviews, or contract decisions.
+  - Internal-audit or management-review slippage.
+  - Scope creep consuming the 200-hour budget.
+  - Certification-body scheduling or findings pushing issuance into April.
+
+evidence_expiry_warning_days: 30

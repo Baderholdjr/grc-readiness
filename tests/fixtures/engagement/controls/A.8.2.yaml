@@ -1,0 +1,19 @@
+# A.8.2 System documentation and information for users
+# Intent (paraphrased): Determine and provide necessary information to users of the AI system.
+id: A.8.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

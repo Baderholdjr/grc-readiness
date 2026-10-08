@@ -9,11 +9,12 @@ from grc.issues import issue_body, write_issue_numbers
 from grc.model import load
 
 ROOT = Path(__file__).resolve().parent.parent
+FIXTURE = Path(__file__).resolve().parent / "fixtures" / "engagement"
 
 
 def test_build_outputs(tmp_path):
     out = tmp_path / "out"
-    assert main(["--today", "2026-10-08", "build", "--out", str(out)]) == 0
+    assert main(["--engagement", str(FIXTURE), "--today", "2026-10-08", "build", "--out", str(out)]) == 0
     for name in ["control-matrix.md", "soa.md", "gap-register.md", "evidence-index.md", "status.json"]:
         assert (out / name).exists()
     brief = docx.Document(str(out / "example-client-iso42001-brief.docx"))
@@ -29,7 +30,7 @@ def test_build_outputs(tmp_path):
 
 
 def test_issue_body_has_marker():
-    m = load(ROOT / "engagement", today=dt.date(2026, 10, 8))
+    m = load(FIXTURE, today=dt.date(2026, 10, 8))
     body = issue_body(m, m.gaps[0])
     assert body.startswith("<!-- grc:GAP-01 -->")
     assert "engagement/controls/5.2.yaml" in body
@@ -37,7 +38,7 @@ def test_issue_body_has_marker():
 
 def test_write_issue_numbers_preserves_comments(tmp_path):
     p = tmp_path / "gaps.yaml"
-    shutil.copy(ROOT / "engagement" / "gaps.yaml", p)
+    shutil.copy(FIXTURE / "gaps.yaml", p)
     write_issue_numbers(p, {"GAP-01": 7, "GAP-13": 9})
     write_issue_numbers(p, {"GAP-01": 7})  # idempotent
     text = p.read_text()

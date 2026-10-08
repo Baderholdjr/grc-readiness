@@ -1,0 +1,26 @@
+# A.7.5 Data provenance
+# Intent (paraphrased): Define and document a process for recording data provenance across the life cycle.
+id: A.7.5
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: Datasets and checkpoints hashed at ingest; manifests stored with artifacts.
+test:
+  documented:
+    status: claimed
+    evidence: []
+  implemented:
+    status: verified
+    evidence:
+    - EV-018
+  evidenced:
+    status: verified
+    evidence:
+    - EV-018
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-06
+last_reviewed: 2026-10-07
+reviewer: Analyst
