@@ -81,7 +81,9 @@ jobs:
           NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
           if [ -z "$NUM" ]; then
             gh pr create --base main --head "$BRANCH" --title "Evidence refresh (automated)" \
-              --label evidence-refresh --body-file body.md
+              --label evidence-refresh --body-file body.md || {
+              echo "::error title=Could not open the refresh PR::Enable Settings -> Actions -> General -> Workflow permissions -> 'Allow GitHub Actions to create and approve pull requests'. The evidence was pushed to branch $BRANCH."
+              exit 1; }
           else
             gh pr edit "$NUM" --body-file body.md
           fi
