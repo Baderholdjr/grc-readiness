@@ -12,7 +12,7 @@ evidence:
   - id: EV-001
     title: Draft AIMS scope statement (unapproved)
     type: document
-    location: https://github.com/Baderholdjr/aims-governance-automation/blob/main/governance/aims_scope.md
+    location: "sharepoint://aims/AIMS-Scope-DRAFT-v0.3.docx"
     owner: VP Engineering
     collected: 2026-10-05
     sensitivity: internal
@@ -20,7 +20,7 @@ evidence:
   - id: EV-002
     title: AI systems inventory (4 systems)
     type: record
-    location: https://github.com/Baderholdjr/aims-governance-automation/blob/main/governance/inventory/ai_systems.json
+    location: "sharepoint://aims/AI-Inventory.xlsx#Systems"
     owner: Head of Platform
     collected: 2026-10-05
     valid_for_days: 90
@@ -72,14 +72,14 @@ evidence:
   - id: EV-008
     title: AI lifecycle controls procedure (draft)
     type: document
-    location: https://github.com/Baderholdjr/aims-governance-automation/blob/main/governance/policies/ai_lifecycle_controls_procedure.md
+    location: "sharepoint://aims/AI-Lifecycle-Controls-Procedure-DRAFT.docx"
     owner: Head of Platform
     collected: 2026-10-05
 
   - id: EV-009
     title: CI model release and evidence gate (workflow config)
     type: config
-    location: https://github.com/Baderholdjr/aims-governance-automation/blob/main/.github/workflows/ai-model-governance-gate.yml
+    location: "git://client-platform/ml-release/.ci/release-gate.yml@main"
     owner: Head of Platform
     collected: 2026-10-05
     valid_for_days: 90
@@ -87,7 +87,7 @@ evidence:
   - id: EV-010
     title: Gated evaluation results - last 3 production releases
     type: record
-    location: "ci://ai-model-governance-gate/runs?branch=main&last=3"
+    location: "ci://ml-release/release-gate/runs?branch=main&last=3"
     owner: Head of Platform
     collected: 2026-09-28
     valid_for_days: 90
