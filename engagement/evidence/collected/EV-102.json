@@ -1,0 +1,34 @@
+{
+  "evidence": "EV-102",
+  "title": "Engagement repo: independent review of merged changes (90 days)",
+  "collector": "github.pr_reviews",
+  "params": {
+    "repo": "Baderholdjr/grc-readiness",
+    "base": "main",
+    "days": 90
+  },
+  "collected_at": "2026-10-08T23:45:59+00:00",
+  "result": "fail",
+  "summary": "Baderholdjr/grc-readiness: 0/6 merged PRs independently approved (90d)",
+  "findings": [
+    "6 of 6 merged PRs had no independent approval: #20, #19, #17, #16, #15, #14"
+  ],
+  "details": {
+    "repo": "Baderholdjr/grc-readiness",
+    "base": "main",
+    "window_days": 90,
+    "label": null,
+    "population": 6,
+    "independently_approved": 0,
+    "approval_rate": 0.0,
+    "unapproved_prs": [
+      20,
+      19,
+      17,
+      16,
+      15,
+      14
+    ]
+  },
+  "sha256": "9af490d20b9c3a1437dcb236ac972912ad83386ff622ec64927d3bbf3c113834"
+}

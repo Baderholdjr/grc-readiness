@@ -1,0 +1,27 @@
+{
+  "evidence": "EV-103",
+  "title": "Engagement repo: validation gate runs",
+  "collector": "github.workflow_runs",
+  "params": {
+    "repo": "Baderholdjr/grc-readiness",
+    "workflow": "validate.yml",
+    "branch": "main",
+    "days": 30
+  },
+  "collected_at": "2026-10-08T23:45:59+00:00",
+  "result": "pass",
+  "summary": "Baderholdjr/grc-readiness validate.yml: 8 runs, 0 failed (30d)",
+  "findings": [],
+  "details": {
+    "repo": "Baderholdjr/grc-readiness",
+    "workflow": "validate.yml",
+    "branch": "main",
+    "window_days": 30,
+    "runs": 8,
+    "failures": 0,
+    "latest_conclusion": "success",
+    "latest_run_url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37859615327",
+    "latest_head_sha": "2a4f26f6e3e1dc93e41b77304b11974047133c50"
+  },
+  "sha256": "71d3afe934b05ff336b0e2c15cdc774f224ce35501d5787fe32747d46c1b48f2"
+}
