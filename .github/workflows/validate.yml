@@ -31,7 +31,7 @@ jobs:
         run: python -m grc validate --format github --summary "$GITHUB_STEP_SUMMARY"
       - name: Build reports and brief
         run: python -m grc build --out out
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: readiness-reports-${{ github.sha }}
           path: out/
