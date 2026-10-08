@@ -1,0 +1,19 @@
+# 7.2 Competence
+# Intent (paraphrased): People affecting AI performance are competent, with actions to close gaps and records retained.
+id: '7.2'
+owner: People Operations
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-03

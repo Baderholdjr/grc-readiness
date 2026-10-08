@@ -1,0 +1,102 @@
+# Framework playbook: reusable engagement content for ISO/IEC 42001 readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+
+title_suffix: ISO 42001 Project Brief
+tldr_template: "Help {client} turn an existing set of AI practices and technical controls into a complete, auditable AI management system (AIMS)."
+
+# The four-part evidence test. Every control file records a status for each leg.
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the requirement formally defined?
+  - key: implemented
+    label: Implemented
+    question: Is the process actually in use?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing execution?
+  - key: tested
+    label: Tested
+    question: Does sampling/interview evidence support consistent operation?
+
+gap_callout: Treat client readiness statements as hypotheses until evidence shows the control is documented, implemented, evidenced, and operating.
+
+working_rule: If a control is described but you cannot trace it to an owner, current artifact, and operating evidence, treat it as unresolved and escalate it to the engagement lead.
+
+# Section 7 of the brief: what "ready for certification" means.
+readiness_criteria:
+  - AIMS scope, governance, objectives, policies, roles, and responsibilities are approved and understood.
+  - AI inventory, risks, impact assessments, supplier controls, lifecycle controls, and training are current and evidenced.
+  - Required processes have operated long enough to produce credible records for auditor sampling.
+  - Internal audit has tested the AIMS; findings have owners and corrective actions.
+  - Management review has considered AIMS performance, risks, audit results, changes, resources, and improvement actions.
+  - Stage 1 findings are closed or controlled before Stage 2; process owners can explain what they do and show evidence.
+
+# Default phases. Engagements set the month for each; deliverables can be overridden.
+phases:
+  - id: validate
+    objective: "Validate & establish"
+    deliverables:
+      - Kickoff and owner alignment
+      - Validate gap-analysis claims and evidence
+      - Finalize AIMS/certification scope
+      - Build clause/control matrix and remediation tracker
+      - Confirm certification-body milestones
+  - id: governance
+    objective: Build governance
+    deliverables:
+      - Approve AIMS/AI policy
+      - Formalize roles, objectives, risk and impact methodology
+      - Define AI data classification and supplier requirements
+      - Codify lifecycle and human-oversight requirements
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Complete initial AI impact assessments
+      - Run AI supplier reviews and address contract gaps
+      - Launch AI-specific training
+      - Operationalize governance cadence and collect evidence
+      - Close implementation findings
+  - id: test
+    objective: Test the AIMS
+    deliverables:
+      - Perform ISO 42001 internal audit
+      - Verify inventory, risk register and impact assessments
+      - Complete corrective actions
+      - Conduct formal management review
+      - Prepare certification evidence package
+  - id: stage1
+    objective: Stage 1
+    deliverables:
+      - Run readiness/mock audit
+      - Close internal-audit findings
+      - Evidence cleanup and owner preparation
+      - Support Stage 1 audit
+      - Triage Stage 1 findings
+  - id: stage2
+    objective: "Stage 2 & closure"
+    deliverables:
+      - Close Stage 1 findings
+      - Prepare process owners for interviews
+      - Support Stage 2 audit
+      - Respond to findings and corrective actions
+      - Certification-body closure / issuance contingency
+
+needs:
+  - Maintain the clause/control mapping, evidence index, remediation tracker, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test; flag unsupported or ambiguous readiness claims.
+  - Draft and revise policies, procedures, templates, and workpapers for lead review - do not invent operating practices.
+  - Support AI impact assessments and supplier reviews by gathering evidence, pre-populating factual sections, and tracking actions.
+  - Prepare test samples, record objective evidence, and document exceptions for the internal audit.
+  - Organize Stage 1/Stage 2 evidence so an auditor can trace each requirement to a current, approved artifact or record.
+
+default_guardrails:
+  - "{client} owns implementation and evidence production; our team structures, reviews, tests, and challenges."
+  - Prefer durable, auditable processes over one-time documents created solely for certification.
+  - Escalate scope changes, major control redesign, legal/contract questions, or unsupported high-risk claims to the engagement lead.
+
+default_risks:
+  - Overstated readiness or evidence that reflects design rather than operation.
+  - Late implementation that leaves too little operating history before Stage 2.
+  - Slow SME responses, policy approvals, vendor reviews, or contract decisions.
+  - Internal-audit or management-review slippage.

@@ -1,0 +1,38 @@
+name: Validate & build readiness reports
+
+# Every PR is a proposed change to the engagement record. This gate blocks
+# merges that would overstate readiness (e.g. "verified" without evidence).
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - name: Unit tests
+        run: pytest -q
+      - name: Validate engagement (four-part evidence test, schemas, gaps)
+        run: python -m grc validate --format github --summary "$GITHUB_STEP_SUMMARY"
+      - name: Build reports and brief
+        run: python -m grc build --out out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readiness-reports-${{ github.sha }}
+          path: out/
+          retention-days: 90

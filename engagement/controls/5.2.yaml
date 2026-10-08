@@ -1,0 +1,19 @@
+# 5.2 AI policy
+# Intent (paraphrased): An approved AI policy appropriate to the organization's purpose, with commitments, communicated and available.
+id: '5.2'
+owner: VP Engineering
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-01

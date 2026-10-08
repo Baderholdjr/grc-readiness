@@ -1,0 +1,267 @@
+"""Render the analyst orientation brief (.docx) from engagement data.
+
+Layout and styles come from templates/brief-template.docx so the output
+matches the house style; all content comes from the repo.
+"""
+from __future__ import annotations
+
+import copy
+from pathlib import Path
+
+import docx
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Pt
+
+from .model import LEGS, Engagement
+from .rules import metrics
+
+NAVY = "183B4E"
+CALLOUT = "EAF2F3"
+BAND = "F3F3F3"
+WHITE = "FFFFFF"
+FULL = 10080        # callout width (dxa)
+CONTENT = 10368     # full table width (dxa)
+BULLET_NUM_ID = "1"  # bullet list defined in the template's numbering.xml
+
+
+# ------------------------------------------------------------------ helpers
+def _el(tag: str, **attrs) -> OxmlElement:
+    e = OxmlElement(tag)
+    for k, v in attrs.items():
+        e.set(qn(k), str(v))
+    return e
+
+
+def _run(p, text: str, bold=False, color: str | None = None, size: float | None = None):
+    r = p.add_run(text)
+    r.bold = bold or None
+    if color:
+        rpr = r._r.get_or_add_rPr()
+        rpr.append(_el("w:color", **{"w:val": color}))
+    if size:
+        r.font.size = Pt(size)
+    return r
+
+
+def _spacing(p, after: int | None = None):
+    ppr = p._p.get_or_add_pPr()
+    sp = ppr.find(qn("w:spacing"))
+    if sp is None:
+        sp = _el("w:spacing")
+        ppr.append(sp)
+    if after is not None:
+        sp.set(qn("w:after"), str(after))
+
+
+def bullet(doc, text: str, last=False):
+    p = doc.add_paragraph()
+    ppr = p._p.get_or_add_pPr()
+    num = _el("w:numPr")
+    num.append(_el("w:ilvl", **{"w:val": 0}))
+    num.append(_el("w:numId", **{"w:val": BULLET_NUM_ID}))
+    ppr.append(num)
+    ppr.append(_el("w:spacing", **{"w:after": 40 if last else 0}))
+    ppr.append(_el("w:ind", **{"w:left": 259}))
+    _run(p, text)
+    return p
+
+
+def bullets(doc, items):
+    items = list(items)
+    for i, t in enumerate(items):
+        bullet(doc, t, last=i == len(items) - 1)
+
+
+def heading(doc, text: str, level=1):
+    p = doc.add_paragraph(text, style=f"Heading {level}")
+    p.paragraph_format.keep_with_next = True
+    return p
+
+
+def _table(doc, widths: list[int], style_id: str):
+    t = doc.add_table(rows=0, cols=len(widths))
+    tbl = t._tbl
+    tblPr = tbl.tblPr
+    for child in list(tblPr):
+        tblPr.remove(child)
+    tblPr.append(_el("w:tblStyle", **{"w:val": style_id}))
+    tblPr.append(_el("w:tblW", **{"w:w": sum(widths), "w:type": "dxa"}))
+    tblPr.append(_el("w:jc", **{"w:val": "center"}))
+    tblPr.append(_el("w:tblLayout", **{"w:type": "fixed"}))
+    grid = tbl.tblGrid
+    for gc, w in zip(grid.findall(qn("w:gridCol")), widths):
+        gc.set(qn("w:w"), str(w))
+    return t
+
+
+def _cell_fmt(cell, width: int, fill: str | None, pad: int | None = None, vcenter=False):
+    tcPr = cell._tc.get_or_add_tcPr()
+    tcPr.append(_el("w:tcW", **{"w:w": width, "w:type": "dxa"}))
+    if fill:
+        tcPr.append(_el("w:shd", **{"w:val": "clear", "w:color": "auto", "w:fill": fill}))
+    if pad:
+        mar = _el("w:tcMar")
+        mar.append(_el("w:top", **{"w:w": pad, "w:type": "dxa"}))
+        mar.append(_el("w:bottom", **{"w:w": pad, "w:type": "dxa"}))
+        tcPr.append(mar)
+    if vcenter:
+        tcPr.append(_el("w:vAlign", **{"w:val": "center"}))
+
+
+def _row(t, header=False):
+    row = t.add_row()
+    trPr = row._tr.get_or_add_trPr()
+    trPr.append(_el("w:cantSplit"))
+    if header:
+        trPr.append(_el("w:tblHeader"))
+    trPr.append(_el("w:jc", **{"w:val": "center"}))
+    return row
+
+
+def _keep_with_next(cell):
+    for p in cell.paragraphs:
+        p.paragraph_format.keep_with_next = True
+
+
+def callout(doc, text: str):
+    t = _table(doc, [FULL], "a")
+    row = _row(t)
+    cell = row.cells[0]
+    _cell_fmt(cell, FULL, CALLOUT, pad=120, vcenter=True)
+    p = cell.paragraphs[0]
+    p.alignment = 1
+    _run(p, text, bold=True, color=NAVY)
+    spacer = doc.add_paragraph()
+    _spacing(spacer, 20)
+
+
+def data_table(doc, headers: list[str], rows: list[list], widths: list[int], first_col_color: str | None = None,
+               bulleted_cols: tuple[int, ...] = (), bold_cols: tuple[int, ...] = (0,), pad=75):
+    """rows: list of cell values; a list value in a bulleted column becomes '• ' lines."""
+    t = _table(doc, widths, "a0")
+    hr = _row(t, header=True)
+    for i, h in enumerate(headers):
+        c = hr.cells[i]
+        _cell_fmt(c, widths[i], NAVY, pad=90 if bulleted_cols else None)
+        _run(c.paragraphs[0], h.upper(), bold=True, color=WHITE)
+        _keep_with_next(c)
+    for ri, values in enumerate(rows):
+        r = _row(t)
+        fill = BAND if ri % 2 == 0 else None
+        for ci, v in enumerate(values):
+            c = r.cells[ci]
+            _cell_fmt(c, widths[ci], fill, pad=pad)
+            if ci in bulleted_cols and isinstance(v, list):
+                p0 = c.paragraphs[0]
+                for li, line in enumerate(v):
+                    p = p0 if li == 0 else c.add_paragraph()
+                    ppr = p._p.get_or_add_pPr()
+                    ppr.append(_el("w:spacing", **{"w:after": 20}))
+                    ppr.append(_el("w:ind", **{"w:left": 115}))
+                    _run(p, f"• {line}")
+            else:
+                color = first_col_color if ci == 0 else None
+                _run(c.paragraphs[0], str(v), bold=ci in bold_cols, color=color)
+    doc.add_paragraph()
+    return t
+
+
+# -------------------------------------------------------------------- brief
+def render_brief(model: Engagement, out_path: Path) -> Path:
+    template = model.root / "templates" / "brief-template.docx"
+    doc = docx.Document(str(template))
+    body = doc.element.body
+    for p in list(body):  # drop the placeholder paragraph, keep sectPr
+        if p.tag != qn("w:sectPr"):
+            body.remove(p)
+
+    e = model.engagement
+    fw = model.catalog["framework"]
+    pb = model.playbook
+    client = model.client
+
+    # Title block
+    title = doc.add_paragraph(style="Title")
+    title.alignment = 1
+    title.add_run(f"{client} {pb.get('title_suffix', fw['short_name'] + ' Project Brief')}")
+    sub = doc.add_paragraph()
+    _spacing(sub, 200)
+    _run(sub, e.get("subtitle", "Analyst Orientation"), bold=True, color=NAVY, size=11)
+    doc.add_paragraph()
+    callout(doc, "TLDR: " + model.fmt(e.get("tldr") or pb.get("tldr_template", "")))
+
+    # 1. Client overview
+    heading(doc, "1. Client Overview")
+    bullets(doc, [model.fmt(x) for x in e["client"].get("overview", [])])
+
+    # 2. AI usage
+    heading(doc, "2. AI Usage")
+    bullets(doc, [model.fmt(x) for x in e.get("ai_usage", [])])
+
+    # 3. In place
+    heading(doc, "3. What is already in place")
+    doc.add_paragraph()
+    data_table(doc, ["Foundation", "Examples"],
+               [[x["foundation"], model.fmt(x["examples"])] for x in e.get("in_place", [])],
+               [5184, 5184])
+
+    # 4. Gap analysis
+    heading(doc, "4. Gap Analysis")
+    callout(doc, model.fmt(pb.get("gap_callout", "")))
+    gap_rows = [[g["area"], model.fmt(g["finding"])] for g in model.gaps
+                if g.get("in_brief", True) and g.get("status") in ("open", "in_progress")]
+    data_table(doc, ["Area", "What to verify / close"], gap_rows, [3305, 7075])
+
+    heading(doc, "Analyst evidence test", 2)
+    bullets(doc, [f"{t['label']} — {model.fmt(t['question'])}" for t in pb["evidence_test"]])
+
+    m = metrics(model)
+    heading(doc, f"Readiness snapshot (as of {m['as_of']})", 2)
+    p = doc.add_paragraph()
+    _run(p, f"{m['requirements_ready']} of {m['requirements_applicable']} applicable requirements pass all four tests; "
+            f"{m['gaps_open']} gaps open; {m['legs_verified_pct']}% of evidence-test legs verified. "
+            f"Generated from the engagement repository - do not edit by hand.")
+    p.paragraph_format.keep_with_next = True
+    labels = {t["key"]: t["label"] for t in pb["evidence_test"]}
+    data_table(doc, ["Test", "Verified", "Partial", "Claimed", "Not started"],
+               [[labels[k], m["legs"][k]["verified"], m["legs"][k]["partial"], m["legs"][k]["claimed"],
+                 m["legs"][k]["not_started"]] for k in LEGS],
+               [3168, 1800, 1800, 1800, 1800], first_col_color=None)
+
+    # 5. Timeline
+    heading(doc, "5. Timeline")
+    data_table(doc, ["Month", "Objective", "Deliverables"],
+               [[ph["label"], ph["objective"], [model.fmt(d) for d in ph["deliverables"]]] for ph in model.phases],
+               [1656, 2232, 6408], first_col_color=NAVY, bulleted_cols=(2,), bold_cols=(0, 1), pad=80)
+
+    # 6. Needs
+    heading(doc, "6. Needs")
+    bullets(doc, [model.fmt(x) for x in model.setting("needs", [])])
+    heading(doc, "Working rule", 2)
+    callout(doc, model.fmt(model.setting("working_rule", "")))
+
+    # 7. Requirements
+    heading(doc, f"7. {pb.get('requirements_heading', 'ISO Requirements')}")
+    bullets(doc, [model.fmt(x) for x in pb.get("readiness_criteria", [])])
+
+    # 8. Guardrails
+    heading(doc, "8. Engagement Guardrails")
+    b = e["budget"]
+    g = [f"{b['hours_total']:g} total consulting hours" + (f": {b['note']}" if b.get("note") else ".")]
+    g += [model.fmt(x) for x in model.setting("guardrails", pb.get("default_guardrails", []))]
+    bullets(doc, g)
+
+    # 9. Risks
+    heading(doc, "9. Key Risks")
+    bullets(doc, [model.fmt(x) for x in model.setting("key_risks", pb.get("default_risks", []))])
+
+    # metadata
+    cp = doc.core_properties
+    cp.title = f"{client} {fw['short_name']} Project Brief"
+    cp.author = "grc-readiness"
+    cp.last_modified_by = "grc-readiness"
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(str(out_path))
+    return out_path

@@ -1,0 +1,307 @@
+"""Validation rules. Each rule encodes part of the engagement's working rule:
+
+    If a control is described but you cannot trace it to an owner, current
+    artifact, and operating evidence, treat it as unresolved.
+
+Severity:
+  error   - blocks merge (CI fails)
+  warning - shown in PR summary; fails only with --strict
+  info    - analyst follow-up list (e.g. unverified client claims)
+"""
+from __future__ import annotations
+
+import datetime as dt
+from dataclasses import dataclass
+from pathlib import Path
+
+from jsonschema import Draft202012Validator, FormatChecker
+
+from .model import LEGS, Engagement, jsonable, load_schema
+
+TEST_TYPES = {"test", "sample", "interview"}
+OPERATING_TYPES = {"record", "log", "config", "test", "sample", "screenshot", "interview"}
+
+
+@dataclass
+class Finding:
+    severity: str
+    code: str
+    message: str
+    file: str | None = None
+    ref: str | None = None
+
+    def as_dict(self) -> dict:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
+
+def _rel(model: Engagement, path: Path | None) -> str | None:
+    if path is None:
+        return None
+    try:
+        return str(path.relative_to(model.root))
+    except ValueError:
+        return str(path)
+
+
+# --------------------------------------------------------------------- schema
+def check_schemas(model: Engagement) -> list[Finding]:
+    out: list[Finding] = []
+
+    def run(schema_name: str, data, path: Path, ref=None):
+        v = Draft202012Validator(load_schema(schema_name), format_checker=FormatChecker())
+        for err in sorted(v.iter_errors(jsonable(data)), key=lambda e: list(e.path)):
+            loc = "/".join(str(p) for p in err.path) or "(root)"
+            out.append(Finding("error", "E001", f"Schema: {loc}: {err.message}", _rel(model, path), ref))
+
+    edir = model.engagement_dir
+    run("engagement", model.engagement, edir / "engagement.yaml")
+    run("gaps", {"gaps": model.gaps}, edir / "gaps.yaml")
+    run("evidence", {"evidence": model.evidence}, edir / "evidence" / "index.yaml")
+    for cid, data in model.controls.items():
+        run("control", data, model.control_files[cid], cid)
+    return out
+
+
+# ------------------------------------------------------------------ structure
+def check_structure(model: Engagement) -> list[Finding]:
+    out: list[Finding] = []
+    req_ids = model.requirement_index
+    # E002 every requirement has an assessment file
+    for rid in req_ids:
+        if rid not in model.controls:
+            out.append(Finding("error", "E002", f"No assessment file for requirement {rid}. Run `python -m grc init`.",
+                               _rel(model, model.engagement_dir / "controls"), rid))
+    # E003 unknown control ids / filename mismatch
+    for cid, path in model.control_files.items():
+        if cid not in req_ids:
+            out.append(Finding("error", "E003", f"'{cid}' is not a requirement in the {model.catalog['framework']['short_name']} catalog.",
+                               _rel(model, path), cid))
+        elif path.stem != cid:
+            out.append(Finding("error", "E003", f"File name should be {cid}.yaml.", _rel(model, path), cid))
+    # E011 duplicate ids
+    for label, items in (("evidence", model.evidence), ("gap", model.gaps)):
+        seen = set()
+        for it in items:
+            if it.get("id") in seen:
+                out.append(Finding("error", "E011", f"Duplicate {label} id {it['id']}.", None, it["id"]))
+            seen.add(it.get("id"))
+    return out
+
+
+# ----------------------------------------------------------- applicability/SoA
+def check_applicability(model: Engagement) -> list[Finding]:
+    out = []
+    for cid, c in model.controls.items():
+        req = model.requirement_index.get(cid)
+        if not req:
+            continue
+        path = _rel(model, model.control_files[cid])
+        if req["kind"] == "clause" and c.get("applicable") is False:
+            out.append(Finding("error", "E004", f"Clause {cid} is mandatory and cannot be excluded.", path, cid))
+        if req["kind"] == "control" and c.get("applicable") is False and not (c.get("justification") or "").strip():
+            out.append(Finding("error", "E004", f"Annex A control {cid} is excluded without a justification (needed for the SoA).", path, cid))
+    return out
+
+
+# --------------------------------------------------------- four-part evidence
+def leg_effective(model: Engagement, leg: dict) -> str:
+    """A 'verified' leg whose evidence has all expired is effectively 'partial'."""
+    status = leg.get("status", "not_started")
+    if status != "verified":
+        return status
+    evs = [model.evidence_index.get(e) for e in leg.get("evidence", [])]
+    evs = [e for e in evs if e]
+    if evs and not any(model.evidence_is_current(e) for e in evs):
+        return "partial"
+    return status
+
+
+def check_evidence_test(model: Engagement) -> list[Finding]:
+    out: list[Finding] = []
+    ev_idx = model.evidence_index
+    warn_days = int(model.engagement.get("evidence_expiry_warning_days", 30))
+    for cid, c in model.controls.items():
+        if cid not in model.requirement_index or not model.is_applicable(cid):
+            continue
+        path = _rel(model, model.control_files[cid])
+        test = c.get("test", {})
+        statuses = {k: test.get(k, {}).get("status", "not_started") for k in LEGS}
+
+        # E009 owner required once anything is claimed
+        if any(s != "not_started" for s in statuses.values()) and not (c.get("owner") or "").strip():
+            out.append(Finding("error", "E009", f"{cid} has progress recorded but no accountable owner.", path, cid))
+
+        for k in LEGS:
+            leg = test.get(k, {})
+            st = statuses[k]
+            refs = leg.get("evidence", [])
+            # E006 unknown refs
+            for r in refs:
+                if r not in ev_idx:
+                    out.append(Finding("error", "E006", f"{cid}.{k} cites {r}, which is not in evidence/index.yaml.", path, cid))
+            known = [ev_idx[r] for r in refs if r in ev_idx]
+            if st == "verified":
+                # E005 verified needs evidence
+                if not refs:
+                    out.append(Finding("error", "E005", f"{cid}.{k} is 'verified' but cites no evidence.", path, cid))
+                    continue
+                # E007 stale
+                if known and not any(model.evidence_is_current(e) for e in known):
+                    out.append(Finding("error", "E007", f"{cid}.{k} is 'verified' but all cited evidence has expired.", path, cid))
+                # E012 evidence type fits the leg
+                types = {e["type"] for e in known}
+                if k == "documented":
+                    if not any(e["type"] == "document" and e.get("approved_by") for e in known):
+                        out.append(Finding("error", "E012", f"{cid}.documented needs an approved 'document' (with approved_by).", path, cid))
+                elif k in ("implemented", "evidenced") and known and not types & OPERATING_TYPES:
+                    out.append(Finding("error", "E012", f"{cid}.{k} cites only design documents; operating evidence (record/log/config/...) is required.", path, cid))
+                elif k == "tested" and known and not types & TEST_TYPES:
+                    out.append(Finding("error", "E012", f"{cid}.tested needs test, sample or interview evidence.", path, cid))
+            # expiring soon
+            for e in known:
+                exp = model.evidence_expiry(e)
+                if st == "verified" and exp and model.today <= exp <= model.today + dt.timedelta(days=warn_days):
+                    out.append(Finding("warning", "W101", f"{cid}.{k}: {e['id']} expires {exp.isoformat()}.", path, cid))
+            if st == "claimed":
+                out.append(Finding("info", "I201", f"{cid}.{k} is a client claim not yet backed by evidence.", path, cid))
+
+        # E008 leg ordering
+        eff = {k: leg_effective(model, test.get(k, {})) for k in LEGS}
+        if eff["tested"] == "verified" and eff["evidenced"] != "verified":
+            out.append(Finding("error", "E008", f"{cid}: 'tested' cannot be verified before 'evidenced'.", path, cid))
+        if eff["evidenced"] == "verified" and eff["implemented"] in ("not_started", "claimed"):
+            out.append(Finding("error", "E008", f"{cid}: 'evidenced' cannot be verified while 'implemented' is {eff['implemented']}.", path, cid))
+        # W102 implemented but not documented: the 'control codification' gap
+        if eff["implemented"] == "verified" and eff["documented"] in ("not_started", "claimed"):
+            out.append(Finding("warning", "W102", f"{cid} operates in practice but is not codified in an approved document.", path, cid))
+        # E010 gap refs
+        for g in c.get("gaps", []) or []:
+            if g not in model.gap_index:
+                out.append(Finding("error", "E010", f"{cid} links {g}, which is not in gaps.yaml.", path, cid))
+    return out
+
+
+# ---------------------------------------------------------------------- gaps
+def check_gaps(model: Engagement) -> list[Finding]:
+    out = []
+    path = _rel(model, model.engagement_dir / "gaps.yaml")
+    phases = model.phase_index
+    for g in model.gaps:
+        gid = g.get("id")
+        for r in g.get("requirements", []):
+            if r not in model.requirement_index:
+                out.append(Finding("error", "E010", f"{gid} references unknown requirement {r}.", path, gid))
+        ph = g.get("phase")
+        if ph and ph not in phases:
+            out.append(Finding("error", "E010", f"{gid} references unknown phase '{ph}'.", path, gid))
+        open_ = g.get("status") in ("open", "in_progress")
+        if open_ and not g.get("owner"):
+            out.append(Finding("warning", "W103", f"{gid} is open with no owner.", path, gid))
+        due = g.get("due")
+        if open_ and due and dt.date.fromisoformat(str(due)) < model.today:
+            out.append(Finding("warning", "W104", f"{gid} is past due ({due}).", path, gid))
+        if due and ph in phases and dt.date.fromisoformat(str(due)) > dt.date.fromisoformat(str(phases[ph]["end"])):
+            out.append(Finding("warning", "W105", f"{gid} is due {due}, after its phase '{ph}' ends {phases[ph]['end']}.", path, gid))
+        if g.get("status") == "closed":
+            if not g.get("closure_evidence"):
+                out.append(Finding("error", "E013", f"{gid} is closed without closure_evidence.", path, gid))
+            for e in g.get("closure_evidence", []):
+                if e not in model.evidence_index:
+                    out.append(Finding("error", "E006", f"{gid} cites unknown closure evidence {e}.", path, gid))
+    return out
+
+
+# -------------------------------------------------------------- engagement
+def check_engagement(model: Engagement) -> list[Finding]:
+    out = []
+    path = _rel(model, model.engagement_dir / "engagement.yaml")
+    b = model.engagement.get("budget", {})
+    total, used = b.get("hours_total", 0), b.get("hours_used", 0) or 0
+    if total and used / total >= 0.8:
+        out.append(Finding("warning", "W106", f"Budget: {used:g} of {total:g} hours used ({used/total:.0%}).", path))
+    d = model.engagement.get("dates", {})
+    try:
+        if d and dt.date.fromisoformat(str(d["stage1"])) >= dt.date.fromisoformat(str(d["stage2"])):
+            out.append(Finding("error", "E014", "Stage 1 must be before Stage 2.", path))
+    except (KeyError, ValueError):
+        pass
+    prev_end = None
+    for p in model.engagement.get("phases", []):
+        try:
+            s, e = dt.date.fromisoformat(str(p["start"])), dt.date.fromisoformat(str(p["end"]))
+        except (KeyError, ValueError):
+            continue
+        if e < s:
+            out.append(Finding("error", "E014", f"Phase '{p['id']}' ends before it starts.", path))
+        if prev_end and s < prev_end:
+            out.append(Finding("warning", "W107", f"Phase '{p['id']}' overlaps the previous phase.", path))
+        prev_end = e
+    return out
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement)
+
+
+def validate(model: Engagement) -> list[Finding]:
+    findings: list[Finding] = []
+    schema_findings = check_schemas(model)
+    findings.extend(schema_findings)
+    for rule in ALL_RULES[1:]:
+        try:
+            findings.extend(rule(model))
+        except (KeyError, TypeError, ValueError) as exc:  # malformed data already reported by schema check
+            if not schema_findings:
+                findings.append(Finding("error", "E000", f"{rule.__name__} could not run: {exc!r}"))
+    return findings
+
+
+# ----------------------------------------------------------- readiness metrics
+def requirement_state(model: Engagement, cid: str) -> str:
+    if not model.is_applicable(cid):
+        return "Excluded"
+    c = model.controls.get(cid)
+    if not c:
+        return "Missing"
+    eff = {k: leg_effective(model, c.get("test", {}).get(k, {})) for k in LEGS}
+    if all(v == "verified" for v in eff.values()):
+        return "Ready"
+    if all(v == "not_started" for v in eff.values()):
+        return "Not started"
+    if all(v in ("not_started", "claimed") for v in eff.values()):
+        return "Unverified claim"
+    return "In progress"
+
+
+def metrics(model: Engagement) -> dict:
+    applicable = [r["id"] for r in model.requirements if model.is_applicable(r["id"])]
+    legs = {k: {"verified": 0, "partial": 0, "claimed": 0, "not_started": 0} for k in LEGS}
+    for cid in applicable:
+        c = model.controls.get(cid, {})
+        for k in LEGS:
+            legs[k][leg_effective(model, c.get("test", {}).get(k, {}))] += 1
+    states: dict[str, int] = {}
+    for r in model.requirements:
+        s = requirement_state(model, r["id"])
+        states[s] = states.get(s, 0) + 1
+    ready = states.get("Ready", 0)
+    total_legs = len(applicable) * 4
+    verified_legs = sum(v["verified"] for v in legs.values())
+    gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
+    stale = [e["id"] for e in model.evidence if not model.evidence_is_current(e)]
+    b = model.engagement.get("budget", {})
+    return {
+        "as_of": model.today.isoformat(),
+        "framework": model.catalog["framework"]["short_name"],
+        "requirements_total": len(model.requirements),
+        "requirements_applicable": len(applicable),
+        "requirements_ready": ready,
+        "states": states,
+        "legs": legs,
+        "legs_verified_pct": round(100 * verified_legs / total_legs, 1) if total_legs else 0.0,
+        "gaps_open": gaps_open,
+        "gaps_total": len(model.gaps),
+        "evidence_total": len(model.evidence),
+        "evidence_stale": stale,
+        "hours_total": b.get("hours_total"),
+        "hours_used": b.get("hours_used", 0),
+    }

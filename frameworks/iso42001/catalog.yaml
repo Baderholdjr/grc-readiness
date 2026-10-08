@@ -1,0 +1,252 @@
+# ISO/IEC 42001:2023 requirement catalog (AI management systems)
+#
+# COPYRIGHT NOTE: This file holds requirement identifiers, short titles, and
+# OUR OWN plain-language interpretation and evidence expectations. It does not
+# reproduce the standard's text. Teams must work from a licensed copy of
+# ISO/IEC 42001:2023 when interpreting a requirement.
+#
+# kind: clause  -> mandatory management-system requirement (Clauses 4-10). Cannot be excluded.
+# kind: control -> Annex A reference control. Applicability is decided in the Statement of
+#                  Applicability (SoA); exclusions need a documented justification.
+
+framework:
+  id: iso42001
+  name: ISO/IEC 42001:2023
+  short_name: ISO 42001
+  management_system: AI management system (AIMS)
+  source: https://www.iso.org/standard/81230.html
+
+groups:
+  - {id: "4",    title: "Context of the organization"}
+  - {id: "5",    title: "Leadership"}
+  - {id: "6",    title: "Planning"}
+  - {id: "7",    title: "Support"}
+  - {id: "8",    title: "Operation"}
+  - {id: "9",    title: "Performance evaluation"}
+  - {id: "10",   title: "Improvement"}
+  - {id: "A.2",  title: "Policies related to AI"}
+  - {id: "A.3",  title: "Internal organization"}
+  - {id: "A.4",  title: "Resources for AI systems"}
+  - {id: "A.5",  title: "Assessing impacts of AI systems"}
+  - {id: "A.6",  title: "AI system life cycle"}
+  - {id: "A.7",  title: "Data for AI systems"}
+  - {id: "A.8",  title: "Information for interested parties of AI systems"}
+  - {id: "A.9",  title: "Use of AI systems"}
+  - {id: "A.10", title: "Third-party and customer relationships"}
+
+requirements:
+  # ---------------------------------------------------------------- Clause 4
+  - id: "4.1"
+    kind: clause
+    group: "4"
+    title: Understanding the organization and its context
+    intent: Know the internal and external issues that affect the AIMS, including the organization's role(s) relative to AI (provider, producer, user, etc.).
+    evidence_examples: [Context analysis, AI role determination, Regulatory/contractual landscape notes]
+  - id: "4.2"
+    kind: clause
+    group: "4"
+    title: Understanding the needs and expectations of interested parties
+    intent: Identify interested parties and which of their requirements the AIMS will address.
+    evidence_examples: [Interested-party register, Requirements mapping]
+  - id: "4.3"
+    kind: clause
+    group: "4"
+    title: Determining the scope of the AI management system
+    intent: Define and approve AIMS boundaries and applicability, informed by 4.1 and 4.2.
+    evidence_examples: [Approved scope statement, Scope approval record]
+  - id: "4.4"
+    kind: clause
+    group: "4"
+    title: AI management system
+    intent: Establish, implement, maintain and continually improve the AIMS and its processes.
+    evidence_examples: [AIMS manual or process map]
+
+  # ---------------------------------------------------------------- Clause 5
+  - id: "5.1"
+    kind: clause
+    group: "5"
+    title: Leadership and commitment
+    intent: Top management demonstrably drives the AIMS - resources, integration into business processes, direction.
+    evidence_examples: [Leadership meeting minutes, Resource approvals]
+  - id: "5.2"
+    kind: clause
+    group: "5"
+    title: AI policy
+    intent: An approved AI policy appropriate to the organization's purpose, with commitments, communicated and available.
+    evidence_examples: [Approved AI policy, Communication record]
+  - id: "5.3"
+    kind: clause
+    group: "5"
+    title: Roles, responsibilities and authorities
+    intent: AIMS roles are assigned, communicated, and include reporting on AIMS performance.
+    evidence_examples: [RACI, Role descriptions, Appointment records]
+
+  # ---------------------------------------------------------------- Clause 6
+  - id: "6.1.1"
+    kind: clause
+    group: "6"
+    title: Actions to address risks and opportunities - general
+    intent: Plan actions for risks and opportunities to the AIMS achieving its outcomes.
+    evidence_examples: [Risk and opportunity plan]
+  - id: "6.1.2"
+    kind: clause
+    group: "6"
+    title: AI risk assessment
+    intent: A defined, repeatable AI risk assessment process with criteria for acceptance and evaluation.
+    evidence_examples: [Risk methodology, Risk criteria, Completed risk assessments]
+  - id: "6.1.3"
+    kind: clause
+    group: "6"
+    title: AI risk treatment
+    intent: Select treatments, compare with Annex A, produce a Statement of Applicability, and get risk-owner approval of the treatment plan and residual risk.
+    evidence_examples: [Risk treatment plan, Statement of Applicability, Residual risk acceptance]
+  - id: "6.1.4"
+    kind: clause
+    group: "6"
+    title: AI system impact assessment
+    intent: A defined process to assess potential consequences of AI systems for individuals, groups and society.
+    evidence_examples: [Impact assessment methodology, Template]
+  - id: "6.2"
+    kind: clause
+    group: "6"
+    title: AI objectives and planning to achieve them
+    intent: Measurable AI objectives with owners, resources, timelines and evaluation methods.
+    evidence_examples: [AI objectives register, Progress tracking]
+  - id: "6.3"
+    kind: clause
+    group: "6"
+    title: Planning of changes
+    intent: Changes to the AIMS are carried out in a planned manner.
+    evidence_examples: [Change records for the AIMS]
+
+  # ---------------------------------------------------------------- Clause 7
+  - id: "7.1"
+    kind: clause
+    group: "7"
+    title: Resources
+    intent: Resources needed for the AIMS are determined and provided.
+    evidence_examples: [Resource plan, Budget approval]
+  - id: "7.2"
+    kind: clause
+    group: "7"
+    title: Competence
+    intent: People affecting AI performance are competent, with actions to close gaps and records retained.
+    evidence_examples: [Competence matrix, Training records]
+  - id: "7.3"
+    kind: clause
+    group: "7"
+    title: Awareness
+    intent: People know the AI policy, their contribution, and implications of non-conformance.
+    evidence_examples: [Awareness training completions, Acknowledgements]
+  - id: "7.4"
+    kind: clause
+    group: "7"
+    title: Communication
+    intent: Internal and external AIMS communications are planned (what, when, with whom, how).
+    evidence_examples: [Communication plan]
+  - id: "7.5"
+    kind: clause
+    group: "7"
+    title: Documented information
+    intent: Required documented information is created, controlled, versioned and available.
+    evidence_examples: [Document control procedure, Version history]
+
+  # ---------------------------------------------------------------- Clause 8
+  - id: "8.1"
+    kind: clause
+    group: "8"
+    title: Operational planning and control
+    intent: Processes needed to meet requirements are planned, controlled and evidenced, including outsourced processes.
+    evidence_examples: [Operational procedures, Process records]
+  - id: "8.2"
+    kind: clause
+    group: "8"
+    title: AI risk assessment (operation)
+    intent: Risk assessments are actually performed at planned intervals and on significant change.
+    evidence_examples: [Dated risk assessment records]
+  - id: "8.3"
+    kind: clause
+    group: "8"
+    title: AI risk treatment (operation)
+    intent: The risk treatment plan is implemented and its effectiveness verified.
+    evidence_examples: [Treatment implementation records]
+  - id: "8.4"
+    kind: clause
+    group: "8"
+    title: AI system impact assessment (operation)
+    intent: Impact assessments are actually performed at planned intervals and on significant change.
+    evidence_examples: [Completed impact assessments]
+
+  # ---------------------------------------------------------------- Clause 9
+  - id: "9.1"
+    kind: clause
+    group: "9"
+    title: Monitoring, measurement, analysis and evaluation
+    intent: Decide what is measured, how and when, and evaluate AIMS performance and effectiveness.
+    evidence_examples: [Metrics definitions, Performance reports]
+  - id: "9.2"
+    kind: clause
+    group: "9"
+    title: Internal audit
+    intent: A planned internal audit programme that tests conformity and effectiveness, with reported results.
+    evidence_examples: [Audit programme, Audit plan, Audit report, Workpapers]
+  - id: "9.3"
+    kind: clause
+    group: "9"
+    title: Management review
+    intent: Top management reviews the AIMS at planned intervals with defined inputs and recorded decisions.
+    evidence_examples: [Management review agenda, Minutes, Action log]
+
+  # --------------------------------------------------------------- Clause 10
+  - id: "10.1"
+    kind: clause
+    group: "10"
+    title: Continual improvement
+    intent: The suitability, adequacy and effectiveness of the AIMS are continually improved.
+    evidence_examples: [Improvement log]
+  - id: "10.2"
+    kind: clause
+    group: "10"
+    title: Nonconformity and corrective action
+    intent: Nonconformities are reacted to, root-caused, corrected, and the effectiveness of actions reviewed.
+    evidence_examples: [Corrective action register, Root cause analyses]
+
+  # ----------------------------------------------------------------- Annex A
+  - {id: "A.2.2",  kind: control, group: "A.2",  title: AI policy, intent: "Document an AI policy for developing or using AI systems.", evidence_examples: [Approved AI policy]}
+  - {id: "A.2.3",  kind: control, group: "A.2",  title: Alignment with other organizational policies, intent: "Identify where other policies (security, privacy, quality) apply to or are affected by AI objectives.", evidence_examples: [Policy alignment mapping]}
+  - {id: "A.2.4",  kind: control, group: "A.2",  title: Review of the AI policy, intent: "Review the AI policy at planned intervals and on change.", evidence_examples: [Policy review record]}
+  - {id: "A.3.2",  kind: control, group: "A.3",  title: AI roles and responsibilities, intent: "Define and allocate AI roles and responsibilities.", evidence_examples: [RACI, Role descriptions]}
+  - {id: "A.3.3",  kind: control, group: "A.3",  title: Reporting of concerns, intent: "Provide a way for people to report concerns about the organization's role with AI systems.", evidence_examples: [Concern-reporting procedure, Channel records]}
+  - {id: "A.4.2",  kind: control, group: "A.4",  title: Resource documentation, intent: "Identify and document resources relevant to each AI system's life cycle stages.", evidence_examples: [AI system resource inventory]}
+  - {id: "A.4.3",  kind: control, group: "A.4",  title: Data resources, intent: "Document data resources used by AI systems.", evidence_examples: [Dataset inventory]}
+  - {id: "A.4.4",  kind: control, group: "A.4",  title: Tooling resources, intent: "Document tooling resources used by AI systems.", evidence_examples: [Tool inventory]}
+  - {id: "A.4.5",  kind: control, group: "A.4",  title: System and computing resources, intent: "Document system and computing resources used by AI systems.", evidence_examples: [Infrastructure inventory]}
+  - {id: "A.4.6",  kind: control, group: "A.4",  title: Human resources, intent: "Document human resources and competences needed across the AI life cycle.", evidence_examples: [Competence matrix]}
+  - {id: "A.5.2",  kind: control, group: "A.5",  title: AI system impact assessment process, intent: "Establish a process to assess potential consequences of AI systems across their life cycle.", evidence_examples: [Impact assessment procedure]}
+  - {id: "A.5.3",  kind: control, group: "A.5",  title: Documentation of AI system impact assessments, intent: "Document and retain impact assessment results.", evidence_examples: [Completed impact assessments, Retention rule]}
+  - {id: "A.5.4",  kind: control, group: "A.5",  title: Assessing AI system impact on individuals or groups of individuals, intent: "Assess and document impacts on individuals and groups.", evidence_examples: [Impact assessments - individual section]}
+  - {id: "A.5.5",  kind: control, group: "A.5",  title: Assessing societal impacts of AI systems, intent: "Assess and document societal impacts.", evidence_examples: [Impact assessments - societal section]}
+  - {id: "A.6.1.2", kind: control, group: "A.6", title: Objectives for responsible development of AI system, intent: "Define and document objectives guiding responsible AI development.", evidence_examples: [Responsible AI objectives]}
+  - {id: "A.6.1.3", kind: control, group: "A.6", title: Processes for responsible AI system design and development, intent: "Define and document processes for responsible design and development.", evidence_examples: [AI SDLC procedure]}
+  - {id: "A.6.2.2", kind: control, group: "A.6", title: AI system requirements and specification, intent: "Specify and document requirements for new AI systems or material enhancements.", evidence_examples: [Requirements specifications]}
+  - {id: "A.6.2.3", kind: control, group: "A.6", title: Documentation of AI system design and development, intent: "Document design and development based on objectives and requirements.", evidence_examples: [Design docs, Model cards]}
+  - {id: "A.6.2.4", kind: control, group: "A.6", title: AI system verification and validation, intent: "Define and document verification and validation measures and criteria.", evidence_examples: [Evaluation plans, Gated metric results]}
+  - {id: "A.6.2.5", kind: control, group: "A.6", title: AI system deployment, intent: "Document a deployment plan and ensure requirements are met before deployment.", evidence_examples: [Release approvals, Deployment checklists]}
+  - {id: "A.6.2.6", kind: control, group: "A.6", title: AI system operation and monitoring, intent: "Define elements needed for ongoing operation - monitoring, repairs, updates, support.", evidence_examples: [Monitoring dashboards, Runbooks]}
+  - {id: "A.6.2.7", kind: control, group: "A.6", title: AI system technical documentation, intent: "Determine and provide technical documentation needed by relevant interested parties.", evidence_examples: [Technical documentation set]}
+  - {id: "A.6.2.8", kind: control, group: "A.6", title: AI system recording of event logs, intent: "Decide life cycle phases where event logging is enabled, at minimum while in use.", evidence_examples: [Logging configuration, Log samples]}
+  - {id: "A.7.2",  kind: control, group: "A.7",  title: Data for development and enhancement of AI system, intent: "Define and implement data management processes for AI development.", evidence_examples: [Data management procedure]}
+  - {id: "A.7.3",  kind: control, group: "A.7",  title: Acquisition of data, intent: "Determine and document how data used in AI systems is acquired and selected.", evidence_examples: [Data acquisition records]}
+  - {id: "A.7.4",  kind: control, group: "A.7",  title: Quality of data for AI systems, intent: "Define and document data quality requirements and ensure data meets them.", evidence_examples: [Data quality criteria, Quality checks]}
+  - {id: "A.7.5",  kind: control, group: "A.7",  title: Data provenance, intent: "Define and document a process for recording data provenance across the life cycle.", evidence_examples: [Provenance records, Hash manifests]}
+  - {id: "A.7.6",  kind: control, group: "A.7",  title: Data preparation, intent: "Define and document criteria for selecting data preparations and methods.", evidence_examples: [Data preparation procedure]}
+  - {id: "A.8.2",  kind: control, group: "A.8",  title: System documentation and information for users, intent: "Determine and provide necessary information to users of the AI system.", evidence_examples: [User documentation, Transparency notices]}
+  - {id: "A.8.3",  kind: control, group: "A.8",  title: External reporting, intent: "Provide a way for interested parties to report adverse impacts of the AI system.", evidence_examples: [External reporting channel]}
+  - {id: "A.8.4",  kind: control, group: "A.8",  title: Communication of incidents, intent: "Plan how incidents are communicated to users and other parties.", evidence_examples: [Incident communication plan]}
+  - {id: "A.8.5",  kind: control, group: "A.8",  title: Information for interested parties, intent: "Determine and document obligations to report information about the AI system.", evidence_examples: [Reporting obligations register]}
+  - {id: "A.9.2",  kind: control, group: "A.9",  title: Processes for responsible use of AI systems, intent: "Define and document processes for responsible use of AI systems.", evidence_examples: [Responsible use procedure]}
+  - {id: "A.9.3",  kind: control, group: "A.9",  title: Objectives for responsible use of AI system, intent: "Identify and document objectives guiding responsible use.", evidence_examples: [Responsible use objectives]}
+  - {id: "A.9.4",  kind: control, group: "A.9",  title: Intended use of the AI system, intent: "Ensure AI systems are used according to their intended uses and documentation.", evidence_examples: [Intended use statements, Use monitoring]}
+  - {id: "A.10.2", kind: control, group: "A.10", title: Allocating responsibilities, intent: "Allocate responsibilities between the organization, partners, suppliers, customers and third parties.", evidence_examples: [Responsibility matrix, Contract clauses]}
+  - {id: "A.10.3", kind: control, group: "A.10", title: Suppliers, intent: "Ensure supplied services, products or materials align with the organization's responsible AI approach.", evidence_examples: [AI supplier assessments, Contract/DPA terms]}
+  - {id: "A.10.4", kind: control, group: "A.10", title: Customers, intent: "Account for customer expectations and needs in the responsible approach to AI.", evidence_examples: [Customer requirements mapping]}

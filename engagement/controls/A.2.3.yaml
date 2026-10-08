@@ -1,0 +1,19 @@
+# A.2.3 Alignment with other organizational policies
+# Intent (paraphrased): Identify where other policies (security, privacy, quality) apply to or are affected by AI objectives.
+id: A.2.3
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Security & Compliance
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

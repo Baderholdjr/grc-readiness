@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "control.schema.json",
+  "title": "Control / requirement assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "test"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "applicable": {
+      "type": "boolean",
+      "default": true,
+      "description": "Annex A only. Clauses 4-10 are always applicable."
+    },
+    "justification": {
+      "type": "string",
+      "description": "Why the control is included or excluded (Statement of Applicability)."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Accountable client owner (name or role)."
+    },
+    "implementation": {
+      "type": "string",
+      "description": "How the client meets the requirement, in one or two sentences."
+    },
+    "reuses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Existing processes reused, e.g. 'SOC 2 CC9.2 vendor program'."
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documented",
+        "implemented",
+        "evidenced",
+        "tested"
+      ],
+      "properties": {
+        "documented": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "not_started",
+                "claimed",
+                "partial",
+                "verified"
+              ],
+              "description": "not_started: nothing yet. claimed: client says it exists but no evidence reviewed (a hypothesis). partial: some evidence, not sufficient. verified: analyst reviewed evidence that supports the leg."
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^EV-[0-9]{3,}$"
+              },
+              "uniqueItems": true
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "implemented": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "not_started",
+                "claimed",
+                "partial",
+                "verified"
+              ],
+              "description": "not_started: nothing yet. claimed: client says it exists but no evidence reviewed (a hypothesis). partial: some evidence, not sufficient. verified: analyst reviewed evidence that supports the leg."
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^EV-[0-9]{3,}$"
+              },
+              "uniqueItems": true
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "evidenced": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "not_started",
+                "claimed",
+                "partial",
+                "verified"
+              ],
+              "description": "not_started: nothing yet. claimed: client says it exists but no evidence reviewed (a hypothesis). partial: some evidence, not sufficient. verified: analyst reviewed evidence that supports the leg."
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^EV-[0-9]{3,}$"
+              },
+              "uniqueItems": true
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "tested": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "not_started",
+                "claimed",
+                "partial",
+                "verified"
+              ],
+              "description": "not_started: nothing yet. claimed: client says it exists but no evidence reviewed (a hypothesis). partial: some evidence, not sufficient. verified: analyst reviewed evidence that supports the leg."
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^EV-[0-9]{3,}$"
+              },
+              "uniqueItems": true
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^GAP-[0-9]{2,}$"
+      }
+    },
+    "last_reviewed": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

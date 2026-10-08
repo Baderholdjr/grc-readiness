@@ -1,0 +1,30 @@
+name: Publish evidence package
+
+# Tag a snapshot (e.g. v2027.02-stage1) to freeze the record for an audit
+# stage. The release holds the brief, SoA, control matrix, gap register and
+# evidence index as of that commit - an immutable, timestamped package.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m grc validate --strict
+      - run: python -m grc build --out out --summary notes.md
+      - name: Checksums
+        run: cd out && sha256sum * > SHA256SUMS.txt
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" out/* --title "Evidence package $GITHUB_REF_NAME" --notes-file notes.md

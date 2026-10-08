@@ -1,0 +1,8 @@
+# Merging a PR that touches these paths is the approval record.
+# Replace the placeholder handles with real GitHub users or teams.
+*                                   @Baderholdjr
+/frameworks/                        @Baderholdjr
+/engagement/engagement.yaml         @Baderholdjr
+# Example: client owners approve their own controls
+# /engagement/controls/A.6.*        @client-org/platform-leads
+# /engagement/controls/A.10.*       @client-org/security-compliance

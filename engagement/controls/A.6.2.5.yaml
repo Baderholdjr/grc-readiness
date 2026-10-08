@@ -1,0 +1,27 @@
+# A.6.2.5 AI system deployment
+# Intent (paraphrased): Document a deployment plan and ensure requirements are met before deployment.
+id: A.6.2.5
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: Production promotion requires an approved PR and passing gate.
+test:
+  documented:
+    status: claimed
+    evidence: []
+  implemented:
+    status: verified
+    evidence:
+    - EV-009
+    - EV-011
+  evidenced:
+    status: verified
+    evidence:
+    - EV-011
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-06
+last_reviewed: 2026-10-07
+reviewer: Analyst

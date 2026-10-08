@@ -1,0 +1,19 @@
+# A.10.4 Customers
+# Intent (paraphrased): Account for customer expectations and needs in the responsible approach to AI.
+id: A.10.4
+applicable: true
+justification: 'Included: AI products are delivered to government customers with contractual AI requirements.'
+owner: Legal
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

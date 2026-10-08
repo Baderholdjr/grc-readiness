@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evidence.schema.json",
+  "title": "Evidence index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence"
+  ],
+  "properties": {
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "type",
+          "location",
+          "collected"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^EV-[0-9]{3,}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "document",
+              "record",
+              "config",
+              "log",
+              "test",
+              "sample",
+              "interview",
+              "screenshot"
+            ]
+          },
+          "location": {
+            "type": "string",
+            "description": "Pointer to where the artifact lives (URL, repo path, GRC tool reference). Do not commit confidential artifacts."
+          },
+          "owner": {
+            "type": "string"
+          },
+          "collected": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "approved_by": {
+            "type": "string",
+            "description": "Required for 'document' evidence used to verify the Documented leg."
+          },
+          "approved_on": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "valid_for_days": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 365
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sensitivity": {
+            "enum": [
+              "public",
+              "internal",
+              "confidential",
+              "restricted"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

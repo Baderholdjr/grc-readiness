@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gaps.schema.json",
+  "title": "Gap register",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "gaps"
+  ],
+  "properties": {
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "area",
+          "finding",
+          "requirements",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^GAP-[0-9]{2,}$"
+          },
+          "area": {
+            "type": "string",
+            "description": "Short area label, shown bold in the brief."
+          },
+          "finding": {
+            "type": "string",
+            "description": "What to verify / close."
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "owner": {
+            "type": "string"
+          },
+          "due": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "status": {
+            "enum": [
+              "open",
+              "in_progress",
+              "closed",
+              "risk_accepted"
+            ]
+          },
+          "issue": {
+            "type": "integer",
+            "description": "GitHub issue number (written by `grc sync-issues`)."
+          },
+          "closure_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^EV-[0-9]{3,}$"
+            }
+          },
+          "in_brief": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    }
+  }
+}

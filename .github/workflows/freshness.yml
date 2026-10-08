@@ -1,0 +1,46 @@
+name: Weekly evidence freshness check
+
+# Evidence goes stale over time even when nobody edits the repo. This job
+# re-evaluates the record against today's date and keeps one tracking issue
+# up to date with expired evidence, past-due gaps and budget warnings.
+on:
+  schedule:
+    - cron: "17 14 * * 1"   # Mondays 14:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Evaluate as of today
+        id: check
+        run: |
+          set +e
+          python -m grc validate --strict --summary report.md > findings.txt 2>&1
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          cat findings.txt
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Update tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Readiness drift: evidence freshness & overdue gaps"
+          NUM=$(gh issue list --label grc-drift --state open --json number -q '.[0].number')
+          if [ "${{ steps.check.outputs.exit }}" = "0" ]; then
+            if [ -n "$NUM" ]; then gh issue close "$NUM" --comment "All clear as of $(date -u +%F)."; fi
+            exit 0
+          fi
+          gh label create grc-drift --color B60205 --force >/dev/null
+          { echo "_Updated $(date -u +%F) by the weekly freshness check._"; echo; cat report.md; } > body.md
+          if [ -n "$NUM" ]; then gh issue edit "$NUM" --body-file body.md
+          else gh issue create --title "$TITLE" --label grc-drift --body-file body.md; fi

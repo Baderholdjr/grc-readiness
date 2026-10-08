@@ -1,0 +1,19 @@
+# A.7.6 Data preparation
+# Intent (paraphrased): Define and document criteria for selecting data preparations and methods.
+id: A.7.6
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

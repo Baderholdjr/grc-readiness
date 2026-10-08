@@ -1,0 +1,19 @@
+# 9.2 Internal audit
+# Intent (paraphrased): A planned internal audit programme that tests conformity and effectiveness, with reported results.
+id: '9.2'
+owner: Security & Compliance
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-08

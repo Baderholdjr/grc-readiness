@@ -1,0 +1,23 @@
+# A.3.2 AI roles and responsibilities
+# Intent (paraphrased): Define and allocate AI roles and responsibilities.
+id: A.3.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: VP Engineering
+test:
+  documented:
+    status: claimed
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-11
+last_reviewed: 2026-10-07
+reviewer: Analyst

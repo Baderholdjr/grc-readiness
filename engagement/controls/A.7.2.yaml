@@ -1,0 +1,25 @@
+# A.7.2 Data for development and enhancement of AI system
+# Intent (paraphrased): Define and implement data management processes for AI development.
+id: A.7.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Security & Compliance
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-017
+    note: Classification policy approved but has no AI artifact classes
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-04
+last_reviewed: 2026-10-07
+reviewer: Analyst

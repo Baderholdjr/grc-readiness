@@ -1,0 +1,35 @@
+name: Sync gap register to GitHub Issues
+
+# gaps.yaml is the source of truth; Issues and phase Milestones are a view of it
+# for day-to-day tracking by owners who don't edit YAML.
+on:
+  push:
+    branches: [main]
+    paths:
+      - engagement/gaps.yaml
+      - engagement/engagement.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: sync-issues
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m grc validate
+      - name: Sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m grc sync-issues --apply

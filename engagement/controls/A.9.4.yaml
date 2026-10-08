@@ -1,0 +1,24 @@
+# A.9.4 Intended use of the AI system
+# Intent (paraphrased): Ensure AI systems are used according to their intended uses and documentation.
+id: A.9.4
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: Agent authority limits enforced in configuration.
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-06
+last_reviewed: 2026-10-07
+reviewer: Analyst

@@ -1,0 +1,22 @@
+# 4.2 Understanding the needs and expectations of interested parties
+# Intent (paraphrased): Identify interested parties and which of their requirements the AIMS will address.
+id: '4.2'
+owner: Legal
+test:
+  documented:
+    status: claimed
+    evidence: []
+    note: Client says customer requirements are tracked per contract
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-07
+last_reviewed: 2026-10-07
+reviewer: Analyst
