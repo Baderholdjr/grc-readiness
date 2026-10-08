@@ -4,7 +4,7 @@ id: '5.2'
 owner: VP Engineering
 test:
   documented:
-    status: not_started
+    status: verified
     evidence: []
   implemented:
     status: not_started
