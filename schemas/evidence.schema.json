@@ -80,6 +80,24 @@
           },
           "notes": {
             "type": "string"
+          },
+          "collector": {
+            "type": "string",
+            "description": "Collector that produced this item (machine-owned entries only)."
+          },
+          "result": {
+            "enum": [
+              "pass",
+              "fail",
+              "error"
+            ],
+            "description": "Latest collector result. fail/error makes the item non-current."
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }

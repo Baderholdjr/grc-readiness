@@ -4,6 +4,8 @@
   build         Generate brief.docx, control matrix, SoA, gap register, evidence index
   init          Scaffold a control file for every catalog requirement that lacks one
   sync-issues   Mirror gaps.yaml into GitHub Issues and phase milestones
+  collect       Run evidence collectors and refresh machine-owned evidence
+  ingest        Draft engagement data from client documents in intake/
 """
 from __future__ import annotations
 
@@ -108,6 +110,29 @@ def cmd_sync(args) -> int:
     return 0
 
 
+def cmd_collect(args) -> int:
+    from . import collect
+    model = _model(args)
+    results, report = collect.run(model, only=args.only, write=not args.dry_run)
+    print(report)
+    if args.report:
+        Path(args.report).write_text(report, encoding="utf-8")
+    counts = {}
+    for r in results:
+        counts[r["result"]] = counts.get(r["result"], 0) + 1
+    print(" · ".join(f"{k}: {v}" for k, v in sorted(counts.items())) or "no checks ran", file=sys.stderr)
+    return 0
+
+
+def cmd_ingest(args) -> int:
+    from . import ingest
+    report = ingest.run(args.engagement, args.intake, mode=args.mode, force=args.force)
+    print(report)
+    if args.report:
+        Path(args.report).write_text(report, encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -135,6 +160,19 @@ def main(argv=None) -> int:
     s.add_argument("--repo", help="owner/name (default: $GITHUB_REPOSITORY)")
     s.add_argument("--write-back", action="store_true", help="record issue numbers in gaps.yaml")
     s.set_defaults(fn=cmd_sync)
+
+    c = sub.add_parser("collect", help="run evidence collectors (engagement/collectors.yaml)")
+    c.add_argument("--only", nargs="*", help="evidence ids to collect")
+    c.add_argument("--report", help="write the Markdown report here (PR body)")
+    c.add_argument("--dry-run", action="store_true", help="run checks but don't write files")
+    c.set_defaults(fn=cmd_collect)
+
+    g = sub.add_parser("ingest", help="draft engagement data from client documents in intake/")
+    g.add_argument("--intake", default="intake")
+    g.add_argument("--mode", choices=["auto", "templates", "ai"], default="auto")
+    g.add_argument("--force", action="store_true", help="re-process files already in the ledger")
+    g.add_argument("--report", help="write the Markdown report here (PR comment)")
+    g.set_defaults(fn=cmd_ingest)
 
     args = p.parse_args(argv)
     return args.fn(args)

@@ -230,6 +230,19 @@
       "type": "integer",
       "minimum": 0,
       "default": 30
+    },
+    "ingest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ai_drafting": {
+          "type": "boolean",
+          "description": "Allow sending intake documents to the Anthropic API for drafting."
+        },
+        "model": {
+          "type": "string"
+        }
+      }
     }
   }
 }

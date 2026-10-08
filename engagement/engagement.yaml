@@ -84,3 +84,9 @@ key_risks:
   - Certification-body scheduling or findings pushing issuance into April.
 
 evidence_expiry_warning_days: 30
+
+# Document ingestion (intake/). AI drafting sends intake documents to the
+# Anthropic API; enable only with the client's agreement. Needs ANTHROPIC_API_KEY.
+ingest:
+  ai_drafting: false
+  model: claude-sonnet-5-5

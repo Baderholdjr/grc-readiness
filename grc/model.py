@@ -48,6 +48,8 @@ class Engagement:
     control_files: dict[str, Path] = field(default_factory=dict)
     gaps: list[dict] = field(default_factory=list)
     evidence: list[dict] = field(default_factory=list)
+    inventory: list[dict] = field(default_factory=list)
+    human_evidence_count: int = 0
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -110,9 +112,16 @@ class Engagement:
             return None
         return collected + dt.timedelta(days=int(ev.get("valid_for_days", 365)))
 
-    def evidence_is_current(self, ev: dict) -> bool:
+    def evidence_is_expired(self, ev: dict) -> bool:
         exp = self.evidence_expiry(ev)
-        return exp is None or exp >= self.today
+        return exp is not None and exp < self.today
+
+    def evidence_is_failing(self, ev: dict) -> bool:
+        """Collector-produced evidence whose latest check failed or errored."""
+        return ev.get("result") in ("fail", "error")
+
+    def evidence_is_current(self, ev: dict) -> bool:
+        return not self.evidence_is_expired(ev) and not self.evidence_is_failing(ev)
 
 
 def control_filename(req_id: str) -> str:
@@ -145,6 +154,13 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     ev_path = edir / "evidence" / "index.yaml"
     if ev_path.exists():
         model.evidence = load_yaml(ev_path).get("evidence", []) or []
+    model.human_evidence_count = len(model.evidence)
+    collected = edir / "evidence" / "collected.yaml"  # machine-owned, written by collectors
+    if collected.exists():
+        model.evidence += load_yaml(collected).get("evidence", []) or []
+    inv = edir / "inventory.yaml"
+    if inv.exists():
+        model.inventory = load_yaml(inv).get("items", []) or []
     return model
 
 

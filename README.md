@@ -5,13 +5,18 @@
 The engagement record lives in this repo as YAML. Git history is the audit trail, pull requests are approvals, and CI enforces the evidence rules. The analyst brief, control matrix, Statement of Applicability, gap register and evidence index are **generated** from the record and never edited by hand.
 
 ```
+ client documents ──upload to intake/──▶ INGEST (templates + Claude drafting) ──┐
+ GitHub · Drata · AWS/Azure/GCP ──daily──▶ COLLECT (evidence snapshots) ─────────┤  both open PRs
+                                                                                 ▼
  engagement YAML ──PR──▶ CI: validate ──▶ build ──▶ brief.docx · control matrix · SoA · gap register · evidence index
         ▲                    │ blocks overstated readiness                     │
         │                    ▼                                                 ▼
-   analyst / owners    PR summary (readiness %)                   artifacts · tagged releases (audit packages)
+   analyst / owners    PR summary (readiness %)                   artifacts · releases (audit packages)
         ▲
         └── GitHub Issues + phase Milestones (synced from gaps.yaml) ◀── weekly freshness check (stale evidence, overdue gaps)
 ```
+
+**Automated end to end, approved by people:** client documents are drafted into the record, evidence is pulled from the client's systems on a schedule, and CI re-evaluates every control against it. Automation only ever opens PRs; nothing it does can mark a control `verified`. Setup: [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
 
 ## The core idea: the four-part evidence test, enforced in code
 
@@ -35,6 +40,8 @@ pip install -r requirements.txt
 python -m grc validate                 # schemas + readiness rules (the CI gate)
 python -m grc build --out out          # brief.docx + Markdown/CSV reports
 python -m grc sync-issues              # dry run: what Issues/Milestones would be created
+python -m grc ingest                   # draft engagement data from new files in intake/
+python -m grc collect --dry-run        # run evidence collectors without writing
 ```
 
 `--today YYYY-MM-DD` evaluates the record as of a given date, for example `--today 2027-02-22` to see what will have expired by Stage 1.
@@ -49,12 +56,17 @@ engagement/           ← one engagement's record (replace with your client's)
   engagement.yaml     client profile, scope, what's in place, budget, dates, phases, guardrails, risks
   controls/<ID>.yaml  four-part evidence test per requirement (65 files)
   gaps.yaml           gap register → GitHub Issues
-  evidence/index.yaml pointers to evidence (location, date, approver, expiry, sha256)
+  inventory.yaml      AI systems, tools, infrastructure, models, datasets (drafted by ingest)
+  collectors.yaml     which evidence to collect automatically, from where
+  evidence/index.yaml pointers to evidence entered by people (location, date, approver, expiry)
+  evidence/collected.yaml + collected/*.json   machine-owned evidence and snapshots
   workpapers/         analyst test workpapers (non-confidential)
+intake/               drop client documents here (in a PR) to draft the record
 schemas/              JSON Schemas for all of the above
-templates/            brief-template.docx (house style)
-grc/                  the CLI: model, rules, renderers, issue sync
-.github/workflows/    validate · weekly freshness · issue sync · release evidence package
+templates/            brief-template.docx (house style) · intake/ CSV templates for clients
+grc/                  the CLI: model, rules, renderers, issue sync, collectors/, ingest/
+docs/AUTOMATION.md    credentials and setup for ingestion and collectors
+.github/workflows/    validate · ingest · collect · weekly freshness · issue sync · release package
 ```
 
 ## Validation rules
@@ -72,8 +84,10 @@ grc/                  the CLI: model, rules, renderers, issue sync
 | E010 | error | Gap references an unknown requirement or phase |
 | E012 | error | Evidence type doesn't fit the leg (draft for Documented, policy for Implemented…) |
 | E013 | error | Gap closed without `closure_evidence` |
+| E015 | error | Leg is `verified` but the collector check behind its evidence is failing |
 | W102 | warning | Operates in practice but isn't codified in an approved document |
 | W101 / W104 / W105 / W106 | warning | Evidence expiring soon · gap past due · gap due after its phase ends · budget at or above 80% |
+| W108 / W109 | warning | A collector check is failing / could not run |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
 
 ## GitOps workflow
