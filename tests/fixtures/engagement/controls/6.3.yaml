@@ -1,0 +1,17 @@
+# 6.3 Planning of changes
+# Intent (paraphrased): Changes to the AIMS are carried out in a planned manner.
+id: '6.3'
+owner: VP Engineering
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

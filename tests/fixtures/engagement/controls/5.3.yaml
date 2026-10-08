@@ -1,0 +1,22 @@
+# 5.3 Roles, responsibilities and authorities
+# Intent (paraphrased): AIMS roles are assigned, communicated, and include reporting on AIMS performance.
+id: '5.3'
+owner: VP Engineering
+test:
+  documented:
+    status: claimed
+    evidence: []
+    note: Roles described verbally at kickoff
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-11
+last_reviewed: 2026-10-07
+reviewer: Analyst

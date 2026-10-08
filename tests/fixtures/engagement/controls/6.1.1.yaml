@@ -1,0 +1,22 @@
+# 6.1.1 Actions to address risks and opportunities - general
+# Intent (paraphrased): Plan actions for risks and opportunities to the AIMS achieving its outcomes.
+id: 6.1.1
+owner: Security & Compliance
+reuses:
+- SOC 2 enterprise risk process
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-005
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

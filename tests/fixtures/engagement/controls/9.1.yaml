@@ -1,0 +1,21 @@
+# 9.1 Monitoring, measurement, analysis and evaluation
+# Intent (paraphrased): Decide what is measured, how and when, and evaluate AIMS performance and effectiveness.
+id: '9.1'
+owner: Head of Platform
+implementation: Production telemetry exists for AI systems; no AIMS-level metrics.
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: partial
+    evidence:
+    - EV-012
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

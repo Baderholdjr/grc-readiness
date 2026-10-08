@@ -25,10 +25,13 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt pytest
-      - name: Unit tests
-        run: pytest -q
+      # Validate the engagement first: this is the check reviewers care about,
+      # and it writes the readiness table to the run's Summary page.
       - name: Validate engagement (four-part evidence test, schemas, gaps)
         run: python -m grc validate --format github --summary "$GITHUB_STEP_SUMMARY"
+      - name: Unit tests (engine, against tests/fixtures)
+        if: success() || failure()
+        run: pytest -q
       - name: Build reports and brief
         run: python -m grc build --out out
       - uses: actions/upload-artifact@v6

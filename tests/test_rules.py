@@ -10,13 +10,15 @@ from grc.model import load
 from grc.rules import metrics, requirement_state, validate
 
 ROOT = Path(__file__).resolve().parent.parent
+# Engine tests run against a frozen copy so editing the live engagement never breaks them.
+FIXTURE = Path(__file__).resolve().parent / "fixtures" / "engagement"
 TODAY = dt.date(2026, 10, 8)
 
 
 @pytest.fixture
 def eng(tmp_path):
     dst = tmp_path / "engagement"
-    shutil.copytree(ROOT / "engagement", dst)
+    shutil.copytree(FIXTURE, dst)
     return dst
 
 
@@ -32,12 +34,12 @@ def edit_control(edir, cid, fn):
 
 
 def test_example_is_valid():
-    errors = [f for f in validate(load(ROOT / "engagement", today=TODAY)) if f.severity == "error"]
+    errors = [f for f in validate(load(FIXTURE, today=TODAY)) if f.severity == "error"]
     assert errors == []
 
 
 def test_codification_gap_detected():
-    assert "W102" in codes(ROOT / "engagement")
+    assert "W102" in codes(FIXTURE)
 
 
 def test_verified_without_evidence(eng):
@@ -63,7 +65,7 @@ def test_stale_evidence_blocks_verified(eng):
 
 def test_evidence_expires_with_time():
     later = dt.date(2027, 3, 1)  # EV-010 (90 days from 2026-09-28) has expired
-    found = codes(ROOT / "engagement", today=later)
+    found = codes(FIXTURE, today=later)
     assert "E007" in found
 
 

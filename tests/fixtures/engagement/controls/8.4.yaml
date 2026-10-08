@@ -1,0 +1,19 @@
+# 8.4 AI system impact assessment (operation)
+# Intent (paraphrased): Impact assessments are actually performed at planned intervals and on significant change.
+id: '8.4'
+owner: Head of Responsible AI
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-02

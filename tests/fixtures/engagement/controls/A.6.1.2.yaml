@@ -1,0 +1,24 @@
+# A.6.1.2 Objectives for responsible development of AI system
+# Intent (paraphrased): Define and document objectives guiding responsible AI development.
+id: A.6.1.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Responsible AI
+implementation: Responsible AI Principles serve as development objectives.
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-006
+    note: Principles approved 2025; annual review overdue so evidence has expired
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

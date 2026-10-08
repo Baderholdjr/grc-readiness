@@ -1,0 +1,21 @@
+# A.8.3 External reporting
+# Intent (paraphrased): Provide a way for interested parties to report adverse impacts of the AI system.
+id: A.8.3
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Legal
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-12

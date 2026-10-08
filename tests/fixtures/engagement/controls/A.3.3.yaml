@@ -1,0 +1,21 @@
+# A.3.3 Reporting of concerns
+# Intent (paraphrased): Provide a way for people to report concerns about the organization's role with AI systems.
+id: A.3.3
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Legal
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-12

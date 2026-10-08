@@ -1,0 +1,23 @@
+# A.7.4 Quality of data for AI systems
+# Intent (paraphrased): Define and document data quality requirements and ensure data meets them.
+id: A.7.4
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-04
+last_reviewed: 2026-10-07
+reviewer: Analyst

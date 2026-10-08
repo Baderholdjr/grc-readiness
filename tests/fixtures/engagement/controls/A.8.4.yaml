@@ -1,0 +1,27 @@
+# A.8.4 Communication of incidents
+# Intent (paraphrased): Plan how incidents are communicated to users and other parties.
+id: A.8.4
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Security & Compliance
+implementation: SOC 2 incident process includes customer notification.
+reuses:
+- SOC 2 incident management
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-013
+    note: No AI-specific incident criteria
+  implemented:
+    status: partial
+    evidence:
+    - EV-014
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

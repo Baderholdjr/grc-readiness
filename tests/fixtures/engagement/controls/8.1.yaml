@@ -1,0 +1,23 @@
+# 8.1 Operational planning and control
+# Intent (paraphrased): Processes needed to meet requirements are planned, controlled and evidenced, including outsourced processes.
+id: '8.1'
+owner: Head of Platform
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-008
+  implemented:
+    status: partial
+    evidence:
+    - EV-009
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-05
+last_reviewed: 2026-10-07
+reviewer: Analyst

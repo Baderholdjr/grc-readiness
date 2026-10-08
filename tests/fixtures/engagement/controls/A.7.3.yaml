@@ -1,0 +1,19 @@
+# A.7.3 Acquisition of data
+# Intent (paraphrased): Determine and document how data used in AI systems is acquired and selected.
+id: A.7.3
+applicable: true
+justification: 'Included: the Platform team acquires third-party and customer data for model development.'
+owner: Head of Platform
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

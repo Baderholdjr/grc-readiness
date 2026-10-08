@@ -1,0 +1,19 @@
+# A.2.4 Review of the AI policy
+# Intent (paraphrased): Review the AI policy at planned intervals and on change.
+id: A.2.4
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Security & Compliance
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
