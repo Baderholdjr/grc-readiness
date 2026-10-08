@@ -113,7 +113,8 @@ def evidence_index(model: Engagement, out: Path):
     for e in model.evidence:
         exp = model.evidence_expiry(e)
         rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
-                     "yes" if model.evidence_is_current(e) else "**EXPIRED**", e.get("approved_by", ""),
+                     ("**FAILING**" if model.evidence_is_failing(e) else "**EXPIRED**" if model.evidence_is_expired(e) else "yes")
+                     + (f" ({e['collector']})" if e.get("collector") else ""), e.get("approved_by", ""),
                      ", ".join(supports.get(e["id"], [])) or "(unused)"])
     md = [f"# {model.client} — evidence index\n", GEN,
           "Each row is a pointer to an artifact held in the client's systems. "
@@ -137,7 +138,7 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
              f"- **Ready:** {m['requirements_ready']} / {m['requirements_applicable']} applicable requirements",
              f"- **Evidence-test legs verified:** {m['legs_verified_pct']}%",
              f"- **Open gaps:** {m['gaps_open']} of {m['gaps_total']}",
-             f"- **Expired evidence:** {len(m['evidence_stale'])}",
+             f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
              f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours\n" if m.get("hours_total") else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
     for t in model.playbook["evidence_test"]:

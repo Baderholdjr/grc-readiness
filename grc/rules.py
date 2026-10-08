@@ -56,7 +56,22 @@ def check_schemas(model: Engagement) -> list[Finding]:
     edir = model.engagement_dir
     run("engagement", model.engagement, edir / "engagement.yaml")
     run("gaps", {"gaps": model.gaps}, edir / "gaps.yaml")
-    run("evidence", {"evidence": model.evidence}, edir / "evidence" / "index.yaml")
+    n = model.human_evidence_count
+    run("evidence", {"evidence": model.evidence[:n]}, edir / "evidence" / "index.yaml")
+    if len(model.evidence) > n:
+        run("evidence", {"evidence": model.evidence[n:]}, edir / "evidence" / "collected.yaml")
+    if (edir / "collectors.yaml").exists():
+        from .model import load_yaml
+        cfg = load_yaml(edir / "collectors.yaml")
+        run("collectors", cfg, edir / "collectors.yaml")
+        known_ids = {e.get("id") for e in model.evidence[:n]}
+        for chk in cfg.get("checks", []) or []:
+            if chk.get("evidence") in known_ids:
+                out.append(Finding("error", "E011", f"collectors.yaml check uses {chk['evidence']}, which is a human-owned "
+                                   "evidence id in evidence/index.yaml. Use a separate id range (e.g. EV-1xx).",
+                                   _rel(model, edir / "collectors.yaml"), chk["evidence"]))
+    if (edir / "inventory.yaml").exists():
+        run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
         run("control", data, model.control_files[cid], cid)
     return out
@@ -127,9 +142,12 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
         test = c.get("test", {})
         statuses = {k: test.get(k, {}).get("status", "not_started") for k in LEGS}
 
-        # E009 owner required once anything is claimed
-        if any(s != "not_started" for s in statuses.values()) and not (c.get("owner") or "").strip():
-            out.append(Finding("error", "E009", f"{cid} has progress recorded but no accountable owner.", path, cid))
+        # E009 owner required once there is real progress; claims alone only warn
+        if not (c.get("owner") or "").strip():
+            if any(s in ("partial", "verified") for s in statuses.values()):
+                out.append(Finding("error", "E009", f"{cid} has progress recorded but no accountable owner.", path, cid))
+            elif any(s == "claimed" for s in statuses.values()):
+                out.append(Finding("warning", "W110", f"{cid} has client claims but no accountable owner yet.", path, cid))
 
         for k in LEGS:
             leg = test.get(k, {})
@@ -145,9 +163,14 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
                 if not refs:
                     out.append(Finding("error", "E005", f"{cid}.{k} is 'verified' but cites no evidence.", path, cid))
                     continue
-                # E007 stale
+                # E007 expired / E015 collector failing
                 if known and not any(model.evidence_is_current(e) for e in known):
-                    out.append(Finding("error", "E007", f"{cid}.{k} is 'verified' but all cited evidence has expired.", path, cid))
+                    failing = [e["id"] for e in known if model.evidence_is_failing(e)]
+                    if failing:
+                        out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' but the collector check for "
+                                           f"{', '.join(failing)} is failing; no other current evidence supports it.", path, cid))
+                    else:
+                        out.append(Finding("error", "E007", f"{cid}.{k} is 'verified' but all cited evidence has expired.", path, cid))
                 # E012 evidence type fits the leg
                 types = {e["type"] for e in known}
                 if k == "documented":
@@ -239,7 +262,18 @@ def check_engagement(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement)
+def check_collected(model: Engagement) -> list[Finding]:
+    out = []
+    path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
+    for e in model.evidence:
+        if e.get("result") == "fail":
+            out.append(Finding("warning", "W108", f"{e['id']} ({e['title']}) collector check is failing: {e.get('notes', '')}"[:300], path, e["id"]))
+        elif e.get("result") == "error":
+            out.append(Finding("warning", "W109", f"{e['id']} ({e['title']}) could not be collected: {e.get('notes', '')}"[:300], path, e["id"]))
+    return out
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected)
 
 
 def validate(model: Engagement) -> list[Finding]:
@@ -287,7 +321,8 @@ def metrics(model: Engagement) -> dict:
     total_legs = len(applicable) * 4
     verified_legs = sum(v["verified"] for v in legs.values())
     gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
-    stale = [e["id"] for e in model.evidence if not model.evidence_is_current(e)]
+    stale = [e["id"] for e in model.evidence if model.evidence_is_expired(e)]
+    failing = [e["id"] for e in model.evidence if model.evidence_is_failing(e)]
     b = model.engagement.get("budget", {})
     return {
         "as_of": model.today.isoformat(),
@@ -302,6 +337,7 @@ def metrics(model: Engagement) -> dict:
         "gaps_total": len(model.gaps),
         "evidence_total": len(model.evidence),
         "evidence_stale": stale,
+        "evidence_failing": failing,
         "hours_total": b.get("hours_total"),
         "hours_used": b.get("hours_used", 0),
     }

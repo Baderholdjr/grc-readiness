@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collectors.schema.json",
+  "title": "Collector configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "enabled": {
+      "type": "boolean"
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "valid_for_days": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evidence",
+          "title",
+          "collector"
+        ],
+        "properties": {
+          "evidence": {
+            "type": "string",
+            "pattern": "^EV-[0-9]{3,}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "collector": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object"
+          },
+          "type": {
+            "enum": [
+              "record",
+              "config",
+              "log",
+              "test",
+              "document",
+              "screenshot"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "valid_for_days": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

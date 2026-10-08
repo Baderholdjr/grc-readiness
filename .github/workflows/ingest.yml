@@ -1,0 +1,59 @@
+name: Ingest client documents
+
+# Upload client documents to intake/ in a PR. This drafts engagement data from
+# them (templates imported as-is; other documents drafted by Claude if enabled),
+# commits the draft to the same PR, and comments a report for review.
+on:
+  pull_request:
+    paths: ["intake/**"]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: ingest-${{ github.head_ref }}
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    # Only same-repo branches (forks can't receive pushes or secrets).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Ingest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m grc ingest --report ingest-report.md
+      - name: Commit the draft to this PR
+        id: commit
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A engagement intake
+          if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git commit -q -m "Ingest: draft engagement data from intake documents"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Comment the report
+        if: always() && hashFiles('ingest-report.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          head -c 60000 ingest-report.md > body.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file body.md
+      - name: Validate the drafted commit
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: gh workflow run validate.yml --ref "$HEAD_REF"

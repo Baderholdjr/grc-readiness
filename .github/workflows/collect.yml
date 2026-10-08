@@ -1,0 +1,89 @@
+name: Collect evidence
+
+# Runs the checks in engagement/collectors.yaml against the client's systems and
+# opens (or updates) one rolling PR, "Evidence refresh", with the new snapshots.
+# Merging that PR is the human approval. A failing check shows up as a CI error on
+# any control that was 'verified' only on that evidence.
+on:
+  schedule:
+    - cron: "41 13 * * *"   # daily 13:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write        # to start the validate check on the refresh PR
+  id-token: write       # OIDC sign-in to AWS / Azure / GCP (no stored cloud keys)
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: auto/evidence-refresh
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt boto3
+
+      # Cloud sign-in only happens when the matching repository variables exist.
+      - name: AWS sign-in (OIDC, read-only role)
+        if: ${{ vars.AWS_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      - name: Azure sign-in (OIDC, Reader)
+        if: ${{ vars.AZURE_CLIENT_ID != '' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: GCP sign-in (workload identity)
+        if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Run collectors
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_COLLECTOR_TOKEN: ${{ secrets.GH_COLLECTOR_TOKEN }}
+          DRATA_API_KEY: ${{ secrets.DRATA_API_KEY }}
+          DRATA_API_BASE: ${{ vars.DRATA_API_BASE }}
+        run: |
+          python -m grc collect --report report.md
+          python -m grc validate --summary validate.md > /dev/null 2>&1 || true
+          { echo; echo "---"; cat validate.md; } >> report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update the refresh PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add engagement/evidence
+          if git diff --cached --quiet; then echo "No evidence changes."; exit 0; fi
+          git commit -q -m "Evidence refresh $(date -u +%F)"
+          git push -f origin "$BRANCH"
+          head -c 60000 report.md > body.md
+          gh label create evidence-refresh --color 0E8A16 --force >/dev/null
+          NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base main --head "$BRANCH" --title "Evidence refresh (automated)" \
+              --label evidence-refresh --body-file body.md
+          else
+            gh pr edit "$NUM" --body-file body.md
+          fi
+          # PRs/pushes made with GITHUB_TOKEN don't trigger workflows; start the required check explicitly.
+          gh workflow run validate.yml --ref "$BRANCH"
