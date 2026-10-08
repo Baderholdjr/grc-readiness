@@ -1,0 +1,24 @@
+# 4.3 Determining the scope of the AI management system
+# Intent (paraphrased): Define and approve AIMS boundaries and applicability, informed by 4.1 and 4.2.
+id: '4.3'
+owner: VP Engineering
+implementation: Draft scope covers Innovation and Platform teams' AI products.
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-001
+    note: Draft not yet approved by leadership
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+gaps:
+- GAP-01
+last_reviewed: 2026-10-07
+reviewer: Analyst

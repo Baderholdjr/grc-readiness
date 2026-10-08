@@ -1,0 +1,21 @@
+# 8.3 AI risk treatment (operation)
+# Intent (paraphrased): The risk treatment plan is implemented and its effectiveness verified.
+id: '8.3'
+owner: Security & Compliance
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: partial
+    evidence:
+    - EV-004
+    note: Open actions tracked; effectiveness not verified
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

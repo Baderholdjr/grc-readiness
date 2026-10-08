@@ -1,0 +1,22 @@
+# A.4.5 System and computing resources
+# Intent (paraphrased): Document system and computing resources used by AI systems.
+id: A.4.5
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: 10 infrastructure services listed in the inventory workbook.
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

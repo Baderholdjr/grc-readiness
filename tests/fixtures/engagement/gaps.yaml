@@ -1,0 +1,141 @@
+# Gap register. `python -m grc sync-issues --apply` mirrors this into GitHub
+# Issues (label grc-gap) with one milestone per phase. Edit here, not in GitHub.
+# Closing a gap requires closure_evidence (CI enforces).
+# in_brief: false keeps a gap out of the brief's Section 4 table.
+
+gaps:
+  - id: GAP-01
+    area: AIMS governance
+    finding: No producer-scope AIMS AI policy yet; scope draft still needs leadership approval.
+    requirements: ["5.2", "4.3", "A.2.2"]
+    owner: VP Engineering
+    due: 2026-11-20
+    phase: governance
+    severity: high
+    status: open
+
+  - id: GAP-02
+    area: Impact assessment
+    finding: No AI impact assessments have been completed; methodology/template must be established and used.
+    requirements: ["6.1.4", "8.4", "A.5.2", "A.5.3", "A.5.4", "A.5.5"]
+    owner: Head of Responsible AI
+    due: 2026-12-18
+    phase: implement
+    severity: high
+    status: open
+
+  - id: GAP-03
+    area: "Training & competence"
+    finding: AI-specific training is planned but not yet operating.
+    requirements: ["7.2", "7.3", "A.4.6"]
+    owner: People Operations
+    due: 2026-12-18
+    phase: implement
+    severity: medium
+    status: open
+
+  - id: GAP-04
+    area: Data governance
+    finding: Existing classification taxonomy does not yet cover AI artifacts such as corpora, datasets, checkpoints, and delivered models.
+    requirements: ["A.4.3", "A.7.2", "A.7.4"]
+    owner: Security & Compliance
+    due: 2026-11-25
+    phase: governance
+    severity: medium
+    status: open
+
+  - id: GAP-05
+    area: AI suppliers
+    finding: AI-specific suppliers have not yet been run through the existing vendor program; supplier contract/DPA requirements are incomplete.
+    requirements: ["A.10.2", "A.10.3", "8.1"]
+    owner: Security & Compliance
+    due: 2026-12-18
+    phase: implement
+    severity: high
+    status: open
+
+  - id: GAP-06
+    area: Control codification
+    finding: Some human-review and engineering practices operate in code/process but are not fully reflected in policy text.
+    requirements: ["A.6.1.3", "A.6.2.4", "A.6.2.5", "A.7.5", "A.9.4"]
+    owner: Head of Platform
+    due: 2026-11-30
+    phase: governance
+    severity: medium
+    status: in_progress
+
+  - id: GAP-07
+    area: Regulatory mapping
+    finding: Formal per-market AI regulatory/contractual mapping has not yet been performed.
+    requirements: ["4.1", "4.2", "A.8.5"]
+    owner: Legal
+    due: 2026-11-30
+    phase: governance
+    severity: medium
+    status: open
+
+  - id: GAP-08
+    area: Internal audit
+    finding: No standalone AI/AIMS internal audit program or completed AI-scoped internal audit exists.
+    requirements: ["9.2"]
+    owner: Security & Compliance
+    due: 2027-01-22
+    phase: test
+    severity: high
+    status: open
+
+  - id: GAP-09
+    area: Management review
+    finding: AI is discussed in quarterly leadership review, but a dedicated standing AI/AIMS review structure needs to be formalized.
+    requirements: ["9.3", "5.1"]
+    owner: VP Engineering
+    due: 2027-01-29
+    phase: test
+    severity: medium
+    status: open
+
+  # --- tracked but not shown in the brief -----------------------------------
+  - id: GAP-10
+    area: Statement of Applicability
+    finding: No SoA exists; Annex A applicability and justifications must be decided and approved.
+    requirements: ["6.1.3"]
+    owner: Security & Compliance
+    due: 2026-11-20
+    phase: governance
+    severity: high
+    status: open
+    in_brief: false
+
+  - id: GAP-11
+    area: Roles
+    finding: AIMS roles and responsibilities are not documented in a RACI.
+    requirements: ["5.3", "A.3.2"]
+    owner: VP Engineering
+    due: 2026-11-13
+    phase: governance
+    severity: medium
+    status: open
+    in_brief: false
+
+  - id: GAP-12
+    area: Concern reporting
+    finding: No internal or external channel for reporting AI concerns or adverse impacts.
+    requirements: ["A.3.3", "A.8.3"]
+    owner: Legal
+    due: 2026-12-11
+    phase: implement
+    severity: medium
+    status: open
+    in_brief: false
+
+  - id: GAP-13
+    area: Inventory
+    finding: Model registry entries lacked an accountable owner field.
+    requirements: ["A.4.2"]
+    owner: Head of Platform
+    due: 2026-10-09
+    phase: validate
+    severity: low
+    status: closed
+    closure_evidence: [EV-003]
+    in_brief: false

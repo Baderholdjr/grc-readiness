@@ -1,0 +1,194 @@
+# Evidence index: POINTERS to artifacts, not the artifacts themselves.
+# Keep confidential evidence in the client's systems (GRC tool, document
+# management) and record where it is, when it was collected, who approved it,
+# and optionally its sha256 so an auditor can confirm it hasn't changed.
+#
+# type: document  -> designed control (policy, procedure, template). Needs approved_by to verify "Documented".
+#       record/log/config/screenshot -> operating evidence ("Implemented", "Evidence exists").
+#       test/sample/interview        -> independent testing ("Tested").
+# valid_for_days: after collected + N days the item is EXPIRED and stops counting.
+
+evidence:
+  - id: EV-001
+    title: Draft AIMS scope statement (unapproved)
+    type: document
+    location: "sharepoint://aims/AIMS-Scope-DRAFT-v0.3.docx"
+    owner: VP Engineering
+    collected: 2026-10-05
+    sensitivity: internal
+
+  - id: EV-002
+    title: AI systems inventory (4 systems)
+    type: record
+    location: "sharepoint://aims/AI-Inventory.xlsx#Systems"
+    owner: Head of Platform
+    collected: 2026-10-05
+    valid_for_days: 90
+
+  - id: EV-003
+    title: Model registry export with owner field populated
+    type: record
+    location: "model-registry://exports/2026-10-07.json"
+    owner: Head of Platform
+    collected: 2026-10-07
+    valid_for_days: 90
+
+  - id: EV-004
+    title: Drata AI-category risk register export (20 risks)
+    type: record
+    location: "drata://risks?category=AI (export 2026-09-30)"
+    owner: Security & Compliance
+    collected: 2026-09-30
+    valid_for_days: 120
+
+  - id: EV-005
+    title: Enterprise risk management methodology (SOC 2)
+    type: document
+    location: "sharepoint://policies/ERM-Methodology-v3.pdf"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    approved_by: CISO
+    approved_on: 2026-03-15
+
+  - id: EV-006
+    title: Responsible AI Principles (published 2025)
+    type: document
+    location: "sharepoint://policies/Responsible-AI-Principles.pdf"
+    owner: Head of Responsible AI
+    collected: 2025-06-01
+    approved_by: CEO
+    approved_on: 2025-06-01
+    notes: Annual review is overdue; still useful context but not current evidence.
+
+  - id: EV-007
+    title: Company AI Use Policy (end-user use)
+    type: document
+    location: "sharepoint://policies/AI-Use-Policy-v1.2.pdf"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    approved_by: CISO
+    approved_on: 2026-02-10
+
+  - id: EV-008
+    title: AI lifecycle controls procedure (draft)
+    type: document
+    location: "sharepoint://aims/AI-Lifecycle-Controls-Procedure-DRAFT.docx"
+    owner: Head of Platform
+    collected: 2026-10-05
+
+  - id: EV-009
+    title: CI model release and evidence gate (workflow config)
+    type: config
+    location: "git://client-platform/ml-release/.ci/release-gate.yml@main"
+    owner: Head of Platform
+    collected: 2026-10-05
+    valid_for_days: 90
+
+  - id: EV-010
+    title: Gated evaluation results - last 3 production releases
+    type: record
+    location: "ci://ml-release/release-gate/runs?branch=main&last=3"
+    owner: Head of Platform
+    collected: 2026-09-28
+    valid_for_days: 90
+
+  - id: EV-011
+    title: PR approval records for Q3 model promotions
+    type: record
+    location: "github://pulls?label=model-promotion&merged=2026-07-01..2026-09-30"
+    owner: Head of Platform
+    collected: 2026-10-01
+    valid_for_days: 120
+
+  - id: EV-012
+    title: Production telemetry dashboard (model drift and error rates)
+    type: screenshot
+    location: "grafana://dashboards/ai-prod-overview (captured 2026-10-03)"
+    owner: Head of Platform
+    collected: 2026-10-03
+    valid_for_days: 60
+
+  - id: EV-013
+    title: Incident management and corrective action procedure (SOC 2)
+    type: document
+    location: "sharepoint://policies/Incident-Management-v4.pdf"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    approved_by: CISO
+    approved_on: 2026-01-20
+
+  - id: EV-014
+    title: Incident tickets sample, Q3 2026 (includes 1 AI-related)
+    type: record
+    location: "jira://INC?created=2026-07-01..2026-09-30"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    valid_for_days: 120
+
+  - id: EV-015
+    title: Vendor management procedure (SOC 2)
+    type: document
+    location: "sharepoint://policies/Vendor-Management-v2.pdf"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    approved_by: CISO
+    approved_on: 2026-04-01
+
+  - id: EV-016
+    title: Quarterly leadership review minutes, Q3 2026 (AI agenda item)
+    type: record
+    location: "sharepoint://leadership/QBR-2026-Q3-minutes.docx"
+    owner: VP Engineering
+    collected: 2026-10-01
+    valid_for_days: 120
+
+  - id: EV-017
+    title: Data classification policy (SOC 2) - no AI artifact classes
+    type: document
+    location: "sharepoint://policies/Data-Classification-v3.pdf"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    approved_by: CISO
+    approved_on: 2026-03-01
+
+  - id: EV-018
+    title: Training-data provenance hash manifests (sample of 3 datasets)
+    type: record
+    location: "s3://ml-artifacts/provenance/manifests/ (sample 2026-10-04)"
+    owner: Head of Platform
+    collected: 2026-10-04
+    valid_for_days: 90
+
+  - id: EV-019
+    title: Production event-logging configuration for AI services
+    type: config
+    location: "infra://terraform/modules/ai-services/logging.tf@a1b2c3d"
+    owner: Head of Platform
+    collected: 2026-10-04
+    valid_for_days: 90
+
+  - id: EV-020
+    title: Document control procedure (SOC 2)
+    type: document
+    location: "sharepoint://policies/Document-Control-v2.pdf"
+    owner: Security & Compliance
+    collected: 2026-10-02
+    approved_by: CISO
+    approved_on: 2026-02-01
+
+  - id: EV-021
+    title: Security awareness training completions (FY26)
+    type: record
+    location: "lms://reports/security-awareness-2026"
+    owner: People Operations
+    collected: 2026-10-02
+    valid_for_days: 120
+
+  - id: EV-022
+    title: "Analyst walkthrough: release gate on 2 sampled promotions"
+    type: test
+    location: "workpapers/WP-01-release-gate-walkthrough.md"
+    owner: Analyst
+    collected: 2026-10-07
+    valid_for_days: 180
+    notes: Re-performed the gate on 2 of 3 Q3 promotions; both blocked until approval. Interview with release owner still pending.

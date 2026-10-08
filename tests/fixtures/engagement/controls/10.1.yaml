@@ -1,0 +1,17 @@
+# 10.1 Continual improvement
+# Intent (paraphrased): The suitability, adequacy and effectiveness of the AIMS are continually improved.
+id: '10.1'
+owner: VP Engineering
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

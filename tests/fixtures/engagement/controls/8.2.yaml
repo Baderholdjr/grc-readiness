@@ -1,0 +1,25 @@
+# 8.2 AI risk assessment (operation)
+# Intent (paraphrased): Risk assessments are actually performed at planned intervals and on significant change.
+id: '8.2'
+owner: Security & Compliance
+implementation: AI risks assessed and re-scored in Drata.
+reuses:
+- SOC 2 enterprise risk process
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-005
+  implemented:
+    status: verified
+    evidence:
+    - EV-004
+  evidenced:
+    status: verified
+    evidence:
+    - EV-004
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

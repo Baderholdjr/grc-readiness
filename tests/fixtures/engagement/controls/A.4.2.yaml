@@ -1,0 +1,26 @@
+# A.4.2 Resource documentation
+# Intent (paraphrased): Identify and document resources relevant to each AI system's life cycle stages.
+id: A.4.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: AI systems inventory and model registry.
+test:
+  documented:
+    status: partial
+    evidence:
+    - EV-001
+  implemented:
+    status: verified
+    evidence:
+    - EV-002
+    - EV-003
+  evidenced:
+    status: partial
+    evidence:
+    - EV-003
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

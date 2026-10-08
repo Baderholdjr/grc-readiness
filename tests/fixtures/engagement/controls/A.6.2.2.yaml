@@ -1,0 +1,21 @@
+# A.6.2.2 AI system requirements and specification
+# Intent (paraphrased): Specify and document requirements for new AI systems or material enhancements.
+id: A.6.2.2
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: claimed
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

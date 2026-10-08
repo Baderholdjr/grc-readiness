@@ -1,0 +1,19 @@
+# A.9.3 Objectives for responsible use of AI system
+# Intent (paraphrased): Identify and document objectives guiding responsible use.
+id: A.9.3
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Responsible AI
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []

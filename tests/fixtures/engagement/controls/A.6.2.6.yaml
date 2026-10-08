@@ -1,0 +1,25 @@
+# A.6.2.6 AI system operation and monitoring
+# Intent (paraphrased): Define elements needed for ongoing operation - monitoring, repairs, updates, support.
+id: A.6.2.6
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: Production telemetry for drift and error rates.
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: verified
+    evidence:
+    - EV-012
+  evidenced:
+    status: partial
+    evidence:
+    - EV-012
+    note: Single screenshot; need alert/response records
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

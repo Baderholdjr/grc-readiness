@@ -1,0 +1,19 @@
+# 7.1 Resources
+# Intent (paraphrased): Resources needed for the AIMS are determined and provided.
+id: '7.1'
+owner: VP Engineering
+test:
+  documented:
+    status: claimed
+    evidence: []
+  implemented:
+    status: not_started
+    evidence: []
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

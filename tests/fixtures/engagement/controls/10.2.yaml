@@ -1,0 +1,24 @@
+# 10.2 Nonconformity and corrective action
+# Intent (paraphrased): Nonconformities are reacted to, root-caused, corrected, and the effectiveness of actions reviewed.
+id: '10.2'
+owner: Security & Compliance
+implementation: SOC 2 incident and corrective action process; one AI-related incident in Q3.
+reuses:
+- SOC 2 incident management
+test:
+  documented:
+    status: verified
+    evidence:
+    - EV-013
+  implemented:
+    status: partial
+    evidence:
+    - EV-014
+  evidenced:
+    status: not_started
+    evidence: []
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst

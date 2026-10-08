@@ -1,0 +1,25 @@
+# A.6.2.8 AI system recording of event logs
+# Intent (paraphrased): Decide life cycle phases where event logging is enabled, at minimum while in use.
+id: A.6.2.8
+applicable: true
+justification: 'Included: in scope for AI products built and provided by the Innovation and Platform teams.'
+owner: Head of Platform
+implementation: Event logging configured for AI services in Terraform.
+test:
+  documented:
+    status: not_started
+    evidence: []
+  implemented:
+    status: verified
+    evidence:
+    - EV-019
+  evidenced:
+    status: partial
+    evidence:
+    - EV-019
+    note: Need log samples showing retention
+  tested:
+    status: not_started
+    evidence: []
+last_reviewed: 2026-10-07
+reviewer: Analyst
