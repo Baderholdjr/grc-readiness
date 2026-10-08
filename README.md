@@ -83,7 +83,7 @@ grc/                  the CLI: model, rules, renderers, issue sync
 3. **Merging is approval.** `CODEOWNERS` decides who must approve which files. For example, client control owners approve their own controls, and the engagement lead approves `engagement.yaml`.
 4. **Gaps become Issues** (`sync-issues.yml`). Each gap becomes an Issue with a hidden ID marker and a milestone per phase. Re-running updates the existing Issues instead of duplicating them. A closed gap closes its Issue.
 5. **Weekly drift check** (`freshness.yml`). This re-evaluates the record against today's date and maintains one `grc-drift` Issue listing expired evidence and overdue gaps.
-6. **Freeze for audits** (`release.yml`). Tag `v2027.02-stage1`. The job validates in strict mode and publishes the brief and reports with SHA-256 checksums as an immutable release.
+6. **Freeze for audits** (`release.yml`). Publish a release from the GitHub UI with a tag such as `v2027.02-stage1`. CI attaches the brief, reports, readiness summary and SHA-256 checksums as of that commit. Validation errors block the package; warnings are listed in the release notes.
 
 ## Starting a new engagement
 

@@ -1,11 +1,12 @@
 name: Publish evidence package
 
-# Tag a snapshot (e.g. v2027.02-stage1) to freeze the record for an audit
-# stage. The release holds the brief, SoA, control matrix, gap register and
-# evidence index as of that commit - an immutable, timestamped package.
+# Freeze the record for an audit stage. Publish a release from the GitHub UI
+# (Releases -> Draft a new release -> new tag such as v2027.02-stage1) and this
+# job attaches the brief, SoA, control matrix, gap register, evidence index and
+# SHA-256 checksums as of that commit: an immutable, timestamped package.
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
 
 permissions:
   contents: write
@@ -15,16 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m grc validate --strict
-      - run: python -m grc build --out out --summary notes.md
+      # Errors block the package; warnings are recorded in the release notes
+      # so the package states its own known weaknesses.
+      - run: python -m grc validate --summary notes.md
+      - run: python -m grc build --out out
       - name: Checksums
         run: cd out && sha256sum * > SHA256SUMS.txt
-      - name: Create release
+      - name: Attach package to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" out/* --title "Evidence package $GITHUB_REF_NAME" --notes-file notes.md
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$TAG" out/* --clobber
+          { gh release view "$TAG" --json body -q .body; echo; echo "---"; cat notes.md; } > body.md
+          gh release edit "$TAG" --notes-file body.md
