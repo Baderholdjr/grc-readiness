@@ -44,3 +44,19 @@ def test_write_issue_numbers_preserves_comments(tmp_path):
     text = p.read_text()
     assert text.count("issue: 7") == 1 and "issue: 9" in text
     assert text.startswith("# Gap register.")
+
+
+def test_reports_are_browsable_and_reproducible(tmp_path):
+    import hashlib
+    outs = []
+    for name in ("a", "b"):
+        out = tmp_path / name
+        assert main(["--engagement", str(FIXTURE), "--today", "2026-10-08", "build", "--out", str(out)]) == 0
+        outs.append({p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in out.iterdir()})
+    assert outs[0] == outs[1]  # byte-identical, including the .docx
+    assert {"README.md", "brief.md"} <= set(outs[0])
+    readme = (tmp_path / "a" / "README.md").read_text()
+    assert "(brief.md)" in readme and "brief.docx?raw=1" in readme and "## Readiness summary" in readme
+    brief_md = (tmp_path / "a" / "brief.md").read_text()
+    for h in ("## 1. Client Overview", "## 5. Timeline", "## 9. Key Risks", "200 total consulting hours"):
+        assert h in brief_md

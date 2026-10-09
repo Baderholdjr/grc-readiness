@@ -64,11 +64,12 @@ def cmd_build(args) -> int:
         print("\nRefusing to build from invalid data (use --force for a draft).", file=sys.stderr)
         return 1
     out = Path(args.out)
-    summary = render_md.render_all(model, findings, out)
-    if not args.no_docx:
+    slug = model.client.strip("()").replace(" ", "-").lower()
+    docx_name = None if args.no_docx else f"{slug}-{model.engagement['framework']}-brief.docx"
+    summary = render_md.render_all(model, findings, out, brief_docx=docx_name)
+    if docx_name:
         from .render_docx import render_brief
-        slug = model.client.strip("()").replace(" ", "-").lower()
-        path = render_brief(model, out / f"{slug}-{model.engagement['framework']}-brief.docx")
+        path = render_brief(model, out / docx_name)
         print(f"brief: {path}")
     if args.summary:
         with open(args.summary, "a", encoding="utf-8") as fh:

@@ -1,5 +1,7 @@
 # grc-readiness
 
+> 📊 **Latest reports:** [brief, control matrix, SoA, gap register, evidence index](../../tree/reports) — rebuilt after every merge and daily.
+
 **GRC-as-code for certification readiness engagements.** Starts with ISO/IEC 42001 (AI management systems) and is built to add more frameworks.
 
 The engagement record lives in this repo as YAML. Git history is the audit trail, pull requests are approvals, and CI enforces the evidence rules. The analyst brief, control matrix, Statement of Applicability, gap register and evidence index are **generated** from the record and never edited by hand.
@@ -97,7 +99,8 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 3. **Merging is approval.** `CODEOWNERS` decides who must approve which files. For example, client control owners approve their own controls, and the engagement lead approves `engagement.yaml`.
 4. **Gaps become Issues** (`sync-issues.yml`). Each gap becomes an Issue with a hidden ID marker and a milestone per phase. Re-running updates the existing Issues instead of duplicating them. A closed gap closes its Issue.
 5. **Weekly drift check** (`freshness.yml`). This re-evaluates the record against today's date and maintains one `grc-drift` Issue listing expired evidence and overdue gaps.
-6. **Freeze for audits** (`release.yml`). Publish a release from the GitHub UI with a tag such as `v2027.02-stage1`. CI attaches the brief, reports, readiness summary and SHA-256 checksums as of that commit. Validation errors block the package; warnings are listed in the release notes.
+6. **Read the reports** on the [`reports` branch](../../tree/reports) (`publish-reports.yml`). It's rebuilt after every merge to `main` and daily; its history is a dated record of readiness.
+7. **Freeze for audits** (`release.yml`). Publish a release from the GitHub UI with a tag such as `v2027.02-stage1`. CI attaches the brief, reports, readiness summary and SHA-256 checksums as of that commit. Validation errors block the package; warnings are listed in the release notes.
 
 ## Starting a new engagement
 

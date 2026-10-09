@@ -6,6 +6,8 @@ matches the house style; all content comes from the repo.
 from __future__ import annotations
 
 import copy
+import datetime as dt
+import zipfile
 from pathlib import Path
 
 import docx
@@ -262,6 +264,22 @@ def render_brief(model: Engagement, out_path: Path) -> Path:
     cp.author = "grc-readiness"
     cp.last_modified_by = "grc-readiness"
 
+    stamp = dt.datetime.combine(model.today, dt.time(12, 0))
+    cp.created = cp.modified = stamp
+    cp.revision = 1
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_path))
+    _normalize_zip(out_path, stamp)
     return out_path
+
+
+def _normalize_zip(path: Path, stamp: dt.datetime) -> None:
+    """Fixed zip timestamps so the same data always produces the same file (clean diffs, stable hashes)."""
+    tmp = path.with_suffix(".tmp")
+    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            info = zipfile.ZipInfo(item.filename, date_time=stamp.timetuple()[:6])
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            zout.writestr(info, zin.read(item.filename))
+    tmp.replace(path)
