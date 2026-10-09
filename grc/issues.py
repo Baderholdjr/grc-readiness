@@ -17,7 +17,7 @@ from pathlib import Path
 
 from .model import Engagement
 
-API = os.environ.get("GITHUB_API_URL", "https://api.github.com")
+API = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
 LABEL_COLORS = {"grc-gap": "183B4E", "severity:high": "B60205", "severity:medium": "FBCA04", "severity:low": "0E8A16"}
 
 

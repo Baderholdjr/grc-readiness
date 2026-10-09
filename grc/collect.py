@@ -100,7 +100,8 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
             prev["result"] = ERROR
             prev["notes"] = f"Latest collection attempt {now.date()} errored: {res.summary}"
             continue
-        snapshot = {"evidence": ev_id, "sandbox": bool(tag), "title": check["title"], "collector": check["collector"],
+        simulated = bool(tag) and not check["collector"].startswith("github.")  # GitHub checks are always real
+        snapshot = {"evidence": ev_id, "sandbox": simulated, "title": check["title"], "collector": check["collector"],
                     "params": params, "collected_at": now.isoformat(), "result": res.result,
                     "summary": res.summary, "findings": res.findings, "details": as_jsonable(res.details),
                     "sha256": res.digest()}
@@ -113,7 +114,7 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
             "owner": check.get("owner", "collector"), "collected": now.date(),
             "valid_for_days": int(check.get("valid_for_days", defaults.get("valid_for_days", 30))),
             "sha256": res.digest(), "collector": check["collector"], "result": res.result,
-            "notes": tag + res.summary + (f" | {'; '.join(res.findings)}" if res.findings else ""),
+            "notes": (tag if simulated else "") + res.summary + (f" | {'; '.join(res.findings)}" if res.findings else ""),
         }
     claimed_before = {(cid, leg): (v.get("note") or "") for cid, c in model.controls.items()
                       for leg, v in (c.get("test") or {}).items() if v.get("status") == "claimed"}

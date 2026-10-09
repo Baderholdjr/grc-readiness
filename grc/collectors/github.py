@@ -13,7 +13,7 @@ import os
 from . import http
 from .base import FAIL, PASS, SKIPPED, CheckResult, MissingCredentials, collector, utcnow
 
-API = os.environ.get("GITHUB_API_URL", "https://api.github.com")
+API = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
 
 
 def _token(repo: str) -> str:
