@@ -64,6 +64,9 @@ def _cited_by(model: Engagement) -> dict[str, list[str]]:
 
 def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | None = None,
         write: bool = True) -> tuple[list[dict], str]:
+    from . import sandbox
+    sandbox.configure(model)
+    tag = "[SANDBOX] " if sandbox.active() else ""
     edir = model.engagement_dir
     cfg = load_config(edir)
     now = now or utcnow()
@@ -96,7 +99,7 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
             prev["result"] = ERROR
             prev["notes"] = f"Latest collection attempt {now.date()} errored: {res.summary}"
             continue
-        snapshot = {"evidence": ev_id, "title": check["title"], "collector": check["collector"],
+        snapshot = {"evidence": ev_id, "sandbox": bool(tag), "title": check["title"], "collector": check["collector"],
                     "params": params, "collected_at": now.isoformat(), "result": res.result,
                     "summary": res.summary, "findings": res.findings, "details": as_jsonable(res.details),
                     "sha256": res.digest()}
@@ -109,17 +112,68 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
             "owner": check.get("owner", "collector"), "collected": now.date(),
             "valid_for_days": int(check.get("valid_for_days", defaults.get("valid_for_days", 30))),
             "sha256": res.digest(), "collector": check["collector"], "result": res.result,
-            "notes": res.summary + (f" | {'; '.join(res.findings)}" if res.findings else ""),
+            "notes": tag + res.summary + (f" | {'; '.join(res.findings)}" if res.findings else ""),
         }
+    links = link_evidence(model, cfg, results, write=write)
     if write:
         entries = [existing[k] for k in sorted(existing)]
         collected_path.parent.mkdir(parents=True, exist_ok=True)
         collected_path.write_text(HEADER + yaml.safe_dump({"evidence": entries}, sort_keys=False, allow_unicode=True,
                                                          width=140), encoding="utf-8")
-    return results, report(model, results, now)
+    out = report(model, results, now, links)
+    if tag:
+        out = ("> ⚠️ **SANDBOX MODE.** Drata, cloud and AI results below come from canned test data in "
+               "`sandbox/`, not from real client systems. GitHub checks are real.\n\n") + out
+    return results, out
 
 
-def report(model: Engagement, results: list[dict], now: dt.datetime) -> str:
+def link_evidence(model: Engagement, cfg: dict, results: list[dict], write: bool = True) -> list[str]:
+    """Cite passing collector evidence on the legs listed in `supports`.
+
+    Adds the evidence id to the leg and moves not_started/claimed legs to 'partial'
+    (machine evidence alone never makes a leg 'verified'). Failing evidence is left
+    cited - the rules then treat it as non-current. Changes land in the refresh PR.
+    """
+    import yaml
+    passing = {r["evidence"] for r in results if r["result"] == PASS}
+    touched: dict[str, dict] = {}
+    log: list[str] = []
+    for check in cfg.get("checks", []) or []:
+        ev = check["evidence"]
+        if ev not in passing:
+            continue
+        for ref in check.get("supports", []) or []:
+            rid, leg = ref.rsplit(":", 1)
+            if rid not in model.controls or leg not in LEGS or not model.is_applicable(rid):
+                log.append(f"⚠️ {ev} → {ref}: no applicable control/leg with that id")
+                continue
+            data = touched.get(rid) or model.controls[rid]
+            cur = data.setdefault("test", {}).setdefault(leg, {"status": "not_started", "evidence": []})
+            cur.setdefault("evidence", [])
+            changed = []
+            if ev not in cur["evidence"]:
+                cur["evidence"].append(ev)
+                changed.append("cited")
+            if cur.get("status") in ("not_started", "claimed") and not (data.get("owner") or "").strip():
+                changed.append("status unchanged: control has no owner yet")
+            elif cur.get("status") in ("not_started", "claimed"):
+                before = cur.get("status")
+                cur["status"] = "partial"
+                note = f"Auto: collector evidence {ev} passing. Analyst to confirm before 'verified'."
+                cur["note"] = f"{cur['note']} | {note}" if cur.get("note") else note
+                changed.append(f"{before} → partial")
+            if changed:
+                touched[rid] = data
+                log.append(f"{ev} → {rid}·{leg}: {', '.join(changed)}")
+    if write:
+        for rid, data in touched.items():
+            path = model.control_files[rid]
+            header = "".join(l for l in path.read_text(encoding="utf-8").splitlines(keepends=True) if l.startswith("#"))
+            path.write_text(header + yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120), encoding="utf-8")
+    return log
+
+
+def report(model: Engagement, results: list[dict], now: dt.datetime, links: list[str] | None = None) -> str:
     cited = _cited_by(model)
     lines = [f"## Evidence collection — {now.strftime('%Y-%m-%d %H:%M UTC')}\n",
              "| Evidence | Check | Result | Summary | Cited by |", "|---|---|---|---|---|"]
@@ -144,9 +198,15 @@ def report(model: Engagement, results: list[dict], now: dt.datetime) -> str:
         lines.append("\n### Failing checks\n")
         for r in fails:
             lines.append(f"- **{r['evidence']} {r['title']}**: " + "; ".join(r["findings"] or [r["summary"]]))
+    if links:
+        lines.append("\n### Linked to controls by this refresh\nMerging this PR records these citations. "
+                     "Legs move to `partial` at most; an analyst confirms `verified`.\n")
+        lines += [f"- {x}" for x in links]
+    linked = {x.split(" → ")[0] for x in links or []}
+    unused = [r for r in unused if r["evidence"] not in linked]
     if unused:
-        lines.append("\n### Passing evidence not yet cited\nAn analyst can cite these in the control files "
-                     "(in a reviewed PR) to support the legs below.\n")
+        lines.append("\n### Passing evidence not yet cited\nAdd `supports: [\"<requirement>:<leg>\"]` to these checks in "
+                     "collectors.yaml to link them automatically.\n")
         for r in unused:
             reqs = ", ".join(r["requirements"]) or "(no requirement hint)"
             lines.append(f"- **{r['evidence']}** {r['title']} → suggested: {reqs}")

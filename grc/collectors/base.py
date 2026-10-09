@@ -49,7 +49,13 @@ def collector(name: str):
     return wrap
 
 
+SANDBOXED_SECRETS = {"DRATA_API_KEY", "ANTHROPIC_API_KEY"}
+
+
 def env(name: str) -> str:
+    from .. import sandbox
+    if sandbox.active() and name in SANDBOXED_SECRETS:
+        return "sandbox"
     value = os.environ.get(name, "").strip()
     if not value:
         raise MissingCredentials(f"{name} is not set")

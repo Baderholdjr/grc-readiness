@@ -44,6 +44,8 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
     """mode: auto (templates + AI if enabled), templates, ai."""
     intake = Path(intake_dir)
     model: Engagement = load(engagement_dir)
+    from .. import sandbox
+    sandbox.configure(model)
     todo = files if files is not None else pending(intake, force)
     if not todo:
         return "No new or changed files in intake/.\n"
@@ -92,4 +94,7 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
             ledger[k] = {**v, "ingested": today}
         lp.write_text("# Files already ingested (sha256). Delete an entry to re-ingest.\n"
                       + yaml.safe_dump(ledger, sort_keys=True), encoding="utf-8")
+    if sandbox.active():
+        report = ("> ⚠️ **SANDBOX MODE.** AI drafting returned canned test output from `sandbox/ai_draft.json`; "
+                  "no document was sent to the Anthropic API.\n\n") + report
     return report + "\n### Files\n" + "\n".join(f"- {n}" for n in notes) + "\n"

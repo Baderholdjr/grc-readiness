@@ -243,6 +243,19 @@
           "type": "string"
         }
       }
+    },
+    "sandbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dir": {
+          "type": "string"
+        }
+      },
+      "description": "Use canned test data instead of real Drata/cloud/AI calls (see grc/sandbox.py)."
     }
   }
 }

@@ -109,3 +109,51 @@ Create a workload identity pool and provider for GitHub, and a service account w
 ## Required check on automated PRs
 
 GitHub doesn't start workflows for PRs or pushes made with the built-in token. So both automations start the `validate` check explicitly on their branch, which keeps your branch protection's required check satisfied. If you'd rather have it trigger natively, use a GitHub App token for the automation's pushes.
+
+---
+
+## Linking collected evidence to controls
+
+Give each check a `supports` list of the control legs its evidence backs:
+
+```yaml
+  - evidence: EV-110
+    collector: github.workflow_runs
+    params: {repo: client-org/ml-release, workflow: release-gate.yml}
+    supports: ["A.6.2.4:implemented", "A.6.2.4:evidenced"]
+```
+
+When the check passes, the refresh PR cites the evidence on those legs. It also moves `not_started` or `claimed` legs to `partial`, but only when the control has an owner. It never sets `verified`. Merging the refresh PR is the one click; confirming `verified` is still an analyst decision.
+
+## Owners, assignments and reminders
+
+`engagement/owners.yaml` maps the role names used in `owner:` fields to GitHub users:
+
+```yaml
+owners:
+  - role: Head of Platform
+    github: [alice, client-org/platform-team]
+```
+
+- **Issues:** gap Issues are assigned to the owner's users. Teams can't be assignees, and users without repo access are skipped with a note.
+- **Reminders:** each day, an overdue gap gets one reminder comment mentioning its owners. There's one reminder per due date; moving the due date re-arms it.
+- **Approvals:** `python -m grc codeowners` writes a managed block into `.github/CODEOWNERS`, so changes to a control file need its owner's approval.
+- **Missing owners:** an owner name that isn't in `owners.yaml` triggers warning W111.
+
+## Sandbox mode (no credentials)
+
+```yaml
+# engagement/engagement.yaml
+sandbox:
+  enabled: true
+  dir: sandbox
+```
+
+| Service | Answered from |
+|---|---|
+| Drata | `sandbox/drata.yaml`: API path → response. Supports `pages:` for pagination and `by_param:` for filtered counts. |
+| AWS | `sandbox/aws.yaml`: CloudTrail trails and status, S3 buckets, log groups |
+| Azure / GCP | `sandbox/cli.yaml`: CLI command prefix → JSON output |
+| AI drafting | `sandbox/ai_draft.json`: returned for any intake document. No document leaves GitHub. |
+
+GitHub checks still run for real. Evidence, snapshots, PRs and reports produced in sandbox mode are all labelled `[SANDBOX]`. Turn the sandbox off once real credentials are in place.

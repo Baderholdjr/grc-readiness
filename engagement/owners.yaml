@@ -1,0 +1,20 @@
+# Who is accountable for what. Control and gap `owner` fields use these role names;
+# the GitHub users listed here are assigned to matching Issues, get overdue reminders,
+# and become required reviewers for those control files (`python -m grc codeowners`).
+# Example engagement: roles are fictional, so no GitHub users are mapped except the lead.
+
+owners:
+  - role: Engagement Lead
+    github: [Baderholdjr]
+  - role: Head of Platform
+    github: []
+  - role: Head of Responsible AI
+    github: []
+  - role: Legal
+    github: []
+  - role: People Operations
+    github: []
+  - role: Security & Compliance
+    github: []
+  - role: VP Engineering
+    github: []

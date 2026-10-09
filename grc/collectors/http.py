@@ -16,6 +16,10 @@ class HTTPError(Exception):
 
 def request(method: str, url: str, headers: dict | None = None, params: dict | None = None,
             body: dict | None = None, retries: int = 3, timeout: int = 60):
+    from .. import sandbox
+    canned = sandbox.handle(method, url, params, body)
+    if canned is not sandbox.NOT_HANDLED:
+        return canned
     if params:
         pairs = []
         for k, v in params.items():

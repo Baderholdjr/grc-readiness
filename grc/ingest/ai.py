@@ -55,7 +55,8 @@ def build_prompt(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps
 
 def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[dict], client: str,
           model: str | None = None, transport=None) -> dict:
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    from .. import sandbox
+    key = "sandbox" if sandbox.active() else os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not key and transport is None:
         raise AIUnavailable("ANTHROPIC_API_KEY is not set")
     body = {

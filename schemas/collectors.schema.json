@@ -70,6 +70,14 @@
           },
           "notes": {
             "type": "string"
+          },
+          "supports": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9A-Z.]+:(documented|implemented|evidenced|tested)$"
+            },
+            "description": "Control legs this evidence backs, as '<requirement>:<leg>'. Passing evidence is cited there automatically."
           }
         }
       }
