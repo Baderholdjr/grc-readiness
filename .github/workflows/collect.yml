@@ -72,7 +72,7 @@ jobs:
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add engagement/evidence
+          git add engagement/evidence engagement/controls
           if git diff --cached --quiet; then echo "No evidence changes."; exit 0; fi
           git commit -q -m "Evidence refresh $(date -u +%F)"
           git push -f origin "$BRANCH"

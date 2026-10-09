@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "owners.schema.json",
+  "title": "Owners",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "owners"
+  ],
+  "properties": {
+    "owners": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "github": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^@?[A-Za-z0-9-]+(/[A-Za-z0-9._-]+)?$"
+            }
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

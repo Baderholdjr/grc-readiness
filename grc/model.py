@@ -49,6 +49,7 @@ class Engagement:
     gaps: list[dict] = field(default_factory=list)
     evidence: list[dict] = field(default_factory=list)
     inventory: list[dict] = field(default_factory=list)
+    owners: list[dict] = field(default_factory=list)
     human_evidence_count: int = 0
     today: dt.date = field(default_factory=dt.date.today)
 
@@ -90,6 +91,15 @@ class Engagement:
                 "deliverables": p.get("deliverables") or base.get("deliverables", []),
             })
         return merged
+
+    def github_users(self, role: str | None) -> list[str]:
+        """GitHub handles for an owner role (case-insensitive). Teams are returned as org/team."""
+        if not role:
+            return []
+        for o in self.owners:
+            if o.get("role", "").strip().lower() == role.strip().lower():
+                return [u.lstrip("@") for u in o.get("github", []) or []]
+        return []
 
     def fmt(self, text: str) -> str:
         return text.replace("{client}", self.client)
@@ -158,6 +168,9 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     collected = edir / "evidence" / "collected.yaml"  # machine-owned, written by collectors
     if collected.exists():
         model.evidence += load_yaml(collected).get("evidence", []) or []
+    own = edir / "owners.yaml"
+    if own.exists():
+        model.owners = load_yaml(own).get("owners", []) or []
     inv = edir / "inventory.yaml"
     if inv.exists():
         model.inventory = load_yaml(inv).get("items", []) or []

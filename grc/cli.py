@@ -6,6 +6,8 @@
   sync-issues   Mirror gaps.yaml into GitHub Issues and phase milestones
   collect       Run evidence collectors and refresh machine-owned evidence
   ingest        Draft engagement data from client documents in intake/
+  new-engagement  Reset the record for a new client (computes phases from dates)
+  codeowners    Make control owners required reviewers of their control files
 """
 from __future__ import annotations
 
@@ -134,6 +136,34 @@ def cmd_ingest(args) -> int:
     return 0
 
 
+def cmd_new(args) -> int:
+    from . import newengagement
+    if not args.confirm_reset:
+        print("This deletes everything under engagement/ and intake/ (except intake/README.md).\n"
+              "Re-run with --confirm-reset to proceed.", file=sys.stderr)
+        return 2
+    try:
+        log = newengagement.reset(Path(args.engagement), Path(args.intake), args.client,
+                                  dt.date.fromisoformat(args.start), dt.date.fromisoformat(args.stage1),
+                                  dt.date.fromisoformat(args.stage2), args.hours, args.framework, args.lead)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for line in log:
+        print(line)
+    return cmd_init(args)
+
+
+def cmd_codeowners(args) -> int:
+    from . import codeowners
+    model = _model(args)
+    changed, missing = codeowners.update(model, Path(args.file))
+    print(f"{args.file}: {'updated' if changed else 'already up to date'}")
+    for m in missing:
+        print(f"  no GitHub user for owner of {m} - add it to owners.yaml", file=sys.stderr)
+    return 1 if (args.check and changed) else 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -174,6 +204,23 @@ def main(argv=None) -> int:
     g.add_argument("--force", action="store_true", help="re-process files already in the ledger")
     g.add_argument("--report", help="write the Markdown report here (PR comment)")
     g.set_defaults(fn=cmd_ingest)
+
+    n = sub.add_parser("new-engagement", help="reset engagement/ and intake/ for a new client")
+    n.add_argument("--client", required=True)
+    n.add_argument("--start", required=True, help="YYYY-MM-DD")
+    n.add_argument("--stage1", required=True, help="planned Stage 1 audit date")
+    n.add_argument("--stage2", required=True, help="planned Stage 2 audit date")
+    n.add_argument("--hours", type=float, default=200)
+    n.add_argument("--framework", default="iso42001")
+    n.add_argument("--lead", help="engagement lead name")
+    n.add_argument("--intake", default="intake")
+    n.add_argument("--confirm-reset", action="store_true")
+    n.set_defaults(fn=cmd_new)
+
+    co = sub.add_parser("codeowners", help="write control owners into .github/CODEOWNERS")
+    co.add_argument("--file", default=".github/CODEOWNERS")
+    co.add_argument("--check", action="store_true", help="exit 1 if the file would change")
+    co.set_defaults(fn=cmd_codeowners)
 
     args = p.parse_args(argv)
     return args.fn(args)

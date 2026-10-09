@@ -205,7 +205,9 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
         ("Gap register", "gap-register.md", "Open and closed gaps with owners and due dates ([CSV](gap-register.csv))"),
         ("Evidence index", "evidence-index.md", "Requirement → evidence traceability ([CSV](evidence-index.csv))"),
     ]
-    L = [f"# {model.client} — {fw} readiness reports\n",
+    banner = ("> ⚠️ **SANDBOX ENGAGEMENT.** Drata, cloud and AI-drafted content is simulated test data. "
+              "Do not treat these reports as real client evidence.\n\n") if (model.engagement.get("sandbox") or {}).get("enabled") else ""
+    L = [f"# {model.client} — {fw} readiness reports\n", banner,
          "<!-- Published automatically from the main branch. Do not edit this branch. -->\n",
          f"**As of {m['as_of']}.** Rebuilt automatically after every change to `main` and once a day. "
          "Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.\n",

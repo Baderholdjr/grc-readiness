@@ -7,9 +7,11 @@ are overwritten on the next sync (comments and assignees are left alone).
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import re
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -44,11 +46,32 @@ class GitHub:
             page += 1
 
 
+def _assignable(users: list[str]) -> list[str]:
+    return [u for u in users if "/" not in u]  # teams can't be assignees
+
+
+def _with_assignees(gh: "GitHub", method: str, path: str, payload: dict, log: list[str], gid: str):
+    """Assignees without repo access make the whole request fail (422); retry without them."""
+    try:
+        return gh.call(method, path, payload)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 422 and payload.get("assignees"):
+            log.append(f"{gid}: could not assign {', '.join(payload['assignees'])} (no repo access?) - left unassigned")
+            return gh.call(method, path, {k: v for k, v in payload.items() if k != "assignees"})
+        raise
+
+
+def overdue_marker(gid: str, due: str) -> str:
+    return f"<!-- grc:overdue:{gid}:{due} -->"
+
+
 def issue_body(model: Engagement, g: dict) -> str:
     reqs = model.requirement_index
     lines = [f"<!-- grc:{g['id']} -->",
              f"**Gap:** {g['id']} · **Area:** {g['area']} · **Severity:** {g.get('severity', 'n/a')}",
-             f"**Owner:** {g.get('owner', 'unassigned')} · **Due:** {g.get('due', 'n/a')} · **Phase:** {g.get('phase', 'n/a')}",
+             f"**Owner:** {g.get('owner', 'unassigned')}"
+             + (" (" + ", ".join(f"@{u}" for u in model.github_users(g.get("owner"))) + ")" if model.github_users(g.get("owner")) else "")
+             + f" · **Due:** {g.get('due', 'n/a')} · **Phase:** {g.get('phase', 'n/a')}",
              "", "### What to verify / close", model.fmt(g["finding"]), "", "### Requirements"]
     for r in g.get("requirements", []):
         title = reqs.get(r, {}).get("title", "?")
@@ -135,18 +158,31 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
                    "state": "closed" if g["status"] in ("closed", "risk_accepted") else "open"}
         if g.get("phase") in ms_number:
             payload["milestone"] = ms_number[g["phase"]]
+        users = _assignable(model.github_users(g.get("owner")))
+        if users:
+            payload["assignees"] = users
         if g["id"] in found:
             num = found[g["id"]]["number"]
-            gh.call("PATCH", f"/issues/{num}", payload)
+            _with_assignees(gh, "PATCH", f"/issues/{num}", payload, log, g["id"])
             log.append(f"updated #{num} {g['id']} ({payload['state']})")
         else:
             state = payload.pop("state")
-            iss = gh.call("POST", "/issues", payload)
+            iss = _with_assignees(gh, "POST", "/issues", payload, log, g["id"])
             num = iss["number"]
             if state == "closed":
                 gh.call("PATCH", f"/issues/{num}", {"state": "closed"})
             log.append(f"created #{num} {g['id']}")
         mapping[g["id"]] = num
+        # Overdue reminder: one comment per gap per due date, mentioning the owners.
+        due = str(g.get("due") or "")
+        if due and g["status"] in ("open", "in_progress") and dt.date.fromisoformat(due) < model.today:
+            marker = overdue_marker(g["id"], due)
+            comments = gh.call("GET", f"/issues/{num}/comments?per_page=100") or []
+            if not any(marker in (c.get("body") or "") for c in comments):
+                who = " ".join(f"@{u}" for u in model.github_users(g.get("owner"))) or f"**{g.get('owner', 'Owner')}**"
+                gh.call("POST", f"/issues/{num}/comments", {"body": f"{marker}\n⏰ {who}: this gap was due **{due}**. "
+                        "Please update it (or its due date) in `engagement/gaps.yaml` through a PR."})
+                log.append(f"overdue reminder on #{num} {g['id']}")
     if write_back:
         write_issue_numbers(model.engagement_dir / "gaps.yaml", mapping)
         log.append("wrote issue numbers to gaps.yaml")

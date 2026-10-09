@@ -1,5 +1,7 @@
 # Evidence collectors: automated, scheduled evidence from the client's systems.
 #
+# `supports` lists the control legs the evidence backs ("<requirement>:<leg>"); the
+# refresh PR cites passing evidence there and proposes 'partial' (never 'verified').
 # Each check refreshes ONE machine-owned evidence item (use ids EV-100 and up so
 # they never collide with hand-entered evidence in evidence/index.yaml).
 # The `collect` workflow runs these on a schedule and opens a PR with the results.
@@ -27,19 +29,19 @@ checks:
     collector: github.branch_protection
     params: {repo: "${GITHUB_REPOSITORY}", branch: main, min_approvals: 1, require_code_owner_review: true, required_checks: [validate]}
     type: config
-    requirements: ["7.5"]
+    supports: ["7.5:implemented"]
   - evidence: EV-102
     title: "Engagement repo: independent review of merged changes (90 days)"
     collector: github.pr_reviews
     params: {repo: "${GITHUB_REPOSITORY}", base: main, days: 90}
     type: record
-    requirements: ["7.5"]
+    supports: ["7.5:evidenced"]
   - evidence: EV-103
     title: "Engagement repo: validation gate runs"
     collector: github.workflow_runs
     params: {repo: "${GITHUB_REPOSITORY}", workflow: validate.yml, branch: main, days: 30}
     type: record
-    requirements: ["9.1"]
+    supports: ["9.1:implemented"]
 
   # --- Client GitHub (needs GH_COLLECTOR_TOKEN). Replace repo names.
   - evidence: EV-110
@@ -47,19 +49,19 @@ checks:
     collector: github.workflow_runs
     params: {repo: client-org/ml-release, workflow: release-gate.yml, branch: main, days: 30, max_failure_rate: 0.3}
     type: record
-    requirements: ["A.6.2.4"]
+    supports: ["A.6.2.4:implemented", "A.6.2.4:evidenced"]
   - evidence: EV-111
     title: Model promotions independently approved
     collector: github.pr_reviews
     params: {repo: client-org/ml-release, base: main, days: 90, label: model-promotion}
     type: record
-    requirements: ["A.6.2.5"]
+    supports: ["A.6.2.5:evidenced"]
   - evidence: EV-112
     title: Release branch protection on ML release repo
     collector: github.branch_protection
     params: {repo: client-org/ml-release, branch: main, min_approvals: 1, required_checks: [release-gate]}
     type: config
-    requirements: ["A.6.2.5"]
+    supports: ["A.6.2.5:implemented"]
 
   # --- Drata (needs DRATA_API_KEY)
   - evidence: EV-120
@@ -68,31 +70,31 @@ checks:
     params: {names: [AI Policy, Data Classification, Vendor Management, Incident]}
     type: document
     owner: Security & Compliance
-    requirements: ["5.2", "A.2.2", "A.7.2", "A.10.3", "A.8.4"]
+    supports: ["5.2:documented", "A.2.2:documented"]
   - evidence: EV-121
     title: AI risk register - every risk owned and treated
     collector: drata.risks
     params: {title_contains: [AI, model, LLM], min_count: 10}
     type: record
-    requirements: ["6.1.2", "6.1.3", "8.2", "8.3"]
+    supports: ["6.1.2:evidenced", "8.2:evidenced"]
   - evidence: EV-122
     title: AI suppliers reviewed in vendor program
     collector: drata.vendors
     params: {names: [OpenAI, Anthropic, Hugging Face]}
     type: record
-    requirements: ["A.10.3"]
+    supports: ["A.10.3:implemented"]
   - evidence: EV-123
     title: AI awareness training completion
     collector: drata.training
     params: {field: aiAwarenessTrainingStatus, min_pass_rate: 0.95}
     type: record
-    requirements: ["7.2", "7.3"]
+    supports: ["7.3:implemented"]
   - evidence: EV-124
     title: Drata monitoring tests for AI infrastructure
     collector: drata.monitoring_tests
     params: {workspace_id: 1, name_contains: [logging, encryption, MFA]}
     type: test
-    requirements: ["A.6.2.6", "A.6.2.8"]
+    supports: ["A.6.2.6:evidenced"]
 
   # --- Cloud (needs OIDC variables; read-only)
   - evidence: EV-130
@@ -100,30 +102,30 @@ checks:
     collector: aws.cloudtrail
     params: {region: us-east-1}
     type: config
-    requirements: ["A.6.2.8"]
+    supports: ["A.6.2.8:implemented"]
   - evidence: EV-131
     title: Model artifact bucket protections
     collector: aws.s3_bucket
     params: {bucket: client-ml-artifacts}
     type: config
-    requirements: ["A.7.5", "A.4.3"]
+    supports: ["A.7.5:implemented"]
   - evidence: EV-132
     title: AI service log retention >= 365 days
     collector: aws.log_retention
     params: {prefix: /ai/, min_days: 365, region: us-east-1}
     type: config
-    requirements: ["A.6.2.8"]
+    supports: ["A.6.2.8:evidenced"]
   - evidence: EV-133
     title: Azure AI artifact storage account
     collector: azure.storage_account
     params: {name: clientaiartifacts, resource_group: rg-ai}
     type: config
-    requirements: ["A.7.5"]
+    supports: ["A.7.5:implemented"]
     enabled: false
   - evidence: EV-134
     title: GCS training-data bucket protections
     collector: gcp.bucket
     params: {bucket: client-training-data}
     type: config
-    requirements: ["A.7.5", "A.4.3"]
+    supports: ["A.7.5:implemented"]
     enabled: false

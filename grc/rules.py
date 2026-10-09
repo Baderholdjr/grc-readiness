@@ -70,6 +70,8 @@ def check_schemas(model: Engagement) -> list[Finding]:
                 out.append(Finding("error", "E011", f"collectors.yaml check uses {chk['evidence']}, which is a human-owned "
                                    "evidence id in evidence/index.yaml. Use a separate id range (e.g. EV-1xx).",
                                    _rel(model, edir / "collectors.yaml"), chk["evidence"]))
+    if (edir / "owners.yaml").exists():
+        run("owners", {"owners": model.owners}, edir / "owners.yaml")
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -262,6 +264,26 @@ def check_engagement(model: Engagement) -> list[Finding]:
     return out
 
 
+def check_owners(model: Engagement) -> list[Finding]:
+    """When owners.yaml exists, every owner named on controls and gaps should be in it."""
+    if not model.owners:
+        return []
+    known = {o.get("role", "").strip().lower() for o in model.owners}
+    seen: dict[str, str] = {}
+    for cid, c in model.controls.items():
+        if c.get("owner"):
+            seen.setdefault(c["owner"], _rel(model, model.control_files[cid]))
+    for g in model.gaps:
+        if g.get("owner"):
+            seen.setdefault(g["owner"], _rel(model, model.engagement_dir / "gaps.yaml"))
+    out = []
+    for name, where in sorted(seen.items()):
+        if name.strip().lower() not in known:
+            out.append(Finding("warning", "W111", f"Owner '{name}' is not in owners.yaml, so nobody is assigned or notified.",
+                               where, name))
+    return out
+
+
 def check_collected(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
@@ -273,7 +295,7 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected)
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners)
 
 
 def validate(model: Engagement) -> list[Finding]:

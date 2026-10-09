@@ -44,6 +44,8 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
     """mode: auto (templates + AI if enabled), templates, ai."""
     intake = Path(intake_dir)
     model: Engagement = load(engagement_dir)
+    from .. import sandbox
+    sandbox.configure(model)
     todo = files if files is not None else pending(intake, force)
     if not todo:
         return "No new or changed files in intake/.\n"
@@ -71,13 +73,15 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
                 if mode != "templates" else "not an intake template"
             notes.append(f"`{rel}`: not processed — {reason}")
 
+    from .. import sandbox
     if for_ai:
         try:
             result = ai.draft([(n, t) for n, t, _ in for_ai], model.requirements, model.gaps, model.client,
                               model=settings.get("model"), transport=transport)
             combined = draft.merge(combined, result)
             for n, _, p in for_ai:
-                notes.append(f"`{n}`: drafted by Claude ({settings.get('model') or ai.DEFAULT_MODEL})")
+                notes.append(f"`{n}`: " + ("sandbox AI draft (canned, sandbox/ai_draft.json)" if sandbox.active()
+                             else f"drafted by Claude ({settings.get('model') or ai.DEFAULT_MODEL})"))
                 ledger_updates[n] = {"sha256": _sha(p), "mode": "ai"}
         except ai.AIUnavailable as exc:
             notes += [f"`{n}`: not processed — {exc}" for n, _, _ in for_ai]
@@ -92,4 +96,7 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
             ledger[k] = {**v, "ingested": today}
         lp.write_text("# Files already ingested (sha256). Delete an entry to re-ingest.\n"
                       + yaml.safe_dump(ledger, sort_keys=True), encoding="utf-8")
+    if sandbox.active():
+        report = ("> ⚠️ **SANDBOX MODE.** AI drafting returned canned test output from `sandbox/ai_draft.json`; "
+                  "no document was sent to the Anthropic API.\n\n") + report
     return report + "\n### Files\n" + "\n".join(f"- {n}" for n in notes) + "\n"

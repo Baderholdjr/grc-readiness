@@ -44,6 +44,8 @@ python -m grc build --out out          # brief.docx + Markdown/CSV reports
 python -m grc sync-issues              # dry run: what Issues/Milestones would be created
 python -m grc ingest                   # draft engagement data from new files in intake/
 python -m grc collect --dry-run        # run evidence collectors without writing
+python -m grc codeowners               # make control owners required reviewers
+python -m grc new-engagement --client "Acme" --start 2026-11-02 --stage1 2027-03-15 --stage2 2027-05-10 --confirm-reset
 ```
 
 `--today YYYY-MM-DD` evaluates the record as of a given date, for example `--today 2027-02-22` to see what will have expired by Stage 1.
@@ -59,7 +61,8 @@ engagement/           ← one engagement's record (replace with your client's)
   controls/<ID>.yaml  four-part evidence test per requirement (65 files)
   gaps.yaml           gap register → GitHub Issues
   inventory.yaml      AI systems, tools, infrastructure, models, datasets (drafted by ingest)
-  collectors.yaml     which evidence to collect automatically, from where
+  collectors.yaml     which evidence to collect automatically, from where, and which control legs it supports
+  owners.yaml         owner roles → GitHub users (issue assignment, reminders, CODEOWNERS)
   evidence/index.yaml pointers to evidence entered by people (location, date, approver, expiry)
   evidence/collected.yaml + collected/*.json   machine-owned evidence and snapshots
   workpapers/         analyst test workpapers (non-confidential)
@@ -90,6 +93,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | W102 | warning | Operates in practice but isn't codified in an approved document |
 | W101 / W104 / W105 / W106 | warning | Evidence expiring soon · gap past due · gap due after its phase ends · budget at or above 80% |
 | W108 / W109 | warning | A collector check is failing / could not run |
+| W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
 
 ## GitOps workflow
@@ -104,10 +108,13 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 
 ## Starting a new engagement
 
-1. Click **Use this template** (Settings → Template repository), or copy the repo. Use **one private repo per client**.
-2. Edit `engagement/engagement.yaml`, then clear `gaps.yaml` and `evidence/index.yaml`.
-3. Delete `engagement/controls/*` and run `python -m grc init` to scaffold 65 blank assessment files.
-4. Set the real reviewers in `.github/CODEOWNERS`, and turn on branch protection for `main` (require the *validate* check and a CODEOWNERS review).
+1. Click **Use this template** to create **one private repo per client**.
+2. In the new repo, go to **Actions → New engagement → Run workflow**. Enter the client name, start date, and planned Stage 1 and Stage 2 dates. It opens a PR that replaces the example with a clean record: 65 blank control files, and phases computed from your dates. Merge it.
+3. List the client's people in `engagement/owners.yaml` (role → GitHub users), then run **`python -m grc codeowners`** so each owner is a required reviewer of their own controls. Gap Issues get assigned to them, and they're reminded when gaps go overdue.
+4. Upload client documents to `intake/` and point `engagement/collectors.yaml` at their systems. See [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
+5. Settings: protect `main` (require the *validate* check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
+
+**No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 
 ## Adding a framework
 
