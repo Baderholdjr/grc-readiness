@@ -31,13 +31,31 @@ def _get(repo: str, path: str, params: dict | None = None):
     return http.request("GET", f"{API}/repos/{repo}{path}", headers=headers, params=params)
 
 
+def _plan_blocked(exc: "http.HTTPError") -> bool:
+    return "upgrade to github pro" in str(exc).lower()
+
+
+def _plan_failure(repo: str, branch: str) -> CheckResult:
+    """GitHub Free doesn't offer (or enforce) branch protection on private repositories."""
+    return CheckResult(FAIL, f"{repo}@{branch}: branch protection unavailable on this GitHub plan",
+                       {"repo": repo, "branch": branch, "plan_limited": True},
+                       ["branch protection and rulesets are not available for private repositories on this GitHub "
+                        "plan, so changes to this branch need no review or passing checks (needs GitHub Pro, Team "
+                        "or Enterprise)"])
+
+
 @collector("github.branch_protection")
 def branch_protection(repo: str, branch: str = "main", min_approvals: int = 1,
                       require_code_owner_review: bool = False, required_checks: list[str] | None = None,
                       block_force_push: bool = True) -> CheckResult:
     """Effective protection from rulesets (and classic protection if readable)."""
     approvals, code_owner, checks, force_blocked, sources = 0, False, set(), False, []
-    rules = _get(repo, f"/rules/branches/{branch}") or []
+    try:
+        rules = _get(repo, f"/rules/branches/{branch}") or []
+    except http.HTTPError as exc:
+        if exc.status == 403 and _plan_blocked(exc):
+            return _plan_failure(repo, branch)
+        raise
     for r in rules:
         t, p = r.get("type"), r.get("parameters") or {}
         if t == "pull_request":
@@ -60,6 +78,8 @@ def branch_protection(repo: str, branch: str = "main", min_approvals: int = 1,
     except http.HTTPError as exc:
         if exc.status not in (403, 404):
             raise
+        if exc.status == 403 and _plan_blocked(exc):
+            return _plan_failure(repo, branch)
         if exc.status == 403 and not rules:
             # Token can't read classic protection; fall back to the branch summary (Contents:read).
             b = _get(repo, f"/branches/{branch}") or {}
