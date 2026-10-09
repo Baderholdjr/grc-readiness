@@ -9,7 +9,18 @@ from typing import Any
 
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
+# Built-in resources shipped with the engine (catalogs, schemas, Word template).
+ENGINE = Path(__file__).resolve().parent / "resources"
+
+
+def resource(repo_root: Path, *parts: str) -> Path:
+    """A file from the client repo if it overrides it, else the engine's built-in copy.
+
+    Lets a client repo customise e.g. frameworks/iso42001/playbook.yaml or
+    templates/brief-template.docx without forking the engine.
+    """
+    local = repo_root.joinpath(*parts)
+    return local if local.exists() else ENGINE.joinpath(*parts)
 LEGS = ("documented", "implemented", "evidenced", "tested")
 
 
@@ -140,17 +151,18 @@ def control_filename(req_id: str) -> str:
 
 def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None) -> Engagement:
     edir = Path(engagement_dir).resolve()
+    root = edir.parent  # the repository the engagement lives in
     eng = load_yaml(edir / "engagement.yaml")
     fw = eng.get("framework", "iso42001")
-    fw_dir = ROOT / "frameworks" / fw
-    if not fw_dir.is_dir():
-        raise SystemExit(f"Unknown framework '{fw}': no directory {fw_dir}")
+    catalog = resource(root, "frameworks", fw, "catalog.yaml")
+    if not catalog.exists():
+        raise SystemExit(f"Unknown framework '{fw}': no catalog in {root / 'frameworks'} or the engine")
     model = Engagement(
-        root=ROOT,
+        root=root,
         engagement_dir=edir,
         engagement=eng,
-        catalog=load_yaml(fw_dir / "catalog.yaml"),
-        playbook=load_yaml(fw_dir / "playbook.yaml"),
+        catalog=load_yaml(catalog),
+        playbook=load_yaml(resource(root, "frameworks", fw, "playbook.yaml")),
         today=today or dt.date.today(),
     )
     for path in sorted((edir / "controls").glob("*.yaml")):
@@ -178,5 +190,5 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
 
 
 def load_schema(name: str) -> dict:
-    with open(ROOT / "schemas" / f"{name}.schema.json", encoding="utf-8") as fh:
+    with open(ENGINE / "schemas" / f"{name}.schema.json", encoding="utf-8") as fh:
         return json.load(fh)

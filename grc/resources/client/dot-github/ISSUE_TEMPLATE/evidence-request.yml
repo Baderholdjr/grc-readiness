@@ -1,0 +1,26 @@
+name: Evidence request
+description: Ask a client owner for evidence supporting a requirement
+labels: [evidence-request]
+body:
+  - type: input
+    id: requirement
+    attributes: {label: Requirement ID, placeholder: "A.6.2.4"}
+    validations: {required: true}
+  - type: dropdown
+    id: leg
+    attributes:
+      label: Evidence-test leg
+      options: [Documented, Implemented, Evidence exists, Tested]
+    validations: {required: true}
+  - type: textarea
+    id: needed
+    attributes:
+      label: What we need
+      description: Describe the artifact or record and the period it should cover.
+    validations: {required: true}
+  - type: input
+    id: due
+    attributes: {label: Needed by, placeholder: "2026-11-15"}
+  - type: markdown
+    attributes:
+      value: "Do not attach confidential files here. Reply with where the evidence lives; the analyst adds a pointer to `engagement/evidence/index.yaml`."

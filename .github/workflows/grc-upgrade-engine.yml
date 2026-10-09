@@ -1,0 +1,63 @@
+name: Upgrade GRC engine (reusable)
+
+# Checks the engine repo for a newer engine-vX.Y.Z release than the version pinned
+# in requirements.txt, and opens (or updates) a PR that bumps the pin. Merging the
+# PR is the upgrade; validate runs on it first. Only requirements.txt changes.
+on:
+  workflow_call:
+    inputs:
+      engine-repo:
+        description: "owner/name of the engine repository"
+        type: string
+        default: Baderholdjr/grc-readiness
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: auto/engine-upgrade
+      ENGINE_REPO: ${{ inputs.engine-repo }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare pinned and latest engine versions
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "::error::GRC_ENGINE_TOKEN secret is not set"; exit 1; fi
+          CURRENT=$(grep -oE 'engine-v[0-9]+\.[0-9]+\.[0-9]+' requirements.txt | head -1 | sed 's/engine-v//')
+          LATEST=$(gh api "repos/$ENGINE_REPO/releases?per_page=50" \
+            --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^engine-v[0-9]+\\.[0-9]+\\.[0-9]+$")))][].tag_name' \
+            | sed 's/engine-v//' | sort -V | tail -1)
+          echo "pinned=$CURRENT latest=$LATEST"
+          if [ -z "$CURRENT" ] || [ -z "$LATEST" ]; then echo "::error::could not determine versions"; exit 1; fi
+          NEWEST=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -1)
+          if [ "$NEWEST" = "$CURRENT" ]; then echo "Engine is up to date ($CURRENT)."; echo "upgrade=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          gh api "repos/$ENGINE_REPO/releases/tags/engine-v$LATEST" --jq .body > notes.md || echo "(no release notes)" > notes.md
+          echo "upgrade=true" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+      - name: Open or update the upgrade PR
+        if: steps.check.outputs.upgrade == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT: ${{ steps.check.outputs.current }}
+          LATEST: ${{ steps.check.outputs.latest }}
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          sed -i "s/engine-v$CURRENT/engine-v$LATEST/g" requirements.txt
+          git add requirements.txt
+          git commit -q -m "Upgrade GRC engine $CURRENT -> $LATEST"
+          git push -f origin "$BRANCH"
+          { echo "Upgrades the GRC engine from **$CURRENT** to **$LATEST** ([release notes](https://github.com/$ENGINE_REPO/releases/tag/engine-v$LATEST))."
+            echo; echo "Validation runs on this PR with the new engine. Merge to upgrade; close to stay on $CURRENT."
+            echo; echo "---"; head -c 50000 notes.md; } > body.md
+          NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base main --head "$BRANCH" --title "Upgrade GRC engine to $LATEST" --body-file body.md
+          else
+            gh pr edit "$NUM" --title "Upgrade GRC engine to $LATEST" --body-file body.md
+          fi
+          gh workflow run validate.yml --ref "$BRANCH"

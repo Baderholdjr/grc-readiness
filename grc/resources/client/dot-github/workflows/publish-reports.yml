@@ -1,0 +1,26 @@
+name: Publish reports
+
+# Keeps the `reports` branch in sync with main: brief (Markdown + Word), control
+# matrix, SoA, gap register, evidence index. Browse it at /tree/reports.
+# Runs after every merge and daily (so expiry dates stay current). The branch
+# history is a dated record of readiness; it is never edited by hand.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 14 * * *"   # daily 14:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-reports
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    uses: __ENGINE_REPO__/.github/workflows/grc-publish-reports.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit

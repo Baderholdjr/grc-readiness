@@ -1,0 +1,47 @@
+name: Validate & build readiness reports (reusable)
+
+# The CI gate for an engagement repo: blocks merges that would overstate readiness
+# (e.g. "verified" without evidence), posts a readiness summary, and uploads the
+# generated reports. Called by each client repo's validate.yml.
+on:
+  workflow_call:
+    inputs:
+      engine:
+        type: string
+        default: pinned
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Validate engagement (four-part evidence test, schemas, gaps)
+        run: python -m grc validate --format github --summary "$GITHUB_STEP_SUMMARY"
+      - name: Build reports and brief
+        run: python -m grc build --out out
+      - uses: actions/upload-artifact@v6
+        with:
+          name: readiness-reports-${{ github.sha }}
+          path: out/
+          retention-days: 90

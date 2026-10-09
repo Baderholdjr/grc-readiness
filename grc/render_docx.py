@@ -171,7 +171,8 @@ def data_table(doc, headers: list[str], rows: list[list], widths: list[int], fir
 
 # -------------------------------------------------------------------- brief
 def render_brief(model: Engagement, out_path: Path) -> Path:
-    template = model.root / "templates" / "brief-template.docx"
+    from .model import resource
+    template = resource(model.root, "templates", "brief-template.docx")
     doc = docx.Document(str(template))
     body = doc.element.body
     for p in list(body):  # drop the placeholder paragraph, keep sectPr

@@ -1,0 +1,62 @@
+name: Weekly evidence freshness check (reusable)
+
+# Evidence goes stale over time even when nobody edits the repo. This job
+# re-evaluates the record against today's date and keeps one tracking issue
+# up to date with expired evidence, past-due gaps and budget warnings.
+# Called by thin wrappers in each repo; the triggers and permissions live there.
+on:
+  workflow_call:
+    inputs:
+      engine:
+        description: "'pinned' = install the version in the caller's requirements.txt; 'local' = install from the checkout (engine repo only)"
+        type: string
+        default: pinned
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Evaluate as of today
+        id: check
+        run: |
+          set +e
+          python -m grc validate --strict --summary report.md > findings.txt 2>&1
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          cat findings.txt
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Update tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Readiness drift: evidence freshness & overdue gaps"
+          NUM=$(gh issue list --label grc-drift --state open --json number -q '.[0].number')
+          if [ "${{ steps.check.outputs.exit }}" = "0" ]; then
+            if [ -n "$NUM" ]; then gh issue close "$NUM" --comment "All clear as of $(date -u +%F)."; fi
+            exit 0
+          fi
+          gh label create grc-drift --color B60205 --force >/dev/null
+          { echo "_Updated $(date -u +%F) by the weekly freshness check._"; echo; cat report.md; } > body.md
+          if [ -n "$NUM" ]; then gh issue edit "$NUM" --body-file body.md
+          else gh issue create --title "$TITLE" --label grc-drift --body-file body.md; fi

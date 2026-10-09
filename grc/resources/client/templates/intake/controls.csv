@@ -1,0 +1,2 @@
+requirement,leg,status,owner,note
+A.6.2.4,implemented,yes,Head of Platform,CI gate blocks releases below metric thresholds

@@ -34,7 +34,7 @@ def setup(tmp_path, ai=False, blank_profile=False):
 def test_template_import(tmp_path):
     edir, intake = setup(tmp_path)
     for name in ("gaps", "evidence", "controls", "inventory"):
-        shutil.copy(ROOT / "templates" / "intake" / f"{name}.csv", intake / f"client-{name}.csv")
+        shutil.copy(ROOT / "grc" / "resources" / "templates" / "intake" / f"{name}.csv", intake / f"client-{name}.csv")
     # make the template gap new (the example duplicates GAP-01 on purpose)
     (intake / "client-gaps.csv").write_text("area,finding,requirements,owner,due,severity,phase\n"
                                             "Logging,Model inference logs are kept for only 7 days,A.6.2.8,Platform,2026-12-01,medium,implement\n"

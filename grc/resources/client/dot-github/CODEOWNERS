@@ -1,0 +1,3 @@
+# Merging a PR that touches these paths is the approval record.
+# `python -m grc codeowners` adds control owners below.
+* @__REPO_OWNER__

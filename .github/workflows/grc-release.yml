@@ -1,0 +1,57 @@
+name: Publish evidence package (reusable)
+
+# Freeze the record for an audit stage. Publish a release from the GitHub UI
+# (Releases -> Draft a new release -> new tag such as v2027.02-stage1) and this
+# job attaches the brief, SoA, control matrix, gap register, evidence index and
+# SHA-256 checksums as of that commit: an immutable, timestamped package.
+# Called by thin wrappers in each repo; the triggers and permissions live there.
+on:
+  workflow_call:
+    inputs:
+      engine:
+        description: "'pinned' = install the version in the caller's requirements.txt; 'local' = install from the checkout (engine repo only)"
+        type: string
+        default: pinned
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      # Errors block the package; warnings are recorded in the release notes
+      # so the package states its own known weaknesses.
+      - run: python -m grc validate --summary notes.md
+      - run: python -m grc build --out out
+      - name: Checksums
+        run: cd out && sha256sum * > SHA256SUMS.txt
+      - name: Attach package to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$TAG" out/* --clobber
+          { gh release view "$TAG" --json body -q .body; echo; echo "---"; cat notes.md; } > body.md
+          gh release edit "$TAG" --notes-file body.md

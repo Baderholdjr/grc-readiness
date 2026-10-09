@@ -1,0 +1,24 @@
+name: Ingest client documents
+
+# Upload client documents to intake/ in a PR. This drafts engagement data from
+# them (templates imported as-is; other documents drafted by Claude if enabled),
+# commits the draft to the same PR, and comments a report for review.
+on:
+  pull_request:
+    paths: ["intake/**"]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: ingest-${{ github.head_ref }}
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    uses: __ENGINE_REPO__/.github/workflows/grc-ingest.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit

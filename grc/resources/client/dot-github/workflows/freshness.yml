@@ -1,0 +1,20 @@
+name: Weekly evidence freshness check
+
+# Evidence goes stale over time even when nobody edits the repo. This job
+# re-evaluates the record against today's date and keeps one tracking issue
+# up to date with expired evidence, past-due gaps and budget warnings.
+on:
+  schedule:
+    - cron: "17 14 * * 1"   # Mondays 14:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  freshness:
+    uses: __ENGINE_REPO__/.github/workflows/grc-freshness.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit
