@@ -9,6 +9,8 @@ Two automations keep the engagement record current without hand-editing:
 
 Both only *propose* changes. A person merges every PR, and nothing automated can mark a control `verified`.
 
+**One-time repository setting:** go to **Settings → Actions → General → Workflow permissions** and tick **Allow GitHub Actions to create and approve pull requests**. Without it, the collector can't open its refresh PR.
+
 All credentials go in the repo under **Settings → Secrets and variables → Actions**. Anything that isn't configured is skipped, never failed. You can turn things on one at a time.
 
 ---
