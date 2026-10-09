@@ -1,5 +1,6 @@
 # (Example Client) — ISO 42001 readiness reports
 
+
 <!-- Published automatically from the main branch. Do not edit this branch. -->
 
 **As of 2026-10-09.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
