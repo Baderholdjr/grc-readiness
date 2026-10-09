@@ -243,3 +243,15 @@ def test_empty_drata_base_variable_uses_default():
         assert seen and seen[0].startswith("https://public-api.drata.com/public/v2/policies")
     finally:
         restore()
+
+
+def test_private_repo_on_free_plan_is_a_clear_failure():
+    def blocked(u, p):
+        raise http.HTTPError(403, '{"message":"Upgrade to GitHub Pro or make this repository public to enable this feature."}')
+    fake = FakeHTTP({"/rules/branches/main": blocked})
+    restore = patched(fake, {"GH_COLLECTOR_TOKEN": "x"})
+    try:
+        r = run_check("github.branch_protection", {"repo": "o/r"})
+        assert r.result == "fail" and r.details["plan_limited"] and "GitHub Pro" in r.findings[0]
+    finally:
+        restore()
