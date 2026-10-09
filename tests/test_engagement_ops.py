@@ -300,3 +300,22 @@ def test_failing_check_flags_contradicted_claim(tmp_path):
         restore()
     section = report.split("Evidence contradicts a client claim", 1)[1].split("###", 1)[0]
     assert "A.6.2.2·implemented" in section and "EV-150" in section
+
+
+def test_sandbox_label_only_on_simulated_collectors(tmp_path):
+    import os
+    os.environ["GH_COLLECTOR_TOKEN"] = "x"
+    root, restore = _sandbox(tmp_path)
+    (root / "engagement" / "collectors.yaml").write_text(yaml.safe_dump({"enabled": True, "checks": [
+        {"evidence": "EV-150", "title": "Gate", "collector": "github.workflow_runs", "params": {"repo": "o/r", "workflow": "g.yml"}},
+        {"evidence": "EV-162", "title": "Bucket", "collector": "aws.s3_bucket", "params": {"bucket": "ml"}}]}))
+    gate = _fake_gate()
+    try:
+        collect.run(load(root / "engagement", today=D(2026, 10, 8)))
+    finally:
+        gate()
+        restore()
+        sandbox._DIR = None
+        sandbox._uninstall_cloud_fakes()
+    ev = {e["id"]: e for e in yaml.safe_load((root / "engagement" / "evidence" / "collected.yaml").read_text())["evidence"]}
+    assert not ev["EV-150"]["notes"].startswith("[SANDBOX]") and ev["EV-162"]["notes"].startswith("[SANDBOX]")
