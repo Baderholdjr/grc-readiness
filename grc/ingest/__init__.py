@@ -73,13 +73,15 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
                 if mode != "templates" else "not an intake template"
             notes.append(f"`{rel}`: not processed — {reason}")
 
+    from .. import sandbox
     if for_ai:
         try:
             result = ai.draft([(n, t) for n, t, _ in for_ai], model.requirements, model.gaps, model.client,
                               model=settings.get("model"), transport=transport)
             combined = draft.merge(combined, result)
             for n, _, p in for_ai:
-                notes.append(f"`{n}`: drafted by Claude ({settings.get('model') or ai.DEFAULT_MODEL})")
+                notes.append(f"`{n}`: " + ("sandbox AI draft (canned, sandbox/ai_draft.json)" if sandbox.active()
+                             else f"drafted by Claude ({settings.get('model') or ai.DEFAULT_MODEL})"))
                 ledger_updates[n] = {"sha256": _sha(p), "mode": "ai"}
         except ai.AIUnavailable as exc:
             notes += [f"`{n}`: not processed — {exc}" for n, _, _ in for_ai]

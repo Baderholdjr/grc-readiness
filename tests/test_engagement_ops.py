@@ -283,3 +283,20 @@ def test_sandbox_ai_draft(tmp_path):
         sandbox._DIR = None
         sandbox._uninstall_cloud_fakes()
     assert "SANDBOX MODE" in report and "sandbox question" in report
+
+
+def test_failing_check_flags_contradicted_claim(tmp_path):
+    import os
+    os.environ["GH_COLLECTOR_TOKEN"] = "x"
+    edir = copy(tmp_path)
+    (edir / "collectors.yaml").write_text(yaml.safe_dump({"enabled": True, "checks": [
+        {"evidence": "EV-150", "title": "Gate", "collector": "github.workflow_runs",
+         "params": {"repo": "o/r", "workflow": "g.yml"}, "supports": ["A.6.2.2:implemented"]}]}))
+    # fixture: A.6.2.2 implemented is 'claimed'
+    restore = _fake_gate("failure")
+    try:
+        _, report = collect.run(load(edir, today=D(2026, 10, 8)))
+    finally:
+        restore()
+    section = report.split("Evidence contradicts a client claim", 1)[1].split("###", 1)[0]
+    assert "A.6.2.2·implemented" in section and "EV-150" in section

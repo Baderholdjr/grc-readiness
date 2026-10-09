@@ -90,7 +90,8 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
         prev = existing.get(ev_id)
         row = {"evidence": ev_id, "title": check["title"], "collector": check["collector"], "result": res.result,
                "summary": res.summary, "findings": res.findings,
-               "previous": prev.get("result") if prev else None, "requirements": check.get("requirements", [])}
+               "previous": prev.get("result") if prev else None, "requirements": check.get("requirements", []),
+               "supports": check.get("supports", [])}
         results.append(row)
         if res.result == SKIPPED:
             continue
@@ -114,13 +115,15 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
             "sha256": res.digest(), "collector": check["collector"], "result": res.result,
             "notes": tag + res.summary + (f" | {'; '.join(res.findings)}" if res.findings else ""),
         }
+    claimed_before = {(cid, leg): (v.get("note") or "") for cid, c in model.controls.items()
+                      for leg, v in (c.get("test") or {}).items() if v.get("status") == "claimed"}
     links = link_evidence(model, cfg, results, write=write)
     if write:
         entries = [existing[k] for k in sorted(existing)]
         collected_path.parent.mkdir(parents=True, exist_ok=True)
         collected_path.write_text(HEADER + yaml.safe_dump({"evidence": entries}, sort_keys=False, allow_unicode=True,
                                                          width=140), encoding="utf-8")
-    out = report(model, results, now, links)
+    out = report(model, results, now, links, claimed_before)
     if tag:
         out = ("> ⚠️ **SANDBOX MODE.** Drata, cloud and AI results below come from canned test data in "
                "`sandbox/`, not from real client systems. GitHub checks are real.\n\n") + out
@@ -173,7 +176,8 @@ def link_evidence(model: Engagement, cfg: dict, results: list[dict], write: bool
     return log
 
 
-def report(model: Engagement, results: list[dict], now: dt.datetime, links: list[str] | None = None) -> str:
+def report(model: Engagement, results: list[dict], now: dt.datetime, links: list[str] | None = None,
+           claimed: dict | None = None) -> str:
     cited = _cited_by(model)
     lines = [f"## Evidence collection — {now.strftime('%Y-%m-%d %H:%M UTC')}\n",
              "| Evidence | Check | Result | Summary | Cited by |", "|---|---|---|---|---|"]
@@ -193,6 +197,20 @@ def report(model: Engagement, results: list[dict], now: dt.datetime, links: list
                      "is downgraded by CI until fixed.\n")
         for r in regressions:
             lines.append(f"- **{r['evidence']} {r['title']}**: " + "; ".join(r["findings"] or [r["summary"]]))
+    contradictions = []
+    for r in results:
+        if r["result"] != FAIL:
+            continue
+        reqs = {ref.rsplit(":", 1)[0] for ref in r.get("supports", [])} | set(r.get("requirements", []))
+        for (rid, leg), note in sorted((claimed or {}).items()):
+            if rid in reqs:
+                    claim = note.replace("Client states: ", "")[:140]
+                    contradictions.append(f"**{rid}·{leg}** — client claims: _{claim}_ → **{r['evidence']}** says: "
+                                          + "; ".join(r["findings"] or [r["summary"]]))
+    if contradictions:
+        lines.append("\n### ⚠️ Evidence contradicts a client claim\nThese legs were `claimed` by the client. "
+                     "Raise them with the owner before relying on the claim.\n")
+        lines += [f"- {x}" for x in contradictions]
     fails = [r for r in results if r["result"] == FAIL and r not in regressions]
     if fails:
         lines.append("\n### Failing checks\n")
@@ -215,5 +233,6 @@ def report(model: Engagement, results: list[dict], now: dt.datetime, links: list
         lines.append("\n<details><summary>Skipped (credentials not configured)</summary>\n")
         lines += [f"- {r['evidence']} `{r['collector']}`: {r['summary']}" for r in skipped]
         lines.append("\n</details>")
-    lines.append("\n_Merging this PR records the refreshed evidence. It does not change any control status._\n")
+    lines.append("\n_Merging this PR records the refreshed evidence and the citations above. "
+                 "Nothing is ever marked `verified` automatically._\n")
     return "\n".join(lines) + "\n"
