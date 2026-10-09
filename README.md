@@ -46,6 +46,7 @@ python -m grc ingest                   # draft engagement data from new files in
 python -m grc collect --dry-run        # run evidence collectors without writing
 python -m grc codeowners               # make control owners required reviewers
 python -m grc new-engagement --client "Acme" --start 2026-11-02 --stage1 2027-03-15 --stage2 2027-05-10 --confirm-reset
+python -m grc bootstrap --dir ../acme-grc  # thin client repo that pins this engine
 ```
 
 `--today YYYY-MM-DD` evaluates the record as of a given date, for example `--today 2027-02-22` to see what will have expired by Stage 1.
@@ -53,10 +54,13 @@ python -m grc new-engagement --client "Acme" --start 2026-11-02 --stage1 2027-03
 ## Repository layout
 
 ```
-frameworks/iso42001/
-  catalog.yaml        requirement IDs, short titles, paraphrased intent, evidence examples
-  playbook.yaml       reusable engagement content: evidence test, phases, needs, readiness criteria
-engagement/           ← one engagement's record (replace with your client's)
+grc/                  the engine: model, rules, renderers, issue sync, collectors/, ingest/
+grc/resources/        shipped with the engine (client repos can override any of these):
+  frameworks/iso42001/  catalog.yaml (requirements, paraphrased intent) · playbook.yaml (phases, needs, criteria)
+  schemas/              JSON Schemas for every engagement file
+  templates/            brief-template.docx (house style) · intake/ CSV templates for clients
+  client/               skeleton for thin client repos (`grc bootstrap`)
+engagement/           ← the example engagement (fictional) used to develop and test the engine
   engagement.yaml     client profile, scope, what's in place, budget, dates, phases, guardrails, risks
   controls/<ID>.yaml  four-part evidence test per requirement (65 files)
   gaps.yaml           gap register → GitHub Issues
@@ -67,11 +71,9 @@ engagement/           ← one engagement's record (replace with your client's)
   evidence/collected.yaml + collected/*.json   machine-owned evidence and snapshots
   workpapers/         analyst test workpapers (non-confidential)
 intake/               drop client documents here (in a PR) to draft the record
-schemas/              JSON Schemas for all of the above
-templates/            brief-template.docx (house style) · intake/ CSV templates for clients
-grc/                  the CLI: model, rules, renderers, issue sync, collectors/, ingest/
+docs/ENGINE.md        engine releases, thin client repos, upgrades, overrides
 docs/AUTOMATION.md    credentials and setup for ingestion and collectors
-.github/workflows/    validate · ingest · collect · weekly freshness · issue sync · release package
+.github/workflows/    grc-*.yml = reusable workflows client repos call · the rest run this repo
 ```
 
 ## Validation rules
@@ -108,11 +110,15 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 
 ## Starting a new engagement
 
-1. Click **Use this template** to create **one private repo per client**.
-2. In the new repo, go to **Actions → New engagement → Run workflow**. Enter the client name, start date, and planned Stage 1 and Stage 2 dates. It opens a PR that replaces the example with a clean record: 65 blank control files, and phases computed from your dates. Merge it.
+**Each client gets its own thin repository** that pins a version of this engine. See [`docs/ENGINE.md`](docs/ENGINE.md) for the steps (`python -m grc bootstrap`). Engine fixes then reach every client through a reviewed *Upgrade GRC engine* PR, instead of being copied by hand.
+
+In the client repository:
+
+1. Add the `GRC_ENGINE_TOKEN` secret, as described in its README.
+2. Go to **Actions → New engagement → Run workflow**. Enter the client name, start date, and planned Stage 1 and Stage 2 dates. It opens a PR that replaces the example with a clean record: 65 blank control files, and phases computed from your dates. Merge it.
 3. List the client's people in `engagement/owners.yaml` (role → GitHub users), then run **`python -m grc codeowners`** so each owner is a required reviewer of their own controls. Gap Issues get assigned to them, and they're reminded when gaps go overdue.
 4. Upload client documents to `intake/` and point `engagement/collectors.yaml` at their systems. See [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
-5. Settings: protect `main` (require the *validate* check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
+5. Settings: protect `main` (require the **`validate / validate`** check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
 
 **No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 

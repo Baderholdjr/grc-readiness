@@ -1,0 +1,62 @@
+name: Release GRC engine
+
+# Publishes a new engine version for client repos:
+#   1. bump __version__ in grc/__init__.py and pyproject.toml in a PR, merge it
+#   2. Actions -> Release GRC engine -> Run workflow
+# Creates tag + release engine-vX.Y.Z (what client repos pin) and moves the
+# engine-v<MAJOR> tag (what client workflow wrappers call). Client repos then get
+# an "Upgrade GRC engine" PR from their weekly upgrade check.
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "Release notes (one line is fine)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: engine-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -q . pytest
+      - name: Tests must pass
+        run: pytest -q
+      - name: Version checks
+        id: v
+        run: |
+          V=$(python -c "import grc; print(grc.__version__)")
+          P=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "$V" != "$P" ]; then echo "::error::grc/__init__.py ($V) and pyproject.toml ($P) disagree"; exit 1; fi
+          if git rev-parse -q --verify "refs/tags/engine-v$V" >/dev/null; then
+            echo "::error::engine-v$V already exists - bump the version first"; exit 1; fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "major=${V%%.*}" >> "$GITHUB_OUTPUT"
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          V: ${{ steps.v.outputs.version }}
+          MAJOR: ${{ steps.v.outputs.major }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "engine-v$V" -m "GRC engine $V"
+          git tag -f -a "engine-v$MAJOR" -m "GRC engine $MAJOR.x (latest: $V)"
+          git push origin "engine-v$V"
+          git push -f origin "engine-v$MAJOR"
+          printf '%s\n\nPin in a client repo'"'"'s requirements.txt:\n\n```\ngrc-readiness @ git+https://github.com/%s@engine-v%s\n```\n' \
+            "$NOTES" "$GITHUB_REPOSITORY" "$V" > notes.md
+          gh release create "engine-v$V" --title "GRC engine $V" --notes-file notes.md --latest=false

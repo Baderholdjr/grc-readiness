@@ -1,0 +1,19 @@
+name: Publish evidence package
+
+# Freeze the record for an audit stage. Publish a release from the GitHub UI
+# (Releases -> Draft a new release -> new tag such as v2027.02-stage1) and this
+# job attaches the brief, SoA, control matrix, gap register, evidence index and
+# SHA-256 checksums as of that commit: an immutable, timestamped package.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    uses: __ENGINE_REPO__/.github/workflows/grc-release.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit

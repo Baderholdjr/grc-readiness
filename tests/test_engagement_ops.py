@@ -219,8 +219,6 @@ def _sandbox(tmp_path):
     import grc.model as gm
     root = tmp_path / "repo"
     shutil.copytree(FIXTURE, root / "engagement")
-    for d in ("frameworks", "schemas", "templates"):
-        shutil.copytree(gm.ROOT / d, root / d)
     sb = root / "sandbox"
     sb.mkdir()
     (sb / "drata.yaml").write_text(yaml.safe_dump({
@@ -239,9 +237,7 @@ def _sandbox(tmp_path):
         {"evidence": "EV-160", "title": "Policies", "collector": "drata.policies", "params": {"names": ["AI Policy", "Vendor Management"]}},
         {"evidence": "EV-161", "title": "Training", "collector": "drata.training", "params": {"min_pass_rate": 0.9}},
         {"evidence": "EV-162", "title": "Bucket", "collector": "aws.s3_bucket", "params": {"bucket": "ml"}}]}))
-    real_root = gm.ROOT
-    gm.ROOT = root
-    return root, lambda: setattr(gm, "ROOT", real_root)
+    return root, lambda: None  # repo root is derived from the engagement directory
 
 
 def test_sandbox_runs_collectors_without_credentials(tmp_path):

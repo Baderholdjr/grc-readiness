@@ -8,6 +8,7 @@
   ingest        Draft engagement data from client documents in intake/
   new-engagement  Reset the record for a new client (computes phases from dates)
   codeowners    Make control owners required reviewers of their control files
+  bootstrap     Write a thin client repository that uses this engine
 """
 from __future__ import annotations
 
@@ -164,6 +165,14 @@ def cmd_codeowners(args) -> int:
     return 1 if (args.check and changed) else 0
 
 
+def cmd_bootstrap(args) -> int:
+    from . import bootstrap
+    for line in bootstrap.write(Path(args.dir), args.engine_repo, args.version, args.force):
+        print(line)
+    print("\nNext: add the GRC_ENGINE_TOKEN secret, then run the New engagement workflow (see README.md).")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -221,6 +230,13 @@ def main(argv=None) -> int:
     co.add_argument("--file", default=".github/CODEOWNERS")
     co.add_argument("--check", action="store_true", help="exit 1 if the file would change")
     co.set_defaults(fn=cmd_codeowners)
+
+    bs = sub.add_parser("bootstrap", help="write a thin client-repo skeleton that uses this engine")
+    bs.add_argument("--dir", required=True, help="client repository folder")
+    bs.add_argument("--engine-repo", default="Baderholdjr/grc-readiness", help="owner/name of the engine repo")
+    bs.add_argument("--version", help="engine version to pin (default: this engine's version)")
+    bs.add_argument("--force", action="store_true", help="overwrite existing files")
+    bs.set_defaults(fn=cmd_bootstrap)
 
     args = p.parse_args(argv)
     return args.fn(args)

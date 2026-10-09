@@ -1,0 +1,24 @@
+name: Validate & build readiness reports
+
+# Every PR is a proposed change to the engagement record. This gate blocks
+# merges that would overstate readiness (e.g. "verified" without evidence).
+# Required status check name for branch protection: "validate / validate".
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    uses: __ENGINE_REPO__/.github/workflows/grc-validate.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit

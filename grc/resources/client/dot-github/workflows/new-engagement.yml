@@ -1,0 +1,32 @@
+name: New engagement
+
+# Start a new client from the GitHub website: Actions -> New engagement -> Run workflow.
+# Opens a PR that replaces the current record (engagement/ and intake/) with a
+# clean one for the new client. Review and merge it to begin.
+on:
+  workflow_dispatch:
+    inputs:
+      client: {description: "Client name", required: true}
+      start: {description: "Engagement start (YYYY-MM-DD)", required: true}
+      stage1: {description: "Planned Stage 1 audit (YYYY-MM-DD)", required: true}
+      stage2: {description: "Planned Stage 2 audit (YYYY-MM-DD)", required: true}
+      hours: {description: "Consulting hours budget", required: true, default: "200"}
+      lead: {description: "Engagement lead", required: false}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  new:
+    uses: __ENGINE_REPO__/.github/workflows/grc-new-engagement.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+      client: ${{ inputs.client }}
+      start: ${{ inputs.start }}
+      stage1: ${{ inputs.stage1 }}
+      stage2: ${{ inputs.stage2 }}
+      hours: ${{ inputs.hours }}
+      lead: ${{ inputs.lead }}
+    secrets: inherit

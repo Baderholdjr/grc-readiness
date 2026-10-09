@@ -1,0 +1,2 @@
+name,kind,owner,risk_tier,description
+Public-facing benefits assistant,ai_system,Platform Team,High,LLM assistant answering benefits questions

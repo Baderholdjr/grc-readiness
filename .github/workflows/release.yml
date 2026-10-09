@@ -13,27 +13,9 @@ permissions:
 
 jobs:
   package:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name }}
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install -r requirements.txt
-      # Errors block the package; warnings are recorded in the release notes
-      # so the package states its own known weaknesses.
-      - run: python -m grc validate --summary notes.md
-      - run: python -m grc build --out out
-      - name: Checksums
-        run: cd out && sha256sum * > SHA256SUMS.txt
-      - name: Attach package to the release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          gh release upload "$TAG" out/* --clobber
-          { gh release view "$TAG" --json body -q .body; echo; echo "---"; cat notes.md; } > body.md
-          gh release edit "$TAG" --notes-file body.md
+    # Engine releases (engine-v*) are not evidence packages.
+    if: ${{ !startsWith(github.event.release.tag_name, 'engine-') }}
+    uses: ./.github/workflows/grc-release.yml
+    with:
+      engine: local
+    secrets: inherit

@@ -1,0 +1,29 @@
+name: Sync gap register to GitHub Issues
+
+# gaps.yaml is the source of truth; Issues and phase Milestones are a view of it
+# for day-to-day tracking by owners who don't edit YAML.
+on:
+  push:
+    branches: [main]
+    paths:
+      - engagement/gaps.yaml
+      - engagement/engagement.yaml
+      - engagement/owners.yaml
+  schedule:
+    - cron: "7 15 * * *"   # daily: refresh assignments and post overdue reminders
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: sync-issues
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    uses: __ENGINE_REPO__/.github/workflows/grc-sync-issues.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit

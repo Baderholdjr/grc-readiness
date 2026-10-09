@@ -1,0 +1,20 @@
+name: Upgrade GRC engine
+
+# Weekly: if the engine repo has a newer engine-vX.Y.Z release than the version
+# pinned in requirements.txt, open a PR that bumps it. Merging it is the upgrade.
+on:
+  schedule:
+    - cron: "11 15 * * 2"   # Tuesdays 15:11 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  upgrade:
+    uses: __ENGINE_REPO__/.github/workflows/grc-upgrade-engine.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine-repo: __ENGINE_REPO__
+    secrets: inherit

@@ -3,7 +3,7 @@
     python -m grc new-engagement --client "Acme Corp" --start 2026-11-02 \
         --stage1 2027-03-15 --stage2 2027-05-10 --hours 200 --confirm-reset
 
-Keeps: frameworks/, schemas/, templates/, the engine, workflows.
+Keeps: the engine, workflows, and any local framework/template overrides.
 Resets: everything under engagement/, plus intake/ (except its README).
 Phases are computed from the dates and can be edited afterwards.
 """
@@ -76,7 +76,7 @@ checks:
   - evidence: EV-101
     title: "Engagement repo: main branch protection"
     collector: github.branch_protection
-    params: {repo: "${GITHUB_REPOSITORY}", branch: main, min_approvals: 1, require_code_owner_review: true, required_checks: [validate]}
+    params: {repo: "${GITHUB_REPOSITORY}", branch: main, min_approvals: 1, require_code_owner_review: true, required_checks: ["validate / validate"]}
     type: config
     supports: ["7.5:implemented"]
   - evidence: EV-102

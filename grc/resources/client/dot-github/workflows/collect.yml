@@ -1,0 +1,27 @@
+name: Collect evidence
+
+# Runs the checks in engagement/collectors.yaml against the client's systems and
+# opens (or updates) one rolling PR, "Evidence refresh", with the new snapshots.
+# Merging that PR is the human approval. A failing check shows up as a CI error on
+# any control that was 'verified' only on that evidence.
+on:
+  schedule:
+    - cron: "41 13 * * *"   # daily 13:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write        # to start the validate check on the refresh PR
+  id-token: write       # OIDC sign-in to AWS / Azure / GCP (no stored cloud keys)
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    uses: __ENGINE_REPO__/.github/workflows/grc-collect.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit
