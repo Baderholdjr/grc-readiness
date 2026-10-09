@@ -1,0 +1,55 @@
+name: Publish reports
+
+# Keeps the `reports` branch in sync with main: brief (Markdown + Word), control
+# matrix, SoA, gap register, evidence index. Browse it at /tree/reports.
+# Runs after every merge and daily (so expiry dates stay current). The branch
+# history is a dated record of readiness; it is never edited by hand.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 14 * * *"   # daily 14:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-reports
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # --force: publish even when validation has errors (they are shown on the landing page).
+      - run: python -m grc build --out out --force
+      - name: Commit to the reports branch
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin reports >/dev/null; then
+            git fetch -q --depth=1 origin reports
+            git worktree add -q pub FETCH_HEAD
+            git -C pub checkout -q -B reports
+          else
+            git worktree add -q --detach pub
+            git -C pub checkout -q --orphan reports
+            git -C pub rm -rqf --cached . && find pub -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          fi
+          find pub -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a out/. pub/
+          cd pub
+          git add -A
+          if git diff --cached --quiet; then echo "Reports unchanged."; exit 0; fi
+          git commit -q -m "Reports as of $(date -u +%F) (main@${SHA::7})"
+          git push -q origin reports
+          echo "Published: https://github.com/${GITHUB_REPOSITORY}/tree/reports" >> "$GITHUB_STEP_SUMMARY"

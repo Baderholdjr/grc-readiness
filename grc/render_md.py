@@ -156,10 +156,72 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
     return "\n".join(x for x in lines if x is not None) + "\n"
 
 
-def render_all(model: Engagement, findings: list[Finding], out: Path) -> str:
+def brief(model: Engagement, out: Path) -> None:
+    """The analyst brief as Markdown, so it can be read directly on GitHub."""
+    e, pb = model.engagement, model.playbook
+    f = model.fmt
+    m = metrics(model)
+    L = [f"# {model.client} {pb.get('title_suffix', 'Project Brief')}\n", GEN,
+         f"**{e.get('subtitle', 'Analyst Orientation')}**\n",
+         f"> **TLDR:** {f(e.get('tldr') or pb.get('tldr_template', ''))}\n",
+         "## 1. Client Overview\n", *[f"- {f(x)}" for x in e['client'].get('overview', [])], "",
+         "## 2. AI Usage\n", *[f"- {f(x)}" for x in e.get('ai_usage', [])], "",
+         "## 3. What is already in place\n",
+         _table(["Foundation", "Examples"], [[x["foundation"], f(x["examples"])] for x in e.get("in_place", [])]),
+         "## 4. Gap Analysis\n", f"> {f(pb.get('gap_callout', ''))}\n",
+         _table(["Area", "What to verify / close"],
+                [[g["area"], f(g["finding"])] for g in model.gaps
+                 if g.get("in_brief", True) and g.get("status") in ("open", "in_progress")]),
+         "### Analyst evidence test\n", *[f"- **{t['label']}** — {f(t['question'])}" for t in pb["evidence_test"]], "",
+         f"### Readiness snapshot (as of {m['as_of']})\n",
+         f"{m['requirements_ready']} of {m['requirements_applicable']} applicable requirements pass all four tests; "
+         f"{m['gaps_open']} gaps open; {m['legs_verified_pct']}% of evidence-test legs verified.\n",
+         _table(["Test", "Verified", "Partial", "Claimed", "Not started"],
+                [[t["label"], *(m["legs"][t["key"]][s] for s in ("verified", "partial", "claimed", "not_started"))]
+                 for t in pb["evidence_test"]]),
+         "## 5. Timeline\n",
+         _table(["Month", "Objective", "Deliverables"],
+                [[ph["label"], ph["objective"], "<br>".join(f"• {f(d)}" for d in ph["deliverables"])] for ph in model.phases]),
+         "## 6. Needs\n", *[f"- {f(x)}" for x in model.setting("needs", [])], "",
+         "### Working rule\n", f"> {f(model.setting('working_rule', ''))}\n",
+         f"## 7. {pb.get('requirements_heading', 'ISO Requirements')}\n", *[f"- {f(x)}" for x in pb.get("readiness_criteria", [])], "",
+         "## 8. Engagement Guardrails\n"]
+    b = e["budget"]
+    L.append(f"- {b['hours_total']:g} total consulting hours" + (f": {b['note']}" if b.get("note") else "."))
+    L += [f"- {f(x)}" for x in model.setting("guardrails", pb.get("default_guardrails", []))]
+    L += ["", "## 9. Key Risks\n", *[f"- {f(x)}" for x in model.setting("key_risks", pb.get("default_risks", []))], ""]
+    (out / "brief.md").write_text("\n".join(L), encoding="utf-8")
+
+
+def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None) -> None:
+    """Landing page for the published reports."""
+    m = metrics(model)
+    fw = model.catalog["framework"]["short_name"]
+    rows = [
+        ("Analyst brief", "brief.md", "The 9-section orientation brief" +
+         (f" · [download Word]({brief_docx}?raw=1)" if brief_docx else "")),
+        ("Control matrix", "control-matrix.md", "Every requirement with the four-part evidence test ([CSV](control-matrix.csv))"),
+        ("Statement of Applicability", "soa.md", "Annex A applicability, justification and status ([CSV](soa.csv))"),
+        ("Gap register", "gap-register.md", "Open and closed gaps with owners and due dates ([CSV](gap-register.csv))"),
+        ("Evidence index", "evidence-index.md", "Requirement → evidence traceability ([CSV](evidence-index.csv))"),
+    ]
+    L = [f"# {model.client} — {fw} readiness reports\n",
+         "<!-- Published automatically from the main branch. Do not edit this branch. -->\n",
+         f"**As of {m['as_of']}.** Rebuilt automatically after every change to `main` and once a day. "
+         "Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.\n",
+         "| Report | What it shows |", "|---|---|"]
+    L += [f"| [{name}]({link}) | {desc} |" for name, link, desc in rows]
+    summary = summary_markdown(model, findings, m).split("\n", 1)[1]  # drop its title line
+    L += ["", "## Readiness summary\n", summary]
+    (out / "README.md").write_text("\n".join(L), encoding="utf-8")
+
+
+def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None = None) -> str:
     out.mkdir(parents=True, exist_ok=True)
     control_matrix(model, out)
     soa(model, out)
     gap_register(model, out)
     evidence_index(model, out)
+    brief(model, out)
+    index(model, findings, out, brief_docx)
     return status(model, findings, out)
