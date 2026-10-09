@@ -15,7 +15,7 @@ import os
 from ..collectors import http
 from .draft import OUTPUT_SCHEMA
 
-API_URL = os.environ.get("ANTHROPIC_API_URL", "https://api.anthropic.com/v1/messages")
+API_URL = os.environ.get("ANTHROPIC_API_URL") or "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 
 SYSTEM = """You are a GRC analyst assistant preparing an ISO/IEC 42001 certification-readiness engagement.

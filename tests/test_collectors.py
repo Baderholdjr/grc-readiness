@@ -231,3 +231,15 @@ def test_secrets_are_not_expanded():
     import os
     os.environ["DRATA_API_KEY"] = "secret"
     assert collect.expand("${DRATA_API_KEY}") == "${DRATA_API_KEY}"
+
+
+def test_empty_drata_base_variable_uses_default():
+    """Actions passes an unset repository variable as an empty string."""
+    seen = []
+    fake = FakeHTTP({"public-api.drata.com/public/v2/policies": lambda u, p: (seen.append(u), {"data": [], "pagination": {}})[1]})
+    restore = patched(fake, {"DRATA_API_KEY": "k", "DRATA_API_BASE": ""})
+    try:
+        run_check("drata.policies", {"names": ["AI Policy"]})
+        assert seen and seen[0].startswith("https://public-api.drata.com/public/v2/policies")
+    finally:
+        restore()

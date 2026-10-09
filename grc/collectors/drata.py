@@ -14,7 +14,8 @@ from .base import FAIL, PASS, CheckResult, collector, env, utcnow
 
 
 def _base() -> str:
-    return os.environ.get("DRATA_API_BASE", "https://public-api.drata.com/public/v2").rstrip("/")
+    # `or`: Actions passes unset repository variables as empty strings, not as missing.
+    return (os.environ.get("DRATA_API_BASE") or "https://public-api.drata.com/public/v2").rstrip("/")
 
 
 def _get(path: str, params: dict | None = None):
