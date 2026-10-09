@@ -1,0 +1,32 @@
+{
+  "evidence": "EV-101",
+  "title": "Engagement repo: main branch protection",
+  "collector": "github.branch_protection",
+  "params": {
+    "repo": "Baderholdjr/grc-readiness",
+    "branch": "main",
+    "min_approvals": 1,
+    "require_code_owner_review": true,
+    "required_checks": [
+      "validate"
+    ]
+  },
+  "collected_at": "2026-10-08T23:45:59+00:00",
+  "result": "pass",
+  "summary": "Baderholdjr/grc-readiness@main: 1 approval(s), checks=['validate']",
+  "findings": [],
+  "details": {
+    "repo": "Baderholdjr/grc-readiness",
+    "branch": "main",
+    "required_approvals": 1,
+    "code_owner_review": true,
+    "required_checks": [
+      "validate"
+    ],
+    "force_push_blocked": true,
+    "sources": [
+      "rulesets"
+    ]
+  },
+  "sha256": "c52411c31afdab3a5896a3537468518a21629db2e74549daf478559e0742d777"
+}

@@ -1,0 +1,37 @@
+# MACHINE-OWNED: written by `python -m grc collect`. Do not edit by hand.
+# Configure checks in engagement/collectors.yaml. Snapshots live in evidence/collected/.
+evidence:
+- id: EV-101
+  title: 'Engagement repo: main branch protection'
+  type: config
+  location: engagement/evidence/collected/EV-101.json
+  owner: collector
+  collected: 2026-10-08
+  valid_for_days: 30
+  sha256: c52411c31afdab3a5896a3537468518a21629db2e74549daf478559e0742d777
+  collector: github.branch_protection
+  result: pass
+  notes: 'Baderholdjr/grc-readiness@main: 1 approval(s), checks=[''validate'']'
+- id: EV-102
+  title: 'Engagement repo: independent review of merged changes (90 days)'
+  type: record
+  location: engagement/evidence/collected/EV-102.json
+  owner: collector
+  collected: 2026-10-08
+  valid_for_days: 30
+  sha256: 9af490d20b9c3a1437dcb236ac972912ad83386ff622ec64927d3bbf3c113834
+  collector: github.pr_reviews
+  result: fail
+  notes: 'Baderholdjr/grc-readiness: 0/6 merged PRs independently approved (90d) | 6 of 6 merged PRs had no independent approval: #20, #19, #17,
+    #16, #15, #14'
+- id: EV-103
+  title: 'Engagement repo: validation gate runs'
+  type: record
+  location: engagement/evidence/collected/EV-103.json
+  owner: collector
+  collected: 2026-10-08
+  valid_for_days: 30
+  sha256: 71d3afe934b05ff336b0e2c15cdc774f224ce35501d5787fe32747d46c1b48f2
+  collector: github.workflow_runs
+  result: pass
+  notes: 'Baderholdjr/grc-readiness validate.yml: 8 runs, 0 failed (30d)'
