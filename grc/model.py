@@ -68,6 +68,8 @@ class Engagement:
     findings: list[dict] = field(default_factory=list)        # engagement/findings.yaml (10.2 register)
     impacts: dict[str, dict] = field(default_factory=dict)    # engagement/impact/IA-NNN.yaml
     impact_files: dict[str, Path] = field(default_factory=dict)
+    documents: dict[str, dict] = field(default_factory=dict)  # engagement/documents/DOC-*.md -> {meta, body, error}
+    document_files: dict[str, Path] = field(default_factory=dict)
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -86,10 +88,11 @@ class Engagement:
     @property
     def evidence_index(self) -> dict[str, dict]:
         """Human + collected evidence, plus concluded audit workpapers (citable as 'AUD-…/WP-…')."""
-        from .impact import evidence_entries
+        from . import documents, impact
         idx = {e["id"]: e for e in self.evidence}
         idx.update(self.workpaper_evidence)
-        idx.update(evidence_entries(self))
+        idx.update(impact.evidence_entries(self))
+        idx.update(documents.evidence_entries(self))
         return idx
 
     @property
@@ -278,6 +281,17 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
                     imp["controls"] = [str(c) for c in imp["controls"]]
         model.impacts[path.stem] = data
         model.impact_files[path.stem] = path
+    from .documents import parse
+    for path in sorted((edir / "documents").glob("*.md")) if (edir / "documents").is_dir() else []:
+        if path.name.lower() == "readme.md":
+            continue
+        meta, body, error = parse(path.read_text(encoding="utf-8"))
+        if isinstance(meta, dict) and isinstance(meta.get("satisfies"), list):
+            meta["satisfies"] = [str(r) for r in meta["satisfies"]]
+        if isinstance(meta, dict) and meta.get("version") is not None:
+            meta["version"] = str(meta["version"])
+        model.documents[path.stem] = {"meta": meta, "body": body, "error": error}
+        model.document_files[path.stem] = path
     fnd = edir / "findings.yaml"
     if fnd.exists():
         model.findings = load_yaml(fnd).get("findings", []) or []

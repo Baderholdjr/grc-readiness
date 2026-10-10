@@ -284,3 +284,116 @@ def _normalize_zip(path: Path, stamp: dt.datetime) -> None:
             info.external_attr = 0o644 << 16
             zout.writestr(info, zin.read(item.filename))
     tmp.replace(path)
+
+
+# ---------------------------------------------------------------- policies and procedures
+def _inline(p, text: str, bold=False, color=None):
+    """**bold** and `code` (rendered plain) inside a paragraph."""
+    for i, part in enumerate(text.replace("`", "").split("**")):
+        if part:
+            _run(p, part, bold=bold or i % 2 == 1, color=color)
+
+
+def _md_blocks(body: str):
+    """Split the Markdown subset used by the templates into blocks."""
+    lines = body.replace("\r\n", "\n").split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        s = line.strip()
+        if not s:
+            i += 1
+            continue
+        if s.startswith("#"):
+            level = len(s) - len(s.lstrip("#"))
+            yield ("h", min(level, 3), s.lstrip("#").strip())
+            i += 1
+        elif s.startswith("|"):
+            rows = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                if not all(set(c) <= set("-: ") for c in cells):
+                    rows.append(cells)
+                i += 1
+            yield ("table", rows)
+        elif s[:2] in ("- ", "* "):
+            yield ("bullet", s[2:])
+            i += 1
+        elif s[0].isdigit() and ". " in s[:5]:
+            yield ("num", s)
+            i += 1
+        else:
+            para = [s]
+            i += 1
+            while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith(("#", "|", "- ", "* ")) \
+                    and not (lines[i].strip()[0].isdigit() and ". " in lines[i].strip()[:5]):
+                para.append(lines[i].strip())
+                i += 1
+            yield ("p", " ".join(para))
+
+
+def render_document(model: Engagement, doc_id: str, out_path: Path) -> Path:
+    """One policy/procedure as Word, in the house style, with a document-control block."""
+    from .documents import is_effective, next_review
+    from .model import resource
+    d = model.documents[doc_id]
+    meta, body = d["meta"], d["body"]
+    doc = docx.Document(str(resource(model.root, "templates", "brief-template.docx")))
+    root = doc.element.body
+    for p in list(root):
+        if p.tag != qn("w:sectPr"):
+            root.remove(p)
+    effective = is_effective(model, doc_id)
+    blocks = list(_md_blocks(body))
+    title = meta.get("title") or doc_id
+    if blocks and blocks[0][0] == "h" and blocks[0][1] == 1:
+        title = blocks.pop(0)[2]
+    t = doc.add_paragraph(style="Title")
+    _run(t, f"{model.client} — {title}")
+    if not effective:
+        callout(doc, f"DRAFT — {meta.get('status', 'draft')}, not an approved document")
+    nr = next_review(model, meta)
+    data_table(doc, ["Document control", ""], [
+        ["Document", f"{doc_id} · version {meta.get('version', '—')} · {meta.get('kind', '')}"],
+        ["Status", str(meta.get("status", "—"))],
+        ["Owner", meta.get("owner") or "—"],
+        ["Approved", f"{meta.get('approver') or '—'} on {meta.get('approved_on') or '—'}"],
+        ["Next review", str(nr) if nr else "—"],
+        ["Requirements", ", ".join(meta.get("satisfies") or []) or "—"],
+    ], [2600, CONTENT - 2600])
+    nums = 0
+    for b in blocks:
+        if b[0] == "h":
+            heading(doc, b[2], level=max(1, b[1] - 1))
+            nums = 0
+        elif b[0] == "p":
+            p = doc.add_paragraph()
+            _inline(p, b[1])
+        elif b[0] == "bullet":
+            p = bullet(doc, "")
+            _inline(p, b[1])
+        elif b[0] == "num":
+            p = doc.add_paragraph()
+            p.paragraph_format.left_indent = Pt(14)
+            _inline(p, b[1])
+        elif b[0] == "table" and b[1]:
+            header, rows = b[1][0], b[1][1:]
+            n = len(header)
+            rows = [(r + [""] * n)[:n] for r in rows]
+            data_table(doc, [h.replace("**", "") for h in header], [[c.replace("**", "") for c in r] for r in rows],
+                       [CONTENT // n] * n, bold_cols=())
+    cp = doc.core_properties
+    cp.title = f"{model.client} {title}"
+    cp.author = cp.last_modified_by = "grc-readiness"
+    stamp = dt.datetime.combine(safe_stamp(meta) or model.today, dt.time(12, 0))
+    cp.created = cp.modified = stamp
+    cp.revision = 1
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(str(out_path))
+    _normalize_zip(out_path, stamp)
+    return out_path
+
+
+def safe_stamp(meta: dict):
+    from .documents import safe_date
+    return safe_date(meta.get("approved_on"))

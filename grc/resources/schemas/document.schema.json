@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document.schema.json",
+  "title": "Policy or procedure (front matter of engagement/documents/DOC-*.md)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "kind", "version", "status"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^DOC-[A-Z0-9]+(-[A-Z0-9]+)*$"},
+    "title": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["policy", "procedure", "standard", "plan", "record"]},
+    "version": {"type": "string", "minLength": 1},
+    "status": {"enum": ["draft", "in_review", "approved", "retired"]},
+    "owner": {"type": "string"},
+    "author": {"type": "string"},
+    "approver": {"type": "string"},
+    "approved_on": {"type": ["string", "null"], "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "approved_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "review_every_days": {"type": "integer", "minimum": 1},
+    "next_review": {"type": ["string", "null"], "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "satisfies": {"type": "array", "items": {"type": "string"}},
+    "drafted": {"type": "object"},
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "approved_on", "approver", "hash"],
+        "properties": {
+          "version": {"type": "string"},
+          "approved_on": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+          "approver": {"type": "string"},
+          "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

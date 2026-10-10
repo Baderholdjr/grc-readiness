@@ -11,6 +11,7 @@
   bootstrap     Write a thin client repository that uses this engine
   audit         Internal audit: plan workpapers, draw reproducible samples
   impact        AI system impact assessments: start one per AI system
+  docs          Policies and procedures: draft from the library, AI-fill, approve
 """
 from __future__ import annotations
 
@@ -72,11 +73,14 @@ def cmd_build(args) -> int:
     import re as _re
     slug = _re.sub(r"[^a-z0-9]+", "-", model.client.lower()).strip("-") or "client"
     docx_name = None if args.no_docx else f"{slug}-{model.engagement['framework']}-brief.docx"
-    summary = render_md.render_all(model, findings, out, brief_docx=docx_name)
+    summary = render_md.render_all(model, findings, out, brief_docx=docx_name, docs_docx=bool(docx_name))
     if docx_name:
-        from .render_docx import render_brief
+        from .documents import docs
+        from .render_docx import render_brief, render_document
         path = render_brief(model, out / docx_name)
         print(f"brief: {path}")
+        for did in docs(model):
+            render_document(model, did, out / f"doc-{did}.docx")
     if args.summary:
         with open(args.summary, "a", encoding="utf-8") as fh:
             fh.write(summary)
@@ -207,6 +211,32 @@ def cmd_impact(args) -> int:
     return 0
 
 
+def cmd_docs(args) -> int:
+    from . import documents
+    from .ingest.ai import AIUnavailable
+    model = _model(args)
+    try:
+        if args.action == "new":
+            log = documents.new(model, args.target, mode=args.mode)
+        elif args.action == "fill":
+            log = documents.fill(model, args.target if args.target == "all" else [args.target], mode="ai")
+        else:
+            if not args.approver:
+                print("error: approve needs --approver", file=sys.stderr)
+                return 2
+            on = dt.date.fromisoformat(args.on) if args.on else None
+            log = documents.approve(model, args.target, args.approver, on)
+    except (ValueError, AIUnavailable) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for line in log:
+        print(line)
+    if args.report:
+        titles = {"new": "New policies and procedures", "fill": "AI-filled document drafts", "approve": "Document approval"}
+        Path(args.report).write_text(f"## {titles[args.action]}\n\n```\n" + "\n".join(log) + "\n```\n", encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -284,6 +314,16 @@ def main(argv=None) -> int:
     im.add_argument("system", help="inventory id (e.g. INV-001) or 'all'")
     im.add_argument("--report", help="write a Markdown summary here")
     im.set_defaults(fn=cmd_impact)
+
+    dc = sub.add_parser("docs", help="policies and procedures")
+    dc.add_argument("action", choices=["new", "fill", "approve"])
+    dc.add_argument("target", help="document id (e.g. DOC-AI-POLICY) or 'all' (new/fill)")
+    dc.add_argument("--mode", choices=["templates", "ai", "auto"], default="auto",
+                    help="new: also AI-fill [[TODO]] markers (auto = if AI drafting is enabled)")
+    dc.add_argument("--approver", help="approve: who approved it (role, name or GitHub user)")
+    dc.add_argument("--on", help="approve: approval date YYYY-MM-DD (default: today)")
+    dc.add_argument("--report", help="write a Markdown summary here")
+    dc.set_defaults(fn=cmd_docs)
 
     args = p.parse_args(argv)
     return args.fn(args)

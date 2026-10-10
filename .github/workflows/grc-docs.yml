@@ -1,0 +1,121 @@
+name: Policies and procedures (reusable)
+
+# new:     draft documents from the engine's library (and AI-fill them if AI drafting is enabled)
+# fill:    AI-fill the remaining [[TODO]] markers in draft documents
+# approve: record an approval (approver, date, fingerprint of the text) - the PR review is the actual approval
+on:
+  workflow_call:
+    inputs:
+      engine:
+        type: string
+        default: pinned
+      action:
+        type: string
+        required: true
+      document:
+        type: string
+        required: true
+      approver:
+        type: string
+        default: ""
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the inputs and continue an existing branch (never discard edits)
+        env:
+          ACTION: ${{ inputs.action }}
+          DOCUMENT: ${{ inputs.document }}
+          APPROVER: ${{ inputs.approver }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          case "$ACTION" in new|fill|approve) ;; *) echo "::error::action must be new, fill or approve"; exit 1;; esac
+          [[ "$DOCUMENT" =~ ^(all|DOC-[A-Z0-9]+(-[A-Z0-9]+)*)$ ]] || { echo "::error::document must be a DOC-... id or 'all'"; exit 1; }
+          if [ "$ACTION" = approve ]; then
+            [ "$DOCUMENT" != all ] || { echo "::error::approve one document at a time"; exit 1; }
+            [ -n "$APPROVER" ] || { echo "::error::approve needs the approver"; exit 1; }
+            BRANCH="docs/approve-$DOCUMENT"
+          else
+            BRANCH="docs/drafts"
+          fi
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git fetch -q origin "$BRANCH"
+            git checkout -q -B "$BRANCH" FETCH_HEAD
+            git config user.name "grc-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git merge -q --no-edit "origin/$BASE" || {
+              echo "::error::$BRANCH conflicts with $BASE - resolve it (or merge/close its PR) and re-run."; exit 1; }
+            echo "Continuing on existing branch $BRANCH (up to date with $BASE)"
+          fi
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Run
+        env:
+          ACTION: ${{ inputs.action }}
+          DOCUMENT: ${{ inputs.document }}
+          APPROVER: ${{ inputs.approver }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ "$ACTION" = approve ]; then
+            python -m grc docs approve "$DOCUMENT" --approver "$APPROVER" --report report.md
+          else
+            python -m grc docs "$ACTION" "$DOCUMENT" --report report.md
+          fi
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTION: ${{ inputs.action }}
+          DOCUMENT: ${{ inputs.document }}
+          APPROVER: ${{ inputs.approver }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -B "$BRANCH"
+          [ -d engagement/documents ] && git add -A engagement/documents
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -q -m "Documents: $ACTION $DOCUMENT"
+          git push origin "$BRANCH"
+          if [ "$ACTION" = approve ]; then
+            TITLE="Approve $DOCUMENT ($APPROVER)"
+            NEXT="Merging this PR is the approval: it should be reviewed and merged by $APPROVER (or on their documented instruction)."
+          else
+            TITLE="Policies and procedures: drafts"
+            NEXT="Next: complete each [[TODO]] (owner, author, the client's facts) in this PR or later ones. When a document is ready, run **Actions -> Policies and procedures** with action \`approve\`."
+          fi
+          { cat report.md; echo; echo "$NEXT"; echo
+            echo "Docs: https://github.com/Baderholdjr/grc-readiness/blob/main/docs/DOCUMENTS.md"; } > body.md
+          NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base "$BASE" --head "$BRANCH" --title "$TITLE" --body-file body.md || {
+              echo "::error title=Could not open the PR::Enable Settings -> Actions -> General -> 'Allow GitHub Actions to create and approve pull requests'. The work was pushed to branch $BRANCH."
+              exit 1; }
+          else
+            gh pr edit "$NUM" --body-file body.md
+          fi
+          gh workflow run validate.yml --ref "$BRANCH"

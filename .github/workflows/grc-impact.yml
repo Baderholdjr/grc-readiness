@@ -79,7 +79,8 @@ jobs:
           { cat report.md; echo
             echo "Next: the assessor completes context, screens every category, scores impacts and mitigations,"
             echo "and records a decision. A different person approves (approver/approved_on, status: approved)."
-            echo "Validation (E031/E032) blocks approval until the assessment is complete. See docs/IMPACT.md."; } > body.md
+            echo "Validation (E031/E032) blocks approval until the assessment is complete."
+            echo "Docs: https://github.com/Baderholdjr/grc-readiness/blob/main/docs/IMPACT.md"; } > body.md
           NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
           if [ -z "$NUM" ]; then
             gh pr create --base "$BASE" --head "$BRANCH" --title "AI impact assessments: start" --body-file body.md || {

@@ -11,6 +11,7 @@ Then, instead of calling the real services:
   AWS        -> sandbox/aws.yaml        (fake boto3 clients)
   Azure/GCP  -> sandbox/cli.yaml        (argv prefix -> canned CLI JSON)
   Anthropic  -> sandbox/ai_draft.json   (canned structured draft)
+               sandbox/ai_docs.json    (canned document fills, keyed by document id)
 GitHub calls are NOT sandboxed: they run for real against the configured repos.
 
 Everything produced in sandbox mode is labelled [SANDBOX] in evidence, snapshots
@@ -60,6 +61,13 @@ def handle(method: str, url: str, params: dict | None, body: dict | None):
     parsed = urllib.parse.urlparse(url)
     if "drata.com" in parsed.netloc:
         return _drata(parsed.path, params or {})
+    if "anthropic.com" in parsed.netloc and "grc-docs" in str((body or {}).get("system", ""))[:40]:
+        import re
+        prompt = str(((body or {}).get("messages") or [{}])[0].get("content", ""))
+        m = re.search(r'<document id="([A-Z0-9-]+)">', prompt)
+        canned = (_load("ai_docs.json") or {}).get(m.group(1) if m else "", {"fills": [], "open_questions": [
+            "sandbox: no canned fills for this document in sandbox/ai_docs.json"]})
+        return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps(canned)}]}
     if "anthropic.com" in parsed.netloc:
         draft = _load("ai_draft.json")
         if draft is None:

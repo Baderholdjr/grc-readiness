@@ -111,8 +111,9 @@ def evidence_index(model: Engagement, out: Path):
     headers = ["ID", "Title", "Type", "Location", "Collected", "Expires", "Current", "Approved by", "Supports"]
     rows = []
     cited = set(supports)
-    from .impact import evidence_entries
-    audit_rows = [e for e in list(model.workpaper_evidence.values()) + list(evidence_entries(model).values()) if e["id"] in cited]
+    from . import documents, impact
+    audit_rows = [e for e in list(model.workpaper_evidence.values()) + list(impact.evidence_entries(model).values())
+                  + list(documents.evidence_entries(model).values()) if e["id"] in cited]
     for e in list(model.evidence) + audit_rows:
         exp = model.evidence_expiry(e)
         rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
@@ -145,6 +146,8 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
               if m.get("findings_total") else ""),
              (f"- **AI impact assessments:** {m['ia_current']} of {m['ia_required']} AI systems current and approved"
               if m.get("ia_required") else ""),
+             (f"- **Policies and procedures:** {m['docs_approved']} of {m['docs_required']} approved and current"
+              if m.get("docs_required") else ""),
              f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
              f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours\n" if m.get("hours_total") else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
@@ -283,6 +286,48 @@ def impact_assessments(model: Engagement, out: Path) -> list[tuple[str, str, str
              f"{done} of {len(required_systems(model))} AI systems have a current, approved assessment (A.5)")]
 
 
+def documents(model: Engagement, out: Path, with_docx: bool = False) -> list[tuple[str, str, str]]:
+    """documents.md (register) + doc-<ID>.md for each policy/procedure."""
+    from .documents import approval_problems, docs, is_effective, library, next_review, todos
+    lib = library(model)
+    have = docs(model)
+    if not lib and not have:
+        return []
+    rows = []
+    for did in list(lib) + [d for d in have if d not in lib]:
+        d = have.get(did)
+        if not d:
+            e = lib[did]
+            rows.append([did, e["title"], e.get("kind", ""), "**not started**", "—", "—", "—", "—",
+                         ", ".join(e.get("satisfies") or [])])
+            continue
+        meta = d["meta"]
+        eff = is_effective(model, did)
+        st = meta.get("status", "—") + (" ✅" if eff else " ⚠️" if meta.get("status") == "approved" else "")
+        left = len(todos(d["body"]))
+        nr = next_review(model, meta)
+        link = f"[{did}](doc-{did}.md)" + (f" · [Word](doc-{did}.docx?raw=1)" if with_docx else "")
+        rows.append([link, meta.get("title", ""), meta.get("kind", ""), st, meta.get("version", "—"),
+                     meta.get("owner") or "—", f"{meta.get('approver') or '—'} {meta.get('approved_on') or ''}".strip(),
+                     (str(nr) if nr else "—") + (f" · {left} to complete" if left else ""),
+                     ", ".join(meta.get("satisfies") or [])])
+        problems = approval_problems(model, did, meta, d["body"]) if meta.get("status") == "approved" else []
+        banner = ("" if eff else f"> **{meta.get('status', 'draft').upper()}** — not an approved document."
+                  + (f" Problems: {'; '.join(problems)}." if problems else "") + "\n\n")
+        head = _table(["Document", "Version", "Status", "Owner", "Approved", "Next review", "Requirements"],
+                      [[did, meta.get("version", "—"), meta.get("status", "—"), meta.get("owner") or "—",
+                        f"{meta.get('approver') or '—'} on {meta.get('approved_on') or '—'}", str(nr) if nr else "—",
+                        ", ".join(meta.get("satisfies") or [])]])
+        (out / f"doc-{did}.md").write_text(banner + head + "\n" + d["body"].lstrip("\n"), encoding="utf-8")
+    L = [f"# {model.client} — policies and procedures\n", GEN,
+         "Each document is Markdown under `engagement/documents/`, drafted from the engine's library and approved through "
+         "a reviewed PR plus `grc docs approve`, which records a fingerprint of the approved text.\n\n",
+         _table(["Document", "Title", "Type", "Status", "Version", "Owner", "Approved", "Next review", "Requirements"], rows)]
+    (out / "documents.md").write_text("".join(L), encoding="utf-8")
+    done = sum(1 for d in lib if is_effective(model, d))
+    return [("Policies and procedures", "documents.md", f"{done} of {len(lib)} library documents approved and current")]
+
+
 def _dicts(xs) -> list[dict]:
     return [x for x in xs if isinstance(x, dict)] if isinstance(xs, list) else []
 
@@ -393,13 +438,15 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
     (out / "README.md").write_text("\n".join(L), encoding="utf-8")
 
 
-def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None = None) -> str:
+def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None = None,
+               docs_docx: bool = False) -> str:
     out.mkdir(parents=True, exist_ok=True)
     control_matrix(model, out)
     soa(model, out)
     gap_register(model, out)
     evidence_index(model, out)
     brief(model, out)
-    extra = impact_assessments(model, out) + internal_audit(model, out) + corrective_actions(model, out)
+    extra = (documents(model, out, docs_docx) + impact_assessments(model, out) + internal_audit(model, out)
+             + corrective_actions(model, out))
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)
