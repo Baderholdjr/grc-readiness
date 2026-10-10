@@ -111,7 +111,8 @@ def evidence_index(model: Engagement, out: Path):
     headers = ["ID", "Title", "Type", "Location", "Collected", "Expires", "Current", "Approved by", "Supports"]
     rows = []
     cited = set(supports)
-    audit_rows = [e for e in model.workpaper_evidence.values() if e["id"] in cited]
+    from .impact import evidence_entries
+    audit_rows = [e for e in list(model.workpaper_evidence.values()) + list(evidence_entries(model).values()) if e["id"] in cited]
     for e in list(model.evidence) + audit_rows:
         exp = model.evidence_expiry(e)
         rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
@@ -142,6 +143,8 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
              f"- **Open gaps:** {m['gaps_open']} of {m['gaps_total']}",
              (f"- **Open nonconformities:** {m['nc_open_major']} major · {m['nc_open_minor']} minor"
               if m.get("findings_total") else ""),
+             (f"- **AI impact assessments:** {m['ia_current']} of {m['ia_required']} AI systems current and approved"
+              if m.get("ia_required") else ""),
              f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
              f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours\n" if m.get("hours_total") else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
@@ -244,6 +247,89 @@ def corrective_actions(model: Engagement, out: Path) -> list[tuple[str, str, str
     return [("Corrective actions", "corrective-actions.md", "Nonconformities, OFIs and corrective actions (10.2) ([CSV](corrective-actions.csv))")]
 
 
+def impact_assessments(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
+    """impact-assessments.md (register) + ia-<ID>.md (one page per assessment)."""
+    from .impact import active_by_system, assessments, band, is_effective, method, next_review, required_systems, score
+    if not model.impacts and not required_systems(model):
+        return []
+    m = method(model)
+    cats = {c["id"]: c for c in m["categories"]}
+    inv = {i.get("id"): i for i in model.inventory if isinstance(i, dict)}
+    active = active_by_system(model)
+    by_system = {sid: ia["id"] for sid, ia in active.items()}
+    rows = []
+    for s in required_systems(model):
+        iid = by_system.get(s["id"])
+        ia = assessments(model).get(iid, {}) if iid else {}
+        res = [score(x.get("residual_likelihood"), x.get("residual_severity")) for x in _dicts(ia.get("impacts"))]
+        res = [r for r in res if r is not None]
+        top = max(res) if res else None
+        nr = next_review(model, ia) if ia else None
+        rows.append([s["id"], s.get("name", ""), s.get("risk_tier") or "—",
+                     f"[{iid}](ia-{iid}.md)" if iid else "**missing**",
+                     (ia.get("status") or "—") + (" ✅" if ia and is_effective(model, ia) else ""),
+                     (ia.get("decision") or "—").replace("_", " ") if ia else "—",
+                     len(_dicts(ia.get("impacts"))) if ia else 0, f"{top} ({band(model, top)})" if top else "—",
+                     str(nr) if nr else "—"])
+    L = [f"# {model.client} — AI system impact assessments\n", GEN,
+         f"Method: {len(cats)} impact categories, likelihood × severity on 1–5 scales; residual ≥ "
+         f"{m['acceptance_required_at']} needs named acceptance, ≥ {m['unacceptable_at']} cannot be approved.\n\n",
+         _table(["System", "Name", "Risk tier", "Assessment", "Status", "Decision", "Impacts", "Highest residual", "Next review"], rows)]
+    (out / "impact-assessments.md").write_text("".join(L), encoding="utf-8")
+    for iid, ia in assessments(model).items():
+        _impact_page(model, iid, ia, cats, inv, out)
+    done = sum(1 for s in required_systems(model) if s["id"] in active and is_effective(model, active[s["id"]]))
+    return [("AI impact assessments", "impact-assessments.md",
+             f"{done} of {len(required_systems(model))} AI systems have a current, approved assessment (A.5)")]
+
+
+def _dicts(xs) -> list[dict]:
+    return [x for x in xs if isinstance(x, dict)] if isinstance(xs, list) else []
+
+
+def _impact_page(model, iid, ia, cats, inv, out):
+    from .impact import band, next_review, score
+    ctx = ia.get("context") if isinstance(ia.get("context"), dict) else {}
+    s = inv.get(ia.get("system"), {})
+    j = lambda xs, sep=", ": sep.join(str(x) for x in xs) if isinstance(xs, list) else str(xs or "")
+    L = [f"# {iid} — {ia.get('title', '')}\n", GEN,
+         _table(["Item", "Detail"], [
+             ["System", f"{ia.get('system')} {s.get('name', '')} (risk tier {s.get('risk_tier') or '—'})"],
+             ["Status", f"{ia.get('status')} · version {ia.get('version', 1)}"],
+             ["Decision", (ia.get("decision") or "—").replace("_", " ")],
+             ["Assessed", f"{ia.get('assessor') or '—'} on {ia.get('assessed_on') or '—'}"],
+             ["Approved", f"{ia.get('approver') or '—'} on {ia.get('approved_on') or '—'}"],
+             ["Next review", next_review(model, ia) or "—"]]),
+         "\n## Context\n\n",
+         _table(["", ""], [["Intended use", ctx.get("intended_use", "")], ["Foreseeable misuse", ctx.get("foreseeable_misuse", "")],
+                           ["Affected parties", j(ctx.get("affected_parties"))], ["Deployment", ctx.get("deployment", "")],
+                           ["Human oversight", ctx.get("human_oversight", "")], ["Data", ctx.get("data", "")],
+                           ["Jurisdictions", j(ctx.get("jurisdictions"))]]),
+         "\n## Screening\n\n",
+         _table(["Category", "Area", "Relevant", "Rationale"],
+                [[cats.get(x.get("category"), {}).get("title", x.get("category")), cats.get(x.get("category"), {}).get("area", ""),
+                  {True: "yes", False: "no"}.get(x.get("relevant"), "⬜ not screened"), x.get("rationale", "")]
+                 for x in _dicts(ia.get("screening"))]),
+         "\n## Impacts\n\n"]
+    rows = []
+    for x in _dicts(ia.get("impacts")):
+        inh = score(x.get("likelihood"), x.get("severity"))
+        res = score(x.get("residual_likelihood"), x.get("residual_severity"))
+        acc = x.get("acceptance") if isinstance(x.get("acceptance"), dict) else {}
+        rows.append([x.get("id"), cats.get(x.get("category"), {}).get("title", x.get("category")), x.get("area"),
+                     x.get("description", ""), f"{inh} {band(model, inh)}", j(x.get("mitigations"), "; "),
+                     f"{res} {band(model, res)}" if res else "—",
+                     f"{acc.get('accepted_by')} ({acc.get('accepted_on')})" if acc.get("accepted_by") else "",
+                     ", ".join(j(v) for v in (x.get("controls"), x.get("gaps")) if v)])
+    L.append(_table(["ID", "Category", "Area", "Impact", "Inherent", "Mitigations", "Residual", "Accepted by", "Controls / gaps"], rows)
+             if rows else "_No impacts recorded yet._\n")
+    if ia.get("conclusion") or ia.get("conditions"):
+        L.append(f"\n## Conclusion\n\n{ia.get('conclusion', '')}\n")
+        if isinstance(ia.get("conditions"), list) and ia["conditions"]:
+            L.append("\n**Conditions:**\n" + "\n".join(f"- {c}" for c in ia["conditions"]) + "\n")
+    (out / f"ia-{iid}.md").write_text("".join(L), encoding="utf-8")
+
+
 def brief(model: Engagement, out: Path) -> None:
     """The analyst brief as Markdown, so it can be read directly on GitHub."""
     e, pb = model.engagement, model.playbook
@@ -314,6 +400,6 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     gap_register(model, out)
     evidence_index(model, out)
     brief(model, out)
-    extra = internal_audit(model, out) + corrective_actions(model, out)
+    extra = impact_assessments(model, out) + internal_audit(model, out) + corrective_actions(model, out)
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

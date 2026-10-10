@@ -9,7 +9,7 @@ from grc.cli import main
 from grc.model import ENGINE, load
 
 ROOT = Path(__file__).resolve().parent.parent
-WRAPPED = ["audit", "collect", "freshness", "ingest", "new-engagement", "publish-reports", "release", "sync-issues"]
+WRAPPED = ["audit", "collect", "impact", "freshness", "ingest", "new-engagement", "publish-reports", "release", "sync-issues"]
 
 
 def _on(path):

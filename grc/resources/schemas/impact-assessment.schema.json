@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "impact-assessment.schema.json",
+  "title": "AI system impact assessment (6.1.4, 8.4, A.5)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "system",
+    "status",
+    "context",
+    "screening",
+    "impacts"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^IA-\\d{3,}$"
+    },
+    "system": {
+      "type": "string",
+      "pattern": "^INV-\\d{3,}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "in_review",
+        "approved",
+        "superseded"
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "supersedes": {
+      "type": "string",
+      "pattern": "^IA-\\d{3,}$"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intended_use": {
+          "type": "string"
+        },
+        "foreseeable_misuse": {
+          "type": "string"
+        },
+        "affected_parties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deployment": {
+          "type": "string"
+        },
+        "human_oversight": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "jurisdictions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "screening": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category"
+        ],
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "relevant": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "rationale": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "impacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "category",
+          "area",
+          "description",
+          "likelihood",
+          "severity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^I-\\d{2,}$"
+          },
+          "category": {
+            "type": "string"
+          },
+          "area": {
+            "enum": [
+              "individuals",
+              "groups",
+              "society"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "affected": {
+            "type": "string"
+          },
+          "likelihood": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "severity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "mitigations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "controls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "requirement ids whose controls mitigate this impact"
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^GAP-\\d{2,}$"
+            }
+          },
+          "residual_likelihood": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "residual_severity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "acceptance": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "accepted_by": {
+                "type": "string"
+              },
+              "accepted_on": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "rationale": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "conclusion": {
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        null,
+        "approve",
+        "approve_with_conditions",
+        "reject"
+      ]
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assessor": {
+      "type": "string"
+    },
+    "assessed_on": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "approver": {
+      "type": "string"
+    },
+    "approved_on": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "next_review": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

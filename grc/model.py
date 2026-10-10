@@ -66,6 +66,8 @@ class Engagement:
     workpapers: dict[str, dict[str, dict]] = field(default_factory=dict)   # audit id -> wp id -> data
     workpaper_files: dict[str, Path] = field(default_factory=dict)         # "AUD/WP" -> path
     findings: list[dict] = field(default_factory=list)        # engagement/findings.yaml (10.2 register)
+    impacts: dict[str, dict] = field(default_factory=dict)    # engagement/impact/IA-NNN.yaml
+    impact_files: dict[str, Path] = field(default_factory=dict)
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -84,8 +86,10 @@ class Engagement:
     @property
     def evidence_index(self) -> dict[str, dict]:
         """Human + collected evidence, plus concluded audit workpapers (citable as 'AUD-…/WP-…')."""
+        from .impact import evidence_entries
         idx = {e["id"]: e for e in self.evidence}
         idx.update(self.workpaper_evidence)
+        idx.update(evidence_entries(self))
         return idx
 
     @property
@@ -266,6 +270,14 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
                 data["requirement"] = str(data["requirement"])
             model.workpapers.setdefault(a["id"], {})[wid] = data
             model.workpaper_files[f"{a['id']}/{wid}"] = path
+    for path in sorted((edir / "impact").glob("IA-*.yaml")) if (edir / "impact").is_dir() else []:
+        data = load_yaml(path)
+        if isinstance(data, dict):
+            for imp in data.get("impacts") or []:
+                if isinstance(imp, dict) and isinstance(imp.get("controls"), list):
+                    imp["controls"] = [str(c) for c in imp["controls"]]
+        model.impacts[path.stem] = data
+        model.impact_files[path.stem] = path
     fnd = edir / "findings.yaml"
     if fnd.exists():
         model.findings = load_yaml(fnd).get("findings", []) or []
