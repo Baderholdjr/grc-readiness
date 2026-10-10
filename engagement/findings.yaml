@@ -1,0 +1,5 @@
+# Nonconformities, OFIs and corrective actions (ISO 42001 clause 10.2).
+# Ids: NC-001 (grade major/minor), OFI-001 (grade ofi). Mirrored to GitHub Issues.
+# Lifecycle: open -> action_planned -> implemented -> closed (effectiveness reviewed by someone else).
+
+findings: []

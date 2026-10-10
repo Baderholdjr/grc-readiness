@@ -9,6 +9,7 @@
   new-engagement  Reset the record for a new client (computes phases from dates)
   codeowners    Make control owners required reviewers of their control files
   bootstrap     Write a thin client repository that uses this engine
+  audit         Internal audit: plan workpapers, draw reproducible samples
 """
 from __future__ import annotations
 
@@ -173,6 +174,22 @@ def cmd_bootstrap(args) -> int:
     return 0
 
 
+def cmd_audit(args) -> int:
+    from . import audit
+    model = _model(args)
+    try:
+        log = audit.plan(model, args.audit_id) if args.action == "plan" else audit.sample(model, args.audit_id, args.force)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for line in log:
+        print(line)
+    if args.report:
+        title = "Test plan and workpapers" if args.action == "plan" else "Samples drawn"
+        Path(args.report).write_text(f"## {args.audit_id}: {title}\n\n```\n" + "\n".join(log) + "\n```\n", encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -237,6 +254,13 @@ def main(argv=None) -> int:
     bs.add_argument("--version", help="engine version to pin (default: this engine's version)")
     bs.add_argument("--force", action="store_true", help="overwrite existing files")
     bs.set_defaults(fn=cmd_bootstrap)
+
+    au = sub.add_parser("audit", help="internal audit: generate workpapers, draw samples")
+    au.add_argument("action", choices=["plan", "sample"])
+    au.add_argument("audit_id", help="e.g. AUD-2027-01 (from engagement/audit/program.yaml)")
+    au.add_argument("--force", action="store_true", help="sample: redraw samples that have no results yet")
+    au.add_argument("--report", help="write a Markdown summary here")
+    au.set_defaults(fn=cmd_audit)
 
     args = p.parse_args(argv)
     return args.fn(args)

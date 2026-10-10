@@ -62,6 +62,10 @@ class Engagement:
     inventory: list[dict] = field(default_factory=list)
     owners: list[dict] = field(default_factory=list)
     human_evidence_count: int = 0
+    audits: list[dict] = field(default_factory=list)          # engagement/audit/program.yaml
+    workpapers: dict[str, dict[str, dict]] = field(default_factory=dict)   # audit id -> wp id -> data
+    workpaper_files: dict[str, Path] = field(default_factory=dict)         # "AUD/WP" -> path
+    findings: list[dict] = field(default_factory=list)        # engagement/findings.yaml (10.2 register)
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -79,7 +83,38 @@ class Engagement:
 
     @property
     def evidence_index(self) -> dict[str, dict]:
-        return {e["id"]: e for e in self.evidence}
+        """Human + collected evidence, plus concluded audit workpapers (citable as 'AUD-…/WP-…')."""
+        idx = {e["id"]: e for e in self.evidence}
+        idx.update(self.workpaper_evidence)
+        return idx
+
+    @property
+    def audit_index(self) -> dict[str, dict]:
+        return {a["id"]: a for a in self.audits}
+
+    @property
+    def finding_index(self) -> dict[str, dict]:
+        return {f["id"]: f for f in self.findings}
+
+    @property
+    def workpaper_evidence(self) -> dict[str, dict]:
+        """A workpaper is test evidence once it's concluded effective and independently reviewed."""
+        out = {}
+        for aid, wps in self.workpapers.items():
+            for wid, wp in wps.items():
+                reviewed = wp.get("reviewed_by") and wp.get("reviewed_by") != wp.get("performed_by")
+                ok = wp.get("conclusion") == "effective" and reviewed
+                out[f"{aid}/{wid}"] = {
+                    "id": f"{aid}/{wid}", "title": f"Internal audit {aid} {wid}: {wp.get('requirement')} {wp.get('title', '')}".strip(),
+                    "type": "test", "location": f"engagement/audit/{aid}/workpapers/{wid}.yaml",
+                    "owner": wp.get("performed_by", ""), "collected": wp.get("performed_on"),
+                    "approved_by": wp.get("reviewed_by", ""), "valid_for_days": 365,
+                    # not concluded/reviewed -> behaves like failing evidence (not current)
+                    "result": None if ok else "fail", "source": "audit",
+                    "notes": f"conclusion: {wp.get('conclusion', 'not_started')}"
+                             + ("" if reviewed else "; not independently reviewed"),
+                }
+        return out
 
     @property
     def gap_index(self) -> dict[str, dict]:
@@ -186,6 +221,19 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     inv = edir / "inventory.yaml"
     if inv.exists():
         model.inventory = load_yaml(inv).get("items", []) or []
+    prog = edir / "audit" / "program.yaml"
+    if prog.exists():
+        model.audits = load_yaml(prog).get("audits", []) or []
+    for a in model.audits:
+        wdir = edir / "audit" / str(a.get("id")) / "workpapers"
+        for path in sorted(wdir.glob("WP-*.yaml")) if wdir.is_dir() else []:
+            data = load_yaml(path)
+            wid = str(data.get("id", path.stem))
+            model.workpapers.setdefault(a["id"], {})[wid] = data
+            model.workpaper_files[f"{a['id']}/{wid}"] = path
+    fnd = edir / "findings.yaml"
+    if fnd.exists():
+        model.findings = load_yaml(fnd).get("findings", []) or []
     return model
 
 

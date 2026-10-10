@@ -1,0 +1,80 @@
+name: Internal audit (reusable)
+
+# plan: generate a workpaper per in-scope requirement, with test steps.
+# sample: draw reproducible samples from each workpaper's population.
+# Opens (or updates) a PR with the result; the auditor completes the workpapers in it or later PRs.
+on:
+  workflow_call:
+    inputs:
+      engine:
+        type: string
+        default: pinned
+      audit:
+        type: string
+        required: true
+      action:
+        type: string
+        required: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Run
+        env:
+          AUDIT: ${{ inputs.audit }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          case "$ACTION" in plan|sample) ;; *) echo "::error::action must be plan or sample"; exit 1;; esac
+          python -m grc audit "$ACTION" "$AUDIT" --report report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUDIT: ${{ inputs.audit }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          BRANCH="audit/$AUDIT-$ACTION"
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A engagement/audit
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -q -m "Internal audit $AUDIT: $ACTION"
+          git push -f origin "$BRANCH"
+          { cat report.md; echo
+            if [ "$ACTION" = plan ]; then
+              echo "Next: merge, then run **Actions → Internal audit** with action \`sample\`."
+            else
+              echo "Next: merge, then complete each workpaper (results, conclusion, summary, performed_by/on) in PRs."
+              echo "A second person sets reviewed_by/on. Raise findings in \`engagement/findings.yaml\`."
+            fi; } > body.md
+          NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base main --head "$BRANCH" --title "Internal audit $AUDIT: $ACTION" --body-file body.md
+          else
+            gh pr edit "$NUM" --body-file body.md
+          fi
+          gh workflow run validate.yml --ref "$BRANCH"

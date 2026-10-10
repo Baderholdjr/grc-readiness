@@ -1,0 +1,26 @@
+name: Internal audit
+
+# Actions -> Internal audit -> Run workflow: choose the audit id and plan or sample.
+on:
+  workflow_dispatch:
+    inputs:
+      audit: {description: "Audit id from engagement/audit/program.yaml (e.g. AUD-2027-01)", required: true}
+      action:
+        description: "plan = generate workpapers; sample = draw samples"
+        required: true
+        type: choice
+        options: [plan, sample]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  audit:
+    uses: __ENGINE_REPO__/.github/workflows/grc-audit.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+      audit: ${{ inputs.audit }}
+      action: ${{ inputs.action }}
+    secrets: inherit

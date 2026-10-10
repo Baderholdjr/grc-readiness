@@ -138,6 +138,8 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
              f"- **Ready:** {m['requirements_ready']} / {m['requirements_applicable']} applicable requirements",
              f"- **Evidence-test legs verified:** {m['legs_verified_pct']}%",
              f"- **Open gaps:** {m['gaps_open']} of {m['gaps_total']}",
+             (f"- **Open nonconformities:** {m['nc_open_major']} major · {m['nc_open_minor']} minor"
+              if m.get("findings_total") else ""),
              f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
              f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours\n" if m.get("hours_total") else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
@@ -154,6 +156,90 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
             lines += [f"- `{f.code}` {f.message}" + (f" — `{f.file}`" if f.file else "") for f in group]
             lines.append("\n</details>\n")
     return "\n".join(x for x in lines if x is not None) + "\n"
+
+
+CONCL = {"effective": "✅ effective", "not_effective": "❌ not effective", "not_applicable": "— n/a",
+         "not_started": "⬜ not started"}
+
+
+def internal_audit(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
+    """internal-audit.md (programme) + audit-<ID>.md (one report per audit). Returns index rows."""
+    from .audit import audit_status, in_scope
+    if not model.audits:
+        return []
+    rows = []
+    prog = [f"# {model.client} — internal audit programme (9.2)\n", GEN]
+    prog_rows = []
+    for a in model.audits:
+        st = audit_status(model, a["id"])
+        c = st["conclusions"]
+        prog_rows.append([f"[{a['id']}](audit-{a['id']}.md)", a["title"], a["status"],
+                          f"{a['planned']['start']} → {a['planned']['end']}", ", ".join(a.get("auditors", [])),
+                          f"{st['workpapers']} ({c.get('effective', 0)}✅ {c.get('not_effective', 0)}❌ {c.get('not_started', 0)}⬜)",
+                          f"{st['findings']['major']} major · {st['findings']['minor']} minor · {st['findings']['ofi']} OFI"])
+        audit_report(model, a, out)
+    prog.append(_table(["Audit", "Title", "Status", "Planned", "Auditors", "Workpapers", "Findings"], prog_rows))
+    (out / "internal-audit.md").write_text("".join(prog), encoding="utf-8")
+    rows.append(("Internal audit", "internal-audit.md", "Audit programme, per-audit reports and workpaper results (9.2)"))
+    return rows
+
+
+def audit_report(model: Engagement, a: dict, out: Path) -> None:
+    from .audit import audit_status, in_scope
+    aid = a["id"]
+    st = audit_status(model, aid)
+    wps = model.workpapers.get(aid, {})
+    rep = a.get("report") or {}
+    L = [f"# Internal audit report — {aid}\n", GEN,
+         f"**{a['title']}** · status **{a['status']}** · {model.client}\n\n",
+         _table(["Item", "Detail"], [
+             ["Scope", "all applicable requirements" if a.get("scope") == "all" else ", ".join(a.get("scope", []))],
+             ["Excluded", ", ".join(a.get("exclude", []) or []) or "—"],
+             ["Requirements in scope", len(in_scope(model, a))],
+             ["Criteria", "; ".join(a.get("criteria", []) or ["ISO/IEC 42001:2023"])],
+             ["Auditors", ", ".join(a.get("auditors", [])) + (f" (lead: {a['lead_auditor']})" if a.get("lead_auditor") else "")],
+             ["Planned", f"{a['planned']['start']} → {a['planned']['end']}"],
+             ["Report", f"issued {rep['issued']}, approved by {rep.get('approved_by', '?')}" if rep.get("issued") else "not issued"],
+         ]), "\n"]
+    if rep.get("conclusion"):
+        L.append(f"## Conclusion\n\n{rep['conclusion']}\n\n")
+    c = st["conclusions"]
+    L.append(f"## Results\n\n{st['workpapers']} workpapers: {c.get('effective', 0)} effective, "
+             f"{c.get('not_effective', 0)} not effective, {c.get('not_applicable', 0)} n/a, {c.get('not_started', 0)} not started; "
+             f"{st['reviewed']} reviewed. Findings: {st['findings']['major']} major, {st['findings']['minor']} minor, "
+             f"{st['findings']['ofi']} OFI ({st['open_findings']} open).\n\n")
+    wrows = []
+    for wid, wp in sorted(wps.items()):
+        sample = wp.get("sample") or []
+        exc = sum(1 for s in sample if s.get("result") == "exception")
+        samp = f"{len(sample)} of {wp.get('sampling', {}).get('population_size', '?')}" + (f" · {exc} exc." if exc else "") if sample else "—"
+        wrows.append([wid, wp.get("requirement"), wp.get("title", ""), samp, CONCL.get(wp.get("conclusion"), wp.get("conclusion")),
+                      ", ".join(wp.get("findings") or []), wp.get("performed_by", ""), wp.get("reviewed_by", "")])
+    L.append(_table(["WP", "Req.", "Title", "Sample", "Conclusion", "Findings", "Performed", "Reviewed"], wrows))
+    fs = [f for f in model.findings if f.get("audit") == aid]
+    if fs:
+        L.append("\n## Findings\n\n")
+        for f in fs:
+            L.append(f"### {f['id']} — {f['grade']} — {f['requirement']}\n\n{f['description']}\n\n"
+                     f"Status **{f['status']}** · owner {f.get('owner', '—')} · due {f.get('due', '—')}\n\n")
+    (out / f"audit-{aid}.md").write_text("".join(L), encoding="utf-8")
+
+
+def corrective_actions(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
+    if not model.findings:
+        return []
+    headers = ["ID", "Grade", "Req.", "Source", "Description", "Owner", "Due", "Status", "Root cause", "Corrective action", "Effective?"]
+    rows = []
+    for f in model.findings:
+        eff = f.get("effectiveness") or {}
+        rows.append([f["id"], f["grade"], f["requirement"], f["source"] + (f" {f['audit']}" if f.get("audit") else ""),
+                     f["description"], f.get("owner", ""), f.get("due", ""), f["status"], f.get("root_cause", ""),
+                     f.get("corrective_action", ""),
+                     ("yes" if eff.get("effective") else "no") + f" ({eff.get('reviewed_on')})" if eff else ""])
+    md = [f"# {model.client} — nonconformities & corrective actions (10.2)\n", GEN, _table(headers, rows)]
+    (out / "corrective-actions.md").write_text("".join(md), encoding="utf-8")
+    _write_csv(out / "corrective-actions.csv", headers, rows)
+    return [("Corrective actions", "corrective-actions.md", "Nonconformities, OFIs and corrective actions (10.2) ([CSV](corrective-actions.csv))")]
 
 
 def brief(model: Engagement, out: Path) -> None:
@@ -193,7 +279,8 @@ def brief(model: Engagement, out: Path) -> None:
     (out / "brief.md").write_text("\n".join(L), encoding="utf-8")
 
 
-def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None) -> None:
+def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None,
+          extra_rows: list[tuple[str, str, str]] | None = None) -> None:
     """Landing page for the published reports."""
     m = metrics(model)
     fw = model.catalog["framework"]["short_name"]
@@ -204,7 +291,7 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
         ("Statement of Applicability", "soa.md", "Annex A applicability, justification and status ([CSV](soa.csv))"),
         ("Gap register", "gap-register.md", "Open and closed gaps with owners and due dates ([CSV](gap-register.csv))"),
         ("Evidence index", "evidence-index.md", "Requirement → evidence traceability ([CSV](evidence-index.csv))"),
-    ]
+    ] + list(extra_rows or [])
     banner = ("> ⚠️ **SANDBOX ENGAGEMENT.** Drata, cloud and AI-drafted content is simulated test data. "
               "Do not treat these reports as real client evidence.\n\n") if (model.engagement.get("sandbox") or {}).get("enabled") else ""
     L = [f"# {model.client} — {fw} readiness reports\n", banner,
@@ -225,5 +312,6 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     gap_register(model, out)
     evidence_index(model, out)
     brief(model, out)
-    index(model, findings, out, brief_docx)
+    extra = internal_audit(model, out) + corrective_actions(model, out)
+    index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

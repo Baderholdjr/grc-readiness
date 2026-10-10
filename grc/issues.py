@@ -18,7 +18,8 @@ from pathlib import Path
 from .model import Engagement
 
 API = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
-LABEL_COLORS = {"grc-gap": "183B4E", "severity:high": "B60205", "severity:medium": "FBCA04", "severity:low": "0E8A16"}
+LABEL_COLORS = {"grc-gap": "183B4E", "grc-finding": "5319E7", "grade:major": "B60205", "grade:minor": "FBCA04",
+                "grade:ofi": "0E8A16", "severity:high": "B60205", "severity:medium": "FBCA04", "severity:low": "0E8A16"}
 
 
 class GitHub:
@@ -87,6 +88,50 @@ def issue_body(model: Engagement, g: dict) -> str:
     return "\n".join(lines)
 
 
+def finding_body(model: Engagement, f: dict) -> str:
+    req = model.requirement_index.get(f.get("requirement"), {})
+    who = model.github_users(f.get("owner"))
+    src = f["source"].replace("_", " ") + (f" {f['audit']}" + (f"/{f['workpaper']}" if f.get("workpaper") else "") if f.get("audit") else "")
+    lines = [f"<!-- grc:{f['id']} -->",
+             f"**{f['id']}** · **{f['grade'].upper()}** · `{f.get('requirement')}` {req.get('title', '')} · source: {src}",
+             f"**Owner:** {f.get('owner') or 'unassigned'}" + (" (" + ", ".join(f"@{u}" for u in who) + ")" if who else "")
+             + f" · **Due:** {f.get('due', 'n/a')} · **Status:** {f['status']}",
+             "", "### Finding", f["description"], ""]
+    if f.get("grade") == "ofi":
+        lines += ["_Opportunity for improvement: no corrective action is required, but record what was decided._"]
+    else:
+        lines += ["### Corrective action lifecycle (update `engagement/findings.yaml` in a PR)",
+                  f"- [{'x' if f.get('correction') else ' '}] **Correction**: fix the nonconformity itself",
+                  f"- [{'x' if f.get('root_cause') else ' '}] **Root cause** identified",
+                  f"- [{'x' if f.get('corrective_action') else ' '}] **Corrective action** planned (owner + due date)",
+                  f"- [{'x' if f.get('evidence') else ' '}] **Implemented**, with evidence",
+                  f"- [{'x' if (f.get('effectiveness') or {}).get('effective') else ' '}] **Effectiveness reviewed** "
+                  "by someone other than the owner, with evidence",
+                  "", "CI won't let this close without each step."]
+    lines += ["", "_Managed by `grc sync-issues` from `engagement/findings.yaml`._"]
+    return "\n".join(lines)
+
+
+def tracked_items(model: Engagement) -> list[dict]:
+    """Everything mirrored to Issues: gaps and findings, in one shape."""
+    items = []
+    for g in model.gaps:
+        items.append({"kind": "gap", "noun": "gap", "file": "gaps.yaml", "id": g["id"],
+                      "title": f"[{g['id']}] {g['area']}: {model.fmt(g['finding'])[:90]}",
+                      "body": issue_body(model, g),
+                      "labels": ["grc-gap"] + ([f"severity:{g['severity']}"] if g.get("severity") else [])
+                      + ([f"phase:{g['phase']}"] if g.get("phase") else []),
+                      "open": g["status"] in ("open", "in_progress"), "owner": g.get("owner"),
+                      "due": g.get("due"), "phase": g.get("phase")})
+    for f in model.findings:
+        items.append({"kind": "finding", "noun": "finding", "file": "findings.yaml", "id": f["id"],
+                      "title": f"[{f['id']}] {f['grade']} · {f.get('requirement')}: {f['description'][:85]}",
+                      "body": finding_body(model, f), "labels": ["grc-finding", f"grade:{f['grade']}"],
+                      "open": f["status"] not in ("closed", "accepted"), "owner": f.get("owner"),
+                      "due": f.get("due"), "phase": "test" if f.get("source") == "internal_audit" else None})
+    return items
+
+
 def write_issue_numbers(gaps_path: Path, mapping: dict[str, int]) -> None:
     """Insert/refresh `issue: N` under each gap id without disturbing comments."""
     text = gaps_path.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -115,16 +160,14 @@ def write_issue_numbers(gaps_path: Path, mapping: dict[str, int]) -> None:
 def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool = True, write_back: bool = False) -> list[str]:
     log: list[str] = []
     if dry_run or not (repo and token):
-        for g in model.gaps:
-            state = "closed" if g["status"] in ("closed", "risk_accepted") else "open"
-            log.append(f"[dry-run] {state:6} [{g['id']}] {g['area']}: {model.fmt(g['finding'])[:70]}")
+        for it in tracked_items(model):
+            log.append(f"[dry-run] {'open' if it['open'] else 'closed':6} {it['title'][:100]}")
         return log
     gh = GitHub(repo, token)
 
     # labels
     existing_labels = {lab["name"] for lab in gh.paged("/labels")}
-    wanted = {"grc-gap"} | {f"severity:{g['severity']}" for g in model.gaps if g.get("severity")} \
-        | {f"phase:{g['phase']}" for g in model.gaps if g.get("phase")}
+    wanted = {lab for it in tracked_items(model) for lab in it["labels"]}
     for name in sorted(wanted - existing_labels):
         gh.call("POST", "/labels", {"name": name, "color": LABEL_COLORS.get(name, "C5DEF5")})
         log.append(f"label created: {name}")
@@ -143,46 +186,45 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
             ms_number[ph["id"]] = ms["number"]
             log.append(f"milestone created: {title}")
 
-    # issues
+    # issues: gaps (grc-gap) and audit/other findings (grc-finding)
     found: dict[str, dict] = {}
-    for iss in gh.paged("/issues?state=all&labels=grc-gap"):
-        m = re.search(r"<!-- grc:(GAP-\d+) -->", iss.get("body") or "")
-        if m:
-            found[m.group(1)] = iss
+    for label in ("grc-gap", "grc-finding"):
+        for iss in gh.paged(f"/issues?state=all&labels={label}"):
+            m = re.search(r"<!-- grc:((?:GAP|NC|OFI)-\d+) -->", iss.get("body") or "")
+            if m:
+                found[m.group(1)] = iss
     mapping = {}
-    for g in model.gaps:
-        labels = ["grc-gap"] + ([f"severity:{g['severity']}"] if g.get("severity") else []) \
-            + ([f"phase:{g['phase']}"] if g.get("phase") else [])
-        payload = {"title": f"[{g['id']}] {g['area']}: {model.fmt(g['finding'])[:90]}",
-                   "body": issue_body(model, g), "labels": labels,
-                   "state": "closed" if g["status"] in ("closed", "risk_accepted") else "open"}
-        if g.get("phase") in ms_number:
-            payload["milestone"] = ms_number[g["phase"]]
-        users = _assignable(model.github_users(g.get("owner")))
+    for it in tracked_items(model):
+        payload = {"title": it["title"], "body": it["body"], "labels": it["labels"],
+                   "state": "open" if it["open"] else "closed"}
+        if it.get("phase") in ms_number:
+            payload["milestone"] = ms_number[it["phase"]]
+        users = _assignable(model.github_users(it.get("owner")))
         if users:
             payload["assignees"] = users
-        if g["id"] in found:
-            num = found[g["id"]]["number"]
-            _with_assignees(gh, "PATCH", f"/issues/{num}", payload, log, g["id"])
-            log.append(f"updated #{num} {g['id']} ({payload['state']})")
+        if it["id"] in found:
+            num = found[it["id"]]["number"]
+            _with_assignees(gh, "PATCH", f"/issues/{num}", payload, log, it["id"])
+            log.append(f"updated #{num} {it['id']} ({payload['state']})")
         else:
             state = payload.pop("state")
-            iss = _with_assignees(gh, "POST", "/issues", payload, log, g["id"])
+            iss = _with_assignees(gh, "POST", "/issues", payload, log, it["id"])
             num = iss["number"]
             if state == "closed":
                 gh.call("PATCH", f"/issues/{num}", {"state": "closed"})
-            log.append(f"created #{num} {g['id']}")
-        mapping[g["id"]] = num
-        # Overdue reminder: one comment per gap per due date, mentioning the owners.
-        due = str(g.get("due") or "")
-        if due and g["status"] in ("open", "in_progress") and dt.date.fromisoformat(due) < model.today:
-            marker = overdue_marker(g["id"], due)
+            log.append(f"created #{num} {it['id']}")
+        if it["kind"] == "gap":
+            mapping[it["id"]] = num
+        # Overdue reminder: one comment per item per due date, mentioning the owners.
+        due = str(it.get("due") or "")
+        if due and it["open"] and dt.date.fromisoformat(due) < model.today:
+            marker = overdue_marker(it["id"], due)
             comments = gh.call("GET", f"/issues/{num}/comments?per_page=100") or []
             if not any(marker in (c.get("body") or "") for c in comments):
-                who = " ".join(f"@{u}" for u in model.github_users(g.get("owner"))) or f"**{g.get('owner', 'Owner')}**"
-                gh.call("POST", f"/issues/{num}/comments", {"body": f"{marker}\n⏰ {who}: this gap was due **{due}**. "
-                        "Please update it (or its due date) in `engagement/gaps.yaml` through a PR."})
-                log.append(f"overdue reminder on #{num} {g['id']}")
+                who = " ".join(f"@{u}" for u in model.github_users(it.get("owner"))) or f"**{it.get('owner') or 'Owner'}**"
+                gh.call("POST", f"/issues/{num}/comments", {"body": f"{marker}\n⏰ {who}: this {it['noun']} was due **{due}**. "
+                        f"Please update it (or its due date) in `engagement/{it['file']}` through a PR."})
+                log.append(f"overdue reminder on #{num} {it['id']}")
     if write_back:
         write_issue_numbers(model.engagement_dir / "gaps.yaml", mapping)
         log.append("wrote issue numbers to gaps.yaml")

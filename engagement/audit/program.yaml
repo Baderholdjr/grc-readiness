@@ -1,0 +1,15 @@
+# Internal audit programme (ISO 42001 clause 9.2).
+# 1. Set auditors (they must not own any control in scope) and confirm scope/dates.
+# 2. Actions -> Internal audit -> plan, then sample. Complete workpapers; raise findings in findings.yaml.
+# 3. Move status: planned -> fieldwork -> reporting -> closed (CI checks each step).
+
+audits:
+  - id: AUD-2027-01
+    title: ISO 42001 internal audit - full AIMS (pre-Stage 1)
+    scope: all
+    criteria: [ISO/IEC 42001:2023, AIMS policy and procedures, Statement of Applicability]
+    auditors: [Internal Auditor]
+    lead_auditor: Internal Auditor
+    planned: {start: 2027-01-11, end: 2027-01-29}
+    status: planned
+    populations: {}

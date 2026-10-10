@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "findings.schema.json",
+  "title": "Nonconformity & corrective action register (10.2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "findings"
+  ],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "requirement",
+          "grade",
+          "description",
+          "raised_on",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(NC|OFI)-\\d{3}$"
+          },
+          "source": {
+            "enum": [
+              "internal_audit",
+              "stage1",
+              "stage2",
+              "surveillance",
+              "incident",
+              "management_review",
+              "monitoring",
+              "other"
+            ]
+          },
+          "audit": {
+            "type": "string",
+            "pattern": "^AUD-\\d{4}-\\d{2}$"
+          },
+          "workpaper": {
+            "type": "string",
+            "pattern": "^WP-\\d{2,3}$"
+          },
+          "requirement": {
+            "type": "string"
+          },
+          "grade": {
+            "enum": [
+              "major",
+              "minor",
+              "ofi"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "raised_on": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "raised_by": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "due": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "action_planned",
+              "implemented",
+              "closed",
+              "accepted"
+            ]
+          },
+          "root_cause": {
+            "type": "string"
+          },
+          "correction": {
+            "type": "string",
+            "description": "Immediate fix of the nonconformity itself."
+          },
+          "corrective_action": {
+            "type": "string",
+            "description": "Action on the root cause to prevent recurrence."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(EV-[0-9]{3,}|AUD-\\d{4}-\\d{2}/WP-\\d{2,3})$"
+            },
+            "description": "Implementation evidence."
+          },
+          "effectiveness": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewed_on": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "reviewed_by": {
+                "type": "string"
+              },
+              "effective": {
+                "type": "boolean"
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^(EV-[0-9]{3,}|AUD-\\d{4}-\\d{2}/WP-\\d{2,3})$"
+                }
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          },
+          "issue": {
+            "type": "integer"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

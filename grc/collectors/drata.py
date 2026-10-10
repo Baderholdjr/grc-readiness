@@ -110,7 +110,9 @@ def risks(title_contains: list[str] | None = None, min_count: int = 1,
     if no_treat:
         findings.append(f"{len(no_treat)} risk(s) without a treatment plan: {', '.join(map(str, no_treat[:15]))}")
     details = {"filter": title_contains, "count": len(items), "by_status": status,
-               "without_owner": no_owner[:50], "without_treatment": no_treat[:50]}
+               "without_owner": no_owner[:50], "without_treatment": no_treat[:50],
+               "items": [{"id": str(r.get("riskId")), "title": r.get("title"), "status": r.get("status"),
+                          "treatment": r.get("treatmentPlan"), "owners": owner_count(r)} for r in items]}
     return CheckResult(FAIL if findings else PASS, f"{len(items)} risks; {len(no_owner)} unowned, {len(no_treat)} untreated",
                        details, findings)
 
@@ -138,7 +140,8 @@ def vendors(names: list[str] | None = None, category: str | None = None) -> Chec
             findings.append(f"'{v.get('name')}' review/renewal overdue since {renewal}")
         if not v.get("risk") or v.get("risk") == "NONE":
             findings.append(f"'{v.get('name')}' has no risk rating")
-    return CheckResult(FAIL if findings else PASS, f"{len(rows)} vendor(s) checked", {"vendors": rows}, findings)
+    return CheckResult(FAIL if findings else PASS, f"{len(rows)} vendor(s) checked",
+                       {"vendors": rows, "items": [{"id": r["name"], **r} for r in rows]}, findings)
 
 
 @collector("drata.monitoring_tests")
