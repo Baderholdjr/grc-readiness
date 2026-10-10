@@ -1,0 +1,91 @@
+name: AI impact assessment (reusable)
+
+# Start an impact assessment file (engagement/impact/IA-NNN.yaml) for one AI system, or every AI system
+# in the inventory that lacks one. Opens (or updates) a PR; the assessor completes it there or in later PRs.
+on:
+  workflow_call:
+    inputs:
+      engine:
+        type: string
+        default: pinned
+      system:
+        type: string
+        required: true
+
+jobs:
+  impact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the input and continue an existing branch (never discard assessor work)
+        env:
+          SYSTEM: ${{ inputs.system }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          [[ "$SYSTEM" =~ ^(all|INV-[0-9]+)$ ]] || { echo "::error::system must be an inventory id (INV-001) or 'all'"; exit 1; }
+          BRANCH="impact/$SYSTEM"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git fetch -q origin "$BRANCH"
+            git checkout -q -B "$BRANCH" FETCH_HEAD
+            git config user.name "grc-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git merge -q --no-edit "origin/$BASE" || {
+              echo "::error::$BRANCH conflicts with $BASE - resolve it (or merge/close its PR) and re-run."; exit 1; }
+            echo "Continuing on existing branch $BRANCH (up to date with $BASE)"
+          fi
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Run
+        env:
+          SYSTEM: ${{ inputs.system }}
+        run: |
+          python -m grc impact new "$SYSTEM" --report report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SYSTEM: ${{ inputs.system }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          BRANCH="impact/$SYSTEM"
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -B "$BRANCH"
+          git add -A engagement/impact
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -q -m "AI impact assessment: start for $SYSTEM"
+          git push origin "$BRANCH"
+          { cat report.md; echo
+            echo "Next: the assessor completes context, screens every category, scores impacts and mitigations,"
+            echo "and records a decision. A different person approves (approver/approved_on, status: approved)."
+            echo "Validation (E031/E032) blocks approval until the assessment is complete. See docs/IMPACT.md."; } > body.md
+          NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base "$BASE" --head "$BRANCH" --title "AI impact assessment: $SYSTEM" --body-file body.md || {
+              echo "::error title=Could not open the PR::Enable Settings -> Actions -> General -> 'Allow GitHub Actions to create and approve pull requests'. The work was pushed to branch $BRANCH."
+              exit 1; }
+          else
+            gh pr edit "$NUM" --body-file body.md
+          fi
+          gh workflow run validate.yml --ref "$BRANCH"

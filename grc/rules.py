@@ -79,6 +79,8 @@ def check_schemas(model: Engagement) -> list[Finding]:
         run("workpaper", model.workpapers[aid][wid], path, key)
     if (edir / "findings.yaml").exists():
         run("findings", {"findings": model.findings}, edir / "findings.yaml")
+    for iid, path in model.impact_files.items():
+        run("impact-assessment", model.impacts[iid], path, iid)
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -177,10 +179,14 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
                 if known and not any(model.evidence_is_current(e) for e in known):
                     failing = [e["id"] for e in known if model.evidence_is_failing(e)]
                     wps = [e["id"] for e in known if e.get("source") == "audit" and model.evidence_is_failing(e)]
-                    if wps and len(wps) == len(known):
+                    ias = [e["id"] for e in known if e.get("source") == "impact" and model.evidence_is_failing(e)]
+                    if ias and len(ias) == len(known):
+                        out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on impact assessment(s) {', '.join(ias)} "
+                                           "that are not approved (independently, with an approve decision).", path, cid))
+                    elif wps and len(wps) == len(known):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on audit workpaper(s) {', '.join(wps)} "
                                            "that are not concluded effective and independently reviewed.", path, cid))
-                    elif failing and not any(e.get("source") == "audit" for e in known if e["id"] in failing):
+                    elif failing and not any(e.get("source") in ("audit", "impact") for e in known if e["id"] in failing):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' but the collector check for "
                                            f"{', '.join(failing)} is failing; no other current evidence supports it.", path, cid))
                     else:
@@ -459,6 +465,109 @@ def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding
                                _rel(model, model.control_files.get(f["requirement"])), f["requirement"]))
 
 
+def check_impact(model: Engagement) -> list[Finding]:
+    """AI system impact assessments (6.1.4, 8.4, A.5.2-A.5.5)."""
+    from .impact import band, method, next_review, required_systems, score
+    out: list[Finding] = []
+    m = method(model)
+    cats = {c["id"]: c for c in m["categories"]}
+    inv = {i["id"]: i for i in model.inventory}
+    kinds = set(m["required_for_kinds"])
+    active: dict[str, list[str]] = {}
+    for iid, ia in model.impacts.items():
+        path = _rel(model, model.impact_files[iid])
+        try:
+            if not isinstance(ia, dict):
+                continue
+            if str(ia.get("id")) != iid:
+                out.append(Finding("error", "E030", f"{iid}: file is {iid}.yaml but its id is '{ia.get('id')}'.", path, iid))
+            sys_id = ia.get("system")
+            if sys_id not in inv:
+                out.append(Finding("error", "E030", f"{iid}: system {sys_id} is not in inventory.yaml.", path, iid))
+            elif inv[sys_id].get("kind") not in kinds:
+                out.append(Finding("error", "E030", f"{iid}: {sys_id} is a '{inv[sys_id].get('kind')}', not an AI system.", path, iid))
+            if ia.get("status") != "superseded":
+                active.setdefault(sys_id, []).append(iid)
+            impacts = [x for x in ia.get("impacts") or [] if isinstance(x, dict)]
+            ids = [x.get("id") for x in impacts]
+            for dup in sorted({i for i in ids if ids.count(i) > 1}):
+                out.append(Finding("error", "E030", f"{iid}: impact id {dup} is used more than once.", path, iid))
+            screened = {s.get("category"): s for s in ia.get("screening") or [] if isinstance(s, dict)}
+            for x in impacts:
+                ref = f"{iid}/{x.get('id')}"
+                if x.get("category") not in cats:
+                    out.append(Finding("error", "E030", f"{ref}: unknown category '{x.get('category')}'.", path, iid))
+                for r in x.get("controls") or []:
+                    if r not in model.requirement_index:
+                        out.append(Finding("error", "E030", f"{ref}: unknown requirement {r}.", path, iid))
+                for g in x.get("gaps") or []:
+                    if g not in model.gap_index:
+                        out.append(Finding("error", "E030", f"{ref}: unknown gap {g}.", path, iid))
+                inh = score(x.get("likelihood"), x.get("severity"))
+                res = score(x.get("residual_likelihood"), x.get("residual_severity"))
+                if res is not None and inh is not None and res > inh:
+                    out.append(Finding("warning", "W133", f"{ref}: residual ({res}) is higher than inherent ({inh}).", path, iid))
+            st = ia.get("status")
+            if st in ("draft", "in_review"):
+                out.append(Finding("warning", "W131", f"{iid} ({ia.get('title', sys_id)}) is {st}, not yet approved.", path, iid))
+            if st != "approved":
+                continue
+            # ---- approval completeness (E031) and scoring (E032)
+            ctx = ia.get("context") or {}
+            missing = [k for k in ("intended_use",) if not (ctx.get(k) or "").strip()] + \
+                      (["affected_parties"] if not ctx.get("affected_parties") else [])
+            missing += [k for k in ("assessor", "assessed_on", "approver", "approved_on", "decision", "conclusion")
+                        if not str(ia.get(k) or "").strip()]
+            if missing:
+                out.append(Finding("error", "E031", f"{iid} is approved without {', '.join(missing)}.", path, iid))
+            if ia.get("approver") and ia.get("assessor") and not model.independent(ia["approver"], ia["assessor"]):
+                out.append(Finding("error", "E031", f"{iid} is approved by its own assessor ({ia['approver']}).", path, iid))
+            unscreened = [c for c in cats if screened.get(c, {}).get("relevant") is None]
+            if unscreened:
+                out.append(Finding("error", "E031", f"{iid} is approved with unscreened categories: {', '.join(unscreened)}.", path, iid))
+            no_reason = [c for c, s in screened.items() if c in cats and s.get("relevant") is not None and not (s.get("rationale") or "").strip()]
+            if no_reason:
+                out.append(Finding("error", "E031", f"{iid}: screening without a rationale: {', '.join(no_reason)}.", path, iid))
+            covered = {x.get("category") for x in impacts}
+            uncovered = [c for c, s in screened.items() if s.get("relevant") is True and c not in covered]
+            if uncovered:
+                out.append(Finding("error", "E031", f"{iid}: relevant categories with no assessed impact: {', '.join(uncovered)}.", path, iid))
+            if ia.get("decision") == "approve_with_conditions" and not ia.get("conditions"):
+                out.append(Finding("error", "E031", f"{iid}: 'approve_with_conditions' lists no conditions.", path, iid))
+            for x in impacts:
+                ref = f"{iid}/{x.get('id')}"
+                res = score(x.get("residual_likelihood"), x.get("residual_severity"))
+                if res is None:
+                    out.append(Finding("error", "E032", f"{ref}: approved without a residual rating (residual_likelihood/severity).", path, iid))
+                    continue
+                if res >= m["unacceptable_at"] and ia.get("decision") != "reject":
+                    out.append(Finding("error", "E032", f"{ref}: residual {res} ({band(model, res)}) is unacceptable "
+                                       f"(>= {m['unacceptable_at']}); reduce it or decide 'reject'.", path, iid))
+                elif res >= m["acceptance_required_at"]:
+                    acc = x.get("acceptance") or {}
+                    if not (acc.get("accepted_by") and acc.get("accepted_on") and (acc.get("rationale") or "").strip()):
+                        out.append(Finding("error", "E032", f"{ref}: residual {res} ({band(model, res)}) needs acceptance "
+                                           "(accepted_by, accepted_on, rationale).", path, iid))
+                    elif not model.independent(acc.get("accepted_by"), ia.get("assessor")):
+                        out.append(Finding("error", "E032", f"{ref}: residual risk accepted by the assessor.", path, iid))
+            nr = next_review(model, ia)
+            if nr and nr < model.today:
+                out.append(Finding("warning", "W132", f"{iid} was due for review on {nr}; reassess it (changes to the "
+                                   "system, its data or its use also trigger a reassessment).", path, iid))
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            out.append(Finding("error", "E000", f"{iid}: could not evaluate ({exc!r}).", path, iid))
+    for sys_id, iids in active.items():
+        if sys_id and len(iids) > 1:
+            out.append(Finding("error", "E030", f"{sys_id} has more than one active assessment ({', '.join(iids)}); "
+                               "mark older ones 'superseded'.", _rel(model, model.impact_files[iids[0]]), sys_id))
+    inv_path = _rel(model, model.engagement_dir / "inventory.yaml")
+    for s in required_systems(model):
+        if s["id"] not in active:
+            out.append(Finding("warning", "W130", f"{s['id']} ({s.get('name')}) has no impact assessment "
+                               f"(`grc impact new {s['id']}`).", inv_path, s["id"]))
+    return out
+
+
 def check_collected(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
@@ -470,7 +579,7 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit)
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact)
 
 
 def validate(model: Engagement) -> list[Finding]:
@@ -501,6 +610,13 @@ def requirement_state(model: Engagement, cid: str) -> str:
     if all(v in ("not_started", "claimed") for v in eff.values()):
         return "Unverified claim"
     return "In progress"
+
+
+def _ia_metrics(model: Engagement) -> dict:
+    from .impact import is_effective, required_systems
+    req = required_systems(model)
+    active = {ia.get("system"): ia for ia in model.impacts.values() if isinstance(ia, dict) and ia.get("status") != "superseded"}
+    return {"ia_required": len(req), "ia_current": sum(1 for s in req if s["id"] in active and is_effective(model, active[s["id"]]))}
 
 
 def metrics(model: Engagement) -> dict:
@@ -539,6 +655,7 @@ def metrics(model: Engagement) -> dict:
         "evidence_stale": stale,
         "evidence_failing": failing,
         "findings_total": len(model.findings),
+        **_ia_metrics(model),
         "nc_open_major": sum(1 for f in model.findings if f.get("grade") == "major" and f.get("status") not in ("closed", "accepted")),
         "nc_open_minor": sum(1 for f in model.findings if f.get("grade") == "minor" and f.get("status") not in ("closed", "accepted")),
         "audits": {a["id"]: a.get("status") for a in model.audits},

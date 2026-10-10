@@ -100,3 +100,27 @@ default_risks:
   - Late implementation that leaves too little operating history before Stage 2.
   - Slow SME responses, policy approvals, vendor reviews, or contract decisions.
   - Internal-audit or management-review slippage.
+
+# AI system impact assessment methodology (6.1.4, 8.4, A.5.2-A.5.5).
+# Our own structure; align with your client's risk method and, where useful, ISO/IEC 42005.
+impact_assessment:
+  required_for_kinds: [ai_system]          # inventory kinds that need an assessment
+  review_every_days: {High: 180, default: 365}
+  scales:
+    likelihood: {1: Rare, 2: Unlikely, 3: Possible, 4: Likely, 5: Almost certain}
+    severity:   {1: Negligible, 2: Minor, 3: Moderate, 4: Major, 5: Severe}
+  bands: [[1, Low], [6, Medium], [12, High], [20, Critical]]   # score = likelihood x severity
+  acceptance_required_at: 12                # residual >= this needs a named acceptance
+  unacceptable_at: 20                       # residual >= this cannot be approved
+  categories:
+    - {id: safety, area: individuals, title: "Safety and physical or psychological harm"}
+    - {id: health, area: individuals, title: "Health and wellbeing (e.g. clinical decisions)"}
+    - {id: fairness, area: groups, title: "Fairness and non-discrimination across groups"}
+    - {id: privacy, area: individuals, title: "Privacy and data protection"}
+    - {id: autonomy, area: individuals, title: "Human autonomy, oversight and the ability to contest decisions"}
+    - {id: transparency, area: individuals, title: "Transparency and explainability to the people affected"}
+    - {id: security, area: individuals, title: "Security, misuse and manipulation of the system"}
+    - {id: economic, area: society, title: "Economic and employment effects"}
+    - {id: information, area: society, title: "Information integrity and public trust"}
+    - {id: environment, area: society, title: "Environmental impact (compute, energy)"}
+    - {id: rights, area: society, title: "Legal, human and civil rights"}

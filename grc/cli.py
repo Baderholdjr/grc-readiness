@@ -10,6 +10,7 @@
   codeowners    Make control owners required reviewers of their control files
   bootstrap     Write a thin client repository that uses this engine
   audit         Internal audit: plan workpapers, draw reproducible samples
+  impact        AI system impact assessments: start one per AI system
 """
 from __future__ import annotations
 
@@ -68,7 +69,8 @@ def cmd_build(args) -> int:
         print("\nRefusing to build from invalid data (use --force for a draft).", file=sys.stderr)
         return 1
     out = Path(args.out)
-    slug = model.client.strip("()").replace(" ", "-").lower()
+    import re as _re
+    slug = _re.sub(r"[^a-z0-9]+", "-", model.client.lower()).strip("-") or "client"
     docx_name = None if args.no_docx else f"{slug}-{model.engagement['framework']}-brief.docx"
     summary = render_md.render_all(model, findings, out, brief_docx=docx_name)
     if docx_name:
@@ -190,6 +192,21 @@ def cmd_audit(args) -> int:
     return 0
 
 
+def cmd_impact(args) -> int:
+    from . import impact
+    model = _model(args)
+    try:
+        log = impact.new(model, args.system)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for line in log:
+        print(line)
+    if args.report:
+        Path(args.report).write_text("## New AI impact assessments\n\n```\n" + "\n".join(log) + "\n```\n", encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -261,6 +278,12 @@ def main(argv=None) -> int:
     au.add_argument("--force", action="store_true", help="sample: redraw samples that have no results yet")
     au.add_argument("--report", help="write a Markdown summary here")
     au.set_defaults(fn=cmd_audit)
+
+    im = sub.add_parser("impact", help="AI system impact assessments")
+    im.add_argument("action", choices=["new"])
+    im.add_argument("system", help="inventory id (e.g. INV-001) or 'all'")
+    im.add_argument("--report", help="write a Markdown summary here")
+    im.set_defaults(fn=cmd_impact)
 
     args = p.parse_args(argv)
     return args.fn(args)

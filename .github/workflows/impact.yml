@@ -1,0 +1,20 @@
+name: AI impact assessment
+
+# Actions -> AI impact assessment -> Run workflow: an inventory id (INV-001) or "all".
+on:
+  workflow_dispatch:
+    inputs:
+      system: {description: "AI system inventory id (e.g. INV-001) or all", required: true, default: all}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  impact:
+    uses: ./.github/workflows/grc-impact.yml
+    with:
+      engine: local
+      system: ${{ inputs.system }}
+    secrets: inherit

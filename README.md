@@ -101,6 +101,10 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | E025 | error | Audit, workpaper or finding references something that doesn't exist |
 | E026 | error | Control's *Tested* leg is verified while a major nonconformity on it is open |
 | W120–W123 | warning | Finding past due · 9.2 verified without a completed audit · audit overrunning · in-scope requirement without a workpaper |
+| E030 | error | Impact assessment references an unknown system, category, requirement or gap; or a system has more than one active assessment |
+| E031 | error | Impact assessment approved while incomplete (context, unscreened categories, missing rationale, relevant category with no impact, no conditions) or approved by its own assessor |
+| E032 | error | Approved impact with no residual rating; residual at or above the unacceptable level without a `reject` decision; high residual without independent acceptance |
+| W130–W133 | warning | AI system without an impact assessment · assessment not yet approved · past its review date · residual higher than inherent |
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
@@ -128,6 +132,8 @@ In the client repository:
 5. Settings: protect `main` (require the **`validate / validate`** check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
 
 **Internal audit (9.2) and corrective actions (10.2):** see [`docs/AUDIT.md`](docs/AUDIT.md). Each new engagement starts with an audit scheduled in its Test phase.
+
+**AI system impact assessments (6.1.4, 8.4, A.5):** see [`docs/IMPACT.md`](docs/IMPACT.md). **Actions → AI impact assessment** starts one per AI system in `inventory.yaml`; an approved assessment can be cited as evidence (`IA-001`).
 
 **No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 
