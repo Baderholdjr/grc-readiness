@@ -32,6 +32,8 @@ def load_yaml(path: Path) -> Any:
 def to_date(value: Any) -> dt.date | None:
     if value is None or value == "":
         return None
+    if isinstance(value, dt.datetime):
+        return value.date()
     if isinstance(value, dt.date):
         return value
     return dt.date.fromisoformat(str(value))
@@ -281,16 +283,17 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
                     imp["controls"] = [str(c) for c in imp["controls"]]
         model.impacts[path.stem] = data
         model.impact_files[path.stem] = path
-    from .documents import parse
+    from .documents import coerce, parse
     for path in sorted((edir / "documents").glob("*.md")) if (edir / "documents").is_dir() else []:
         if path.name.lower() == "readme.md":
             continue
-        meta, body, error = parse(path.read_text(encoding="utf-8"))
-        if isinstance(meta, dict) and isinstance(meta.get("satisfies"), list):
-            meta["satisfies"] = [str(r) for r in meta["satisfies"]]
-        if isinstance(meta, dict) and meta.get("version") is not None:
-            meta["version"] = str(meta["version"])
-        model.documents[path.stem] = {"meta": meta, "body": body, "error": error}
+        try:
+            raw, body, error = parse(path.read_text(encoding="utf-8-sig"))
+        except (UnicodeDecodeError, OSError) as exc:
+            raw, body, error = None, "", f"could not read the file ({exc.__class__.__name__})"
+        # `raw` is what the schema checks; `meta` is a type-safe copy the rules and reports use
+        model.documents[path.stem] = {"meta": coerce(raw) if isinstance(raw, dict) else None, "raw": raw,
+                                      "body": body, "error": error}
         model.document_files[path.stem] = path
     fnd = edir / "findings.yaml"
     if fnd.exists():

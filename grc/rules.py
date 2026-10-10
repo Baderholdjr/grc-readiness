@@ -86,7 +86,7 @@ def check_schemas(model: Engagement) -> list[Finding]:
         if d.get("error"):
             out.append(Finding("error", "E001", f"{did}: {d['error']}.", _rel(model, path), did))
         else:
-            run("document", d["meta"], path, did)
+            run("document", d["raw"], path, did)
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -606,7 +606,7 @@ def check_impact(model: Engagement) -> list[Finding]:
 
 def check_documents(model: Engagement) -> list[Finding]:
     """Policies and procedures (5.2, 7.5; the Documented leg)."""
-    from .documents import DOC_ID, approval_problems, body_hash, docs, library, next_review, is_effective
+    from .documents import DOC_ID, approval_problems, docs, fingerprint, library, next_review, is_effective
     out: list[Finding] = []
     lib = library(model)
     for did, d in docs(model).items():
@@ -633,9 +633,10 @@ def check_documents(model: Engagement) -> list[Finding]:
             if not h:
                 out.append(Finding("error", "E042", f"{did} is marked approved without an approval fingerprint; "
                                    f"record approval with `grc docs approve {did} --approver ...`.", path, did))
-            elif h != body_hash(body):
-                out.append(Finding("error", "E042", f"{did} v{meta.get('version')} text changed after it was approved; "
-                                   "bump `version`, set status back to draft or in_review, and re-approve.", path, did))
+            elif h != fingerprint(meta, body):
+                out.append(Finding("error", "E042", f"{did} v{meta.get('version')}: the text or approval details (title, version, "
+                                   "approver, date, requirements) changed after approval; bump `version`, set status back to "
+                                   "draft, and re-approve.", path, did))
             nr = next_review(model, meta)
             if nr and nr < model.today:
                 out.append(Finding("warning", "W142", f"{did} was due for review on {nr}.", path, did))

@@ -16,7 +16,6 @@
     "approver": {"type": "string"},
     "approved_on": {"type": ["string", "null"], "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
     "approved_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "review_every_days": {"type": "integer", "minimum": 1},
     "next_review": {"type": ["string", "null"], "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
     "satisfies": {"type": "array", "items": {"type": "string"}},
     "drafted": {"type": "object"},

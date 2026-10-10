@@ -351,11 +351,11 @@ def render_document(model: Engagement, doc_id: str, out_path: Path) -> Path:
     t = doc.add_paragraph(style="Title")
     _run(t, f"{model.client} — {title}")
     if not effective:
-        callout(doc, f"DRAFT — {meta.get('status', 'draft')}, not an approved document")
+        callout(doc, f"DRAFT — {meta.get('status') or 'draft'}, not an approved document")
     nr = next_review(model, meta)
     data_table(doc, ["Document control", ""], [
         ["Document", f"{doc_id} · version {meta.get('version', '—')} · {meta.get('kind', '')}"],
-        ["Status", str(meta.get("status", "—"))],
+        ["Status", str(meta.get("status") or "—")],
         ["Owner", meta.get("owner") or "—"],
         ["Approved", f"{meta.get('approver') or '—'} on {meta.get('approved_on') or '—'}"],
         ["Next review", str(nr) if nr else "—"],
@@ -395,5 +395,7 @@ def render_document(model: Engagement, doc_id: str, out_path: Path) -> Path:
 
 
 def safe_stamp(meta: dict):
+    """Approved: the approval date. Draft: the date it was drafted. Either way, the same text gives the same file."""
     from .documents import safe_date
-    return safe_date(meta.get("approved_on"))
+    drafted = meta.get("drafted") if isinstance(meta.get("drafted"), dict) else {}
+    return safe_date(meta.get("approved_on")) or safe_date(drafted.get("on")) or dt.date(2000, 1, 1)

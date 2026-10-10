@@ -288,7 +288,7 @@ def impact_assessments(model: Engagement, out: Path) -> list[tuple[str, str, str
 
 def documents(model: Engagement, out: Path, with_docx: bool = False) -> list[tuple[str, str, str]]:
     """documents.md (register) + doc-<ID>.md for each policy/procedure."""
-    from .documents import approval_problems, docs, is_effective, library, next_review, todos
+    from .documents import approval_problems, docs, is_effective, library, next_review, open_markers
     lib = library(model)
     have = docs(model)
     if not lib and not have:
@@ -303,8 +303,8 @@ def documents(model: Engagement, out: Path, with_docx: bool = False) -> list[tup
             continue
         meta = d["meta"]
         eff = is_effective(model, did)
-        st = meta.get("status", "—") + (" ✅" if eff else " ⚠️" if meta.get("status") == "approved" else "")
-        left = len(todos(d["body"]))
+        st = str(meta.get("status") or "—") + (" ✅" if eff else " ⚠️" if meta.get("status") == "approved" else "")
+        left = open_markers(d["body"])
         nr = next_review(model, meta)
         link = f"[{did}](doc-{did}.md)" + (f" · [Word](doc-{did}.docx?raw=1)" if with_docx else "")
         rows.append([link, meta.get("title", ""), meta.get("kind", ""), st, meta.get("version", "—"),
@@ -312,7 +312,7 @@ def documents(model: Engagement, out: Path, with_docx: bool = False) -> list[tup
                      (str(nr) if nr else "—") + (f" · {left} to complete" if left else ""),
                      ", ".join(meta.get("satisfies") or [])])
         problems = approval_problems(model, did, meta, d["body"]) if meta.get("status") == "approved" else []
-        banner = ("" if eff else f"> **{meta.get('status', 'draft').upper()}** — not an approved document."
+        banner = ("" if eff else f"> **{str(meta.get('status') or 'draft').upper()}** — not an approved document."
                   + (f" Problems: {'; '.join(problems)}." if problems else "") + "\n\n")
         head = _table(["Document", "Version", "Status", "Owner", "Approved", "Next review", "Requirements"],
                       [[did, meta.get("version", "—"), meta.get("status", "—"), meta.get("owner") or "—",

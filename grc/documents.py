@@ -27,7 +27,7 @@ import yaml
 from .model import Engagement, resource, to_date
 
 FRONT = re.compile(r"\A---[ \t]*\n(.*?)\n---[ \t]*(?:\n|\Z)", re.S)
-TODO = re.compile(r"\[\[TODO(?::\s*(.*?))?\]\]", re.S)
+TODO = re.compile(r"\[\[\s*TODO\b([^\[\]\n]*)\]\]", re.I)   # one line, no nested brackets
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_]+)\s*\}\}")
 DOC_ID = re.compile(r"^DOC-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 STATUSES = ("draft", "in_review", "approved", "retired")
@@ -36,6 +36,7 @@ STATUSES = ("draft", "in_review", "approved", "retired")
 # ------------------------------------------------------------------ parsing
 def parse(text: str) -> tuple[dict | None, str, str | None]:
     """(front matter, body, error)."""
+    text = text.lstrip("\ufeff")
     m = FRONT.match(text)
     if not m:
         return None, text, "no YAML front matter (the file must start with ---)"
@@ -52,10 +53,41 @@ def dump(meta: dict, body: str) -> str:
     return "---\n" + yaml.safe_dump(meta, sort_keys=False, allow_unicode=True, width=120) + "---\n" + body
 
 
+SCALARS = ("id", "title", "kind", "version", "status", "owner", "author", "approver", "approved_hash")
+SEALED = ("id", "title", "version", "approver", "approved_on", "satisfies")  # covered by the approval fingerprint
+MAX_REVIEW_DAYS = 3650
+
+
+def coerce(raw: dict) -> dict:
+    """A copy of the front matter with safe types (the schema reports the raw problems)."""
+    meta = dict(raw)
+    for k in SCALARS:
+        if meta.get(k) is not None and not isinstance(meta[k], str):
+            meta[k] = str(meta[k]) if not isinstance(meta[k], (list, dict)) else ""
+    for k in ("approved_on", "next_review"):
+        v = meta.get(k)
+        meta[k] = safe_date(v).isoformat() if safe_date(v) else (None if v in (None, "") else str(v))
+    sat = meta.get("satisfies")
+    meta["satisfies"] = [sat] if isinstance(sat, (str, int, float)) else [str(r) for r in sat] if isinstance(sat, list) else []
+    meta["satisfies"] = [str(r) for r in meta["satisfies"]]
+    meta["history"] = [h for h in meta.get("history") or [] if isinstance(h, dict)] if isinstance(meta.get("history"), list) else []
+    meta.pop("review_every_days", None)  # the cycle is set by the library, not per document
+    return meta
+
+
 def body_hash(body: str) -> str:
-    """Fingerprint of the text: insensitive to line endings and trailing whitespace only."""
+    """Hash of the text: insensitive to line endings and trailing whitespace only."""
     norm = "\n".join(line.rstrip() for line in body.replace("\r\n", "\n").split("\n")).strip() + "\n"
     return hashlib.sha256(norm.encode("utf-8")).hexdigest()
+
+
+def fingerprint(meta: dict, body: str) -> str:
+    """What an approval covers: the text plus the approval details (so neither can change unnoticed)."""
+    sealed = {k: meta.get(k) for k in SEALED}
+    sealed["approved_on"] = str(safe_date(meta.get("approved_on")) or "")
+    sealed["satisfies"] = [str(r) for r in meta.get("satisfies") or []]
+    head = json.dumps({k: (v if isinstance(v, list) else str(v or "")) for k, v in sealed.items()}, sort_keys=True)
+    return hashlib.sha256((head + "\n" + body_hash(body)).encode("utf-8")).hexdigest()
 
 
 def headings(body: str) -> set[str]:
@@ -63,20 +95,29 @@ def headings(body: str) -> set[str]:
 
 
 def todos(body: str) -> list[str]:
-    return [(m.group(1) or "").strip() for m in TODO.finditer(body)]
+    return [(m.group(1) or "").strip(" :-") for m in TODO.finditer(body)]
+
+
+def open_markers(body: str) -> int:
+    """TODO markers plus any other leftover [[ ... ]] - none may survive approval."""
+    return max(len(todos(body)), body.count("[["), body.count("]]"))
 
 
 def safe_date(v) -> dt.date | None:
     try:
         return to_date(v)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
 
 
 # ------------------------------------------------------------------ library and method
 def config(model: Engagement) -> dict:
     cfg = model.playbook.get("documents") or {}
-    return {"review_every_days": int(cfg.get("review_every_days") or 365), "library": cfg.get("library") or []}
+    try:
+        days = min(max(int(cfg.get("review_every_days") or 365), 1), MAX_REVIEW_DAYS)
+    except (TypeError, ValueError):
+        days = 365
+    return {"review_every_days": days, "library": cfg.get("library") or []}
 
 
 def library(model: Engagement) -> dict[str, dict]:
@@ -88,21 +129,18 @@ def docs(model: Engagement) -> dict[str, dict]:
     return {k: v for k, v in model.documents.items() if isinstance(v.get("meta"), dict)}
 
 
-def review_days(model: Engagement, meta: dict) -> int:
-    try:
-        return int(meta.get("review_every_days") or config(model)["review_every_days"])
-    except (TypeError, ValueError):
-        return config(model)["review_every_days"]
-
-
 def next_review(model: Engagement, meta: dict) -> dt.date | None:
-    """approved_on + review cycle; an explicit next_review can only bring it forward."""
+    """approved_on + the library's review cycle; an explicit next_review can only bring it forward
+    (and is ignored if it predates the approval, e.g. left over from an earlier version)."""
     approved = safe_date(meta.get("approved_on"))
     explicit = safe_date(meta.get("next_review"))
     if not approved:
         return explicit
-    cycle = approved + dt.timedelta(days=review_days(model, meta))
-    return min(cycle, explicit) if explicit else cycle
+    try:
+        cycle = approved + dt.timedelta(days=config(model)["review_every_days"])
+    except OverflowError:
+        cycle = dt.date.max
+    return min(cycle, explicit) if explicit and explicit >= approved else cycle
 
 
 def approval_problems(model: Engagement, doc_id: str, meta: dict, body: str, check_hash: bool = True) -> list[str]:
@@ -116,9 +154,9 @@ def approval_problems(model: Engagement, doc_id: str, meta: dict, body: str, che
     approved = safe_date(meta.get("approved_on"))
     if approved and approved > model.today:
         p.append("approved_on is in the future")
-    left = todos(body)
+    left = open_markers(body)
     if left:
-        p.append(f"{len(left)} unresolved [[TODO]] marker(s)")
+        p.append(f"{left} unresolved [[TODO]] marker(s)")
     if PLACEHOLDER.search(body):
         p.append("unfilled {{placeholder}}")
     entry = library(model).get(doc_id)
@@ -130,8 +168,8 @@ def approval_problems(model: Engagement, doc_id: str, meta: dict, body: str, che
         h = meta.get("approved_hash")
         if not h:
             p.append("no approval fingerprint (approve with `grc docs approve`)")
-        elif h != body_hash(body):
-            p.append("text changed after approval (bump version and re-approve)")
+        elif h != fingerprint(meta, body):
+            p.append("text or approval details changed after approval (bump version and re-approve)")
     return p
 
 
@@ -149,10 +187,13 @@ def evidence_entries(model: Engagement) -> dict[str, dict]:
     out = {}
     for did, d in model.documents.items():
         meta = d.get("meta") if isinstance(d.get("meta"), dict) else {}
-        approved = safe_date(meta.get("approved_on"))
-        nr = next_review(model, meta) if meta else None
-        sound = (meta.get("status") == "approved" and approved and approved <= model.today
-                 and not approval_problems(model, did, meta, d.get("body", "")))
+        try:
+            approved = safe_date(meta.get("approved_on"))
+            nr = next_review(model, meta) if meta else None
+            sound = bool(meta.get("status") == "approved" and approved and approved <= model.today
+                         and not approval_problems(model, did, meta, d.get("body", "")))
+        except Exception:  # never let one bad file disable evidence checks for everything else
+            approved, nr, sound = None, None, False
         out[did] = {
             "id": did, "title": f"{meta.get('title') or did} v{meta.get('version', '?')}", "type": "document",
             "location": f"engagement/documents/{did}.md", "owner": meta.get("owner", ""),
@@ -262,7 +303,7 @@ def new(model: Engagement, target: str, mode: str = "templates", transport=None)
             "id": did, "title": entry["title"], "kind": entry.get("kind", "procedure"), "version": "0.1", "status": "draft",
             "owner": suggested_owner(model, entry), "author": "", "approver": "", "approved_on": None,
             "satisfies": list(entry.get("satisfies") or []),
-            "drafted": {"from": f"{fw}/{entry['template']}", "on": model.today.isoformat(), "ai_fills": 0},
+            "drafted": {"from": f"{fw}/{entry['template']}", "on": model.today.isoformat()},
         }
         ddir.mkdir(parents=True, exist_ok=True)
         path.write_text(dump(meta, body), encoding="utf-8")
@@ -350,13 +391,19 @@ def _intake(model: Engagement) -> list[tuple[str, str]]:
     return out
 
 
-def _clean(text: str, in_table: bool) -> str:
-    t = re.sub(r"\[\[|\]\]|\{\{|\}\}", "", str(text))
+def _clean(text: str, in_table: bool, line_start: bool) -> str:
+    """Plain text only: no brackets/braces (markers, placeholders, links), no HTML or code, one line."""
+    t = re.sub(r"[\[\]{}<>`]", "", str(text))
     t = re.sub(r"^\s*#+\s*", "", t, flags=re.M)
-    t = " ".join(t.split())
+    t = " ".join(t.split())[:MAX_FILL]
     if in_table:
         t = t.replace("|", "/")
-    return t[:MAX_FILL]
+    elif line_start and t:
+        # don't let the fill start a heading, list, quote, rule or table when the marker begins a line
+        if t[0] in "#>-+*=|_~":
+            t = "\\" + t
+        t = re.sub(r"^(\d+)([.)])", r"\1\\\2", t)
+    return t
 
 
 def _call(model: Engagement, did: str, prompt: str, transport=None) -> dict:
@@ -427,15 +474,17 @@ def fill(model: Engagement, targets: list[str] | str, mode: str = "ai", transpor
             continue
         by_n = {}
         for f in data.get("fills") or []:
-            if isinstance(f, dict) and isinstance(f.get("n"), int) and f.get("text") and str(f.get("source") or "").strip():
-                by_n[f["n"]] = f
+            if isinstance(f, dict) and isinstance(f.get("n"), int) and isinstance(f.get("text"), str) and f["text"].strip() \
+                    and str(f.get("source") or "").strip():
+                by_n[f["n"]] = {"text": f["text"], "source": str(f["source"]).strip()}
         out, last, count, sources = [], 0, 0, []
         for i, mk in enumerate(markers, start=1):
             out.append(body[last:mk.start()])
             line_start = body.rfind("\n", 0, mk.start()) + 1
-            in_table = body[line_start:mk.start()].lstrip().startswith("|")
+            before = body[line_start:mk.start()]
+            in_table = before.lstrip().startswith("|")
             f = by_n.get(i)
-            text = _clean(f["text"], in_table) if f else ""
+            text = _clean(f["text"], in_table, not before.strip()) if f else ""
             if text:
                 out.append(text)
                 count += 1
@@ -446,11 +495,11 @@ def fill(model: Engagement, targets: list[str] | str, mode: str = "ai", transpor
         out.append(body[last:])
         new_body = "".join(out)
         tag = "[SANDBOX] " if sandbox.active() and transport is None else ""
-        meta.setdefault("drafted", {})
-        if isinstance(meta["drafted"], dict):
-            meta["drafted"]["ai_fills"] = int(meta["drafted"].get("ai_fills") or 0) + count
-            meta["drafted"]["ai_model"] = tag + (os.environ.get("GRC_MODEL") or "claude-sonnet-5-5")
-        (model.engagement_dir / "documents" / f"{did}.md").write_text(dump(meta, new_body), encoding="utf-8")
+        # splice the new body after the ORIGINAL front matter text, so nothing else changes
+        path = model.document_files[did]
+        original = path.read_text(encoding="utf-8-sig")
+        fm = FRONT.match(original)
+        path.write_text(original[:fm.end()] + new_body, encoding="utf-8")
         log.append(f"{did}  {tag}AI filled {count} of {len(markers)} item(s); {len(markers) - count} left for the analyst")
         log += [f"    {s}" for s in sources]
         log += [f"    ? {q}" for q in (data.get("open_questions") or []) if isinstance(q, str)][:10]
@@ -462,23 +511,26 @@ def approve(model: Engagement, did: str, approver: str, on: dt.date | None = Non
     d = model.documents.get(did)
     if not d or not isinstance(d.get("meta"), dict):
         raise ValueError(f"{did}: no such document (engagement/documents/{did}.md)")
-    meta, body = dict(d["meta"]), d["body"]
+    meta, body = d["meta"], d["body"]
     if meta.get("status") == "retired":
         raise ValueError(f"{did} is retired")
     on = on or model.today
     version = str(meta.get("version") or "").strip()
-    h = body_hash(body)
+    text = body_hash(body)
     for past in meta.get("history") or []:
-        if isinstance(past, dict) and str(past.get("version")) == version and past.get("hash") != h:
+        if str(past.get("version")) == version and past.get("hash") != text:
             raise ValueError(f"{did} v{version} was already approved with different text; bump `version` first")
-    if meta.get("status") == "approved" and meta.get("approved_hash") == h:
-        return [f"{did} v{version} is already approved with this text."]
-    meta.update(status="approved", approver=approver, approved_on=on.isoformat(), approved_hash=h)
-    problems = approval_problems(model, did, meta, body)
+    if is_effective(model, did):
+        return [f"{did} v{version} is already approved with this text and is not due for review."]
+    raw = dict(d.get("raw") or meta)
+    raw.update(status="approved", approver=approver, approved_on=on.isoformat())
+    raw.pop("next_review", None)  # a review date set for an earlier approval no longer applies
+    new = coerce(raw)
+    seal = fingerprint(new, body)
+    raw["approved_hash"] = new["approved_hash"] = seal
+    problems = approval_problems(model, did, new, body)
     if problems:
         raise ValueError(f"{did} can't be approved: " + "; ".join(problems))
-    hist = [x for x in meta.get("history") or [] if isinstance(x, dict)]
-    hist.append({"version": version, "approved_on": on.isoformat(), "approver": approver, "hash": h})
-    meta["history"] = hist
-    (model.engagement_dir / "documents" / f"{did}.md").write_text(dump(meta, body), encoding="utf-8")
-    return [f"{did} v{version} approved by {approver} on {on} (fingerprint {h[:12]})"]
+    raw["history"] = new["history"] + [{"version": version, "approved_on": on.isoformat(), "approver": approver, "hash": text}]
+    model.document_files[did].write_text(dump(raw, body), encoding="utf-8")
+    return [f"{did} v{version} approved by {approver} on {on} (fingerprint {seal[:12]})"]

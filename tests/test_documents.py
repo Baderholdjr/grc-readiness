@@ -140,7 +140,7 @@ def test_approve_refuses_incomplete_documents(tmp_path):
 def test_approved_document_is_documented_evidence(tmp_path):
     edir = approved(tmp_path)
     meta, body, _ = documents.parse(path(edir).read_text())
-    assert meta["status"] == "approved" and meta["approved_hash"] == documents.body_hash(body)
+    assert meta["status"] == "approved" and meta["approved_hash"] == documents.fingerprint(documents.coerce(meta), body)
     assert meta["history"][0]["approver"] == "Chief Executive Officer"
     assert documents.is_effective(m(edir), "DOC-AI-POLICY")
     w143 = findings(edir, code="W143")
@@ -155,7 +155,7 @@ def test_changing_approved_text_is_caught(tmp_path):
     edir = approved(tmp_path)
     cite(edir)
     edit(edir, body=lambda b: b.replace("Accountability", "Accountability (mostly)"))
-    assert any("changed after it was approved" in f.message for f in findings(edir, code="E042"))
+    assert any("changed after approval" in f.message for f in findings(edir, code="E042"))
     assert any("DOC-AI-POLICY" in f.message for f in findings(edir, code="E015"))
     # whitespace-only changes don't count
     edir2 = approved(tmp_path / "b")
@@ -258,8 +258,7 @@ def test_ai_fill_only_replaces_markers_and_sanitises(tmp_path):
     strip = lambda s: documents.TODO.sub("", s.split("---\n", 2)[2])
     assert re.sub(r"Information Security Policy / v4|Injected heading line two TODO client", "", strip(after)) == strip(before)
     assert "[[TODO#1:" in seen["body"]["messages"][0]["content"]
-    meta, _, _ = documents.parse(after)
-    assert meta["drafted"]["ai_fills"] == 2
+    assert after.split("---\n", 2)[1] == before.split("---\n", 2)[1]   # front matter byte-for-byte unchanged
 
 
 def test_ai_fill_never_touches_approved_documents(tmp_path):
@@ -318,3 +317,102 @@ def test_cli_approve(tmp_path):
     assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "docs", "approve", "DOC-IMPROVE",
                  "--approver", "CEO", "--report", str(rep)]) == 0
     assert "approved by CEO" in rep.read_text()
+
+
+# ---------------------------------------------------------------- review regressions
+def test_front_matter_edits_after_approval_are_caught(tmp_path):
+    edir = approved(tmp_path)
+    cite(edir)
+    for change in (lambda d: d.update(approved_on="2026-10-07"), lambda d: d.update(approver="Someone Else"),
+                   lambda d: d.update(satisfies=["5.2", "9.3"]), lambda d: d.update(title="Different"),
+                   lambda d: d.update(version="9.9")):
+        edir2 = approved(tmp_path / str(id(change)))
+        cite(edir2)
+        edit(edir2, meta=change)
+        assert findings(edir2, code="E042") and findings(edir2, code="E015")
+    # a per-document review cycle is not allowed (it could stretch validity)
+    edit(edir, meta=lambda d: d.update(review_every_days=100000))
+    assert findings(edir, code="E001")
+
+
+def test_bad_metadata_in_one_document_does_not_silence_other_checks(tmp_path):
+    edir = setup(tmp_path)
+    cite(edir, did="EV-999")
+    base = {f.code for f in findings(edir, severity="error")}
+    assert "E006" in base
+    documents.new(m(edir), "DOC-USE", mode="templates")
+    edit(edir, "DOC-USE", meta=lambda d: d.update(author=["x"], approver={"a": 1}, approved_on=dt.datetime(2026, 10, 8, 10),
+                                                   status="approved", satisfies="A.9.2", history=5))
+    codes = {f.code for f in findings(edir, severity="error")}
+    assert "E006" in codes and "E001" in codes and "E000" not in codes
+    assert not [f for f in findings(edir) if "unknown requirement" in f.message and "DOC-USE" in f.message]
+    # approve doesn't crash on malformed history; it reports what's wrong
+    try:
+        documents.approve(m(edir), "DOC-USE", "CEO")
+    except ValueError:
+        pass
+    (edir / "documents" / "DOC-BIN.md").write_bytes(b"\xff\xfe\x00bad")
+    (edir / "documents" / "DOC-NULL.md").write_text("﻿---\nid: DOC-NULL\ntitle: t\nkind: policy\nversion: 1.10\nstatus: null\n---\nx\n")
+    fs = findings(edir)
+    assert {"DOC-BIN", "DOC-NULL"} <= {f.ref for f in fs if f.code == "E001"}
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(tmp_path / "o"), "--force"]) == 0
+
+
+def test_unclosed_or_odd_markers(tmp_path):
+    edir = setup(tmp_path)
+    documents.new(m(edir), "DOC-AI-POLICY", mode="templates")
+    edit(edir, body=lambda b: b.replace("## Commitments", "Owner: [[TODO: name\n\n## Commitments", 1))
+    t, _ = _transport([{"n": i, "text": "x", "source": "engagement"} for i in range(1, 60)])
+    documents.fill(m(edir), ["DOC-AI-POLICY"], transport=t)
+    assert "## Commitments" in path(edir).read_text()
+    edir2 = setup(tmp_path / "b")
+    documents.new(m(edir2), "DOC-AI-POLICY", mode="templates")
+    complete(edir2)
+    for odd in ("[[TODO - decide]]", "[[todo: x]]", "[[ something ]]"):
+        edit(edir2, body=lambda b, o=odd: b + f"\n{o}\n")
+        try:
+            documents.approve(m(edir2), "DOC-AI-POLICY", "CEO")
+            raise AssertionError(odd)
+        except ValueError as exc:
+            assert "unresolved" in str(exc)
+        edit(edir2, body=lambda b, o=odd: b.replace(f"\n{o}\n", ""))
+
+
+def test_fill_text_cannot_inject_markup(tmp_path):
+    edir = setup(tmp_path)
+    documents.new(m(edir), "DOC-USE", mode="templates")
+    edit(edir, "DOC-USE", body=lambda b: b + "\n[[TODO: line start]]\n\n[[TODO: another]]\n\n# comment kept\n")
+    raw = path(edir, "DOC-USE").read_text().replace("status: draft", "status: draft  # keep me", 1)
+    path(edir, "DOC-USE").write_text(raw)
+    n = len(documents.todos(documents.parse(raw)[1]))
+    t, _ = _transport([{"n": 1, "text": "ok [{{[TODO: x]{{] and {[[{client}]]} <!-- `code`", "source": 5},
+                       {"n": n - 1, "text": "```text", "source": "engagement"},
+                       {"n": n, "text": "1. numbered", "source": "engagement"}])
+    documents.fill(m(edir), ["DOC-USE"], transport=t)
+    after = path(edir, "DOC-USE").read_text()
+    assert "status: draft  # keep me" in after                       # front matter untouched
+    assert "ok TODO: x and client !-- code" in after and "{{" not in after.split("---", 2)[2]
+    assert "```" not in after and "\ntext\n" in after
+    assert "\n1\\. numbered\n" in after
+
+
+def test_periodic_reapproval_and_stale_next_review(tmp_path):
+    edir = approved(tmp_path)
+    edit(edir, meta=lambda d: d.update(next_review="2026-12-01"))
+    later = dt.date(2027, 3, 1)
+    assert not documents.is_effective(m(edir, later), "DOC-AI-POLICY")
+    log = documents.approve(m(edir, later), "DOC-AI-POLICY", "CEO")   # same version, same text: periodic review
+    assert "approved by CEO" in log[0]
+    meta, _, _ = documents.parse(path(edir).read_text())
+    assert "next_review" not in meta and len(meta["history"]) == 2
+    assert documents.is_effective(m(edir, later), "DOC-AI-POLICY")
+    assert "not due for review" in documents.approve(m(edir, later), "DOC-AI-POLICY", "CEO")[0]
+
+
+def test_draft_word_file_is_the_same_on_different_days(tmp_path):
+    from grc.render_docx import render_document
+    edir = setup(tmp_path)
+    documents.new(m(edir), "DOC-USE", mode="templates")
+    a = render_document(m(edir, TODAY), "DOC-USE", tmp_path / "a.docx").read_bytes()
+    b = render_document(m(edir, TODAY + dt.timedelta(days=1)), "DOC-USE", tmp_path / "b.docx").read_bytes()
+    assert a == b
