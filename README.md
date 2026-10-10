@@ -3,7 +3,7 @@
 
 <!-- Published automatically from the main branch. Do not edit this branch. -->
 
-**As of 2026-10-09.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
+**As of 2026-10-10.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
 
 | Report | What it shows |
 |---|---|
@@ -12,6 +12,7 @@
 | [Statement of Applicability](soa.md) | Annex A applicability, justification and status ([CSV](soa.csv)) |
 | [Gap register](gap-register.md) | Open and closed gaps with owners and due dates ([CSV](gap-register.csv)) |
 | [Evidence index](evidence-index.md) | Requirement → evidence traceability ([CSV](evidence-index.csv)) |
+| [Internal audit](internal-audit.md) | Audit programme, per-audit reports and workpaper results (9.2) |
 
 ## Readiness summary
 
@@ -19,6 +20,7 @@
 - **Ready:** 0 / 65 applicable requirements
 - **Evidence-test legs verified:** 5.8%
 - **Open gaps:** 12 of 13
+
 - **Expired evidence:** 1 · **Failing collector checks:** 1
 - **Budget:** 18 / 200 hours
 
