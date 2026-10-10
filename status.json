@@ -46,6 +46,8 @@
     "EV-102"
   ],
   "findings_total": 0,
+  "ia_required": 0,
+  "ia_current": 0,
   "nc_open_major": 0,
   "nc_open_minor": 0,
   "audits": {

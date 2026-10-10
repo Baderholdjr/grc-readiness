@@ -21,6 +21,7 @@
 - **Evidence-test legs verified:** 5.8%
 - **Open gaps:** 12 of 13
 
+
 - **Expired evidence:** 1 · **Failing collector checks:** 1
 - **Budget:** 18 / 200 hours
 
