@@ -25,7 +25,7 @@ jobs:
           BASE: ${{ github.event.repository.default_branch }}
         run: |
           [[ "$SYSTEM" =~ ^(all|INV-[0-9]+)$ ]] || { echo "::error::system must be an inventory id (INV-001) or 'all'"; exit 1; }
-          BRANCH="impact/$SYSTEM"
+          BRANCH="impact/new"  # one branch for all runs, so numbering never collides
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
             git fetch -q origin "$BRANCH"
             git checkout -q -B "$BRANCH" FETCH_HEAD
@@ -68,11 +68,11 @@ jobs:
           SYSTEM: ${{ inputs.system }}
           BASE: ${{ github.event.repository.default_branch }}
         run: |
-          BRANCH="impact/$SYSTEM"
+          BRANCH="impact/new"  # one branch for all runs, so numbering never collides
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q -B "$BRANCH"
-          git add -A engagement/impact
+          [ -d engagement/impact ] && git add -A engagement/impact
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git commit -q -m "AI impact assessment: start for $SYSTEM"
           git push origin "$BRANCH"
@@ -82,7 +82,7 @@ jobs:
             echo "Validation (E031/E032) blocks approval until the assessment is complete. See docs/IMPACT.md."; } > body.md
           NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
           if [ -z "$NUM" ]; then
-            gh pr create --base "$BASE" --head "$BRANCH" --title "AI impact assessment: $SYSTEM" --body-file body.md || {
+            gh pr create --base "$BASE" --head "$BRANCH" --title "AI impact assessments: start" --body-file body.md || {
               echo "::error title=Could not open the PR::Enable Settings -> Actions -> General -> 'Allow GitHub Actions to create and approve pull requests'. The work was pushed to branch $BRANCH."
               exit 1; }
           else

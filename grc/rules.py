@@ -260,6 +260,9 @@ def check_gaps(model: Engagement) -> list[Finding]:
             for e in g.get("closure_evidence", []):
                 if e not in model.evidence_index:
                     out.append(Finding("error", "E006", f"{gid} cites unknown closure evidence {e}.", path, gid))
+                elif model.evidence_index[e].get("source") in ("audit", "impact") and model.evidence_is_failing(model.evidence_index[e]):
+                    out.append(Finding("error", "E013", f"{gid} is closed on {e}, which isn't approved/concluded effective "
+                                       "and independently reviewed.", path, gid))
     return out
 
 
@@ -436,6 +439,9 @@ def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding
         elif ev_idx[e].get("source") == "audit" and model.evidence_is_failing(ev_idx[e]):
             out.append(Finding("error", "E024", f"{fid} cites workpaper {e}, which is not concluded effective and "
                                "independently reviewed.", fpath, fid))
+        elif ev_idx[e].get("source") == "impact" and model.evidence_is_failing(ev_idx[e]):
+            out.append(Finding("error", "E024", f"{fid} cites impact assessment {e}, which is not approved "
+                               "(independently, with an approve decision).", fpath, fid))
     if f.get("grade") == "ofi":
         return
     if st in ("action_planned", "implemented", "closed"):
@@ -467,7 +473,7 @@ def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding
 
 def check_impact(model: Engagement) -> list[Finding]:
     """AI system impact assessments (6.1.4, 8.4, A.5.2-A.5.5)."""
-    from .impact import band, method, next_review, required_systems, score
+    from .impact import band, method, next_review, required_systems, safe_date, score
     out: list[Finding] = []
     m = method(model)
     cats = {c["id"]: c for c in m["categories"]}
@@ -492,7 +498,16 @@ def check_impact(model: Engagement) -> list[Finding]:
             ids = [x.get("id") for x in impacts]
             for dup in sorted({i for i in ids if ids.count(i) > 1}):
                 out.append(Finding("error", "E030", f"{iid}: impact id {dup} is used more than once.", path, iid))
-            screened = {s.get("category"): s for s in ia.get("screening") or [] if isinstance(s, dict)}
+            screening = [x for x in ia.get("screening") or [] if isinstance(x, dict)]
+            scats = [x.get("category") for x in screening]
+            for dup in sorted({str(c) for c in scats if scats.count(c) > 1}):
+                out.append(Finding("error", "E030", f"{iid}: category '{dup}' is screened more than once.", path, iid))
+            for c in sorted({str(c) for c in scats if c not in cats}):
+                out.append(Finding("error", "E030", f"{iid}: screening lists unknown category '{c}'.", path, iid))
+            screened: dict = {}
+            for x in screening:  # a category is relevant if any entry says so
+                if x.get("category") not in screened or x.get("relevant") is True:
+                    screened[x.get("category")] = x
             for x in impacts:
                 ref = f"{iid}/{x.get('id')}"
                 if x.get("category") not in cats:
@@ -532,7 +547,14 @@ def check_impact(model: Engagement) -> list[Finding]:
             uncovered = [c for c, s in screened.items() if s.get("relevant") is True and c not in covered]
             if uncovered:
                 out.append(Finding("error", "E031", f"{iid}: relevant categories with no assessed impact: {', '.join(uncovered)}.", path, iid))
-            if ia.get("decision") == "approve_with_conditions" and not ia.get("conditions"):
+            dates = {k: safe_date(ia.get(k)) for k in ("assessed_on", "approved_on")}
+            future = [k for k, d in dates.items() if d and d > model.today]
+            if future:
+                out.append(Finding("error", "E031", f"{iid}: {', '.join(future)} is in the future.", path, iid))
+            if dates["assessed_on"] and dates["approved_on"] and dates["approved_on"] < dates["assessed_on"]:
+                out.append(Finding("error", "E031", f"{iid} is approved ({dates['approved_on']}) before it was assessed "
+                                   f"({dates['assessed_on']}).", path, iid))
+            if ia.get("decision") == "approve_with_conditions" and not [c for c in ia.get("conditions") or [] if str(c or "").strip()]:
                 out.append(Finding("error", "E031", f"{iid}: 'approve_with_conditions' lists no conditions.", path, iid))
             for x in impacts:
                 ref = f"{iid}/{x.get('id')}"
@@ -550,6 +572,8 @@ def check_impact(model: Engagement) -> list[Finding]:
                                            "(accepted_by, accepted_on, rationale).", path, iid))
                     elif not model.independent(acc.get("accepted_by"), ia.get("assessor")):
                         out.append(Finding("error", "E032", f"{ref}: residual risk accepted by the assessor.", path, iid))
+                    elif (safe_date(acc.get("accepted_on")) or dt.date.min) > model.today:
+                        out.append(Finding("error", "E032", f"{ref}: acceptance is dated in the future.", path, iid))
             nr = next_review(model, ia)
             if nr and nr < model.today:
                 out.append(Finding("warning", "W132", f"{iid} was due for review on {nr}; reassess it (changes to the "
@@ -613,9 +637,9 @@ def requirement_state(model: Engagement, cid: str) -> str:
 
 
 def _ia_metrics(model: Engagement) -> dict:
-    from .impact import is_effective, required_systems
+    from .impact import active_by_system, is_effective, required_systems
     req = required_systems(model)
-    active = {ia.get("system"): ia for ia in model.impacts.values() if isinstance(ia, dict) and ia.get("status") != "superseded"}
+    active = active_by_system(model)
     return {"ia_required": len(req), "ia_current": sum(1 for s in req if s["id"] in active and is_effective(model, active[s["id"]]))}
 
 
@@ -636,7 +660,9 @@ def metrics(model: Engagement) -> dict:
     gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
     cited = {r for c in model.controls.values() for leg in (c.get("test") or {}).values()
              for r in (leg or {}).get("evidence", []) or []}
-    counted = list(model.evidence) + [e for e in model.workpaper_evidence.values() if e["id"] in cited]
+    from .impact import evidence_entries
+    counted = list(model.evidence) + [e for e in list(model.workpaper_evidence.values()) + list(evidence_entries(model).values())
+                                      if e["id"] in cited]
     stale = [e["id"] for e in counted if model.evidence_is_expired(e)]
     failing = [e["id"] for e in counted if model.evidence_is_failing(e)]
     b = model.engagement.get("budget", {})
