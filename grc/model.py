@@ -62,6 +62,10 @@ class Engagement:
     inventory: list[dict] = field(default_factory=list)
     owners: list[dict] = field(default_factory=list)
     human_evidence_count: int = 0
+    audits: list[dict] = field(default_factory=list)          # engagement/audit/program.yaml
+    workpapers: dict[str, dict[str, dict]] = field(default_factory=dict)   # audit id -> wp id -> data
+    workpaper_files: dict[str, Path] = field(default_factory=dict)         # "AUD/WP" -> path
+    findings: list[dict] = field(default_factory=list)        # engagement/findings.yaml (10.2 register)
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -79,7 +83,38 @@ class Engagement:
 
     @property
     def evidence_index(self) -> dict[str, dict]:
-        return {e["id"]: e for e in self.evidence}
+        """Human + collected evidence, plus concluded audit workpapers (citable as 'AUD-…/WP-…')."""
+        idx = {e["id"]: e for e in self.evidence}
+        idx.update(self.workpaper_evidence)
+        return idx
+
+    @property
+    def audit_index(self) -> dict[str, dict]:
+        return {a["id"]: a for a in self.audits}
+
+    @property
+    def finding_index(self) -> dict[str, dict]:
+        return {f["id"]: f for f in self.findings}
+
+    @property
+    def workpaper_evidence(self) -> dict[str, dict]:
+        """A workpaper is test evidence once it's concluded effective and independently reviewed."""
+        out = {}
+        for aid, wps in self.workpapers.items():
+            for wid, wp in wps.items():
+                reviewed = self.independent(wp.get("reviewed_by"), wp.get("performed_by"))
+                ok = wp.get("conclusion") == "effective" and reviewed
+                out[f"{aid}/{wid}"] = {
+                    "id": f"{aid}/{wid}", "title": f"Internal audit {aid} {wid}: {wp.get('requirement')} {wp.get('title', '')}".strip(),
+                    "type": "test", "location": f"engagement/audit/{aid}/workpapers/{wid}.yaml",
+                    "owner": wp.get("performed_by", ""), "collected": wp.get("performed_on"),
+                    "approved_by": wp.get("reviewed_by", ""), "valid_for_days": 365,
+                    # not concluded/reviewed -> behaves like failing evidence (not current)
+                    "result": None if ok else "fail", "source": "audit",
+                    "notes": f"conclusion: {wp.get('conclusion', 'not_started')}"
+                             + ("" if reviewed else "; not independently reviewed"),
+                }
+        return out
 
     @property
     def gap_index(self) -> dict[str, dict]:
@@ -111,6 +146,28 @@ class Engagement:
             if o.get("role", "").strip().lower() == role.strip().lower():
                 return [u.lstrip("@") for u in o.get("github", []) or []]
         return []
+
+    def identities(self, name: str | None) -> set[str]:
+        """Everything a person/role name can stand for: itself, a role's GitHub users, a user's roles.
+
+        Used for independence checks, so 'alice', '@Alice' and the role alice belongs to all collide.
+        """
+        n = (name or "").strip().lstrip("@").lower()
+        if not n:
+            return set()
+        ids = {n}
+        for o in self.owners:
+            role = (o.get("role") or "").strip().lower()
+            users = {u.strip().lstrip("@").lower() for u in o.get("github", []) or []}
+            if n == role:
+                ids |= users
+            if n in users:
+                ids.add(role)
+        return ids
+
+    def independent(self, a: str | None, b: str | None) -> bool:
+        """True when a and b are both set and can't be the same person or role."""
+        return bool(a and b) and not (self.identities(a) & self.identities(b))
 
     def fmt(self, text: str) -> str:
         return text.replace("{client}", self.client)
@@ -186,6 +243,35 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     inv = edir / "inventory.yaml"
     if inv.exists():
         model.inventory = load_yaml(inv).get("items", []) or []
+    prog = edir / "audit" / "program.yaml"
+    if prog.exists():
+        model.audits = load_yaml(prog).get("audits", []) or []
+        for a in model.audits:
+            if isinstance(a, dict):
+                a["id"] = str(a.get("id"))
+                for k in ("scope", "exclude"):
+                    v = a.get(k)
+                    if isinstance(v, (list, tuple)):
+                        a[k] = [str(x) for x in v]
+                    elif v is not None and k == "exclude":
+                        a[k] = [str(v)]
+                    elif v is not None and v != "all":
+                        a[k] = [str(v)]
+    for a in model.audits:
+        wdir = edir / "audit" / str(a.get("id")) / "workpapers"
+        for path in sorted(wdir.glob("WP-*.yaml")) if wdir.is_dir() else []:
+            data = load_yaml(path)
+            wid = path.stem  # the file name is the identity; a mismatching `id:` is reported (E025)
+            if isinstance(data, dict) and data.get("requirement") is not None:
+                data["requirement"] = str(data["requirement"])
+            model.workpapers.setdefault(a["id"], {})[wid] = data
+            model.workpaper_files[f"{a['id']}/{wid}"] = path
+    fnd = edir / "findings.yaml"
+    if fnd.exists():
+        model.findings = load_yaml(fnd).get("findings", []) or []
+        for f in model.findings:
+            if isinstance(f, dict) and f.get("requirement") is not None:
+                f["requirement"] = str(f["requirement"])
     return model
 
 

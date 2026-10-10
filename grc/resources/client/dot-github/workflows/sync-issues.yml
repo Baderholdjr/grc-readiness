@@ -9,6 +9,7 @@ on:
       - engagement/gaps.yaml
       - engagement/engagement.yaml
       - engagement/owners.yaml
+      - engagement/findings.yaml
   schedule:
     - cron: "7 15 * * *"   # daily: refresh assignments and post overdue reminders
   workflow_dispatch:

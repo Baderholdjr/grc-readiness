@@ -72,6 +72,13 @@ def check_schemas(model: Engagement) -> list[Finding]:
                                    _rel(model, edir / "collectors.yaml"), chk["evidence"]))
     if (edir / "owners.yaml").exists():
         run("owners", {"owners": model.owners}, edir / "owners.yaml")
+    if (edir / "audit" / "program.yaml").exists():
+        run("audit-program", {"audits": model.audits}, edir / "audit" / "program.yaml")
+    for key, path in model.workpaper_files.items():
+        aid, wid = key.split("/")
+        run("workpaper", model.workpapers[aid][wid], path, key)
+    if (edir / "findings.yaml").exists():
+        run("findings", {"findings": model.findings}, edir / "findings.yaml")
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -96,7 +103,8 @@ def check_structure(model: Engagement) -> list[Finding]:
         elif path.stem != cid:
             out.append(Finding("error", "E003", f"File name should be {cid}.yaml.", _rel(model, path), cid))
     # E011 duplicate ids
-    for label, items in (("evidence", model.evidence), ("gap", model.gaps)):
+    for label, items in (("evidence", model.evidence), ("gap", model.gaps), ("finding", model.findings),
+                         ("audit", model.audits)):
         seen = set()
         for it in items:
             if it.get("id") in seen:
@@ -168,20 +176,33 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
                 # E007 expired / E015 collector failing
                 if known and not any(model.evidence_is_current(e) for e in known):
                     failing = [e["id"] for e in known if model.evidence_is_failing(e)]
-                    if failing:
+                    wps = [e["id"] for e in known if e.get("source") == "audit" and model.evidence_is_failing(e)]
+                    if wps and len(wps) == len(known):
+                        out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on audit workpaper(s) {', '.join(wps)} "
+                                           "that are not concluded effective and independently reviewed.", path, cid))
+                    elif failing and not any(e.get("source") == "audit" for e in known if e["id"] in failing):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' but the collector check for "
                                            f"{', '.join(failing)} is failing; no other current evidence supports it.", path, cid))
                     else:
                         out.append(Finding("error", "E007", f"{cid}.{k} is 'verified' but all cited evidence has expired.", path, cid))
-                # E012 evidence type fits the leg
-                types = {e["type"] for e in known}
-                if k == "documented":
-                    if not any(e["type"] == "document" and e.get("approved_by") for e in known):
-                        out.append(Finding("error", "E012", f"{cid}.documented needs an approved 'document' (with approved_by).", path, cid))
-                elif k in ("implemented", "evidenced") and known and not types & OPERATING_TYPES:
+                # E012 evidence type fits the leg - judged on CURRENT evidence only, so an expired
+                # document or an unreviewed workpaper can't make up the required type.
+                cur = [e for e in known if model.evidence_is_current(e)]
+                types = {e["type"] for e in cur}
+                if cur and k == "documented":
+                    if not any(e["type"] == "document" and e.get("approved_by") for e in cur):
+                        out.append(Finding("error", "E012", f"{cid}.documented needs a current, approved 'document' (with approved_by).", path, cid))
+                elif cur and k in ("implemented", "evidenced") and not types & OPERATING_TYPES:
                     out.append(Finding("error", "E012", f"{cid}.{k} cites only design documents; operating evidence (record/log/config/...) is required.", path, cid))
-                elif k == "tested" and known and not types & TEST_TYPES:
-                    out.append(Finding("error", "E012", f"{cid}.tested needs test, sample or interview evidence.", path, cid))
+                elif cur and k == "tested" and not types & TEST_TYPES:
+                    out.append(Finding("error", "E012", f"{cid}.tested needs current test, sample or interview evidence.", path, cid))
+                # W125: an audit workpaper cited for a different requirement
+                for e in known:
+                    if e.get("source") == "audit":
+                        aid, wid = e["id"].split("/")
+                        wreq = model.workpapers.get(aid, {}).get(wid, {}).get("requirement")
+                        if wreq and wreq != cid:
+                            out.append(Finding("warning", "W125", f"{cid}.{k} cites {e['id']}, which tested {wreq}.", path, cid))
             # expiring soon
             for e in known:
                 exp = model.evidence_expiry(e)
@@ -284,6 +305,160 @@ def check_owners(model: Engagement) -> list[Finding]:
     return out
 
 
+def check_audit(model: Engagement) -> list[Finding]:
+    """Internal audit (9.2) and corrective action (10.2) integrity."""
+    out: list[Finding] = []
+    prog = _rel(model, model.engagement_dir / "audit" / "program.yaml")
+    fpath = _rel(model, model.engagement_dir / "findings.yaml")
+    for a in model.audits:
+        try:
+            _check_one_audit(model, a, prog, out)
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            out.append(Finding("error", "E000", f"{a.get('id', '?')}: could not evaluate this audit ({exc!r}); "
+                               "fix the schema errors above.", prog, str(a.get("id"))))
+    for f in model.findings:
+        try:
+            _check_one_finding(model, f, fpath, out)
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            out.append(Finding("error", "E000", f"{f.get('id', '?')}: could not evaluate this finding ({exc!r}).", fpath, str(f.get("id"))))
+    # W121: clause 9.2 can't be operating without a completed audit
+    c92 = model.controls.get("9.2", {}).get("test", {})
+    if any((c92.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and \
+            not any(a.get("status") in ("reporting", "closed") for a in model.audits):
+        out.append(Finding("warning", "W121", "9.2 is marked verified but no internal audit has reached reporting.",
+                           _rel(model, model.control_files.get("9.2")), "9.2"))
+    return out
+
+
+def _owner_of(model: Engagement, rid: str | None) -> str:
+    return (model.controls.get(rid or "", {}).get("owner") or "").strip()
+
+
+def _check_one_audit(model: Engagement, a: dict, prog: str, out: list[Finding]) -> None:
+    from .audit import in_scope, unmatched_scope
+    aid = a["id"]
+    scope = in_scope(model, a)
+    for sel in unmatched_scope(model, a):
+        out.append(Finding("warning", "W124", f"{aid}: scope/exclude entry '{sel}' matches no requirement.", prog, aid))
+    auditor_ids = set().union(*[model.identities(x) for x in a.get("auditors", [])]) if a.get("auditors") else set()
+    # E020 independence: auditors must not audit their own controls
+    conflicts = [f"{rid} ({_owner_of(model, rid)})" for rid in scope
+                 if _owner_of(model, rid) and model.identities(_owner_of(model, rid)) & auditor_ids]
+    if conflicts:
+        out.append(Finding("error", "E020", f"{aid}: auditor(s) would audit controls they own: {', '.join(conflicts[:10])}"
+                           + (" …" if len(conflicts) > 10 else "") + ". Exclude them from scope or change auditors.", prog, aid))
+    if dt.date.fromisoformat(str(a["planned"]["end"])) < dt.date.fromisoformat(str(a["planned"]["start"])):
+        out.append(Finding("error", "E014", f"{aid}: planned end is before start.", prog, aid))
+    wps = model.workpapers.get(aid, {})
+    status = a.get("status")
+    if status in ("fieldwork", "reporting", "closed") and not wps:
+        out.append(Finding("error", "E021", f"{aid} is '{status}' but has no workpapers (run `grc audit plan {aid}`).", prog, aid))
+    open_wps = [w for w, wp in wps.items() if wp.get("conclusion", "not_started") == "not_started"]
+    if status in ("reporting", "closed") and open_wps:
+        out.append(Finding("error", "E021", f"{aid} is '{status}' but {len(open_wps)} workpaper(s) are not concluded: "
+                           + ", ".join(open_wps[:8]), prog, aid))
+    if status == "closed":
+        unreviewed = [w for w, wp in wps.items() if wp.get("conclusion") not in (None, "not_started")
+                      and not model.independent(wp.get("reviewed_by"), wp.get("performed_by"))]
+        if unreviewed:
+            out.append(Finding("error", "E021", f"{aid} is closed but workpapers lack independent review: {', '.join(unreviewed[:8])}", prog, aid))
+        rep = a.get("report") or {}
+        if not (rep.get("issued") and rep.get("approved_by")):
+            out.append(Finding("error", "E021", f"{aid} is closed without report.issued and report.approved_by.", prog, aid))
+    if status in ("planned", "fieldwork") and dt.date.fromisoformat(str(a["planned"]["end"])) < model.today:
+        out.append(Finding("warning", "W122", f"{aid} planned to finish {a['planned']['end']} but is still '{status}'.", prog, aid))
+    covered = {wp.get("requirement") for wp in wps.values()}
+    if wps:
+        for rid in scope:
+            if rid not in covered:
+                out.append(Finding("warning", "W123", f"{aid}: {rid} is in scope but has no workpaper (re-run `grc audit plan`).", prog, aid))
+
+    fidx = model.finding_index
+    for wid, wp in wps.items():
+        path = _rel(model, model.workpaper_files[f"{aid}/{wid}"])
+        ref = f"{aid}/{wid}"
+        if str(wp.get("id")) != wid:
+            out.append(Finding("error", "E025", f"{ref}: file is {wid}.yaml but its id is '{wp.get('id')}'.", path, ref))
+        if wp.get("audit") != aid:
+            out.append(Finding("error", "E025", f"{ref}: audit field is '{wp.get('audit')}'.", path, ref))
+        if wp.get("requirement") not in model.requirement_index:
+            out.append(Finding("error", "E025", f"{ref}: unknown requirement {wp.get('requirement')}.", path, ref))
+        concl = wp.get("conclusion", "not_started")
+        sample = [s for s in wp.get("sample") or [] if isinstance(s, dict)]
+        pending = [str(s.get("item")) for s in sample if s.get("result", "not_tested") == "not_tested"]
+        exceptions = [str(s.get("item")) for s in sample if s.get("result") == "exception"]
+        if concl in ("effective", "not_effective"):
+            if not (wp.get("performed_by") and wp.get("performed_on")):
+                out.append(Finding("error", "E022", f"{ref} is concluded without performed_by/performed_on.", path, ref))
+            if pending:
+                out.append(Finding("error", "E022", f"{ref} is concluded with {len(pending)} untested sample item(s): {', '.join(pending[:6])}.", path, ref))
+            if not (wp.get("summary") or "").strip():
+                out.append(Finding("error", "E022", f"{ref} is concluded without a summary of what was tested.", path, ref))
+        if concl == "effective" and exceptions and not (wp.get("exception_rationale") or "").strip():
+            out.append(Finding("error", "E022", f"{ref} is 'effective' despite exceptions ({', '.join(exceptions[:6])}) "
+                               "with no exception_rationale.", path, ref))
+        if concl == "not_effective" and not wp.get("findings"):
+            out.append(Finding("error", "E022", f"{ref} is 'not_effective' but raises no finding.", path, ref))
+        for fid in wp.get("findings") or []:
+            if fid not in fidx:
+                out.append(Finding("error", "E025", f"{ref} cites {fid}, which is not in findings.yaml.", path, ref))
+        if wp.get("reviewed_by") and wp.get("performed_by") and not model.independent(wp["reviewed_by"], wp["performed_by"]):
+            out.append(Finding("error", "E022", f"{ref} is reviewed by the person who performed it ({wp['reviewed_by']}).", path, ref))
+        if wp.get("reviewed_by") and concl == "not_started":
+            out.append(Finding("error", "E022", f"{ref} is marked reviewed but not concluded.", path, ref))
+        owner = _owner_of(model, wp.get("requirement"))
+        for role in ("performed_by", "reviewed_by"):
+            if wp.get(role) and owner and not model.independent(wp[role], owner):
+                out.append(Finding("error", "E020", f"{ref}: {role} '{wp[role]}' owns {wp.get('requirement')} - "
+                                   "nobody may audit or review their own control.", path, ref))
+
+
+def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding]) -> None:
+    fid, st = f["id"], f.get("status")
+    if f.get("requirement") not in model.requirement_index:
+        out.append(Finding("error", "E025", f"{fid}: unknown requirement {f.get('requirement')}.", fpath, fid))
+    if f.get("audit") and f["audit"] not in model.audit_index:
+        out.append(Finding("error", "E025", f"{fid}: unknown audit {f['audit']}.", fpath, fid))
+    if f.get("workpaper") and f.get("audit") and f["workpaper"] not in model.workpapers.get(f["audit"], {}):
+        out.append(Finding("error", "E025", f"{fid}: unknown workpaper {f['audit']}/{f['workpaper']}.", fpath, fid))
+    if fid.startswith("OFI") != (f.get("grade") == "ofi"):
+        out.append(Finding("error", "E024", f"{fid}: OFI-… ids are for grade 'ofi'; NC-… ids for major/minor.", fpath, fid))
+    ev_idx = model.evidence_index
+    for e in (f.get("evidence") or []) + ((f.get("effectiveness") or {}).get("evidence") or []):
+        if e not in ev_idx:
+            out.append(Finding("error", "E006", f"{fid} cites unknown evidence {e}.", fpath, fid))
+        elif ev_idx[e].get("source") == "audit" and model.evidence_is_failing(ev_idx[e]):
+            out.append(Finding("error", "E024", f"{fid} cites workpaper {e}, which is not concluded effective and "
+                               "independently reviewed.", fpath, fid))
+    if f.get("grade") == "ofi":
+        return
+    if st in ("action_planned", "implemented", "closed"):
+        need = [k for k in ("owner", "due", "root_cause", "corrective_action") if not str(f.get(k) or "").strip()]
+        if need:
+            out.append(Finding("error", "E024", f"{fid} is '{st}' without {', '.join(need)}.", fpath, fid))
+    if st in ("implemented", "closed") and not f.get("evidence"):
+        out.append(Finding("error", "E024", f"{fid} is '{st}' without implementation evidence.", fpath, fid))
+    if st == "closed":
+        eff = f.get("effectiveness") or {}
+        if not (eff.get("effective") is True and eff.get("reviewed_by") and eff.get("reviewed_on") and eff.get("evidence")):
+            out.append(Finding("error", "E024", f"{fid} is closed without an effectiveness review "
+                               "(effective: true, reviewed_by, reviewed_on, evidence).", fpath, fid))
+        elif not model.independent(eff.get("reviewed_by"), f.get("owner")):
+            out.append(Finding("error", "E024", f"{fid}: effectiveness was reviewed by the action owner "
+                               f"('{eff.get('reviewed_by')}' is '{f.get('owner')}').", fpath, fid))
+    if st == "accepted" and f.get("grade") == "major":
+        out.append(Finding("error", "E024", f"{fid}: a major nonconformity cannot be risk-accepted; it must be corrected.", fpath, fid))
+    if st not in ("closed", "accepted") and f.get("due") and dt.date.fromisoformat(str(f["due"])) < model.today:
+        out.append(Finding("warning", "W120", f"{fid} ({f['grade']}) is past due ({f['due']}).", fpath, fid))
+    if st == "open" and not f.get("owner"):
+        out.append(Finding("warning", "W103", f"{fid} is open with no owner.", fpath, fid))
+    if f.get("grade") == "major" and st != "closed":
+        c = model.controls.get(f.get("requirement"), {})
+        if (c.get("test", {}).get("tested", {}) or {}).get("status") == "verified":
+            out.append(Finding("error", "E026", f"{f['requirement']}.tested is 'verified' but {fid} (major) is still {st}.",
+                               _rel(model, model.control_files.get(f["requirement"])), f["requirement"]))
+
+
 def check_collected(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
@@ -295,7 +470,7 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners)
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit)
 
 
 def validate(model: Engagement) -> list[Finding]:
@@ -305,7 +480,7 @@ def validate(model: Engagement) -> list[Finding]:
     for rule in ALL_RULES[1:]:
         try:
             findings.extend(rule(model))
-        except (KeyError, TypeError, ValueError) as exc:  # malformed data already reported by schema check
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:  # malformed data already reported by schema check
             if not schema_findings:
                 findings.append(Finding("error", "E000", f"{rule.__name__} could not run: {exc!r}"))
     return findings
@@ -343,8 +518,11 @@ def metrics(model: Engagement) -> dict:
     total_legs = len(applicable) * 4
     verified_legs = sum(v["verified"] for v in legs.values())
     gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
-    stale = [e["id"] for e in model.evidence if model.evidence_is_expired(e)]
-    failing = [e["id"] for e in model.evidence if model.evidence_is_failing(e)]
+    cited = {r for c in model.controls.values() for leg in (c.get("test") or {}).values()
+             for r in (leg or {}).get("evidence", []) or []}
+    counted = list(model.evidence) + [e for e in model.workpaper_evidence.values() if e["id"] in cited]
+    stale = [e["id"] for e in counted if model.evidence_is_expired(e)]
+    failing = [e["id"] for e in counted if model.evidence_is_failing(e)]
     b = model.engagement.get("budget", {})
     return {
         "as_of": model.today.isoformat(),
@@ -360,6 +538,10 @@ def metrics(model: Engagement) -> dict:
         "evidence_total": len(model.evidence),
         "evidence_stale": stale,
         "evidence_failing": failing,
+        "findings_total": len(model.findings),
+        "nc_open_major": sum(1 for f in model.findings if f.get("grade") == "major" and f.get("status") not in ("closed", "accepted")),
+        "nc_open_minor": sum(1 for f in model.findings if f.get("grade") == "minor" and f.get("status") not in ("closed", "accepted")),
+        "audits": {a["id"]: a.get("status") for a in model.audits},
         "hours_total": b.get("hours_total"),
         "hours_used": b.get("hours_used", 0),
     }

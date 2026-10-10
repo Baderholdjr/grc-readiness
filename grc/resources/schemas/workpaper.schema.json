@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workpaper.schema.json",
+  "title": "Audit workpaper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "audit",
+    "requirement",
+    "conclusion"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^WP-\\d{2,3}$"
+    },
+    "audit": {
+      "type": "string",
+      "pattern": "^AUD-\\d{4}-\\d{2}$"
+    },
+    "requirement": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "procedure": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_reviewed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "population": {
+      "type": "string",
+      "description": "name of a population in the audit programme"
+    },
+    "sample_size": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "population_size": {
+          "type": "integer"
+        },
+        "population_sha256": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "string"
+        },
+        "drawn_on": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "method": {
+          "type": "string"
+        }
+      }
+    },
+    "sample": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item"
+        ],
+        "properties": {
+          "item": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          },
+          "result": {
+            "enum": [
+              "not_tested",
+              "pass",
+              "exception"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "conclusion": {
+      "enum": [
+        "not_started",
+        "effective",
+        "not_effective",
+        "not_applicable"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "exception_rationale": {
+      "type": "string",
+      "description": "Why exceptions don't make the control ineffective."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(NC|OFI)-\\d{3}$"
+      }
+    },
+    "performed_by": {
+      "type": "string"
+    },
+    "performed_on": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_on": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    }
+  }
+}

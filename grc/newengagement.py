@@ -145,6 +145,23 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
         "# Collector-produced evidence lives in collected.yaml (machine-owned).\n\nevidence: []\n", encoding="utf-8")
     (engagement_dir / "collectors.yaml").write_text(COLLECTORS, encoding="utf-8")
     (engagement_dir / "owners.yaml").write_text(OWNERS, encoding="utf-8")
+    test = next(p for p in phases if p["id"] == "test")
+    (engagement_dir / "audit").mkdir()
+    (engagement_dir / "audit" / "program.yaml").write_text(
+        "# Internal audit programme (ISO 42001 clause 9.2).\n"
+        "# 1. Set auditors (they must not own any control in scope) and confirm scope/dates.\n"
+        "# 2. Actions -> Internal audit -> plan, then sample. Complete workpapers; raise findings in findings.yaml.\n"
+        "# 3. Move status: planned -> fieldwork -> reporting -> closed (CI checks each step).\n\n"
+        + yaml.safe_dump({"audits": [{
+            "id": f"AUD-{test['start'].year}-01", "title": "ISO 42001 internal audit - full AIMS", "scope": "all",
+            "criteria": ["ISO/IEC 42001:2023", "AIMS policy and procedures"], "auditors": ["Internal Auditor"],
+            "planned": {"start": test["start"], "end": test["end"]}, "status": "planned", "populations": {}}]},
+            sort_keys=False, allow_unicode=True, width=120), encoding="utf-8")
+    (engagement_dir / "findings.yaml").write_text(
+        "# Nonconformities, OFIs and corrective actions (ISO 42001 clause 10.2).\n"
+        "# Ids: NC-001 (grade major/minor), OFI-001 (grade ofi). Mirrored to GitHub Issues.\n"
+        "# Lifecycle: open -> action_planned -> implemented -> closed (effectiveness reviewed by someone else).\n\n"
+        "findings: []\n", encoding="utf-8")
     (engagement_dir / "workpapers" / "README.md").write_text(
         "# Workpapers\n\nAnalyst test workpapers (non-confidential). Reference them from evidence/index.yaml "
         "as `type: test`, `sample` or `interview`.\n", encoding="utf-8")

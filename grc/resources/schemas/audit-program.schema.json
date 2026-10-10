@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audit-program.schema.json",
+  "title": "Internal audit programme (9.2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "audits"
+  ],
+  "properties": {
+    "audits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "scope",
+          "auditors",
+          "planned",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^AUD-\\d{4}-\\d{2}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "scope": {
+            "oneOf": [
+              {
+                "const": "all"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              }
+            ],
+            "description": "'all' applicable requirements, or a list of requirement ids / group prefixes (e.g. 'A.6', '9')."
+          },
+          "exclude": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "auditors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Names/roles/GitHub users. Must not own any control in scope (independence)."
+          },
+          "lead_auditor": {
+            "type": "string"
+          },
+          "planned": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "end": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            }
+          },
+          "status": {
+            "enum": [
+              "planned",
+              "fieldwork",
+              "reporting",
+              "closed"
+            ]
+          },
+          "populations": {
+            "type": "object",
+            "description": "Named sample populations.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "from_evidence": {
+                  "type": "string",
+                  "description": "collector evidence id whose snapshot lists items"
+                },
+                "file": {
+                  "type": "string",
+                  "description": "CSV/YAML path relative to engagement/audit/"
+                },
+                "key": {
+                  "type": "string"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "report": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "issued": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "approved_by": {
+                "type": "string"
+              },
+              "conclusion": {
+                "type": "string"
+              },
+              "distribution": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

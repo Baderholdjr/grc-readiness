@@ -94,6 +94,13 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | E015 | error | Leg is `verified` but the collector check behind its evidence is failing |
 | W102 | warning | Operates in practice but isn't codified in an approved document |
 | W101 / W104 / W105 / W106 | warning | Evidence expiring soon · gap past due · gap due after its phase ends · budget at or above 80% |
+| E020 | error | An internal auditor would audit a control they own (independence) |
+| E021 | error | Audit status ahead of its work (fieldwork without workpapers; reporting/closed with open or unreviewed workpapers, or no approved report) |
+| E022 | error | Workpaper concluded without performer, summary or tested sample; "effective" despite unexplained exceptions; "not effective" with no finding; self-reviewed |
+| E024 | error | Finding lifecycle skipped (no root cause/action/owner/due, no implementation evidence, no independent effectiveness review); major NC risk-accepted |
+| E025 | error | Audit, workpaper or finding references something that doesn't exist |
+| E026 | error | Control's *Tested* leg is verified while a major nonconformity on it is open |
+| W120–W123 | warning | Finding past due · 9.2 verified without a completed audit · audit overrunning · in-scope requirement without a workpaper |
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
@@ -119,6 +126,8 @@ In the client repository:
 3. List the client's people in `engagement/owners.yaml` (role → GitHub users), then run **`python -m grc codeowners`** so each owner is a required reviewer of their own controls. Gap Issues get assigned to them, and they're reminded when gaps go overdue.
 4. Upload client documents to `intake/` and point `engagement/collectors.yaml` at their systems. See [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
 5. Settings: protect `main` (require the **`validate / validate`** check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
+
+**Internal audit (9.2) and corrective actions (10.2):** see [`docs/AUDIT.md`](docs/AUDIT.md). Each new engagement starts with an audit scheduled in its Test phase.
 
 **No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 
