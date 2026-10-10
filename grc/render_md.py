@@ -110,7 +110,9 @@ def evidence_index(model: Engagement, out: Path):
                     supports[e].append(tag)
     headers = ["ID", "Title", "Type", "Location", "Collected", "Expires", "Current", "Approved by", "Supports"]
     rows = []
-    for e in model.evidence:
+    cited = set(supports)
+    audit_rows = [e for e in model.workpaper_evidence.values() if e["id"] in cited]
+    for e in list(model.evidence) + audit_rows:
         exp = model.evidence_expiry(e)
         rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
                      ("**FAILING**" if model.evidence_is_failing(e) else "**EXPIRED**" if model.evidence_is_expired(e) else "yes")

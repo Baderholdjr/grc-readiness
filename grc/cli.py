@@ -179,7 +179,7 @@ def cmd_audit(args) -> int:
     model = _model(args)
     try:
         log = audit.plan(model, args.audit_id) if args.action == "plan" else audit.sample(model, args.audit_id, args.force)
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     for line in log:

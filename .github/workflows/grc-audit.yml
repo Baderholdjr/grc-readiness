@@ -21,6 +21,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Continue on the audit's branch if it already exists (never discard auditor work)
+        env:
+          AUDIT: ${{ inputs.audit }}
+          ACTION: ${{ inputs.action }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          BRANCH="audit/$AUDIT-$ACTION"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git fetch -q origin "$BRANCH"
+            git checkout -q -B "$BRANCH" FETCH_HEAD
+            git config user.name "grc-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git merge -q --no-edit "origin/$BASE" || {
+              echo "::error::$BRANCH conflicts with $BASE - resolve it (or merge/close its PR) and re-run."; exit 1; }
+            echo "Continuing on existing branch $BRANCH (up to date with $BASE)"
+          fi
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -55,15 +73,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUDIT: ${{ inputs.audit }}
           ACTION: ${{ inputs.action }}
+          BASE: ${{ github.event.repository.default_branch }}
         run: |
           BRANCH="audit/$AUDIT-$ACTION"
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH"
+          git checkout -q -B "$BRANCH"
           git add -A engagement/audit
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git commit -q -m "Internal audit $AUDIT: $ACTION"
-          git push -f origin "$BRANCH"
+          git push origin "$BRANCH"
           { cat report.md; echo
             if [ "$ACTION" = plan ]; then
               echo "Next: merge, then run **Actions → Internal audit** with action \`sample\`."
@@ -73,7 +92,9 @@ jobs:
             fi; } > body.md
           NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
           if [ -z "$NUM" ]; then
-            gh pr create --base main --head "$BRANCH" --title "Internal audit $AUDIT: $ACTION" --body-file body.md
+            gh pr create --base "$BASE" --head "$BRANCH" --title "Internal audit $AUDIT: $ACTION" --body-file body.md || {
+              echo "::error title=Could not open the PR::Enable Settings -> Actions -> General -> 'Allow GitHub Actions to create and approve pull requests'. The work was pushed to branch $BRANCH."
+              exit 1; }
           else
             gh pr edit "$NUM" --body-file body.md
           fi

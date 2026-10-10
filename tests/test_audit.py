@@ -205,7 +205,7 @@ def test_audit_status_gates(tmp_path):
     edit_wp(edir, "WP-01", lambda w: _conclude(w))
     d["audits"][0]["report"] = {"issued": "2027-01-29", "approved_by": "Engagement Lead"}
     prog.write_text(yaml.safe_dump(d, sort_keys=False))
-    assert any("lack review" in f.message for f in errors(edir, code="E021"))
+    assert any("lack independent review" in f.message for f in errors(edir, code="E021"))
     edit_wp(edir, "WP-01", lambda w: w.update(reviewed_by="Engagement Lead", reviewed_on="2027-01-28"))
     assert not errors(edir)
 
@@ -246,3 +246,135 @@ def test_new_engagement_schedules_an_audit(tmp_path):
     test = m.phase_index["test"]
     assert a["id"] == "AUD-2027-01" and str(a["planned"]["start"]) == str(test["start"]) and m.findings == []
     assert not [f for f in validate(m) if f.severity == "error"]
+
+
+# ------------------------------------------------- regressions from review
+def _owners(edir, mapping):
+    (edir / "owners.yaml").write_text(yaml.safe_dump({"owners": [{"role": r, "github": u} for r, u in mapping.items()]}))
+
+
+def _cite_tested(edir, rid, refs):
+    p = edir / "controls" / f"{rid}.yaml"
+    c = yaml.safe_load(p.read_text())
+    c["test"]["tested"] = {"status": "verified", "evidence": refs}
+    p.write_text(yaml.safe_dump(c, sort_keys=False))
+
+
+def test_unconcluded_workpaper_cannot_supply_the_test_type(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",))
+    audit.plan(load(edir), "AUD-2027-01")
+    _cite_tested(edir, "A.6.2.5", ["EV-011", "AUD-2027-01/WP-01"])  # EV-011 is a record, WP-01 not started
+    assert errors(edir, code="E012")
+
+
+def test_independence_uses_identities(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",))
+    _owners(edir, {"Head of Platform": ["alice"], "Internal Auditor": ["bob"]})
+    audit.plan(load(edir), "AUD-2027-01")
+    # control owner performs the test of their own control
+    edit_wp(edir, "WP-01", lambda d: _conclude(d, by="Head of Platform", reviewed_by="Engagement Lead", reviewed_on="2027-01-18"))
+    assert any("owns A.6.2.5" in f.message for f in errors(edir, code="E020"))
+    # performer and reviewer differ only by case / role-vs-user
+    for reviewer in ("internal auditor", "@Bob"):
+        edit_wp(edir, "WP-01", lambda d: _conclude(d, by="Internal Auditor", reviewed_by=reviewer, reviewed_on="2027-01-18"))
+        assert any("reviewed by the person who performed" in f.message for f in errors(edir, code="E022")), reviewer
+        assert load(edir).evidence_index["AUD-2027-01/WP-01"]["result"] == "fail"
+
+
+def test_auditor_identity_forms(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",), auditors=("@alice",))
+    _owners(edir, {"Head of Platform": ["alice"]})
+    assert errors(edir, code="E020")
+    edir2 = setup(tmp_path / "b", scope=("A.6.2.5",), auditors=("Internal Auditor",))
+    _owners(edir2, {"Head of Platform": ["alice"], "Internal Auditor": ["alice"]})
+    assert errors(edir2, code="E020")
+
+
+def test_effectiveness_reviewer_is_owner_user(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",))
+    _owners(edir, {"Head of Platform": ["alice"]})
+    _findings(edir, [{**BASE, "owner": "Head of Platform", "due": "2027-02-15", "root_cause": "x", "corrective_action": "y",
+                      "evidence": ["EV-011"], "status": "closed",
+                      "effectiveness": {"reviewed_on": "2027-02-20", "reviewed_by": "alice", "effective": True, "evidence": ["EV-011"]}}])
+    assert any("reviewed by the action owner" in f.message for f in errors(edir, code="E024"))
+
+
+def test_finding_cannot_cite_failed_workpaper(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",))
+    audit.plan(load(edir), "AUD-2027-01")
+    _findings(edir, [{**BASE, "evidence": ["AUD-2027-01/WP-01"]}])
+    assert any("not concluded effective" in f.message for f in errors(edir, code="E024"))
+
+
+def test_workpaper_identity_is_file_name_and_plan_never_overwrites(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5", "A.6.2.4"))
+    audit.plan(load(edir), "AUD-2027-01")
+    edit_wp(edir, "WP-02", lambda d: d.update(id="WP-01", summary="precious"))
+    m = load(edir)
+    assert set(m.workpapers["AUD-2027-01"]) == {"WP-01", "WP-02"}
+    assert any("its id is 'WP-01'" in f.message for f in errors(edir, code="E025"))
+    # add a requirement to scope: the new workpaper must not clobber an existing file
+    prog = edir / "audit" / "program.yaml"
+    d = yaml.safe_load(prog.read_text())
+    d["audits"][0]["scope"].append("9.2")
+    prog.write_text(yaml.safe_dump(d, sort_keys=False))
+    audit.plan(load(edir), "AUD-2027-01")
+    assert yaml.safe_load(wp_path(edir, "WP-02").read_text())["summary"] == "precious"
+    assert wp_path(edir, "WP-03").exists()
+
+
+def test_numeric_and_string_scope(tmp_path):
+    edir = setup(tmp_path)
+    prog = edir / "audit" / "program.yaml"
+    prog.write_text(prog.read_text().replace("- '9.2'", "- 9.2").replace("scope:\n  - A.6.2.5", "scope:\n  - A.6.2.5"))
+    assert "- 9.2" in prog.read_text()
+    assert "9.2" in audit.in_scope(load(edir), load(edir).audits[0])
+    assert not [f for f in validate(load(edir, today=TODAY)) if f.code in ("E000", "E001")]
+    d = yaml.safe_load(prog.read_text())
+    d["audits"][0]["scope"] = "A.6"
+    prog.write_text(yaml.safe_dump(d))
+    assert len(audit.in_scope(load(edir), load(edir).audits[0])) == 9
+    d["audits"][0]["scope"] = ["A.66"]
+    prog.write_text(yaml.safe_dump(d))
+    assert any(f.code == "W124" for f in validate(load(edir, today=TODAY)))
+
+
+def test_bad_hand_edits_dont_crash(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",), populations={"p": {"items": ["a", "b", "c"]}})
+    audit.plan(load(edir), "AUD-2027-01")
+    edit_wp(edir, "WP-01", lambda d: d.update(sample=["3", "7"], population="p"))
+    validate(load(edir, today=TODAY))  # no exception
+    assert "NOT redrawn" in audit.sample(load(edir), "AUD-2027-01", force=True)[0]
+    edit_wp(edir, "WP-01", lambda d: d.update(sample=[], sample_size=-1))
+    assert "sample_size" in audit.sample(load(edir), "AUD-2027-01")[0]
+
+
+def test_population_problems_are_reported(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",),
+                 populations={"missing": {"file": "populations/nope.csv"}, "badkey": {"from_evidence": "EV-150", "key": "vendor_id"}})
+    _snapshot(edir, "EV-150", 30)
+    audit.plan(load(edir), "AUD-2027-01")
+    edit_wp(edir, "WP-01", lambda d: d.update(population="missing"))
+    assert "not found" in audit.sample(load(edir), "AUD-2027-01")[0]
+    edit_wp(edir, "WP-01", lambda d: d.update(population="badkey"))
+    assert "have no 'vendor_id'" in audit.sample(load(edir), "AUD-2027-01")[0]
+
+
+def test_duplicate_finding_ids_and_workpaper_in_evidence_index(tmp_path):
+    edir = setup(tmp_path, scope=("A.6.2.5",))
+    _findings(edir, [BASE, BASE])
+    assert errors(edir, code="E011")
+    _findings(edir, [])
+    audit.plan(load(edir), "AUD-2027-01")
+    edit_wp(edir, "WP-01", lambda d: _conclude(d, reviewed_by="Engagement Lead", reviewed_on="2027-01-18"))
+    _cite_tested(edir, "A.6.2.5", ["AUD-2027-01/WP-01"])
+    out = tmp_path / "out"
+    assert main(["--engagement", str(edir), "--today", "2026-10-08", "build", "--out", str(out)]) == 0
+    assert "AUD-2027-01/WP-01" in (out / "evidence-index.csv").read_text()
+
+
+def test_playbook_procedure_keys_may_be_numbers(tmp_path):
+    edir = setup(tmp_path, scope=("9.2",))
+    m = load(edir)
+    m.playbook["audit_procedures"] = {9.2: ["Custom step"]}
+    assert audit.procedures(m, "9.2", None) == ["Custom step"]

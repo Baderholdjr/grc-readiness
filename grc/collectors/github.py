@@ -151,7 +151,7 @@ def pr_reviews(repo: str, base: str = "main", days: int = 90, label: str | None 
                         + ", ".join(f"#{x}" for x in unapproved[:20]))
     details = {"repo": repo, "base": base, "window_days": days, "label": label, "population": n,
                "independently_approved": approved, "approval_rate": round(rate, 3),
-               "unapproved_prs": unapproved[:50], "items": items}
+               "unapproved_prs": unapproved[:50], "items": items, "truncated": len(merged) > max_prs}
     return CheckResult(FAIL if findings else PASS,
                        f"{repo}: {approved}/{n} merged PRs independently approved ({days}d)", details, findings)
 
@@ -164,6 +164,7 @@ def workflow_runs(repo: str, workflow: str, branch: str = "main", days: int = 30
     data = _get(repo, f"/actions/workflows/{workflow}/runs",
                 {"branch": branch, "created": f">={since}", "per_page": 100, "status": "completed"}) or {}
     runs = data.get("workflow_runs", [])
+    truncated = int(data.get("total_count") or 0) > len(runs)
     runs = [r for r in runs if r.get("conclusion") in ("success", "failure", "timed_out")]  # ignore cancelled/skipped
     conclusions = [r.get("conclusion") for r in runs]
     failures = sum(c == "failure" for c in conclusions)
@@ -181,7 +182,8 @@ def workflow_runs(repo: str, workflow: str, branch: str = "main", days: int = 30
                "latest_run_url": latest.get("html_url") if latest else None,
                "latest_head_sha": latest.get("head_sha") if latest else None,
                "items": [{"id": f"run-{r.get('id')}", "conclusion": r.get("conclusion"), "created_at": r.get("created_at"),
-                          "head_sha": r.get("head_sha"), "url": r.get("html_url")} for r in runs]}
+                          "head_sha": r.get("head_sha"), "url": r.get("html_url")} for r in runs],
+               "truncated": truncated}
     return CheckResult(FAIL if findings else PASS,
                        f"{repo} {workflow}: {len(runs)} runs, {failures} failed ({days}d)", details, findings)
 

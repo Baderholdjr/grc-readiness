@@ -102,7 +102,7 @@ class Engagement:
         out = {}
         for aid, wps in self.workpapers.items():
             for wid, wp in wps.items():
-                reviewed = wp.get("reviewed_by") and wp.get("reviewed_by") != wp.get("performed_by")
+                reviewed = self.independent(wp.get("reviewed_by"), wp.get("performed_by"))
                 ok = wp.get("conclusion") == "effective" and reviewed
                 out[f"{aid}/{wid}"] = {
                     "id": f"{aid}/{wid}", "title": f"Internal audit {aid} {wid}: {wp.get('requirement')} {wp.get('title', '')}".strip(),
@@ -146,6 +146,28 @@ class Engagement:
             if o.get("role", "").strip().lower() == role.strip().lower():
                 return [u.lstrip("@") for u in o.get("github", []) or []]
         return []
+
+    def identities(self, name: str | None) -> set[str]:
+        """Everything a person/role name can stand for: itself, a role's GitHub users, a user's roles.
+
+        Used for independence checks, so 'alice', '@Alice' and the role alice belongs to all collide.
+        """
+        n = (name or "").strip().lstrip("@").lower()
+        if not n:
+            return set()
+        ids = {n}
+        for o in self.owners:
+            role = (o.get("role") or "").strip().lower()
+            users = {u.strip().lstrip("@").lower() for u in o.get("github", []) or []}
+            if n == role:
+                ids |= users
+            if n in users:
+                ids.add(role)
+        return ids
+
+    def independent(self, a: str | None, b: str | None) -> bool:
+        """True when a and b are both set and can't be the same person or role."""
+        return bool(a and b) and not (self.identities(a) & self.identities(b))
 
     def fmt(self, text: str) -> str:
         return text.replace("{client}", self.client)
@@ -224,16 +246,32 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     prog = edir / "audit" / "program.yaml"
     if prog.exists():
         model.audits = load_yaml(prog).get("audits", []) or []
+        for a in model.audits:
+            if isinstance(a, dict):
+                a["id"] = str(a.get("id"))
+                for k in ("scope", "exclude"):
+                    v = a.get(k)
+                    if isinstance(v, (list, tuple)):
+                        a[k] = [str(x) for x in v]
+                    elif v is not None and k == "exclude":
+                        a[k] = [str(v)]
+                    elif v is not None and v != "all":
+                        a[k] = [str(v)]
     for a in model.audits:
         wdir = edir / "audit" / str(a.get("id")) / "workpapers"
         for path in sorted(wdir.glob("WP-*.yaml")) if wdir.is_dir() else []:
             data = load_yaml(path)
-            wid = str(data.get("id", path.stem))
+            wid = path.stem  # the file name is the identity; a mismatching `id:` is reported (E025)
+            if isinstance(data, dict) and data.get("requirement") is not None:
+                data["requirement"] = str(data["requirement"])
             model.workpapers.setdefault(a["id"], {})[wid] = data
             model.workpaper_files[f"{a['id']}/{wid}"] = path
     fnd = edir / "findings.yaml"
     if fnd.exists():
         model.findings = load_yaml(fnd).get("findings", []) or []
+        for f in model.findings:
+            if isinstance(f, dict) and f.get("requirement") is not None:
+                f["requirement"] = str(f["requirement"])
     return model
 
 
