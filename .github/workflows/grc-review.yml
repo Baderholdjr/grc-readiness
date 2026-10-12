@@ -1,0 +1,107 @@
+name: Management review (reusable)
+
+# new:  schedule a management review (target = planned date, YYYY-MM-DD)
+# pack: generate (or refresh, until the review is held) its input pack (target = review id)
+on:
+  workflow_call:
+    inputs:
+      engine:
+        type: string
+        default: pinned
+      action:
+        type: string
+        required: true
+      target:
+        type: string
+        default: ""
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the inputs and continue an existing branch (never discard edits)
+        env:
+          ACTION: ${{ inputs.action }}
+          TARGET: ${{ inputs.target }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          case "$ACTION" in
+            new)  [[ -z "$TARGET" || "$TARGET" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "::error::new takes a date (YYYY-MM-DD)"; exit 1; }
+                  BRANCH="review/new" ;;
+            pack) [[ "$TARGET" =~ ^MR-[0-9]{4}-[0-9]{2}$ ]] || { echo "::error::pack takes a review id (MR-2027-01)"; exit 1; }
+                  BRANCH="review/$TARGET-pack" ;;
+            *)    echo "::error::action must be new or pack"; exit 1 ;;
+          esac
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git fetch -q origin "$BRANCH"
+            git checkout -q -B "$BRANCH" FETCH_HEAD
+            git config user.name "grc-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git merge -q --no-edit "origin/$BASE" || {
+              echo "::error::$BRANCH conflicts with $BASE - resolve it (or merge/close its PR) and re-run."; exit 1; }
+            echo "Continuing on existing branch $BRANCH (up to date with $BASE)"
+          fi
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
+            # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Run
+        env:
+          ACTION: ${{ inputs.action }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          python -m grc review "$ACTION" ${TARGET:+"$TARGET"} --report report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTION: ${{ inputs.action }}
+          TARGET: ${{ inputs.target }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name "grc-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -B "$BRANCH"
+          [ -d engagement/reviews ] && git add -A engagement/reviews
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -q -m "Management review: $ACTION $TARGET"
+          git push origin "$BRANCH"
+          if [ "$ACTION" = pack ]; then
+            TITLE="Management review $TARGET: input pack"
+            NEXT="Merge before the meeting and circulate the pack (reports: mr-$TARGET-pack.md / .docx). Afterwards record notes, decisions and actions in engagement/reviews/$TARGET.yaml."
+          else
+            TITLE="Management review: schedule"
+            NEXT="Next: set the chair and attendees; shortly before the meeting run this workflow with action \`pack\`."
+          fi
+          { cat report.md; echo; echo "$NEXT"; echo
+            echo "Docs: https://github.com/Baderholdjr/grc-readiness/blob/main/docs/REVIEW.md"; } > body.md
+          NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$NUM" ]; then
+            gh pr create --base "$BASE" --head "$BRANCH" --title "$TITLE" --body-file body.md || {
+              echo "::error title=Could not open the PR::Enable Settings -> Actions -> General -> 'Allow GitHub Actions to create and approve pull requests'. The work was pushed to branch $BRANCH."
+              exit 1; }
+          else
+            gh pr edit "$NUM" --body-file body.md
+          fi
+          gh workflow run validate.yml --ref "$BRANCH"

@@ -81,6 +81,12 @@ def check_schemas(model: Engagement) -> list[Finding]:
         run("findings", {"findings": model.findings}, edir / "findings.yaml")
     for iid, path in model.impact_files.items():
         run("impact-assessment", model.impacts[iid], path, iid)
+    for rid, path in model.review_files.items():
+        r = model.reviews[rid]
+        if isinstance(r, dict) and r.get("_error"):
+            out.append(Finding("error", "E001", f"{rid}: {r['_error']}.", _rel(model, path), rid))
+        else:
+            run("management-review", r, path, rid)
     for did, path in model.document_files.items():
         d = model.documents[did]
         if d.get("error"):
@@ -187,7 +193,11 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
                     wps = [e["id"] for e in known if e.get("source") == "audit" and model.evidence_is_failing(e)]
                     ias = [e["id"] for e in known if e.get("source") == "impact" and model.evidence_is_failing(e)]
                     dcs = [e["id"] for e in known if e.get("source") == "document" and model.evidence_is_failing(e)]
-                    if dcs and len(dcs) == len(known):
+                    mrs = [e["id"] for e in known if e.get("source") == "review" and model.evidence_is_failing(e)]
+                    if mrs and len(mrs) == len(known):
+                        out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on management review(s) {', '.join(mrs)} "
+                                           "that are not held with complete, approved minutes.", path, cid))
+                    elif dcs and len(dcs) == len(known):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on document(s) {', '.join(dcs)} "
                                            "that are not soundly approved (see E041/E042).", path, cid))
                     elif ias and len(ias) == len(known):
@@ -196,7 +206,7 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
                     elif wps and len(wps) == len(known):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on audit workpaper(s) {', '.join(wps)} "
                                            "that are not concluded effective and independently reviewed.", path, cid))
-                    elif failing and not any(e.get("source") in ("audit", "impact", "document") for e in known if e["id"] in failing):
+                    elif failing and not any(e.get("source") in ("audit", "impact", "document", "review") for e in known if e["id"] in failing):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' but the collector check for "
                                            f"{', '.join(failing)} is failing; no other current evidence supports it.", path, cid))
                     else:
@@ -270,7 +280,7 @@ def check_gaps(model: Engagement) -> list[Finding]:
             for e in g.get("closure_evidence", []):
                 if e not in model.evidence_index:
                     out.append(Finding("error", "E006", f"{gid} cites unknown closure evidence {e}.", path, gid))
-                elif model.evidence_index[e].get("source") in ("audit", "impact", "document") and model.evidence_is_failing(model.evidence_index[e]):
+                elif model.evidence_index[e].get("source") in ("audit", "impact", "document", "review") and model.evidence_is_failing(model.evidence_index[e]):
                     out.append(Finding("error", "E013", f"{gid} is closed on {e}, which isn't approved/concluded effective "
                                        "and independently reviewed.", path, gid))
     return out
@@ -449,6 +459,9 @@ def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding
         elif ev_idx[e].get("source") == "audit" and model.evidence_is_failing(ev_idx[e]):
             out.append(Finding("error", "E024", f"{fid} cites workpaper {e}, which is not concluded effective and "
                                "independently reviewed.", fpath, fid))
+        elif ev_idx[e].get("source") == "review" and model.evidence_is_failing(ev_idx[e]):
+            out.append(Finding("error", "E024", f"{fid} cites management review {e}, which is not held with complete, "
+                               "approved minutes.", fpath, fid))
         elif ev_idx[e].get("source") == "document" and model.evidence_is_failing(ev_idx[e]):
             out.append(Finding("error", "E024", f"{fid} cites document {e}, which is not soundly approved.", fpath, fid))
         elif ev_idx[e].get("source") == "impact" and model.evidence_is_failing(ev_idx[e]):
@@ -655,6 +668,72 @@ def check_documents(model: Engagement) -> list[Finding]:
     return out
 
 
+def check_reviews(model: Engagement) -> list[Finding]:
+    """Management review (9.3)."""
+    from .review import _dicts, last_held, method, problems, reviews, safe_date
+    out: list[Finding] = []
+    cfg = method(model)
+    ev_idx = model.evidence_index
+    for rid, r in reviews(model).items():
+        if r.get("_error"):
+            continue
+        path = _rel(model, model.review_files[rid])
+        try:
+            if str(r.get("id")) != rid:
+                out.append(Finding("error", "E050", f"{rid}: file is {rid}.yaml but its id is '{r.get('id')}'.", path, rid))
+            for kind in ("decisions", "actions"):
+                ids = [str(x.get("id")) for x in _dicts(r.get(kind))]
+                for dup in sorted({i for i in ids if ids.count(i) > 1}):
+                    out.append(Finding("error", "E050", f"{rid}: {kind[:-1]} id {dup} is used more than once.", path, rid))
+            known_inputs = {i["id"] for i in cfg["inputs"]}
+            for i in _dicts(r.get("inputs")):
+                if str(i.get("id")) not in known_inputs:
+                    out.append(Finding("error", "E050", f"{rid}: unknown input '{i.get('id')}'.", path, rid))
+            st = r.get("status")
+            if st in ("held", "closed"):
+                p = problems(model, rid, r)
+                if p:
+                    out.append(Finding("error", "E051", f"{rid} is '{st}' but: {'; '.join(p)}.", path, rid))
+            elif st == "planned":
+                planned = safe_date(r.get("planned_on"))
+                if planned and planned < model.today:
+                    out.append(Finding("warning", "W150", f"{rid} was planned for {planned} but is not recorded as held.", path, rid))
+            for a in _dicts(r.get("actions")):
+                ref = f"{rid}/{a.get('id')}"
+                need = [k for k in ("action", "owner", "due") if not str(a.get(k) or "").strip()]
+                if need and a.get("status") != "cancelled":
+                    out.append(Finding("error", "E052", f"{ref}: action without {', '.join(need)}.", path, rid))
+                for e in a.get("evidence") or []:
+                    if e not in ev_idx:
+                        out.append(Finding("error", "E006", f"{ref} cites unknown evidence {e}.", path, rid))
+                if a.get("status") == "done":
+                    if not safe_date(a.get("closed_on")) or not a.get("evidence"):
+                        out.append(Finding("error", "E052", f"{ref} is done without closed_on and evidence.", path, rid))
+                    elif safe_date(a.get("closed_on")) > model.today:
+                        out.append(Finding("error", "E052", f"{ref}: closed_on is in the future.", path, rid))
+                due = safe_date(a.get("due"))
+                if a.get("status") == "open" and due and due < model.today:
+                    out.append(Finding("warning", "W152", f"{ref} is overdue (due {due}): {str(a.get('action'))[:80]}", path, rid))
+            if st == "closed" and any(a.get("status") == "open" for a in _dicts(r.get("actions"))):
+                out.append(Finding("error", "E052", f"{rid} is closed with open actions; finish or cancel them first.", path, rid))
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            out.append(Finding("error", "E000", f"{rid}: could not evaluate ({exc!r}).", path, rid))
+    # cadence: a review held within the cycle, and one before the Stage 1 audit
+    last = last_held(model)
+    rpath = _rel(model, model.engagement_dir / "reviews")
+    if last and (model.today - last[1]).days > int(cfg["review_every_days"]):
+        out.append(Finding("warning", "W151", f"The last management review ({last[0]}) was held on {last[1]}, more than "
+                           f"{cfg['review_every_days']} days ago.", rpath, last[0]))
+    stage1 = safe_date((model.engagement.get("dates") or {}).get("stage1"))
+    if not last and stage1 and 0 <= (stage1 - model.today).days <= int(cfg["warn_before_stage1_days"]):
+        out.append(Finding("warning", "W151", f"No management review has been held and the Stage 1 audit is on {stage1}.", rpath, None))
+    c93 = model.controls.get("9.3", {}).get("test", {})
+    if any((c93.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and not last:
+        out.append(Finding("warning", "W153", "9.3 is marked verified but no management review is recorded as held.",
+                           _rel(model, model.control_files.get("9.3")), "9.3"))
+    return out
+
+
 def check_collected(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
@@ -666,7 +745,7 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents)
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews)
 
 
 def validate(model: Engagement) -> list[Finding]:
@@ -699,6 +778,15 @@ def requirement_state(model: Engagement, cid: str) -> str:
     return "In progress"
 
 
+def _review_metrics(model: Engagement) -> dict:
+    from .review import actions, last_held, safe_date
+    last = last_held(model)
+    acts = actions(model)
+    return {"mr_last_held": str(last[1]) if last else None, "mr_actions_open": sum(1 for a in acts if a.get("status") == "open"),
+            "mr_actions_overdue": sum(1 for a in acts if a.get("status") == "open" and safe_date(a.get("due"))
+                                      and safe_date(a.get("due")) < model.today)}
+
+
 def _doc_metrics(model: Engagement) -> dict:
     from .documents import is_effective, library
     lib = library(model)
@@ -729,9 +817,10 @@ def metrics(model: Engagement) -> dict:
     gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
     cited = {r for c in model.controls.values() for leg in (c.get("test") or {}).values()
              for r in (leg or {}).get("evidence", []) or []}
-    from . import documents, impact
+    from . import documents, impact, review
     counted = list(model.evidence) + [e for e in list(model.workpaper_evidence.values()) + list(impact.evidence_entries(model).values())
-                                      + list(documents.evidence_entries(model).values()) if e["id"] in cited]
+                                      + list(documents.evidence_entries(model).values())
+                                      + list(review.evidence_entries(model).values()) if e["id"] in cited]
     stale = [e["id"] for e in counted if model.evidence_is_expired(e)]
     failing = [e["id"] for e in counted if model.evidence_is_failing(e)]
     b = model.engagement.get("budget", {})
@@ -752,6 +841,7 @@ def metrics(model: Engagement) -> dict:
         "findings_total": len(model.findings),
         **_ia_metrics(model),
         **_doc_metrics(model),
+        **_review_metrics(model),
         "nc_open_major": sum(1 for f in model.findings if f.get("grade") == "major" and f.get("status") not in ("closed", "accepted")),
         "nc_open_minor": sum(1 for f in model.findings if f.get("grade") == "minor" and f.get("status") not in ("closed", "accepted")),
         "audits": {a["id"]: a.get("status") for a in model.audits},

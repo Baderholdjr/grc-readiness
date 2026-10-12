@@ -18,7 +18,7 @@ from pathlib import Path
 from .model import Engagement
 
 API = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
-LABEL_COLORS = {"grc-gap": "183B4E", "grc-finding": "5319E7", "grade:major": "B60205", "grade:minor": "FBCA04",
+LABEL_COLORS = {"grc-gap": "183B4E", "grc-finding": "5319E7", "grc-review-action": "0E8A16", "grade:major": "B60205", "grade:minor": "FBCA04",
                 "grade:ofi": "0E8A16", "severity:high": "B60205", "severity:medium": "FBCA04", "severity:low": "0E8A16"}
 
 
@@ -129,6 +129,20 @@ def tracked_items(model: Engagement) -> list[dict]:
                       "body": finding_body(model, f), "labels": ["grc-finding", f"grade:{f['grade']}"],
                       "open": f["status"] not in ("closed", "accepted"), "owner": f.get("owner"),
                       "due": f.get("due"), "phase": "test" if f.get("source") == "internal_audit" else None})
+    from .review import actions
+    for a in actions(model):
+        if a.get("status") == "cancelled" and not a.get("issue"):
+            continue
+        key = f"{a['review']}/{a.get('id')}"
+        body = (f"<!-- grc:{key} -->\n**Management review action** from {a['review']} (ISO 42001 9.3).\n\n"
+                f"- **Action:** {a.get('action', '')}\n- **Owner:** {a.get('owner') or '—'}\n- **Due:** {a.get('due') or '—'}\n"
+                + (f"- **Decision:** {a['decision']}\n" if a.get("decision") else "")
+                + f"\nClose it in `engagement/reviews/{a['review']}.yaml` (status: done, closed_on, evidence) through a PR; "
+                "this issue follows.\n")
+        items.append({"kind": "review", "noun": "management review action", "file": f"reviews/{a['review']}.yaml",
+                      "id": key, "title": f"[{key}] {str(a.get('action', ''))[:100]}", "body": body,
+                      "labels": ["grc-review-action"], "open": a.get("status") == "open", "owner": a.get("owner"),
+                      "due": a.get("due"), "phase": None})
     return items
 
 
@@ -188,9 +202,9 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
 
     # issues: gaps (grc-gap) and audit/other findings (grc-finding)
     found: dict[str, dict] = {}
-    for label in ("grc-gap", "grc-finding"):
+    for label in ("grc-gap", "grc-finding", "grc-review-action"):
         for iss in gh.paged(f"/issues?state=all&labels={label}"):
-            m = re.search(r"<!-- grc:((?:GAP|NC|OFI)-\d+) -->", iss.get("body") or "")
+            m = re.search(r"<!-- grc:((?:GAP|NC|OFI)-\d+|MR-\d{4}-\d{2}/A-\d+) -->", iss.get("body") or "")
             if m:
                 found[m.group(1)] = iss
     mapping = {}

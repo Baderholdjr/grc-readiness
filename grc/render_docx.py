@@ -6,6 +6,7 @@ matches the house style; all content comes from the repo.
 from __future__ import annotations
 
 import copy
+import re
 import datetime as dt
 import zipfile
 from pathlib import Path
@@ -332,40 +333,27 @@ def _md_blocks(body: str):
             yield ("p", " ".join(para))
 
 
-def render_document(model: Engagement, doc_id: str, out_path: Path) -> Path:
-    """One policy/procedure as Word, in the house style, with a document-control block."""
-    from .documents import is_effective, next_review
+def render_markdown(model: Engagement, body: str, out_path: Path, title: str, stamp_date: dt.date,
+                    banner: str | None = None, control: list[list[str]] | None = None, control_title: str = "Document control") -> Path:
+    """Markdown subset -> Word in the house style (shared by policies, procedures and review packs)."""
     from .model import resource
-    d = model.documents[doc_id]
-    meta, body = d["meta"], d["body"]
     doc = docx.Document(str(resource(model.root, "templates", "brief-template.docx")))
     root = doc.element.body
     for p in list(root):
         if p.tag != qn("w:sectPr"):
             root.remove(p)
-    effective = is_effective(model, doc_id)
     blocks = list(_md_blocks(body))
-    title = meta.get("title") or doc_id
     if blocks and blocks[0][0] == "h" and blocks[0][1] == 1:
         title = blocks.pop(0)[2]
     t = doc.add_paragraph(style="Title")
-    _run(t, f"{model.client} — {title}")
-    if not effective:
-        callout(doc, f"DRAFT — {meta.get('status') or 'draft'}, not an approved document")
-    nr = next_review(model, meta)
-    data_table(doc, ["Document control", ""], [
-        ["Document", f"{doc_id} · version {meta.get('version', '—')} · {meta.get('kind', '')}"],
-        ["Status", str(meta.get("status") or "—")],
-        ["Owner", meta.get("owner") or "—"],
-        ["Approved", f"{meta.get('approver') or '—'} on {meta.get('approved_on') or '—'}"],
-        ["Next review", str(nr) if nr else "—"],
-        ["Requirements", ", ".join(meta.get("satisfies") or []) or "—"],
-    ], [2600, CONTENT - 2600])
-    nums = 0
+    _run(t, title)
+    if banner:
+        callout(doc, banner)
+    if control:
+        data_table(doc, [control_title, ""], control, [2600, CONTENT - 2600])
     for b in blocks:
         if b[0] == "h":
             heading(doc, b[2], level=max(1, b[1] - 1))
-            nums = 0
         elif b[0] == "p":
             p = doc.add_paragraph()
             _inline(p, b[1])
@@ -383,15 +371,39 @@ def render_document(model: Engagement, doc_id: str, out_path: Path) -> Path:
             data_table(doc, [h.replace("**", "") for h in header], [[c.replace("**", "") for c in r] for r in rows],
                        [CONTENT // n] * n, bold_cols=())
     cp = doc.core_properties
-    cp.title = f"{model.client} {title}"
+    cp.title = title
     cp.author = cp.last_modified_by = "grc-readiness"
-    stamp = dt.datetime.combine(safe_stamp(meta) or model.today, dt.time(12, 0))
+    stamp = dt.datetime.combine(stamp_date, dt.time(12, 0))
     cp.created = cp.modified = stamp
     cp.revision = 1
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_path))
     _normalize_zip(out_path, stamp)
     return out_path
+
+
+def render_document(model: Engagement, doc_id: str, out_path: Path) -> Path:
+    """One policy/procedure as Word, with a document-control block."""
+    from .documents import is_effective, next_review
+    d = model.documents[doc_id]
+    meta, body = d["meta"], d["body"]
+    blocks = list(_md_blocks(body))
+    title = meta.get("title") or doc_id
+    if blocks and blocks[0][0] == "h" and blocks[0][1] == 1:
+        title = blocks[0][2]
+    nr = next_review(model, meta)
+    control = [
+        ["Document", f"{doc_id} · version {meta.get('version', '—')} · {meta.get('kind', '')}"],
+        ["Status", str(meta.get("status") or "—")],
+        ["Owner", meta.get("owner") or "—"],
+        ["Approved", f"{meta.get('approver') or '—'} on {meta.get('approved_on') or '—'}"],
+        ["Next review", str(nr) if nr else "—"],
+        ["Requirements", ", ".join(meta.get("satisfies") or []) or "—"],
+    ]
+    banner = None if is_effective(model, doc_id) else f"DRAFT — {meta.get('status') or 'draft'}, not an approved document"
+    first = re.sub(r"^\s*#\s+(.+)$", lambda m: f"# {model.client} — {m.group(1)}", body.lstrip("\n"), count=1, flags=re.M) \
+        if blocks and blocks[0][0] == "h" and blocks[0][1] == 1 else f"# {model.client} — {title}\n\n" + body
+    return render_markdown(model, first, out_path, f"{model.client} — {title}", safe_stamp(meta), banner, control)
 
 
 def safe_stamp(meta: dict):

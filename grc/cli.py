@@ -12,6 +12,7 @@
   audit         Internal audit: plan workpapers, draw reproducible samples
   impact        AI system impact assessments: start one per AI system
   docs          Policies and procedures: draft from the library, AI-fill, approve
+  review        Management review: schedule one, generate its input pack
 """
 from __future__ import annotations
 
@@ -81,6 +82,14 @@ def cmd_build(args) -> int:
         print(f"brief: {path}")
         for did in docs(model):
             render_document(model, did, out / f"doc-{did}.docx")
+        from .render_docx import render_markdown
+        from .review import pack_path, reviews, safe_date
+        for rid, r in reviews(model).items():
+            pk = pack_path(model, rid)
+            if pk.exists() and not r.get("_error"):
+                as_of = safe_date((r.get("pack") or {}).get("as_of") if isinstance(r.get("pack"), dict) else None)
+                render_markdown(model, pk.read_text(encoding="utf-8"), out / f"mr-{rid}-pack.docx",
+                                f"{model.client} — management review input pack ({rid})", as_of or model.today)
     if args.summary:
         with open(args.summary, "a", encoding="utf-8") as fh:
             fh.write(summary)
@@ -237,6 +246,27 @@ def cmd_docs(args) -> int:
     return 0
 
 
+def cmd_review(args) -> int:
+    from . import review
+    model = _model(args)
+    try:
+        if args.action == "new":
+            log = review.new(model, dt.date.fromisoformat(args.target) if args.target else model.today)
+        else:
+            if not args.target:
+                print("error: pack needs the review id (e.g. MR-2027-01)", file=sys.stderr)
+                return 2
+            log = review.pack(model, args.target, force=args.force)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for line in log:
+        print(line)
+    if args.report:
+        Path(args.report).write_text("## Management review\n\n```\n" + "\n".join(log) + "\n```\n", encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -324,6 +354,13 @@ def main(argv=None) -> int:
     dc.add_argument("--on", help="approve: approval date YYYY-MM-DD (default: today)")
     dc.add_argument("--report", help="write a Markdown summary here")
     dc.set_defaults(fn=cmd_docs)
+
+    rv = sub.add_parser("review", help="management review (9.3)")
+    rv.add_argument("action", choices=["new", "pack"])
+    rv.add_argument("target", nargs="?", help="new: planned date YYYY-MM-DD (default today); pack: review id")
+    rv.add_argument("--force", action="store_true", help="pack: regenerate even after the review was held (breaks its record)")
+    rv.add_argument("--report", help="write a Markdown summary here")
+    rv.set_defaults(fn=cmd_review)
 
     args = p.parse_args(argv)
     return args.fn(args)

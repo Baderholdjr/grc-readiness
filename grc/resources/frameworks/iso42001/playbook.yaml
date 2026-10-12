@@ -168,3 +168,17 @@ documents:
        satisfies: ["9.3"], sections: [Purpose, Frequency and attendees, Inputs, Outputs, Records, Review]}
     - {id: DOC-IMPROVE, title: "Nonconformity, Corrective Action and Improvement", kind: procedure, template: improve.md,
        satisfies: ["10.1", "10.2"], sections: [Purpose, Raising a finding, Corrective action, Effectiveness, Continual improvement, Review]}
+
+# Management review (9.3). `grc review pack` assembles the inputs from the engagement record;
+# the meeting's notes, decisions and actions are recorded in engagement/reviews/MR-YYYY-NN.yaml.
+management_review:
+  review_every_days: 365          # a review must have been held within this period (once one has been held)
+  warn_before_stage1_days: 60     # warn if no review is held this close to the Stage 1 audit
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous management reviews"}
+    - {id: context_changes, title: "Changes in external and internal issues relevant to the AIMS"}
+    - {id: interested_parties, title: "Changes in the needs and expectations of interested parties"}
+    - {id: performance, title: "AIMS performance: nonconformities and corrective actions, monitoring and measurement, audit results"}
+    - {id: risks_and_impacts, title: "AI risks and impact assessments, and the status of treatment"}
+    - {id: improvement, title: "Opportunities for continual improvement"}
+    - {id: resources, title: "Adequacy of resources"}

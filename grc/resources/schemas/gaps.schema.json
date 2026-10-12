@@ -74,7 +74,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "pattern": "^(EV-[0-9]{3,}|AUD-\\d{4}-\\d{2}/WP-\\d{2,3}|IA-\\d{3,}|DOC-[A-Z0-9]+(-[A-Z0-9]+)*)$"
+              "pattern": "^(EV-[0-9]{3,}|AUD-\\d{4}-\\d{2}/WP-\\d{2,3}|IA-\\d{3,}|DOC-[A-Z0-9]+(-[A-Z0-9]+)*|MR-\\d{4}-\\d{2})$"
             }
           },
           "in_brief": {

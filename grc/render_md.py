@@ -111,9 +111,10 @@ def evidence_index(model: Engagement, out: Path):
     headers = ["ID", "Title", "Type", "Location", "Collected", "Expires", "Current", "Approved by", "Supports"]
     rows = []
     cited = set(supports)
-    from . import documents, impact
+    from . import documents, impact, review
     audit_rows = [e for e in list(model.workpaper_evidence.values()) + list(impact.evidence_entries(model).values())
-                  + list(documents.evidence_entries(model).values()) if e["id"] in cited]
+                  + list(documents.evidence_entries(model).values()) + list(review.evidence_entries(model).values())
+                  if e["id"] in cited]
     for e in list(model.evidence) + audit_rows:
         exp = model.evidence_expiry(e)
         rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
@@ -148,6 +149,9 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
               if m.get("ia_required") else ""),
              (f"- **Policies and procedures:** {m['docs_approved']} of {m['docs_required']} approved and current"
               if m.get("docs_required") else ""),
+             (f"- **Management review:** last held {m['mr_last_held'] or 'never'} · actions open {m['mr_actions_open']}"
+              + (f" ({m['mr_actions_overdue']} overdue)" if m.get("mr_actions_overdue") else "")
+              if (m.get("mr_last_held") or m.get("mr_actions_open") or model.reviews) else ""),
              f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
              f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours\n" if m.get("hours_total") else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
@@ -328,6 +332,59 @@ def documents(model: Engagement, out: Path, with_docx: bool = False) -> list[tup
     return [("Policies and procedures", "documents.md", f"{done} of {len(lib)} library documents approved and current")]
 
 
+def management_reviews(model: Engagement, out: Path, with_docx: bool = False) -> list[tuple[str, str, str]]:
+    """management-reviews.md (register) + mr-<ID>.md (record) + mr-<ID>-pack.md (frozen input pack)."""
+    from .review import _dicts, file_hash, is_sound, last_held, method, pack_path, problems, reviews, safe_date
+    rs = reviews(model)
+    if not rs:
+        return []
+    titles = {i["id"]: i["title"] for i in method(model)["inputs"]}
+    rows = []
+    for rid, r in rs.items():
+        if r.get("_error"):
+            rows.append([rid, "—", "—", "**invalid file**", "—", "—"])
+            continue
+        acts = _dicts(r.get("actions"))
+        open_ = [a for a in acts if a.get("status") == "open"]
+        overdue = [a for a in open_ if safe_date(a.get("due")) and safe_date(a.get("due")) < model.today]
+        pk = pack_path(model, rid)
+        pack_link = (f"[pack](mr-{rid}-pack.md)" + (f" · [Word](mr-{rid}-pack.docx?raw=1)" if with_docx else "")) if pk.exists() else "—"
+        st = str(r.get("status") or "—") + (" ✅" if is_sound(model, rid) else " ⚠️" if r.get("status") in ("held", "closed") else "")
+        rows.append([f"[{rid}](mr-{rid}.md)", r.get("planned_on"), r.get("held_on") or "—", st,
+                     f"{len(open_)} open" + (f", **{len(overdue)} overdue**" if overdue else "") + f" of {len(acts)}", pack_link])
+        p = problems(model, rid, r) if r.get("status") in ("held", "closed") else []
+        L = [f"# {model.client} — {r.get('title') or rid}\n", GEN,
+             (f"> **Not complete:** {'; '.join(p)}.\n\n" if p else ""),
+             _table(["Item", "Detail"], [["Status", r.get("status")], ["Planned", r.get("planned_on")], ["Held", r.get("held_on") or "—"],
+                                         ["Chair", r.get("chair") or "—"], ["Attendees", ", ".join(str(a) for a in r.get("attendees") or []) or "—"],
+                                         ["Input pack", f"as of {(r.get('pack') or {}).get('as_of') or '—'}" if isinstance(r.get("pack"), dict) else "—"],
+                                         ["Minutes approved", f"{r.get('minutes_approved_by') or '—'} on {r.get('minutes_approved_on') or '—'}"]]),
+             "\n## Inputs considered\n\n",
+             _table(["Input", "Notes"], [[titles.get(str(i.get("id")), i.get("id")), i.get("notes") or "_not yet recorded_"]
+                                         for i in _dicts(r.get("inputs"))]),
+             "\n## Decisions\n\n",
+             _table(["ID", "About", "Decision"], [[d.get("id"), d.get("about", ""), d.get("decision")] for d in _dicts(r.get("decisions"))])
+             if _dicts(r.get("decisions")) else "_None recorded._\n",
+             "\n## Actions\n\n",
+             _table(["ID", "Action", "Owner", "Due", "Status", "Closed", "Evidence"],
+                    [[a.get("id"), a.get("action"), a.get("owner"), a.get("due"),
+                      ("**overdue**" if a in overdue else a.get("status")), a.get("closed_on") or "—", ", ".join(a.get("evidence") or [])]
+                     for a in acts]) if acts else "_None recorded._\n"]
+        (out / f"mr-{rid}.md").write_text("".join(L), encoding="utf-8")
+        if pk.exists():
+            intact = (r.get("pack") or {}).get("sha256") == file_hash(pk) if isinstance(r.get("pack"), dict) else False
+            note = "" if intact else "> ⚠️ This pack does not match the fingerprint in the review record.\n\n"
+            (out / f"mr-{rid}-pack.md").write_text(note + pk.read_text(encoding="utf-8"), encoding="utf-8")
+    L = [f"# {model.client} — management reviews (9.3)\n", GEN,
+         "Each review has a frozen input pack (what management was shown), the notes against every required input, "
+         "decisions and actions. Actions are tracked as GitHub Issues until done.\n\n",
+         _table(["Review", "Planned", "Held", "Status", "Actions", "Input pack"], rows)]
+    (out / "management-reviews.md").write_text("".join(L), encoding="utf-8")
+    last = last_held(model)
+    return [("Management reviews", "management-reviews.md",
+             f"Last held: {last[0]} on {last[1]}" if last else "No management review held yet (9.3)")]
+
+
 def _dicts(xs) -> list[dict]:
     return [x for x in xs if isinstance(x, dict)] if isinstance(xs, list) else []
 
@@ -447,6 +504,6 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     evidence_index(model, out)
     brief(model, out)
     extra = (documents(model, out, docs_docx) + impact_assessments(model, out) + internal_audit(model, out)
-             + corrective_actions(model, out))
+             + corrective_actions(model, out) + management_reviews(model, out, docs_docx))
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

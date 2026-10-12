@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "management-review.schema.json",
+  "title": "Management review (engagement/reviews/MR-YYYY-NN.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "status", "planned_on", "inputs", "decisions", "actions"],
+  "$defs": {
+    "date": {"type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "dateOrNull": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]},
+    "ref": {"type": "string", "pattern": "^(EV-[0-9]{3,}|AUD-\\d{4}-\\d{2}/WP-\\d{2,3}|IA-\\d{3,}|DOC-[A-Z0-9]+(-[A-Z0-9]+)*|MR-\\d{4}-\\d{2})$"}
+  },
+  "properties": {
+    "id": {"type": "string", "pattern": "^MR-\\d{4}-\\d{2}$"},
+    "title": {"type": "string"},
+    "status": {"enum": ["planned", "held", "closed", "cancelled"]},
+    "planned_on": {"$ref": "#/$defs/date"},
+    "held_on": {"$ref": "#/$defs/dateOrNull"},
+    "chair": {"type": "string"},
+    "attendees": {"type": "array", "items": {"type": "string"}},
+    "pack": {
+      "type": "object", "additionalProperties": false,
+      "properties": {"as_of": {"$ref": "#/$defs/dateOrNull"},
+                     "sha256": {"anyOf": [{"type": "string", "pattern": "^[0-9a-f]{64}$"}, {"type": "null"}]}}
+    },
+    "inputs": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": false, "required": ["id"],
+                "properties": {"id": {"type": "string"}, "notes": {"type": "string"}}}
+    },
+    "decisions": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": false, "required": ["id", "decision"],
+                "properties": {"id": {"type": "string", "pattern": "^D-\\d{2,}$"},
+                               "about": {"enum": ["improvement", "change", "resources", "policy", "objectives", "risk", "other"]},
+                               "decision": {"type": "string"}}}
+    },
+    "actions": {
+      "type": "array",
+      "items": {"type": "object", "additionalProperties": false, "required": ["id", "action", "status"],
+                "properties": {"id": {"type": "string", "pattern": "^A-\\d{2,}$"},
+                               "action": {"type": "string"},
+                               "decision": {"type": "string"},
+                               "owner": {"type": "string"},
+                               "due": {"$ref": "#/$defs/dateOrNull"},
+                               "status": {"enum": ["open", "done", "cancelled"]},
+                               "closed_on": {"$ref": "#/$defs/dateOrNull"},
+                               "evidence": {"type": "array", "items": {"$ref": "#/$defs/ref"}},
+                               "notes": {"type": "string"},
+                               "issue": {"type": "integer"}}}
+    },
+    "minutes_approved_by": {"type": "string"},
+    "minutes_approved_on": {"$ref": "#/$defs/dateOrNull"}
+  }
+}
