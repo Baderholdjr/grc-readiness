@@ -719,7 +719,10 @@ def check_reviews(model: Engagement) -> list[Finding]:
         except (KeyError, TypeError, ValueError, AttributeError) as exc:
             out.append(Finding("error", "E000", f"{rid}: could not evaluate ({exc!r}).", path, rid))
     # cadence: a review held within the cycle, and one before the Stage 1 audit
-    last = last_held(model)
+    try:
+        last = last_held(model)
+    except Exception:
+        last = None
     rpath = _rel(model, model.engagement_dir / "reviews")
     if last and (model.today - last[1]).days > int(cfg["review_every_days"]):
         out.append(Finding("warning", "W151", f"The last management review ({last[0]}) was held on {last[1]}, more than "

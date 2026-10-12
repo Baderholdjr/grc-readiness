@@ -356,7 +356,7 @@ def management_reviews(model: Engagement, out: Path, with_docx: bool = False) ->
         L = [f"# {model.client} — {r.get('title') or rid}\n", GEN,
              (f"> **Not complete:** {'; '.join(p)}.\n\n" if p else ""),
              _table(["Item", "Detail"], [["Status", r.get("status")], ["Planned", r.get("planned_on")], ["Held", r.get("held_on") or "—"],
-                                         ["Chair", r.get("chair") or "—"], ["Attendees", ", ".join(str(a) for a in r.get("attendees") or []) or "—"],
+                                         ["Chair", r.get("chair") or "—"], ["Attendees", ", ".join(str(a) for a in (r.get("attendees") if isinstance(r.get("attendees"), list) else [])) or "—"],
                                          ["Input pack", f"as of {(r.get('pack') or {}).get('as_of') or '—'}" if isinstance(r.get("pack"), dict) else "—"],
                                          ["Minutes approved", f"{r.get('minutes_approved_by') or '—'} on {r.get('minutes_approved_on') or '—'}"]]),
              "\n## Inputs considered\n\n",
@@ -368,7 +368,7 @@ def management_reviews(model: Engagement, out: Path, with_docx: bool = False) ->
              "\n## Actions\n\n",
              _table(["ID", "Action", "Owner", "Due", "Status", "Closed", "Evidence"],
                     [[a.get("id"), a.get("action"), a.get("owner"), a.get("due"),
-                      ("**overdue**" if a in overdue else a.get("status")), a.get("closed_on") or "—", ", ".join(a.get("evidence") or [])]
+                      ("**overdue**" if a in overdue else a.get("status")), a.get("closed_on") or "—", ", ".join(str(e) for e in (a.get("evidence") if isinstance(a.get("evidence"), list) else []))]
                      for a in acts]) if acts else "_None recorded._\n"]
         (out / f"mr-{rid}.md").write_text("".join(L), encoding="utf-8")
         if pk.exists():

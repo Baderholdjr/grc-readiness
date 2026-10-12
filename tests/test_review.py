@@ -124,7 +124,7 @@ def test_closing_needs_minutes_and_finished_actions(tmp_path):
     edir = held(tmp_path)
     edit(edir, lambda d: d.update(status="closed"))
     msgs = " ".join(f.message for f in findings(edir, severity="error"))
-    assert "minutes approval" in msgs and "open actions" in msgs
+    assert "minutes not approved" in msgs and "open actions" in msgs
     edit(edir, lambda d: (d.update(minutes_approved_by="Chief Executive Officer", minutes_approved_on="2026-10-07"),
                           d["actions"][0].update(status="done")))
     assert any("done without closed_on and evidence" in f.message for f in findings(edir, code="E052"))
@@ -218,3 +218,59 @@ def test_cli(tmp_path):
     assert main(["--engagement", str(edir), "review", "pack"]) == 2
     assert main(["--engagement", str(edir), "review", "pack", "MR-2026-01"]) == 0
     assert main(["--engagement", str(edir), "review", "pack", "MR-2099-01"]) == 2
+
+
+# ---------------------------------------------------------------- review regressions
+def test_minutes_dates_are_checked_for_held_reviews_too(tmp_path):
+    for on in ("2099-01-01", "2020-01-01", None):
+        edir = held(tmp_path / str(on))
+        cite(edir)
+        edit(edir, lambda d, o=on: d.update(minutes_approved_by="Board", minutes_approved_on=o))
+        assert findings(edir, code="E015"), on
+        assert review.evidence_entries(m(edir))["MR-2026-01"]["result"] == "fail"
+
+
+def test_closed_with_open_actions_is_not_sound(tmp_path):
+    edir = held(tmp_path)
+    edit(edir, lambda d: d.update(status="closed", minutes_approved_by="CEO", minutes_approved_on="2026-10-07"))
+    assert not review.is_sound(m(edir), "MR-2026-01")
+    assert review.evidence_entries(m(edir))["MR-2026-01"]["result"] == "fail"
+
+
+def test_malformed_fields_do_not_crash_or_hide_checks(tmp_path):
+    edir = held(tmp_path)
+    review.new(m(edir), dt.date(2026, 11, 1))
+    edit(edir, lambda d: d.update(attendees=5, chair=""), "MR-2026-01")
+    edit(edir, lambda d: d.update(actions=[{"id": "A-01", "action": "x", "owner": "o", "due": "2026-12-01",
+                                            "status": "open", "evidence": [1]}]), "MR-2026-02")
+    fs = findings(edir)
+    assert any(f.code == "E001" for f in fs) and any(f.code == "E051" for f in fs)   # review checks still run
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "validate", "--summary", str(tmp_path / "s.md")]) == 1
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(tmp_path / "o"), "--force"]) == 0
+
+
+def test_pack_rewrites_the_record_cleanly(tmp_path):
+    edir = setup(tmp_path)
+    review.new(m(edir), dt.date(2026, 11, 2))
+    p = rpath(edir)
+    p.write_text(p.read_text().replace("pack:\n  as_of: null\n  sha256: null\n", "pack: null  # to do\n# a note\n"))
+    review.pack(m(edir), "MR-2026-01")
+    text = p.read_text()
+    assert text.count("\npack:") == 1 and text.startswith("# Management review")
+    d = yaml.safe_load(text)
+    assert d["pack"]["sha256"] and d["planned_on"] == "2026-11-02"
+    assert not findings(edir, severity="error")
+
+
+def test_playbook_without_review_section_still_works(tmp_path):
+    edir = setup(tmp_path)
+    fw = tmp_path / "frameworks" / "iso42001"
+    fw.mkdir(parents=True)
+    pb = yaml.safe_load((Path(review.__file__).parent / "resources" / "frameworks" / "iso42001" / "playbook.yaml").read_text())
+    pb.pop("management_review")
+    (fw / "playbook.yaml").write_text(yaml.safe_dump(pb))
+    review.new(m(edir), dt.date(2026, 11, 2))
+    review.pack(m(edir), "MR-2026-01")
+    assert "## 7. Adequacy of resources" in (edir / "reviews" / "MR-2026-01-pack.md").read_text()
+    edit(edir, lambda d: (hold(d), [i.update(notes="") for i in d["inputs"]]))
+    assert any("no notes for input(s)" in f.message for f in findings(edir, code="E051"))

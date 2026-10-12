@@ -35,7 +35,7 @@ A new engagement schedules its first review at the end of the Test phase, before
 | Code | Severity | Rule |
 |---|---|---|
 | E050 | error | File/id mismatch, duplicate decision or action ids, unknown input |
-| E051 | error | Held or closed but incomplete: no date (or a future one), chair, attendees, notes for every input, or decisions; no input pack, a pack changed after it was generated, or a pack dated after the meeting; closed without minutes approval |
+| E051 | error | Held or closed but incomplete: no date (or a future one), chair, attendees, notes for every input, or decisions; no input pack, a pack changed after it was generated, or a pack dated after the meeting; minutes approval missing (when closed) or dated before the meeting or in the future; closed with open actions |
 | E052 | error | Action without owner or due date; done without `closed_on` and evidence; review closed with open actions |
 | E015 / E007 | error | A leg is verified on a review that isn't held with approved minutes / is older than the review cycle |
 | W150 | warning | Planned date has passed but the review isn't recorded as held |
