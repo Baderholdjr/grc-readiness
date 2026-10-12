@@ -22,3 +22,5 @@ Files already ingested are listed with their hash in `.processed.yaml`; changed 
 **Confidentiality:** documents committed here live in this (private) repo's history, and with AI
 drafting enabled their text is sent to the Anthropic API. Don't upload anything the client hasn't
 agreed to share that way.
+
+**Timesheets** go in `intake/timesheets/` (Toggl, Harvest, Clockify or CSV exports). They are read by the *Hours* workflow, not by ingestion.

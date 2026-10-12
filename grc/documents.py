@@ -378,7 +378,8 @@ def _intake(model: Engagement) -> list[tuple[str, str]]:
     intake = model.root / "intake"
     out, used = [], 0
     for p in sorted(intake.rglob("*")) if intake.exists() else []:
-        if not p.is_file() or p.name.startswith((".", "~$")) or p.name == "README.md" or p.suffix.lower() not in extract.SUPPORTED:
+        if not p.is_file() or p.name.startswith((".", "~$")) or p.name == "README.md" or p.suffix.lower() not in extract.SUPPORTED \
+                or p.relative_to(intake).parts[0] == "timesheets":
             continue
         try:
             text = extract.text(p)

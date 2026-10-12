@@ -182,3 +182,23 @@ management_review:
     - {id: risks_and_impacts, title: "AI risks and impact assessments, and the status of treatment"}
     - {id: improvement, title: "Opportunities for continual improvement"}
     - {id: resources, title: "Adequacy of resources"}
+
+# Hours tracking (engagement/hours.yaml, `grc hours`). Activities classify time; keywords map
+# task/tag/description text from time-tracker exports onto them.
+hours:
+  warn_at: 0.8                 # W106 when this share of the budget is used
+  forecast_weeks: 4            # burn rate = average of the last N full weeks
+  max_per_person_day: 14       # E060 above this (catches duplicated imports)
+  phase_split: {validate: 0.12, governance: 0.2, implement: 0.28, test: 0.2, stage1: 0.1, stage2: 0.1}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and scoping", keywords: [kickoff, kick-off, scoping, scope]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, procedures and documentation", keywords: [policy, procedure, document, drafting, soa]}
+    - {id: risk_impact, title: "Risk and impact assessment", keywords: [risk, impact, assessment, ia-]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, collector]}
+    - {id: internal_audit, title: "Internal audit", keywords: [internal audit, audit, workpaper, sample]}
+    - {id: management_review, title: "Management review", keywords: [management review, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: certification, title: "Certification audit support", keywords: [stage 1, stage 2, stage1, stage2, certification, auditor]}
+    - {id: other, title: "Other", keywords: []}

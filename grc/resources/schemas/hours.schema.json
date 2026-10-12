@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hours.schema.json",
+  "title": "Timesheet (engagement/hours.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "entries"
+  ],
+  "properties": {
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "date",
+          "person",
+          "hours",
+          "activity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^H-[0-9a-f]{10}$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "person": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 24
+          },
+          "activity": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Other spellings of a person -> the name to use"
+    },
+    "ignored": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^H-[0-9a-f]{10}$"
+      },
+      "description": "Entry ids removed on purpose; imports skip them"
+    }
+  }
+}

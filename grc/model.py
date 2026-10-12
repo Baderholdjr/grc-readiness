@@ -72,6 +72,8 @@ class Engagement:
     impact_files: dict[str, Path] = field(default_factory=dict)
     documents: dict[str, dict] = field(default_factory=dict)  # engagement/documents/DOC-*.md -> {meta, body, error}
     document_files: dict[str, Path] = field(default_factory=dict)
+    hours: list[dict] = field(default_factory=list)           # engagement/hours.yaml (timesheet)
+    hours_meta: dict = field(default_factory=dict)            # its aliases / ignored lists
     reviews: dict[str, dict] = field(default_factory=dict)    # engagement/reviews/MR-YYYY-NN.yaml (9.3)
     review_files: dict[str, Path] = field(default_factory=dict)
     today: dt.date = field(default_factory=dt.date.today)
@@ -253,6 +255,12 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     own = edir / "owners.yaml"
     if own.exists():
         model.owners = load_yaml(own).get("owners", []) or []
+    hrs = edir / "hours.yaml"
+    if hrs.exists():
+        data = load_yaml(hrs) or {}
+        data = data if isinstance(data, dict) else {"entries": []}
+        model.hours = data.get("entries") if isinstance(data.get("entries"), list) else []
+        model.hours_meta = {k: v for k, v in data.items() if k != "entries"}
     inv = edir / "inventory.yaml"
     if inv.exists():
         model.inventory = load_yaml(inv).get("items", []) or []

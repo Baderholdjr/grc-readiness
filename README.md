@@ -94,7 +94,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | E013 | error | Gap closed without `closure_evidence` |
 | E015 | error | Leg is `verified` but the collector check behind its evidence is failing |
 | W102 | warning | Operates in practice but isn't codified in an approved document |
-| W101 / W104 / W105 / W106 | warning | Evidence expiring soon · gap past due · gap due after its phase ends · budget at or above 80% |
+| W101 / W104 / W105 / W106 | warning | Evidence expiring soon · gap past due · gap due after its phase ends · budget at or above 80% (from the timesheet when there is one) |
 | E020 | error | An internal auditor would audit a control they own (independence) |
 | E021 | error | Audit status ahead of its work (fieldwork without workpapers; reporting/closed with open or unreviewed workpapers, or no approved report) |
 | E022 | error | Workpaper concluded without performer, summary or tested sample; "effective" despite unexplained exceptions; "not effective" with no finding; self-reviewed |
@@ -109,6 +109,8 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | W140–W143 | warning | Library documents not started · draft not yet approved · document past review · approved document not cited on its requirements |
 | E050–E052 | error | Management review record incomplete (inputs, decisions, frozen input pack, minutes) or actions without owner/due/evidence |
 | W150–W153 | warning | Review overdue · none held within the cycle or before Stage 1 · action overdue · 9.3 verified without a held review |
+| E060 | error | Timesheet entry invalid (future date, unknown activity/phase/reference, duplicate, more than 14 h per person per day) |
+| W160 / W161 / W163 | warning | Phase over its planned hours · forecast over budget · manual hours_used disagrees with the timesheet |
 | W130–W133 | warning | AI system without an impact assessment · assessment not yet approved · past its review date · residual higher than inherent |
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
@@ -137,6 +139,8 @@ In the client repository:
 5. Settings: protect `main` (require the **`validate / validate`** check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
 
 **Internal audit (9.2) and corrective actions (10.2):** see [`docs/AUDIT.md`](docs/AUDIT.md). Each new engagement starts with an audit scheduled in its Test phase.
+
+**Hours:** see [`docs/HOURS.md`](docs/HOURS.md). Drop Toggl, Harvest or Clockify exports into `intake/timesheets/` (or run **Actions → Hours → log**); burn by phase, activity and person and a forecast are reported.
 
 **Management review (9.3):** see [`docs/REVIEW.md`](docs/REVIEW.md). **Actions → Management review** schedules a review and generates its input pack from the record; actions become Issues.
 

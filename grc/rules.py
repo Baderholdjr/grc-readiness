@@ -93,6 +93,8 @@ def check_schemas(model: Engagement) -> list[Finding]:
             out.append(Finding("error", "E001", f"{did}: {d['error']}.", _rel(model, path), did))
         else:
             run("document", d["raw"], path, did)
+    if (edir / "hours.yaml").exists():
+        run("hours", {**model.hours_meta, "entries": model.hours}, edir / "hours.yaml")
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -290,9 +292,10 @@ def check_gaps(model: Engagement) -> list[Finding]:
 def check_engagement(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "engagement.yaml")
+    from . import hours as H
     b = model.engagement.get("budget", {})
-    total, used = b.get("hours_total", 0), b.get("hours_used", 0) or 0
-    if total and used / total >= 0.8:
+    total, used = b.get("hours_total", 0), H.hours_used(model)
+    if total and used / total >= float(H.method(model).get("warn_at") or 0.8):
         out.append(Finding("warning", "W106", f"Budget: {used:g} of {total:g} hours used ({used/total:.0%}).", path))
     d = model.engagement.get("dates", {})
     try:
@@ -737,6 +740,60 @@ def check_reviews(model: Engagement) -> list[Finding]:
     return out
 
 
+def check_hours(model: Engagement) -> list[Finding]:
+    """Timesheet (engagement/hours.yaml): sane entries, phase plans, forecast."""
+    from . import hours as H
+    out: list[Finding] = []
+    if not H.tracked(model):
+        return out
+    path = _rel(model, model.engagement_dir / "hours.yaml")
+    cfg = H.method(model)
+    acts = {a["id"] for a in cfg["activities"]}
+    phase_ids = {str(p["id"]) for p in H.phases(model)}
+    refs_ok = H.known_refs(model)
+    ids = [e.get("id") for e in H.entries(model)]
+    for dup in sorted({str(i) for i in ids if ids.count(i) > 1}):
+        out.append(Finding("error", "E060", f"Timesheet entry id {dup} appears more than once.", path, dup))
+    per_day: dict = {}
+    for e in H.entries(model):
+        eid = str(e.get("id"))
+        try:
+            float(e.get("hours"))
+        except (TypeError, ValueError):
+            out.append(Finding("error", "E060", f"{eid}: hours '{e.get('hours')}' is not a number.", path, eid))
+        d = H.safe_date(e.get("date"))
+        if d and d > model.today:
+            out.append(Finding("error", "E060", f"{eid}: dated {d}, in the future.", path, eid))
+        if e.get("activity") not in acts:
+            out.append(Finding("error", "E060", f"{eid}: unknown activity '{e.get('activity')}'.", path, eid))
+        if e.get("phase") and str(e["phase"]) not in phase_ids:
+            out.append(Finding("error", "E060", f"{eid}: unknown phase '{e.get('phase')}'.", path, eid))
+        bad = [r for r in e.get("refs") or [] if str(r) not in refs_ok]
+        if bad:
+            out.append(Finding("error", "E060", f"{eid}: unknown reference(s) {', '.join(map(str, bad))}.", path, eid))
+        key = (str(e.get("person", "")).strip().lower(), d)
+        per_day[key] = per_day.get(key, 0.0) + H._num(e.get("hours"))
+    cap = float(cfg.get("max_per_person_day") or 14)
+    for (who, d), h in sorted(per_day.items(), key=lambda x: (str(x[0][1]), x[0][0])):
+        if h > cap:
+            out.append(Finding("error", "E060", f"{who} has {h:g} hours on {d} (more than {cap:g}); is an import duplicated?", path, None))
+    plan, used = H.planned(model), H.by(model, lambda e: H.phase_for(model, e))
+    for ph, p_hours in plan.items():
+        if p_hours and used.get(ph, 0) > p_hours:
+            out.append(Finding("warning", "W160", f"Phase '{ph}': {used[ph]:g} hours used of {p_hours:g} planned "
+                               f"({used[ph] / p_hours:.0%}).", path, ph))
+    f = H.forecast(model)
+    if f["budget"] and f["rate_per_week"] and f["projected_total"] > f["budget"]:
+        out.append(Finding("warning", "W161", f"At the last {f['weeks']} weeks' rate ({f['rate_per_week']:g} h/week), the "
+                           f"engagement will use about {f['projected_total']:g} of {f['budget']:g} hours by {f['end']}.", path, None))
+    manual = (model.engagement.get("budget") or {}).get("hours_used")
+    if manual not in (None, 0, 0.0) and abs(H._num(manual) - H.total(model)) > 0.01:
+        out.append(Finding("warning", "W163", f"budget.hours_used in engagement.yaml ({H._num(manual):g}) differs from the "
+                           f"timesheet ({H.total(model):g}); the timesheet is used - remove hours_used.",
+                           _rel(model, model.engagement_dir / "engagement.yaml"), None))
+    return out
+
+
 def check_collected(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
@@ -748,7 +805,7 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews)
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours)
 
 
 def validate(model: Engagement) -> list[Finding]:
@@ -826,6 +883,7 @@ def metrics(model: Engagement) -> dict:
                                       + list(review.evidence_entries(model).values()) if e["id"] in cited]
     stale = [e["id"] for e in counted if model.evidence_is_expired(e)]
     failing = [e["id"] for e in counted if model.evidence_is_failing(e)]
+    from . import hours as H
     b = model.engagement.get("budget", {})
     return {
         "as_of": model.today.isoformat(),
@@ -849,5 +907,6 @@ def metrics(model: Engagement) -> dict:
         "nc_open_minor": sum(1 for f in model.findings if f.get("grade") == "minor" and f.get("status") not in ("closed", "accepted")),
         "audits": {a["id"]: a.get("status") for a in model.audits},
         "hours_total": b.get("hours_total"),
-        "hours_used": b.get("hours_used", 0),
+        "hours_used": H.hours_used(model),
+        "hours_forecast": H.forecast(model)["projected_total"] if H.tracked(model) else None,
     }
