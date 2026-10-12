@@ -22,7 +22,8 @@ import yaml
 
 from .model import Engagement, to_date
 
-DEFAULT = {"warn_at": 0.8, "forecast_weeks": 4, "max_per_person_day": 14, "phase_split": {}, "activities": [{"id": "other"}]}
+DEFAULT = {"warn_at": 0.8, "forecast_weeks": 4, "max_per_person_day": 14, "phase_split": {}, "activities": [{"id": "other"}],
+           "date_order": None}
 HEADER = ("# Timesheet (engagement/hours.yaml). Imported by `grc hours import` (Toggl, Harvest, Clockify or CSV)\n"
           "# or added with `grc hours log`. Edit through PRs like everything else; ids keep re-imports idempotent.\n")
 
@@ -38,8 +39,30 @@ def safe_date(v) -> dt.date | None:
         return None
 
 
+def _clean(e: dict, aliases: dict) -> dict:
+    e = dict(e)
+    refs = e.get("refs")
+    e["refs"] = [str(r) for r in refs] if isinstance(refs, list) else ([str(refs)] if isinstance(refs, (str, int, float)) else [])
+    who = str(e.get("person") or "").strip()
+    e["person"] = aliases.get(who.lower(), who)
+    return e
+
+
+def aliases(model: Engagement) -> dict[str, str]:
+    """hours.yaml `aliases: {"Ana Lopez": ana}` - one person, several spellings (tracker name, GitHub user)."""
+    a = model.hours_meta.get("aliases") if isinstance(model.hours_meta.get("aliases"), dict) else {}
+    return {str(k).strip().lower(): str(v).strip() for k, v in a.items()}
+
+
+def ignored(model: Engagement) -> set[str]:
+    """hours.yaml `ignored: [H-...]` - entries deliberately removed, so re-imports don't bring them back."""
+    v = model.hours_meta.get("ignored")
+    return {str(x) for x in v} if isinstance(v, list) else set()
+
+
 def entries(model: Engagement) -> list[dict]:
-    return [e for e in model.hours if isinstance(e, dict)]
+    al = aliases(model)
+    return [_clean(e, al) for e in model.hours if isinstance(e, dict)]
 
 
 def tracked(model: Engagement) -> bool:
@@ -94,7 +117,7 @@ def planned(model: Engagement) -> dict[str, float]:
 def by(model: Engagement, key) -> dict[str, float]:
     acc: dict[str, float] = collections.defaultdict(float)
     for e in entries(model):
-        acc[key(e) or "—"] += _num(e.get("hours"))
+        acc[str(key(e) or "—")] += _num(e.get("hours"))
     return {k: round(v, 2) for k, v in sorted(acc.items())}
 
 
@@ -116,9 +139,13 @@ def forecast(model: Engagement) -> dict:
     cfg = method(model)
     n = int(cfg.get("forecast_weeks") or 4)
     this_week = week_of(model.today)
-    weeks = [this_week - dt.timedelta(weeks=i) for i in range(1, n + 1)]
     w = weekly(model)
-    rate = round(sum(w.get(x, 0.0) for x in weeks) / n, 2)
+    starts = [d for d in [safe_date((model.engagement.get("dates") or {}).get("start"))] + list(w) if d]
+    first = min(starts) if starts else None
+    full_weeks = max(0, (this_week - week_of(first)).days // 7) if first else 0
+    span = max(1, min(n, full_weeks))
+    weeks = [this_week - dt.timedelta(weeks=i) for i in range(1, span + 1)]
+    rate = round(sum(w.get(x, 0.0) for x in weeks) / span, 2) if full_weeks else 0.0
     ends = [safe_date(p.get("end")) for p in phases(model)] + [safe_date((model.engagement.get("dates") or {}).get("stage2"))]
     end = max([d for d in ends if d] or [model.today])
     remaining_weeks = max((end - model.today).days, 0) / 7
@@ -127,7 +154,7 @@ def forecast(model: Engagement) -> dict:
     budget = _num((model.engagement.get("budget") or {}).get("hours_total"))
     start = safe_date((model.engagement.get("dates") or {}).get("start"))
     elapsed = (min(1.0, max(0.0, (model.today - start).days / max((end - start).days, 1)))) if start else None
-    return {"rate_per_week": rate, "weeks": n, "end": end, "projected_total": projected, "budget": budget,
+    return {"rate_per_week": rate, "weeks": span if full_weeks else 0, "end": end, "projected_total": projected, "budget": budget,
             "used": used, "elapsed_share": round(elapsed, 3) if elapsed is not None else None,
             "budget_share": round(used / budget, 3) if budget else None}
 
@@ -143,7 +170,7 @@ def classify(model: Engagement, *texts: str) -> str:
     best, score = "other", 0
     for a in acts:
         for k in a.get("keywords") or []:
-            if re.search(rf"(?<![a-z]){re.escape(k.lower())}", text) and len(k) > score:
+            if re.search(rf"(?<![a-z0-9]){re.escape(k.lower())}(?:s|es)?(?![a-z0-9])", text) and len(k) > score:
                 best, score = a["id"], len(k)
     return best if best in ids else ("other" if "other" in ids else sorted(ids)[0])
 
@@ -158,7 +185,10 @@ def _duration(v: str) -> float | None:
     if not v:
         return None
     if ":" in v:   # h:mm or h:mm:ss
-        parts = [float(x or 0) for x in v.split(":")]
+        try:
+            parts = [float(x or 0) for x in v.split(":")]
+        except ValueError:
+            return None
         while len(parts) < 3:
             parts.append(0.0)
         return round(parts[0] + parts[1] / 60 + parts[2] / 3600, 4)
@@ -168,14 +198,31 @@ def _duration(v: str) -> float | None:
         return None
 
 
-def _date(v: str) -> dt.date | None:
-    v = (v or "").strip()[:10]
-    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%d.%m.%Y", "%Y/%m/%d"):
+def _date(v: str, order: str = "MDY") -> dt.date | None:
+    v = re.split(r"[ T]", (v or "").strip(), maxsplit=1)[0]
+    slash = ("%m/%d/%Y", "%d/%m/%Y") if order == "MDY" else ("%d/%m/%Y", "%m/%d/%Y")
+    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%d.%m.%Y") + slash:
         try:
             return dt.datetime.strptime(v, fmt).date()
         except ValueError:
             continue
     return None
+
+
+def date_order(values: list[str], preferred: str | None) -> tuple[str, bool]:
+    """Day/month order for a file's slash dates: decided from the data when any day is > 12, else `preferred`.
+    Returns (order, ambiguous)."""
+    first, second = set(), set()
+    for v in values:
+        m = re.match(r"^\s*(\d{1,2})/(\d{1,2})/\d{2,4}", v or "")
+        if m:
+            first.add(int(m.group(1)))
+            second.add(int(m.group(2)))
+    if any(x > 12 for x in first):
+        return "DMY", False
+    if any(x > 12 for x in second):
+        return "MDY", False
+    return (preferred or "MDY"), bool(first) and preferred is None
 
 
 def _pick(row: dict, *names: str) -> str:
@@ -186,10 +233,13 @@ def _pick(row: dict, *names: str) -> str:
     return ""
 
 
-def parse_csv(text: str) -> tuple[str, list[dict]]:
-    """Recognise the export format and return (format, rows as {date, person, hours, task, tags, note, project, client, start})."""
-    reader = csv.DictReader(io.StringIO(text.lstrip("﻿")))
+def parse_csv(text: str, order: str | None = None) -> tuple[str, list[dict], str, bool]:
+    """Recognise the export format. Returns (format, rows, date order used, order was ambiguous).
+    rows: {date, person, hours, task, tags, note, project, client, start, phase, refs}."""
+    reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
     heads = {h.strip().lower() for h in reader.fieldnames or []}
+    reader = list(reader)
+    used_order, ambiguous = date_order([_pick(r, "start date", "date", "spent date", "day") for r in reader], order)
     fmt = ("toggl" if {"start date", "duration", "user"} <= heads else
            "clockify" if {"start date", "duration (decimal)"} <= heads else
            "harvest" if {"date", "hours", "first name"} <= heads else "generic")
@@ -198,27 +248,30 @@ def parse_csv(text: str) -> tuple[str, list[dict]]:
         if fmt == "toggl":
             hours = _duration(_pick(r, "duration"))
             person = _pick(r, "user", "email")
-            date = _date(_pick(r, "start date"))
+            date = _date(_pick(r, "start date"), used_order)
         elif fmt == "clockify":
             hours = _duration(_pick(r, "duration (decimal)", "duration (h)"))
             person = _pick(r, "user", "email")
-            date = _date(_pick(r, "start date"))
+            date = _date(_pick(r, "start date"), used_order)
         elif fmt == "harvest":
             hours = _duration(_pick(r, "hours"))
             person = " ".join(x for x in (_pick(r, "first name"), _pick(r, "last name")) if x)
-            date = _date(_pick(r, "date", "spent date"))
+            date = _date(_pick(r, "date", "spent date"), used_order)
         else:
             hours = _duration(_pick(r, "hours", "duration", "time"))
             person = _pick(r, "person", "user", "who", "name", "consultant")
-            date = _date(_pick(r, "date", "day", "start date"))
+            date = _date(_pick(r, "date", "day", "start date"), used_order)
         rows.append({"date": date, "person": person, "hours": hours, "task": _pick(r, "task", "activity", "category"),
                      "tags": _pick(r, "tags", "tag"), "note": _pick(r, "description", "notes", "note", "comment"),
                      "project": _pick(r, "project", "project code"), "client": _pick(r, "client"),
                      "start": _pick(r, "start time"), "phase": _pick(r, "phase"), "refs": _pick(r, "refs", "references")})
-    return fmt, rows
+    return fmt, rows, used_order, ambiguous
 
 
 REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|MR-\d{4}-\d{2}|AUD-\d{4}-\d{2}|[A-Z]\.\d+(?:\.\d+)*|\d{1,2}\.\d+(?:\.\d+)*)\b")
+# In free-text notes only unambiguous ids count ("2.5 hours" is not clause 2.5); bare clause numbers
+# like 6.1.2 are taken from the refs/tags columns.
+NOTE_REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|MR-\d{4}-\d{2}|AUD-\d{4}-\d{2}|[A-Z]\.\d+(?:\.\d+)+)\b")
 
 
 def known_refs(model: Engagement) -> set[str]:
@@ -231,20 +284,34 @@ def known_refs(model: Engagement) -> set[str]:
 def _write(model: Engagement, items: list[dict]) -> None:
     path = model.engagement_dir / "hours.yaml"
     items = sorted(items, key=lambda e: (str(e.get("date")), str(e.get("person")), str(e.get("id"))))
-    path.write_text(HEADER + yaml.safe_dump({"entries": items}, sort_keys=False, allow_unicode=True, width=120), encoding="utf-8")
+    data = {k: v for k, v in model.hours_meta.items() if k in ("aliases", "ignored") and v}
+    data["entries"] = items
+    path.write_text(HEADER + yaml.safe_dump(_plain(data), sort_keys=False, allow_unicode=True, width=120), encoding="utf-8")
 
 
-def _plain(e: dict) -> dict:
-    return {k: (v.isoformat() if isinstance(v, dt.date) else v) for k, v in e.items()}
+def _plain(v):
+    if isinstance(v, dict):
+        return {k: _plain(x) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_plain(x) for x in v]
+    return v.isoformat() if isinstance(v, dt.date) else v
 
 
-def import_files(model: Engagement, paths: list[Path], match: str | None = None, person: str | None = None) -> list[str]:
-    existing = [_plain(e) for e in entries(model)]
-    seen = {e.get("id") for e in existing}
+def import_files(model: Engagement, paths: list[Path], match: str | None = None, person: str | None = None,
+                 order: str | None = None) -> list[str]:
+    existing = [_plain(e) for e in model.hours if isinstance(e, dict)]
+    seen = {e.get("id") for e in existing} | ignored(model)
+    al = aliases(model)
+    known = known_refs(model)
     log, added = [], 0
     for path in paths:
-        fmt, rows = parse_csv(Path(path).read_text(encoding="utf-8-sig", errors="replace"))
-        skipped = {"other client/project": 0, "no date or hours": 0, "already imported": 0}
+        fmt, rows, used_order, ambiguous = parse_csv(Path(path).read_text(encoding="utf-8-sig", errors="replace"),
+                                                     order or method(model).get("date_order"))
+        if ambiguous:
+            log.append(f"[!] {Path(path).name}: dates like 05/09/2026 could be day/month or month/day; read as "
+                       f"{'month/day' if used_order == 'MDY' else 'day/month'}. Set --date-order (or hours.date_order) to be sure.")
+        skipped = {"other client/project": 0, "no date or hours": 0, "already imported or ignored": 0}
+        occurrence: dict = {}
         for r in rows:
             if match and match.lower() not in f"{r['client']} {r['project']}".lower():
                 skipped["other client/project"] += 1
@@ -253,11 +320,14 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
                 skipped["no date or hours"] += 1
                 continue
             who = person or r["person"] or "unknown"
-            eid = entry_id(Path(path).name, r["date"], who, r["hours"], r["start"], r["note"], r["task"], r["project"])
+            who = al.get(who.strip().lower(), who)
+            key = (fmt, r["date"], who, r["hours"], r["start"], r["note"], r["task"], r["project"], r["client"])
+            occurrence[key] = occurrence.get(key, 0) + 1     # identical rows in one export are separate work
+            eid = entry_id(*key, occurrence[key])            # no file name: renamed or cumulative exports are safe
             if eid in seen:
-                skipped["already imported"] += 1
+                skipped["already imported or ignored"] += 1
                 continue
-            refs = sorted(r_ for r_ in set(REF.findall(f"{r['refs']} {r['note']} {r['tags']}")) if r_ in known_refs(model))
+            refs = sorted(x for x in set(REF.findall(f"{r['refs']} {r['tags']}")) | set(NOTE_REF.findall(r["note"])) if x in known)
             e = {"id": eid, "date": r["date"].isoformat(), "person": who, "hours": round(r["hours"], 2),
                  "activity": classify(model, r["task"], r["tags"], r["note"])}
             if r["phase"]:
@@ -287,7 +357,7 @@ def log_entry(model: Engagement, hours: float, activity: str, person: str, on: d
     on = on or model.today
     if on > model.today:
         raise ValueError("date is in the future")
-    items = [_plain(e) for e in entries(model)]
+    items = [_plain(e) for e in model.hours if isinstance(e, dict)]
     n = sum(1 for e in items if e.get("date") == on.isoformat() and e.get("person") == person)
     e = {"id": entry_id("log", on, person, hours, activity, note, n), "date": on.isoformat(), "person": person,
          "hours": round(float(hours), 2), "activity": activity}

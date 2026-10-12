@@ -427,7 +427,7 @@ def hours_report(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
               _table(["Reference(s)", "Hours"], [[k, f"{v:g}"] for k, v in sorted(refs.items(), key=lambda x: -x[1])[:40]])]
     (out / "hours.md").write_text("".join(L), encoding="utf-8")
     rows = [[e.get("id"), e.get("date"), e.get("person"), e.get("hours"), e.get("activity"), H.phase_for(model, e) or "",
-             ", ".join(e.get("refs") or []), e.get("note", ""), e.get("source", "")]
+             ", ".join(e.get("refs") or []), str(e.get("note", "")), str(e.get("source", ""))]
             for e in sorted(H.entries(model), key=lambda e: (str(e.get("date")), str(e.get("person"))))]
     _write_csv(out / "hours.csv", ["ID", "Date", "Person", "Hours", "Activity", "Phase", "Refs", "Note", "Source"], rows)
     return [("Hours and budget", "hours.md", f"{used:g} of {budget:g} hours used ({pct(used, budget)}); forecast "

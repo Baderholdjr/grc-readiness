@@ -14,16 +14,16 @@ on:
         options: [log, import]
         default: log
       hours: {description: "log: hours (e.g. 2.5)", required: false, default: ""}
-      activity:
-        description: "log: activity"
-        type: choice
-        options: [project_management, kickoff, interviews, documentation, risk_impact, evidence_review, internal_audit,
-                  management_review, remediation, certification, other]
-        default: other
+      activity: {description: "log: activity - project_management, kickoff, interviews, documentation, risk_impact, evidence_review, internal_audit, management_review, remediation, certification or other", required: false, default: other}
+      phase: {description: "log: phase id (default: from the date)", required: false, default: ""}
       date: {description: "log: YYYY-MM-DD (default today)", required: false, default: ""}
       note: {description: "log: what was done", required: false, default: ""}
       refs: {description: "log: related ids, comma-separated (GAP-03, A.6.2.5, NC-001)", required: false, default: ""}
       person: {description: "log: who (default: you)", required: false, default: ""}
+
+concurrency:
+  group: grc-hours
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -42,4 +42,5 @@ jobs:
       note: ${{ inputs.note }}
       refs: ${{ inputs.refs }}
       person: ${{ inputs.person }}
+      phase: ${{ inputs.phase }}
     secrets: inherit

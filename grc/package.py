@@ -33,7 +33,7 @@ from . import __version__
 from .model import LEGS, Engagement
 
 SECTIONS = [
-    ("01-overview", "Overview", ("brief", "status", "gap-register", "hours")),
+    ("01-overview", "Overview", ("brief", "status", "gap-register")),
     ("02-applicability", "Applicability", ("soa", "control-matrix")),
     ("03-documented-information", "Documented information", ("documents", "doc-")),
     ("04-risk-and-impact", "Risk and impact", ("impact-assessments", "ia-")),
@@ -41,7 +41,9 @@ SECTIONS = [
     ("06-internal-audit", "Internal audit and corrective action", ("internal-audit", "audit-", "corrective-actions")),
     ("07-management-review", "Management review", ("management-reviews", "mr-")),
 ]
-SKIP = {"README.md"}   # the landing page links to the live reports; the index replaces it here
+# README: the landing page links to the live reports (the index replaces it here).
+# hours: internal engagement economics, not audit evidence.
+SKIP = {"README.md", "hours.md", "hours.csv"}
 
 
 def _git(model: Engagement, *args: str) -> str | None:
@@ -76,7 +78,7 @@ def source_files(model: Engagement) -> list[Path]:
             rel = p.relative_to(model.engagement_dir)
         except ValueError:
             continue
-        if (p.is_symlink() or not p.is_file() or any(part.startswith(".") for part in rel.parts)
+        if (p.is_symlink() or not p.is_file() or any(part.startswith(".") for part in rel.parts) or rel.as_posix() == "hours.yaml"
                 or p.suffix.lower() not in (".yaml", ".yml", ".md", ".csv", ".json")
                 or not p.resolve().is_relative_to(edir)):
             continue

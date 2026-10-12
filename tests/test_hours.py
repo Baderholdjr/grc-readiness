@@ -144,3 +144,89 @@ def test_timesheets_are_not_ingested(tmp_path):
     (intake / "timesheets" / "t.csv").write_text(TOGGL)
     (intake / "policy.md").write_text("x")
     assert [p.name for p in pending(intake)] == ["policy.md"]
+
+
+# ---------------------------------------------------------------- review regressions
+def test_date_order_detected_per_file_and_flagged_when_ambiguous(tmp_path):
+    edir = setup(tmp_path)
+    eu = write(tmp_path, "eu.csv", "date,person,hours\n13/09/2026,ana,1\n05/09/2026,ana,1\n")
+    us = write(tmp_path, "amb.csv", "date,person,hours\n05/09/2026 09:00,ben,1\n")
+    log = hours.import_files(m(edir), [eu, us])
+    dates = sorted(e["date"] for e in m(edir).hours)
+    assert dates == ["2026-05-09", "2026-09-05", "2026-09-13"]
+    assert any("could be day/month" in l and "amb.csv" in l for l in log) and not any("eu.csv" in l and "could be" in l for l in log)
+    edir2 = setup(tmp_path / "b")
+    hours.import_files(m(edir2), [us], order="DMY")
+    assert m(edir2).hours[0]["date"] == "2026-09-05"
+
+
+def test_identical_rows_kept_and_renamed_exports_not_duplicated(tmp_path):
+    edir = setup(tmp_path)
+    text = HARVEST + "2026-09-21,Larkspur,ISO 42001,LK1,Interviews,Release owner walkthrough,1.5,Yes,Ben,Ortiz\n"
+    hours.import_files(m(edir), [write(tmp_path, "sept.csv", text)])
+    assert hours.total(m(edir)) == 6.25            # 1.5 + 3.25 + 1.5: the repeated row is real work
+    hours.import_files(m(edir), [write(tmp_path, "q3-cumulative.csv", text + "2026-09-30,Larkspur,ISO 42001,LK1,Interviews,x,2,Yes,Ben,Ortiz\n")])
+    assert hours.total(m(edir)) == 8.25            # only the new row added
+
+
+def test_early_burn_rate_uses_weeks_since_start(tmp_path):
+    edir = setup(tmp_path)
+    eng = yaml.safe_load((edir / "engagement.yaml").read_text())
+    start = hours.week_of(TODAY) - dt.timedelta(weeks=1)
+    eng["dates"]["start"] = start.isoformat()
+    (edir / "engagement.yaml").write_text(yaml.safe_dump(eng, sort_keys=False))
+    hours.log_entry(m(edir), 10, "kickoff", "ana", on=start)
+    hours.log_entry(m(edir), 10, "kickoff", "ben", on=start + dt.timedelta(days=1))
+    f = hours.forecast(m(edir))
+    assert f["rate_per_week"] == 20 and f["weeks"] == 1
+
+
+def test_malformed_entries_do_not_hide_other_checks(tmp_path):
+    edir = setup(tmp_path)
+    (edir / "hours.yaml").write_text(yaml.safe_dump({"entries": [
+        {"id": "H-aaaaaaaaaa", "date": "2026-09-01", "person": "ana", "hours": 8, "activity": "other", "refs": 5},
+        {"id": "H-bbbbbbbbbb", "date": "2026-09-01", "person": 7, "hours": "x", "activity": "other", "refs": "A.6.2.5"},
+        {"id": "H-cccccccccc", "date": "2026-09-02", "person": "ana", "hours": 9, "activity": "other", "refs": [9.3]},
+        {"id": "H-cccccccccc", "date": "2026-09-02", "person": "ana", "hours": 9, "activity": "other"}]}))
+    fs = findings(edir)
+    msgs = " | ".join(f.message for f in fs if f.code == "E060")
+    assert "appears more than once" in msgs and "not a number" in msgs and "more than 14" in msgs
+    assert not [f for f in fs if f.code == "E000"] and "A, ." not in msgs
+    out = tmp_path / "out"
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(out), "--force", "--no-docx"]) == 0
+
+
+def test_bad_duration_skips_row_and_classification_edges(tmp_path):
+    edir = setup(tmp_path)
+    toggl = TOGGL.replace("02:30:00", "1:xx")
+    log = hours.import_files(m(edir), [write(tmp_path, "t.csv", toggl)], match="larkspur")
+    assert "no date or hours" in log[0] and len(m(edir).hours) == 1
+    model = m(edir)
+    assert hours.classify(model, "", "", "Call at 2pm about fixtures") == "other"
+    assert hours.classify(model, "", "", "Reviewed gaps with owners") == "remediation"
+    assert hours.classify(model, "", "", "Spent 2.5 hours") == "other"
+
+
+def test_note_numbers_are_not_clause_refs_aliases_and_ignored(tmp_path):
+    edir = setup(tmp_path)
+    (edir / "hours.yaml").write_text(yaml.safe_dump({"aliases": {"Ana Lopez": "ana"}, "entries": []}))
+    csvf = write(tmp_path, "g.csv", "date,person,hours,note,refs\n2026-09-30,Ana Lopez,2.5,Spent 6.2 h on GAP-01,9.3\n")
+    hours.import_files(m(edir), [csvf])
+    e = m(edir).hours[0]
+    assert e["person"] == "ana" and e["refs"] == ["9.3", "GAP-01"]
+    d = yaml.safe_load((edir / "hours.yaml").read_text())
+    assert d["aliases"] == {"Ana Lopez": "ana"}
+    d["ignored"] = [e["id"]]
+    d["entries"] = []
+    (edir / "hours.yaml").write_text(yaml.safe_dump(d))
+    hours.import_files(m(edir), [csvf])
+    assert m(edir).hours == [] and not findings(edir, severity="error")
+
+
+def test_timesheet_stays_out_of_the_auditor_package(tmp_path):
+    from grc import package
+    edir = setup(tmp_path)
+    hours.log_entry(m(edir), 2, "interviews", "ana")
+    package.build(m(edir), tmp_path / "dist")
+    root = next(p for p in (tmp_path / "dist").iterdir() if p.is_dir())
+    assert not list(root.glob("01-overview/hours*")) and not (root / "08-source-record" / "engagement" / "hours.yaml").exists()

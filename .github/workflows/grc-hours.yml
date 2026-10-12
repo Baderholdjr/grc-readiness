@@ -31,6 +31,9 @@ on:
       person:
         type: string
         default: ""
+      phase:
+        type: string
+        default: ""
 
 jobs:
   hours:
@@ -83,12 +86,13 @@ jobs:
           NOTE: ${{ inputs.note }}
           REFS: ${{ inputs.refs }}
           PERSON: ${{ inputs.person || github.actor }}
+          PHASE: ${{ inputs.phase }}
           MATCH: ${{ vars.HOURS_MATCH }}
         run: |
           if [ "$ACTION" = log ]; then
-            [[ "$HOURS" =~ ^[0-9]+([.][0-9]+)?$ ]] || { echo "::error::hours must be a number"; exit 1; }
+            [[ "$HOURS" =~ ^([0-9]+([.][0-9]+)?|[.][0-9]+)$ ]] || { echo "::error::hours must be a number"; exit 1; }
             python -m grc hours log --hours "$HOURS" --activity "$ACTIVITY" --person "$PERSON" \
-              ${DATE:+--date "$DATE"} ${NOTE:+--note "$NOTE"} ${REFS:+--refs "$REFS"} --report report.md
+              ${DATE:+--date "$DATE"} ${NOTE:+--note "$NOTE"} ${REFS:+--refs "$REFS"} ${PHASE:+--phase "$PHASE"} --report report.md
           else
             shopt -s nullglob
             files=(intake/timesheets/*.csv)

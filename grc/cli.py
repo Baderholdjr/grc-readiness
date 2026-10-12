@@ -275,7 +275,8 @@ def cmd_hours(args) -> int:
             if not args.files:
                 print("error: import needs one or more CSV files", file=sys.stderr)
                 return 2
-            log = hours.import_files(model, [Path(f) for f in args.files], match=args.match, person=args.person)
+            log = hours.import_files(model, [Path(f) for f in args.files], match=args.match, person=args.person,
+                                     order=args.date_order)
         else:
             person = args.person or os.environ.get("GITHUB_ACTOR") or ""
             if not person or args.hours is None or not args.activity:
@@ -406,6 +407,7 @@ def main(argv=None) -> int:
     hr.add_argument("--note")
     hr.add_argument("--refs", help="log: comma-separated gap/finding/requirement ids")
     hr.add_argument("--phase")
+    hr.add_argument("--date-order", choices=["MDY", "DMY"], help="import: how to read dates like 05/09/2026")
     hr.add_argument("--report")
     hr.set_defaults(fn=cmd_hours)
 

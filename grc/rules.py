@@ -94,7 +94,7 @@ def check_schemas(model: Engagement) -> list[Finding]:
         else:
             run("document", d["raw"], path, did)
     if (edir / "hours.yaml").exists():
-        run("hours", {"entries": model.hours}, edir / "hours.yaml")
+        run("hours", {**model.hours_meta, "entries": model.hours}, edir / "hours.yaml")
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -757,6 +757,10 @@ def check_hours(model: Engagement) -> list[Finding]:
     per_day: dict = {}
     for e in H.entries(model):
         eid = str(e.get("id"))
+        try:
+            float(e.get("hours"))
+        except (TypeError, ValueError):
+            out.append(Finding("error", "E060", f"{eid}: hours '{e.get('hours')}' is not a number.", path, eid))
         d = H.safe_date(e.get("date"))
         if d and d > model.today:
             out.append(Finding("error", "E060", f"{eid}: dated {d}, in the future.", path, eid))

@@ -59,6 +59,21 @@
           }
         }
       }
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Other spellings of a person -> the name to use"
+    },
+    "ignored": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^H-[0-9a-f]{10}$"
+      },
+      "description": "Entry ids removed on purpose; imports skip them"
     }
   }
 }
