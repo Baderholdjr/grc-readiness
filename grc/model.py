@@ -72,6 +72,8 @@ class Engagement:
     impact_files: dict[str, Path] = field(default_factory=dict)
     documents: dict[str, dict] = field(default_factory=dict)  # engagement/documents/DOC-*.md -> {meta, body, error}
     document_files: dict[str, Path] = field(default_factory=dict)
+    reviews: dict[str, dict] = field(default_factory=dict)    # engagement/reviews/MR-YYYY-NN.yaml (9.3)
+    review_files: dict[str, Path] = field(default_factory=dict)
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -95,6 +97,8 @@ class Engagement:
         idx.update(self.workpaper_evidence)
         idx.update(impact.evidence_entries(self))
         idx.update(documents.evidence_entries(self))
+        from . import review
+        idx.update(review.evidence_entries(self))
         return idx
 
     @property
@@ -295,6 +299,14 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
         model.documents[path.stem] = {"meta": coerce(raw) if isinstance(raw, dict) else None, "raw": raw,
                                       "body": body, "error": error}
         model.document_files[path.stem] = path
+    rdir = edir / "reviews"
+    for path in sorted(rdir.glob("MR-*.yaml")) if rdir.is_dir() else []:
+        try:
+            data = load_yaml(path)
+        except Exception as exc:  # report, don't crash
+            data = {"_error": f"not valid YAML ({str(exc).splitlines()[0][:120]})"}
+        model.reviews[path.stem] = data
+        model.review_files[path.stem] = path
     fnd = edir / "findings.yaml"
     if fnd.exists():
         model.findings = load_yaml(fnd).get("findings", []) or []

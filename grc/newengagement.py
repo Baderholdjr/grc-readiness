@@ -157,6 +157,10 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
             "criteria": ["ISO/IEC 42001:2023", "AIMS policy and procedures"], "auditors": ["Internal Auditor"],
             "planned": {"start": test["start"], "end": test["end"]}, "status": "planned", "populations": {}}]},
             sort_keys=False, allow_unicode=True, width=120), encoding="utf-8")
+    from .model import load_yaml, resource
+    from .review import write_new
+    pb = load_yaml(resource(engagement_dir.parent, "frameworks", framework, "playbook.yaml")) or {}
+    write_new(engagement_dir, test["end"], (pb.get("management_review") or {}).get("inputs") or [])
     (engagement_dir / "findings.yaml").write_text(
         "# Nonconformities, OFIs and corrective actions (ISO 42001 clause 10.2).\n"
         "# Ids: NC-001 (grade major/minor), OFI-001 (grade ofi). Mirrored to GitHub Issues.\n"

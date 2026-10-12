@@ -123,7 +123,7 @@ def test_approve_refuses_incomplete_documents(tmp_path):
             documents.approve(m(edir), "DOC-AI-POLICY", approver)
             raise AssertionError
         except ValueError as exc:
-            assert "is the author" in str(exc)
+            assert "same person as the author" in str(exc)
     edit(edir, body=lambda b: b.replace("## Commitments", "## Promises"))
     try:
         documents.approve(m(edir), "DOC-AI-POLICY", "CEO")

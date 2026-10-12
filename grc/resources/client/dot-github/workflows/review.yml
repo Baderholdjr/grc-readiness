@@ -1,0 +1,28 @@
+name: Management review
+
+# Actions -> Management review -> Run workflow.
+#   new  + planned date (YYYY-MM-DD)  : schedule a review
+#   pack + review id (MR-2027-01)     : generate its input pack before the meeting
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "new or pack"
+        required: true
+        type: choice
+        options: [new, pack]
+      target: {description: "new: planned date YYYY-MM-DD; pack: review id (MR-2027-01)", required: false, default: ""}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  review:
+    uses: __ENGINE_REPO__/.github/workflows/grc-review.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+      action: ${{ inputs.action }}
+      target: ${{ inputs.target }}
+    secrets: inherit

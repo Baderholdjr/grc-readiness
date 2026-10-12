@@ -150,7 +150,8 @@ def approval_problems(model: Engagement, doc_id: str, meta: dict, body: str, che
         if not str(meta.get(k) or "").strip():
             p.append(f"no {k}")
     if meta.get("approver") and meta.get("author") and not model.independent(meta["approver"], meta["author"]):
-        p.append(f"approver ({meta['approver']}) is the author")
+        p.append(f"approver ({meta['approver']}) is the same person as the author ({meta['author']}), "
+                 "directly or through owners.yaml")
     approved = safe_date(meta.get("approved_on"))
     if approved and approved > model.today:
         p.append("approved_on is in the future")
