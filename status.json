@@ -50,6 +50,9 @@
   "ia_current": 0,
   "docs_required": 17,
   "docs_approved": 0,
+  "mr_last_held": null,
+  "mr_actions_open": 0,
+  "mr_actions_overdue": 0,
   "nc_open_major": 0,
   "nc_open_minor": 0,
   "audits": {
