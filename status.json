@@ -59,7 +59,8 @@
     "AUD-2027-01": "planned"
   },
   "hours_total": 200,
-  "hours_used": 18,
+  "hours_used": 18.0,
+  "hours_forecast": null,
   "findings": {
     "error": 0,
     "warning": 7,
