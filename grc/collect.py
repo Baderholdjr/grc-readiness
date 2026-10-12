@@ -147,7 +147,7 @@ def link_evidence(model: Engagement, cfg: dict, results: list[dict], write: bool
         if ev not in passing:
             continue
         for ref in check.get("supports", []) or []:
-            rid, leg = ref.rsplit(":", 1)
+            rid, _, leg = str(ref).rpartition(":")
             if rid not in model.controls or leg not in LEGS or not model.is_applicable(rid):
                 log.append(f"⚠️ {ev} → {ref}: no applicable control/leg with that id")
                 continue

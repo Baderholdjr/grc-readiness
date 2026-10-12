@@ -8,7 +8,8 @@ The engagement record lives in this repo as YAML. Git history is the audit trail
 
 ```
  client documents ──upload to intake/──▶ INGEST (templates + Claude drafting) ──┐
- GitHub · Drata · AWS/Azure/GCP ──daily──▶ COLLECT (evidence snapshots) ─────────┤  both open PRs
+ GitHub · Drata · AWS/Azure/GCP · Jira · SharePoint/Google Drive · SageMaker/MLflow
+                             ──daily──▶ COLLECT (evidence snapshots) ─────────┤  both open PRs
                                                                                  ▼
  engagement YAML ──PR──▶ CI: validate ──▶ build ──▶ brief.docx · control matrix · SoA · gap register · evidence index
         ▲                    │ blocks overstated readiness                     │
@@ -143,7 +144,7 @@ In the client repository:
 
 **AI system impact assessments (6.1.4, 8.4, A.5):** see [`docs/IMPACT.md`](docs/IMPACT.md). **Actions → AI impact assessment** starts one per AI system in `inventory.yaml`; an approved assessment can be cited as evidence (`IA-001`).
 
-**No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
+**No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud, Jira, SharePoint/Drive, model registry and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 
 ## Adding a framework
 

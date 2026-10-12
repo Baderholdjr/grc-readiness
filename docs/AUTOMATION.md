@@ -99,6 +99,66 @@ Create a workload identity pool and provider for GitHub, and a service account w
 
 ---
 
+### Jira (incidents, changes, approvals, concerns)
+
+Add **variables** `JIRA_BASE_URL` (e.g. `https://acme.atlassian.net`) and `JIRA_EMAIL` (a read-only user), and the **secret** `JIRA_API_TOKEN` (that user's API token). One collector, `jira.issues`, runs a JQL query and checks what the process promises:
+
+```yaml
+- evidence: EV-140
+  title: AI incidents are assigned and resolved within 30 days
+  collector: jira.issues
+  type: record
+  params:
+    jql: 'project = AIOPS AND issuetype = "AI Incident" AND created >= -180d'
+    min_count: 0
+    require_assignee: true
+    resolved_within_days: 30        # resolved tickets took longer -> fail
+    max_open_age_days: 30           # open tickets older than this -> fail
+    require_fields: [customfield_10050]   # e.g. an approval or root-cause field must be filled
+  supports: ["A.8.4:evidenced"]
+```
+
+Use the same collector for model release approvals, change requests (6.3), reported concerns (A.3.3) or risk treatment tickets. The ticket keys become the population an internal audit samples from.
+
+### SharePoint (Microsoft Graph)
+
+Register an app with the **application** permission `Sites.Read.All` (or `Sites.Selected` scoped to the AIMS site) and admin consent. Add **variables** `MS_TENANT_ID`, `MS_CLIENT_ID` and the **secret** `MS_CLIENT_SECRET`.
+
+```yaml
+- evidence: EV-141
+  title: Approved AI policies are published and current in SharePoint
+  collector: sharepoint.documents
+  type: document
+  params:
+    site: "acme.sharepoint.com:/sites/AIMS"
+    library: Documents
+    folder: Policies/AI
+    names: ["AI Policy", "Impact Assessment Procedure"]
+    max_age_days: 400
+    require_major_version: true     # latest version must be published (3.0), not a draft (3.1)
+```
+
+### Google Drive
+
+Uses the same GCP sign-in as the cloud checks (workload identity). Enable the **Google Drive API** in that project and share the folder (or the shared drive) with the service account as **Viewer**. Then `gdrive.documents` takes `folder_id`, `names` and `max_age_days`, like the SharePoint check; for a folder in a shared drive, add `drive_id`.
+
+### Model registries
+
+- **SageMaker Model Registry** (`aws.sagemaker_model_registry`) uses the AWS sign-in; the role needs `sagemaker:ListModelPackages` and `sagemaker:DescribeModelPackage`. For each model package group it checks the latest version is **Approved**, nothing has waited longer than `max_pending_days` for approval, and optionally that the approver differs from the creator (`require_independent_approval`, based on `CreatedBy` / `LastModifiedBy`, so sample the approvals in the audit as well; identities aren't stored in the snapshot, only whether they differ) and that a model card is attached (`require_model_card`).
+- **MLflow** (`mlflow.models`, open source or Databricks): add the **variable** `MLFLOW_TRACKING_URI` (the server URL; for Databricks the workspace URL `https://….cloud.databricks.com`, not `databricks`) and either the **secret** `MLFLOW_TRACKING_TOKEN` or `MLFLOW_TRACKING_USERNAME` (variable) and `MLFLOW_TRACKING_PASSWORD` (secret). For each model it checks there is a description, the required model tags (e.g. `model_card`, `impact_assessment`), a production version (`production_alias`, e.g. `champion`, or a legacy `production_stage` such as `Production`; `champion` if neither is set), the required version tags on it (e.g. `validation_report`), and, with `approver_tag`, that the approver named in that tag isn't the version's creator.
+
+```yaml
+- evidence: EV-142
+  title: Production models were validated and independently approved
+  collector: aws.sagemaker_model_registry
+  type: record
+  params: {groups: [triage-chatbot, readmission-risk], max_pending_days: 14,
+           require_independent_approval: true, require_model_card: true}
+  supports: ["A.6.2.5:evidenced"]
+```
+
+Approved model versions become the audit population for release-approval testing.
+
 ## How collected evidence affects readiness
 
 - Each check writes a snapshot to `engagement/evidence/collected/<ID>.json`. The snapshot holds metadata only (settings, counts, IDs) plus a SHA-256 hash. It also writes an index entry to `engagement/evidence/collected.yaml`, which is machine-owned. Humans keep editing `evidence/index.yaml`.

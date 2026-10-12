@@ -15,9 +15,10 @@ class HTTPError(Exception):
 
 
 def request(method: str, url: str, headers: dict | None = None, params: dict | None = None,
-            body: dict | None = None, retries: int = 3, timeout: int = 60):
+            body: dict | None = None, retries: int = 3, timeout: int = 60, form: dict | None = None):
+    """JSON request (or form-encoded when `form` is given, e.g. OAuth token endpoints)."""
     from .. import sandbox
-    canned = sandbox.handle(method, url, params, body)
+    canned = sandbox.handle(method, url, params, body if form is None else form)
     if canned is not sandbox.NOT_HANDLED:
         return canned
     if params:
@@ -28,13 +29,16 @@ def request(method: str, url: str, headers: dict | None = None, params: dict | N
             for item in (v if isinstance(v, (list, tuple)) else [v]):
                 pairs.append((k, str(item).lower() if isinstance(item, bool) else str(item)))
         url = f"{url}{'&' if '?' in url else '?'}{urllib.parse.urlencode(pairs)}"
-    data = json.dumps(body).encode() if body is not None else None
+    if form is not None:
+        data = urllib.parse.urlencode(form).encode()
+    else:
+        data = json.dumps(body).encode() if body is not None else None
     for attempt in range(retries):
         req = urllib.request.Request(url, data=data, method=method)
         for k, v in (headers or {}).items():
             req.add_header(k, v)
         if data is not None:
-            req.add_header("Content-Type", "application/json")
+            req.add_header("Content-Type", "application/x-www-form-urlencoded" if form is not None else "application/json")
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw = resp.read()
