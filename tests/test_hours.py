@@ -56,7 +56,10 @@ def test_import_formats_filter_and_idempotence(tmp_path):
     edir = setup(tmp_path)
     files = [write(tmp_path, "toggl.csv", TOGGL), write(tmp_path, "harvest.csv", HARVEST), write(tmp_path, "clockify.csv", CLOCKIFY)]
     log = hours.import_files(m(edir), files, match="larkspur")
-    assert "toggl" in log[0] and "1 skipped (other client/project)" in log[0] and "harvest" in log[1] and "clockify" in log[2]
+    files_log = [l for l in log if l.endswith(")") or "added so far" in l]
+    assert "toggl" in files_log[0] and "1 skipped (other client/project)" in files_log[0]
+    assert any("(harvest)" in l for l in log) and any("(clockify)" in l for l in log)
+    assert any("client/project filter: 'larkspur'" in l for l in log)
     es = {e["note"][:12]: e for e in m(edir).hours}
     assert es["Kickoff work"]["hours"] == 2.5 and es["Kickoff work"]["activity"] == "kickoff"
     assert es["Drafted AI p"]["activity"] == "documentation" and es["Drafted AI p"]["refs"] == ["A.2.2", "GAP-01"]
@@ -230,3 +233,13 @@ def test_timesheet_stays_out_of_the_auditor_package(tmp_path):
     package.build(m(edir), tmp_path / "dist")
     root = next(p for p in (tmp_path / "dist").iterdir() if p.is_dir())
     assert not list(root.glob("01-overview/hours*")) and not (root / "08-source-record" / "engagement" / "hours.yaml").exists()
+
+
+def test_match_is_forgiving_and_explains_itself(tmp_path):
+    for typed in ('"Larkspur"', " Larkspur ", "HOURS_MATCH=Larkspur", "acme, larkspur", "\u201cLarkspur\u201d"):
+        edir = setup(tmp_path / str(abs(hash(typed))))
+        hours.import_files(m(edir), [write(tmp_path, "t.csv", TOGGL)], match=typed)
+        assert len(m(edir).hours) == 2, typed
+    edir = setup(tmp_path / "none")
+    log = hours.import_files(m(edir), [write(tmp_path, "t.csv", TOGGL)], match="Larkspur Health (fictional)")
+    assert any("skipped every row" in l and "Larkspur / ISO 42001 (2)" in l for l in log)

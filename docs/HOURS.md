@@ -5,7 +5,7 @@ The engagement's hours live in `engagement/hours.yaml`, one entry per block of w
 ## Getting hours in
 
 - **From a time tracker.** Export a CSV from **Toggl**, **Harvest** or **Clockify** (or any CSV with `date` and `hours` columns, plus optional `person`, `activity`, `note`, `refs`, `phase`) and commit it to `intake/timesheets/`. The **Hours** workflow imports every file there and opens a *Timesheet update* PR.
-  - Set the repository variable `HOURS_MATCH` (e.g. `Larkspur`) to keep only rows whose client or project contains it.
+  - Set the repository variable `HOURS_MATCH` (e.g. `Larkspur`) to keep only rows whose client or project contains it. Case, stray quotes and spaces don't matter; separate alternatives with commas. If the filter skips every row, the PR lists the client and project names it found.
   - Each entry's id comes from the row's content, not the file name, so re-importing a renamed or longer (cumulative) export adds only the new rows. Identical rows in one export are kept as separate work.
   - Dates like `05/09/2026` are read day/month or month/day according to the file (any day above 12 decides it). If a file is ambiguous, the PR says so and month/day is assumed; pass `--date-order DMY` (or set `hours.date_order` in the playbook) for European exports.
   - Activities are inferred from the task, tags and description using the playbook's keywords (`hours.activities`). References such as `GAP-01`, `NC-001` or `A.6.2.5` in the description are picked up when they exist in the record; bare clause numbers (`6.1.2`) are taken only from a `refs` or tags column, so "2.5 hours" isn't read as a clause.
