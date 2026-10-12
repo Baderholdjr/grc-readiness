@@ -1,10 +1,10 @@
 """Document stores: the client's controlled documents exist where they say, and are kept current.
 
-SharePoint / OneDrive (Microsoft Graph, app-only):
+SharePoint (Microsoft Graph, app-only):
   MS_TENANT_ID, MS_CLIENT_ID (repository variables), MS_CLIENT_SECRET (secret).
   The app registration needs the read-only application permission Sites.Read.All (or Sites.Selected).
 Google Drive:
-  Uses the GCP sign-in already used for cloud checks (google-github-actions/auth); the service
+  Enable the Google Drive API in the workload-identity project. Uses the GCP sign-in already used for cloud checks (google-github-actions/auth); the service
   account must be given Viewer access to the folder (or the shared drive). Needs the google-auth package.
 
 Snapshots record names, dates, versions and links only - never document content.
@@ -72,9 +72,15 @@ def sharepoint_documents(site: str, folder: str = "", library: str = "Documents"
     require_major_version: the latest version is published (e.g. 3.0), not a draft (3.1).
     """
     h = {"Authorization": f"Bearer {_graph_token()}", "Accept": "application/json"}
-    host, _, path = site.partition(":")
-    s = http.request("GET", f"{GRAPH}/sites/{host}:{path or '/'}", headers=h) or {}
-    drives = _graph_all(f"{GRAPH}/sites/{s.get('id')}/drives", h)
+    host, _, path = str(site).partition(":")
+    where = f"{site}/{library}/{folder}".rstrip("/")
+    try:
+        s = http.request("GET", f"{GRAPH}/sites/{urllib.parse.quote(host)}:{urllib.parse.quote(path or '/')}", headers=h) or {}
+        drives = _graph_all(f"{GRAPH}/sites/{s.get('id')}/drives", h)
+    except http.HTTPError as exc:
+        if exc.status == 404:
+            return CheckResult(FAIL, f"site {site} not found", {"site": site, "items": []}, [f"SharePoint site {site} not found"])
+        raise
     drive = next((d for d in drives if str(d.get("name", "")).lower() == library.lower()), None)
     if not drive:
         return CheckResult(FAIL, f"library '{library}' not found on {site}", {"site": site, "items": []},
@@ -82,16 +88,22 @@ def sharepoint_documents(site: str, folder: str = "", library: str = "Documents"
     base = f"{GRAPH}/drives/{drive['id']}"
     loc = f"{base}/root:/{urllib.parse.quote(folder.strip('/'))}:/children" if folder.strip("/") else f"{base}/root/children"
     files = []
-    for it in _graph_all(loc, h):
+    try:
+        children = _graph_all(loc, h)
+    except http.HTTPError as exc:
+        if exc.status == 404:
+            return CheckResult(FAIL, f"folder not found: {where}", {"site": site, "items": []}, [f"folder '{folder}' not found in {library}"])
+        raise
+    for it in children:
         if "file" not in it:
             continue
         version = None
-        if require_major_version:
+        if require_major_version and (not names or match(it.get("name", ""), names)):
             vs = (http.request("GET", f"{base}/items/{it['id']}/versions", headers=h) or {}).get("value") or []
             version = vs[0].get("id") if vs else None
         files.append({"name": it.get("name", ""), "modified": parse_time(it.get("lastModifiedDateTime")),
                       "version": version, "url": it.get("webUrl")})
-    return evaluate(f"SharePoint {site}/{library}/{folder}".rstrip("/"), files, names, max_age_days, require_major_version)
+    return evaluate(f"SharePoint {where}", files, names, max_age_days, require_major_version)
 
 
 # ------------------------------------------------------------------ Google Drive
@@ -103,7 +115,7 @@ def _google_token() -> str:
         import google.auth
         import google.auth.transport.requests
     except ImportError as exc:
-        raise MissingCredentials("google-auth is not installed") from exc
+        raise MissingCredentials(f"google-auth[requests] is not installed ({exc.name})") from exc
     try:
         creds, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/drive.readonly"])
         creds.refresh(google.auth.transport.requests.Request())
@@ -113,16 +125,20 @@ def _google_token() -> str:
 
 
 @collector("gdrive.documents")
-def gdrive_documents(folder_id: str, names: list[str] | None = None, max_age_days: int | None = None) -> CheckResult:
-    """Named documents exist in a Google Drive folder (or shared drive folder) and are current."""
+def gdrive_documents(folder_id: str, names: list[str] | None = None, max_age_days: int | None = None,
+                     drive_id: str | None = None) -> CheckResult:
+    """Named documents exist in a Google Drive folder and are current. For a folder in a shared drive,
+    give drive_id (the shared drive's id) as well."""
+    for v in (folder_id, drive_id or "x"):
+        if not isinstance(v, str) or not v.replace("-", "").replace("_", "").isalnum():
+            return CheckResult(FAIL, "invalid folder or drive id", {"items": []}, ["folder_id/drive_id must be Drive ids"])
     h = {"Authorization": f"Bearer {_google_token()}", "Accept": "application/json"}
-    if not folder_id.replace("-", "").replace("_", "").isalnum():
-        return CheckResult(FAIL, "invalid folder id", {"items": []}, ["folder_id must be a Drive folder id"])
     files, token = [], None
     while len(files) < 2000:
         params = {"q": f"'{folder_id}' in parents and trashed = false", "pageSize": 200,
                   "fields": "nextPageToken,files(id,name,mimeType,modifiedTime,version,webViewLink)",
-                  "supportsAllDrives": "true", "includeItemsFromAllDrives": "true"}
+                  "supportsAllDrives": "true", "includeItemsFromAllDrives": "true",
+                  **({"corpora": "drive", "driveId": drive_id} if drive_id else {})}
         if token:
             params["pageToken"] = token
         page = http.request("GET", f"{DRIVE}/files", headers=h, params=params) or {}

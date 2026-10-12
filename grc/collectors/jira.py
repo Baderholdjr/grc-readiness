@@ -11,6 +11,7 @@ from . import http
 from .base import FAIL, PASS, CheckResult, collector, env, parse_time, setting, utcnow
 
 MAX_ISSUES = 2000
+MAX_PAGES = 100
 
 
 def _headers() -> dict:
@@ -21,18 +22,22 @@ def _headers() -> dict:
 def search(jql: str, fields: list[str], limit: int = MAX_ISSUES) -> tuple[list[dict], bool]:
     """Enhanced JQL search (POST /rest/api/3/search/jql, token pagination). Returns (issues, truncated)."""
     url = setting("JIRA_BASE_URL").rstrip("/") + "/rest/api/3/search/jql"
-    issues, token = [], None
-    while True:
+    issues, token, seen = [], None, set()
+    for _ in range(MAX_PAGES):
         body = {"jql": jql, "fields": fields, "maxResults": 100}
         if token:
             body["nextPageToken"] = token
         page = http.request("POST", url, headers=_headers(), body=body) or {}
-        issues.extend(page.get("issues") or [])
+        batch = page.get("issues") or []
+        issues.extend(batch)
         token = page.get("nextPageToken")
+        more = bool(token) and not page.get("isLast") and bool(batch) and token not in seen
         if len(issues) >= limit:
-            return issues[:limit], True
-        if not token or page.get("isLast"):
+            return issues[:limit], more or len(issues) > limit
+        if not more:
             return issues, False
+        seen.add(token)
+    return issues, True
 
 
 def _name(v) -> str | None:

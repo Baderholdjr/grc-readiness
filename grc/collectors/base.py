@@ -83,8 +83,8 @@ def parse_time(value) -> dt.datetime | None:
     """ISO-8601 (with Z or offset) or epoch milliseconds -> aware UTC datetime."""
     if value in (None, ""):
         return None
-    if isinstance(value, (int, float)):
-        return dt.datetime.fromtimestamp(value / 1000, dt.timezone.utc)
+    if isinstance(value, (int, float)) or (isinstance(value, str) and value.strip().isdigit()):
+        return dt.datetime.fromtimestamp(int(value) / 1000, dt.timezone.utc)
     if isinstance(value, dt.datetime):
         return value if value.tzinfo else value.replace(tzinfo=dt.timezone.utc)
     s = str(value).strip().replace("Z", "+00:00")

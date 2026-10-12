@@ -209,3 +209,60 @@ def test_parse_time_formats():
     assert parse_time("2026-10-01T10:00:00.000+0000").tzinfo is not None
     assert parse_time("2026-10-01T10:00:00.1234567Z").microsecond == 123456
     assert parse_time(1760000000000).year == 2025
+
+
+# ---------------------------------------------------------------- review regressions
+def test_sandbox_passes_github_enterprise_through(tmp_path):
+    (tmp_path / "sb").mkdir()
+    sandbox._DIR = tmp_path / "sb"
+    try:
+        assert sandbox.handle("GET", "https://ghe.acme.corp/api/v3/repos/o/r", None, None) is sandbox.NOT_HANDLED
+        assert sandbox.handle("GET", "https://api.github.com/repos/o/r", None, None) is sandbox.NOT_HANDLED
+        try:
+            sandbox.handle("GET", "https://graph.microsoft.com/v1.0/sites/x", None, None)
+            raise AssertionError
+        except http.HTTPError as exc:
+            assert exc.status == 404
+    finally:
+        sandbox._DIR = None
+
+
+def test_jira_paging_terminates():
+    fake = FakeHTTP({"/search/jql": {"issues": [], "nextPageToken": "same"}})
+    restore = patched(fake, {"JIRA_BASE_URL": "https://acme.atlassian.net", "JIRA_EMAIL": "a", "JIRA_API_TOKEN": "t"})
+    try:
+        r = run_check("jira.issues", {"jql": "x"})
+        assert r.result == "pass" and len(fake.calls) == 1 and not r.details["truncated"]
+        fake.routes["/search/jql"] = {"issues": [_issue("AI-1", 1)], "nextPageToken": "same"}
+        fake.calls.clear()
+        r = run_check("jira.issues", {"jql": "x"})
+        assert len(fake.calls) == 2
+    finally:
+        restore()
+
+
+def test_mlflow_stage_only_and_paging():
+    pages = {None: {"model_versions": [{"version": str(i), "current_stage": "None", "user_id": "a", "tags": []} for i in range(200)],
+                    "next_page_token": "p2"},
+             "p2": {"model_versions": [{"version": "201", "current_stage": "Production", "user_id": "a",
+                                        "creation_timestamp": "1760000000000", "tags": []}]}}
+    fake = FakeHTTP({"/registered-models/get": {"registered_model": {"name": "m", "description": "d", "aliases": []}},
+                     "/model-versions/search": lambda url, params: pages[params.get("page_token")]})
+    restore = patched(fake, {"MLFLOW_TRACKING_URI": "https://mlflow.acme", "MLFLOW_TRACKING_TOKEN": "t"})
+    try:
+        r = run_check("mlflow.models", {"models": ["m"], "production_stage": "Production"})
+        assert r.result == "pass", r.findings
+        assert r.details["items"] == ["m/v201"]
+    finally:
+        restore()
+
+
+def test_sharepoint_missing_site_is_a_finding_and_epoch_strings_parse():
+    fake = FakeHTTP({"login.microsoftonline.com": {"access_token": "tok"}})
+    restore = patched(fake, {"MS_TENANT_ID": "t", "MS_CLIENT_ID": "c", "MS_CLIENT_SECRET": "s"})
+    try:
+        r = run_check("sharepoint.documents", {"site": "acme.sharepoint.com:/sites/AI Governance", "names": ["x"]})
+        assert r.result == "fail" and "not found" in r.findings[0]
+    finally:
+        restore()
+    assert parse_time("1760000000000").year == 2025

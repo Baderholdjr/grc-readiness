@@ -38,8 +38,9 @@ def sagemaker_model_registry(groups: list[str], region: str | None = None, recen
         try:
             pkgs = sm.list_model_packages(ModelPackageGroupName=g, SortBy="CreationTime", SortOrder="Descending",
                                           MaxResults=max(1, min(recent_versions, 100))).get("ModelPackageSummaryList", [])
-        except Exception as exc:  # ResourceNotFound etc. - keep going with the other groups
-            findings.append(f"model package group '{g}' could not be read ({type(exc).__name__})")
+        except Exception as exc:  # ResourceNotFound, AccessDenied ... - keep going with the other groups
+            code = (getattr(exc, "response", None) or {}).get("Error", {}).get("Code") or type(exc).__name__
+            findings.append(f"model package group '{g}' could not be read ({code})")
             continue
         if not pkgs:
             findings.append(f"model package group '{g}' has no versions")
@@ -59,7 +60,8 @@ def sagemaker_model_registry(groups: list[str], region: str | None = None, recen
             if status == "Approved" and (require_independent_approval or require_model_card):
                 d = sm.describe_model_package(ModelPackageName=p.get("ModelPackageArn"))
                 creator, approver = _who(d.get("CreatedBy")), _who(d.get("LastModifiedBy"))
-                row.update(created_by=creator, approved_by=approver, model_card=bool(d.get("ModelCard")))
+                # identities stay out of the committed snapshot; only the outcome is recorded
+                row.update(independent=bool(approver and creator and approver != creator), model_card=bool(d.get("ModelCard")))
                 if require_independent_approval and (not approver or not creator or approver == creator):
                     findings.append(f"'{g}' v{p.get('ModelPackageVersion')} approval not shown to be by someone other "
                                     f"than its creator (created by {creator or '?'}, approved by {approver or '?'})")
@@ -68,8 +70,9 @@ def sagemaker_model_registry(groups: list[str], region: str | None = None, recen
             if status == "Approved":
                 approvals.append(f"{g}/v{p.get('ModelPackageVersion')}")
             rows.append(row)
+    window = max(1, min(recent_versions, 100))
     return CheckResult(FAIL if findings else PASS,
-                       f"{len(groups)} model group(s), {len(approvals)} approved version(s) in the last {recent_versions}",
+                       f"{len(groups)} model group(s), {len(approvals)} approved version(s) in the last {window} per group",
                        {"groups": groups, "items": approvals, "versions": rows}, findings)
 
 
@@ -91,7 +94,7 @@ def _tags(obj) -> dict:
 
 
 @collector("mlflow.models")
-def mlflow_models(models: list[str], production_alias: str | None = "champion", production_stage: str | None = None,
+def mlflow_models(models: list[str], production_alias: str | None = None, production_stage: str | None = None,
                   require_model_tags: list[str] | None = None, require_version_tags: list[str] | None = None,
                   approver_tag: str | None = None) -> CheckResult:
     """Registered models are documented and the production version is validated and independently approved.
@@ -102,7 +105,12 @@ def mlflow_models(models: list[str], production_alias: str | None = "champion", 
     (e.g. "validation_report"). approver_tag: a version tag naming the approver, which must differ
     from the version's creator (user_id).
     """
-    base = setting("MLFLOW_TRACKING_URI").rstrip("/") + "/api/2.0/mlflow"
+    if not production_alias and not production_stage:
+        production_alias = "champion"
+    uri = setting("MLFLOW_TRACKING_URI")
+    if not uri.startswith(("https://", "http://")):
+        raise MissingCredentials("MLFLOW_TRACKING_URI must be the server or Databricks workspace URL (https://...)")
+    base = uri.rstrip("/") + "/api/2.0/mlflow"
     h = {**_mlflow_headers(), "Accept": "application/json"}
     findings, rows, prod = [], [], []
     for name in models:
@@ -117,8 +125,15 @@ def mlflow_models(models: list[str], production_alias: str | None = "champion", 
         for t in require_model_tags or []:
             if not str(mt.get(t) or "").strip():
                 findings.append(f"model '{name}' lacks tag '{t}'")
-        versions = (http.request("GET", f"{base}/model-versions/search", headers=h,
-                                 params={"filter": "name='" + name.replace("'", "\\'") + "'", "max_results": 200}) or {}).get("model_versions") or []
+        quoted = f'"{name}"' if "'" in name else f"'{name}'"
+        versions, token = [], None
+        for _ in range(20):   # page through all versions (200 per page)
+            params = {"filter": f"name={quoted}", "max_results": 200, **({"page_token": token} if token else {})}
+            page = http.request("GET", f"{base}/model-versions/search", headers=h, params=params) or {}
+            versions.extend(page.get("model_versions") or [])
+            token = page.get("next_page_token")
+            if not token or not page.get("model_versions"):
+                break
         aliases = {a.get("alias"): str(a.get("version")) for a in rm.get("aliases") or [] if isinstance(a, dict)}
         if production_alias:
             pv = aliases.get(production_alias)
@@ -135,7 +150,7 @@ def mlflow_models(models: list[str], production_alias: str | None = "champion", 
                     findings.append(f"'{name}' v{v.get('version')} (production) lacks tag '{t}'")
             if approver_tag:
                 appr, creator = str(vt.get(approver_tag) or "").strip(), str(v.get("user_id") or "").strip()
-                if not appr or (creator and appr.lower() == creator.lower()):
+                if not appr or not creator or appr.lower() == creator.lower():
                     findings.append(f"'{name}' v{v.get('version')} (production) is not shown to be approved by someone "
                                     f"other than its creator ({approver_tag}: {appr or 'missing'}, created by {creator or '?'})")
             prod.append(f"{name}/v{v.get('version')}")

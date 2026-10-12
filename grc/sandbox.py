@@ -70,11 +70,9 @@ def handle(method: str, url: str, params: dict | None, body: dict | None):
         canned = (_load("ai_docs.json") or {}).get(m.group(1) if m else "", {"fills": [], "open_questions": [
             "sandbox: no canned fills for this document in sandbox/ai_docs.json"]})
         return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps(canned)}]}
-    if "github" in parsed.netloc:
-        return NOT_HANDLED  # GitHub is never simulated
     if parsed.netloc == "login.microsoftonline.com":
         return {"access_token": "sandbox", "token_type": "Bearer", "expires_in": 3600}
-    if "anthropic.com" not in parsed.netloc:
+    if parsed.netloc in _simulated_hosts():
         return _http(method, parsed.path, params or {}, body or {})
     if "anthropic.com" in parsed.netloc:
         draft = _load("ai_draft.json")
@@ -83,6 +81,19 @@ def handle(method: str, url: str, params: dict | None, body: dict | None):
             raise HTTPError(404, "sandbox: no ai_draft.json")
         return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps(draft)}]}
     return NOT_HANDLED
+
+
+def _simulated_hosts() -> set[str]:
+    """Hosts the sandbox answers for (Jira, Graph, Google Drive, MLflow). Anything else - GitHub,
+    GitHub Enterprise - is called for real, as before."""
+    import os
+    from .collectors.base import SANDBOX_SETTINGS
+    hosts = {"graph.microsoft.com", "www.googleapis.com"}
+    for name in ("JIRA_BASE_URL", "MLFLOW_TRACKING_URI"):
+        for url in (os.environ.get(name, ""), SANDBOX_SETTINGS.get(name, "")):
+            if url:
+                hosts.add(urllib.parse.urlparse(url).netloc)
+    return hosts
 
 
 def _http(method: str, path: str, params: dict, body: dict):

@@ -30,14 +30,14 @@ jobs:
           GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
         run: |
           if [ "$ENGINE" = "local" ]; then
-            pip install -q . boto3 google-auth
+            pip install -q . boto3 'google-auth[requests]'
           else
             # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
             # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
               git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
             fi
-            pip install -q -r requirements.txt boto3 google-auth
+            pip install -q -r requirements.txt boto3 'google-auth[requests]'
             git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
           fi
           python -c "import grc; print('GRC engine', grc.__version__)"

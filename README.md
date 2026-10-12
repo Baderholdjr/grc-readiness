@@ -8,7 +8,7 @@ The engagement record lives in this repo as YAML. Git history is the audit trail
 
 ```
  client documents ──upload to intake/──▶ INGEST (templates + Claude drafting) ──┐
- GitHub · Drata · AWS/Azure/GCP · Jira · SharePoint/Drive · SageMaker/MLflow
+ GitHub · Drata · AWS/Azure/GCP · Jira · SharePoint/Google Drive · SageMaker/MLflow
                              ──daily──▶ COLLECT (evidence snapshots) ─────────┤  both open PRs
                                                                                  ▼
  engagement YAML ──PR──▶ CI: validate ──▶ build ──▶ brief.docx · control matrix · SoA · gap register · evidence index
