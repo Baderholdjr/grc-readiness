@@ -16,6 +16,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -49,7 +50,12 @@ def collector(name: str):
     return wrap
 
 
-SANDBOXED_SECRETS = {"DRATA_API_KEY", "ANTHROPIC_API_KEY"}
+SANDBOXED_SECRETS = {"DRATA_API_KEY", "ANTHROPIC_API_KEY", "JIRA_API_TOKEN", "MS_CLIENT_SECRET",
+                     "MLFLOW_TRACKING_TOKEN"}
+# Non-secret settings (repository variables). In sandbox mode they get harmless defaults.
+SANDBOX_SETTINGS = {"JIRA_BASE_URL": "https://sandbox.atlassian.net", "JIRA_EMAIL": "sandbox@example.com",
+                    "MS_TENANT_ID": "sandbox-tenant", "MS_CLIENT_ID": "sandbox-client",
+                    "MLFLOW_TRACKING_URI": "https://mlflow.sandbox.example"}
 
 
 def env(name: str) -> str:
@@ -60,6 +66,42 @@ def env(name: str) -> str:
     if not value:
         raise MissingCredentials(f"{name} is not set")
     return value
+
+
+def setting(name: str) -> str:
+    """A non-secret setting such as a base URL (repository variable)."""
+    from .. import sandbox
+    value = os.environ.get(name, "").strip()
+    if not value and sandbox.active() and name in SANDBOX_SETTINGS:
+        return SANDBOX_SETTINGS[name]
+    if not value:
+        raise MissingCredentials(f"{name} is not set")
+    return value
+
+
+def parse_time(value) -> dt.datetime | None:
+    """ISO-8601 (with Z or offset) or epoch milliseconds -> aware UTC datetime."""
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        return dt.datetime.fromtimestamp(value / 1000, dt.timezone.utc)
+    if isinstance(value, dt.datetime):
+        return value if value.tzinfo else value.replace(tzinfo=dt.timezone.utc)
+    s = str(value).strip().replace("Z", "+00:00")
+    if len(s) >= 5 and s[-5] in "+-" and s[-3] != ":":   # Jira style +0000
+        s = s[:-2] + ":" + s[-2:]
+    # Python 3.10's fromisoformat wants 0, 3 or 6 fractional digits (Graph sends 7, some APIs 1-2)
+    s = re.sub(r"\.(\d+)", lambda m: "." + (m.group(1) + "000000")[:6], s, count=1)
+    t = dt.datetime.fromisoformat(s)
+    return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
+
+
+def match(name: str, wanted: list[str]) -> str | None:
+    low = (name or "").lower()
+    for w in wanted:
+        if w.lower() in low:
+            return w
+    return None
 
 
 def utcnow() -> dt.datetime:

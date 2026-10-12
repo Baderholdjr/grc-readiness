@@ -30,14 +30,14 @@ jobs:
           GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
         run: |
           if [ "$ENGINE" = "local" ]; then
-            pip install -q . boto3
+            pip install -q . boto3 google-auth
           else
             # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
             # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
               git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
             fi
-            pip install -q -r requirements.txt boto3
+            pip install -q -r requirements.txt boto3 google-auth
             git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
           fi
           python -c "import grc; print('GRC engine', grc.__version__)"
@@ -69,6 +69,16 @@ jobs:
           GH_COLLECTOR_TOKEN: ${{ secrets.GH_COLLECTOR_TOKEN }}
           DRATA_API_KEY: ${{ secrets.DRATA_API_KEY }}
           DRATA_API_BASE: ${{ vars.DRATA_API_BASE }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ vars.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          MS_TENANT_ID: ${{ vars.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ vars.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MLFLOW_TRACKING_URI: ${{ vars.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_TOKEN: ${{ secrets.MLFLOW_TRACKING_TOKEN }}
+          MLFLOW_TRACKING_USERNAME: ${{ vars.MLFLOW_TRACKING_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
         run: |
           python -m grc collect --report report.md
           python -m grc validate --summary validate.md > /dev/null 2>&1 || true
