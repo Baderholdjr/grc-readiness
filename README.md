@@ -104,6 +104,8 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | E030 | error | Impact assessment references an unknown system, category, requirement or gap; or a system has more than one active assessment |
 | E031 | error | Impact assessment approved while incomplete (context, unscreened categories, missing rationale, relevant category with no impact, no conditions) or approved by its own assessor |
 | E032 | error | Approved impact with no residual rating; residual at or above the unacceptable level without a `reject` decision; high residual without independent acceptance |
+| E040–E042 | error | Document claims an unknown requirement; approved while incomplete or self-approved; approved without a fingerprint or changed after approval |
+| W140–W143 | warning | Library documents not started · draft not yet approved · document past review · approved document not cited on its requirements |
 | W130–W133 | warning | AI system without an impact assessment · assessment not yet approved · past its review date · residual higher than inherent |
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
@@ -132,6 +134,8 @@ In the client repository:
 5. Settings: protect `main` (require the **`validate / validate`** check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
 
 **Internal audit (9.2) and corrective actions (10.2):** see [`docs/AUDIT.md`](docs/AUDIT.md). Each new engagement starts with an audit scheduled in its Test phase.
+
+**Policies and procedures:** see [`docs/DOCUMENTS.md`](docs/DOCUMENTS.md). **Actions → Policies and procedures** drafts all 17 documents from the library, filled from the engagement record (and by AI if enabled); approval records a fingerprint of the approved text.
 
 **AI system impact assessments (6.1.4, 8.4, A.5):** see [`docs/IMPACT.md`](docs/IMPACT.md). **Actions → AI impact assessment** starts one per AI system in `inventory.yaml`; an approved assessment can be cited as evidence (`IA-001`).
 

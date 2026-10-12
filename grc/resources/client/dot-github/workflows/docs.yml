@@ -1,0 +1,31 @@
+name: Policies and procedures
+
+# Actions -> Policies and procedures -> Run workflow.
+#   new     + DOC-... or all : draft from the library (AI-filled if AI drafting is enabled)
+#   fill    + DOC-... or all : AI-fill the remaining [[TODO]] markers in drafts
+#   approve + DOC-...        : record the approval (also enter the approver)
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "new, fill or approve"
+        required: true
+        type: choice
+        options: [new, fill, approve]
+      document: {description: "Document id (e.g. DOC-AI-POLICY) or all", required: true, default: all}
+      approver: {description: "approve only: who approved it (role, name or GitHub user)", required: false, default: ""}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  docs:
+    uses: __ENGINE_REPO__/.github/workflows/grc-docs.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+      action: ${{ inputs.action }}
+      document: ${{ inputs.document }}
+      approver: ${{ inputs.approver }}
+    secrets: inherit

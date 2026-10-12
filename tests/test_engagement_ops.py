@@ -52,7 +52,8 @@ def test_new_engagement_resets_and_validates(tmp_path):
     assert sorted(p.name for p in intake.iterdir()) == ["README.md"]
     m = load(edir)
     assert m.client == "Acme" and m.gaps == [] and m.evidence == [] and len(m.controls) == 65
-    assert not [f for f in validate(m) if f.severity in ("error", "warning")]
+    # a fresh engagement only reminds you to start the policy library
+    assert [f.code for f in validate(m) if f.severity in ("error", "warning")] == ["W140"]
 
 
 # ------------------------------------------------------------------- owners

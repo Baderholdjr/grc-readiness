@@ -81,6 +81,12 @@ def check_schemas(model: Engagement) -> list[Finding]:
         run("findings", {"findings": model.findings}, edir / "findings.yaml")
     for iid, path in model.impact_files.items():
         run("impact-assessment", model.impacts[iid], path, iid)
+    for did, path in model.document_files.items():
+        d = model.documents[did]
+        if d.get("error"):
+            out.append(Finding("error", "E001", f"{did}: {d['error']}.", _rel(model, path), did))
+        else:
+            run("document", d["raw"], path, did)
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
     for cid, data in model.controls.items():
@@ -180,13 +186,17 @@ def check_evidence_test(model: Engagement) -> list[Finding]:
                     failing = [e["id"] for e in known if model.evidence_is_failing(e)]
                     wps = [e["id"] for e in known if e.get("source") == "audit" and model.evidence_is_failing(e)]
                     ias = [e["id"] for e in known if e.get("source") == "impact" and model.evidence_is_failing(e)]
-                    if ias and len(ias) == len(known):
+                    dcs = [e["id"] for e in known if e.get("source") == "document" and model.evidence_is_failing(e)]
+                    if dcs and len(dcs) == len(known):
+                        out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on document(s) {', '.join(dcs)} "
+                                           "that are not soundly approved (see E041/E042).", path, cid))
+                    elif ias and len(ias) == len(known):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on impact assessment(s) {', '.join(ias)} "
                                            "that are not approved (independently, with an approve decision).", path, cid))
                     elif wps and len(wps) == len(known):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' on audit workpaper(s) {', '.join(wps)} "
                                            "that are not concluded effective and independently reviewed.", path, cid))
-                    elif failing and not any(e.get("source") in ("audit", "impact") for e in known if e["id"] in failing):
+                    elif failing and not any(e.get("source") in ("audit", "impact", "document") for e in known if e["id"] in failing):
                         out.append(Finding("error", "E015", f"{cid}.{k} is 'verified' but the collector check for "
                                            f"{', '.join(failing)} is failing; no other current evidence supports it.", path, cid))
                     else:
@@ -260,7 +270,7 @@ def check_gaps(model: Engagement) -> list[Finding]:
             for e in g.get("closure_evidence", []):
                 if e not in model.evidence_index:
                     out.append(Finding("error", "E006", f"{gid} cites unknown closure evidence {e}.", path, gid))
-                elif model.evidence_index[e].get("source") in ("audit", "impact") and model.evidence_is_failing(model.evidence_index[e]):
+                elif model.evidence_index[e].get("source") in ("audit", "impact", "document") and model.evidence_is_failing(model.evidence_index[e]):
                     out.append(Finding("error", "E013", f"{gid} is closed on {e}, which isn't approved/concluded effective "
                                        "and independently reviewed.", path, gid))
     return out
@@ -439,6 +449,8 @@ def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding
         elif ev_idx[e].get("source") == "audit" and model.evidence_is_failing(ev_idx[e]):
             out.append(Finding("error", "E024", f"{fid} cites workpaper {e}, which is not concluded effective and "
                                "independently reviewed.", fpath, fid))
+        elif ev_idx[e].get("source") == "document" and model.evidence_is_failing(ev_idx[e]):
+            out.append(Finding("error", "E024", f"{fid} cites document {e}, which is not soundly approved.", fpath, fid))
         elif ev_idx[e].get("source") == "impact" and model.evidence_is_failing(ev_idx[e]):
             out.append(Finding("error", "E024", f"{fid} cites impact assessment {e}, which is not approved "
                                "(independently, with an approve decision).", fpath, fid))
@@ -592,6 +604,57 @@ def check_impact(model: Engagement) -> list[Finding]:
     return out
 
 
+def check_documents(model: Engagement) -> list[Finding]:
+    """Policies and procedures (5.2, 7.5; the Documented leg)."""
+    from .documents import DOC_ID, approval_problems, docs, fingerprint, library, next_review, is_effective
+    out: list[Finding] = []
+    lib = library(model)
+    for did, d in docs(model).items():
+        meta, body = d["meta"], d["body"]
+        path = _rel(model, model.document_files[did])
+        try:
+            if str(meta.get("id")) != did:
+                out.append(Finding("error", "E040", f"{did}: file is {did}.md but its id is '{meta.get('id')}'.", path, did))
+            if not DOC_ID.match(did):
+                out.append(Finding("error", "E040", f"{did}: document file names must look like DOC-NAME.md.", path, did))
+            for r in meta.get("satisfies") or []:
+                if r not in model.requirement_index:
+                    out.append(Finding("error", "E040", f"{did}: satisfies unknown requirement {r}.", path, did))
+            st = meta.get("status")
+            if st in ("draft", "in_review"):
+                out.append(Finding("warning", "W141", f"{did} ({meta.get('title')}) is {st}, not yet approved.", path, did))
+                continue
+            if st != "approved":
+                continue
+            problems = approval_problems(model, did, meta, body, check_hash=False)
+            if problems:
+                out.append(Finding("error", "E041", f"{did} is approved but: {'; '.join(problems)}.", path, did))
+            h = meta.get("approved_hash")
+            if not h:
+                out.append(Finding("error", "E042", f"{did} is marked approved without an approval fingerprint; "
+                                   f"record approval with `grc docs approve {did} --approver ...`.", path, did))
+            elif h != fingerprint(meta, body):
+                out.append(Finding("error", "E042", f"{did} v{meta.get('version')}: the text or approval details (title, version, "
+                                   "approver, date, requirements) changed after approval; bump `version`, set status back to "
+                                   "draft, and re-approve.", path, did))
+            nr = next_review(model, meta)
+            if nr and nr < model.today:
+                out.append(Finding("warning", "W142", f"{did} was due for review on {nr}.", path, did))
+            if is_effective(model, did):
+                uncited = [r for r in meta.get("satisfies") or [] if r in model.requirement_index and model.is_applicable(r)
+                           and did not in ((model.controls.get(r, {}).get("test") or {}).get("documented") or {}).get("evidence", [])]
+                if uncited:
+                    out.append(Finding("warning", "W143", f"{did} is approved; cite it on the Documented leg of: "
+                                       f"{', '.join(uncited)}.", path, did))
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            out.append(Finding("error", "E000", f"{did}: could not evaluate ({exc!r}).", path, did))
+    missing = [i for i in lib if i not in model.documents]
+    if missing and lib:
+        out.append(Finding("warning", "W140", f"{len(missing)} of {len(lib)} library documents not started: "
+                           f"{', '.join(missing)} (`grc docs new all`).", _rel(model, model.engagement_dir / "documents"), None))
+    return out
+
+
 def check_collected(model: Engagement) -> list[Finding]:
     out = []
     path = _rel(model, model.engagement_dir / "evidence" / "collected.yaml")
@@ -603,7 +666,7 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact)
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents)
 
 
 def validate(model: Engagement) -> list[Finding]:
@@ -636,6 +699,12 @@ def requirement_state(model: Engagement, cid: str) -> str:
     return "In progress"
 
 
+def _doc_metrics(model: Engagement) -> dict:
+    from .documents import is_effective, library
+    lib = library(model)
+    return {"docs_required": len(lib), "docs_approved": sum(1 for d in lib if is_effective(model, d))}
+
+
 def _ia_metrics(model: Engagement) -> dict:
     from .impact import active_by_system, is_effective, required_systems
     req = required_systems(model)
@@ -660,9 +729,9 @@ def metrics(model: Engagement) -> dict:
     gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
     cited = {r for c in model.controls.values() for leg in (c.get("test") or {}).values()
              for r in (leg or {}).get("evidence", []) or []}
-    from .impact import evidence_entries
-    counted = list(model.evidence) + [e for e in list(model.workpaper_evidence.values()) + list(evidence_entries(model).values())
-                                      if e["id"] in cited]
+    from . import documents, impact
+    counted = list(model.evidence) + [e for e in list(model.workpaper_evidence.values()) + list(impact.evidence_entries(model).values())
+                                      + list(documents.evidence_entries(model).values()) if e["id"] in cited]
     stale = [e["id"] for e in counted if model.evidence_is_expired(e)]
     failing = [e["id"] for e in counted if model.evidence_is_failing(e)]
     b = model.engagement.get("budget", {})
@@ -682,6 +751,7 @@ def metrics(model: Engagement) -> dict:
         "evidence_failing": failing,
         "findings_total": len(model.findings),
         **_ia_metrics(model),
+        **_doc_metrics(model),
         "nc_open_major": sum(1 for f in model.findings if f.get("grade") == "major" and f.get("status") not in ("closed", "accepted")),
         "nc_open_minor": sum(1 for f in model.findings if f.get("grade") == "minor" and f.get("status") not in ("closed", "accepted")),
         "audits": {a["id"]: a.get("status") for a in model.audits},

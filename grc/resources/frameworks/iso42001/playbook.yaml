@@ -124,3 +124,47 @@ impact_assessment:
     - {id: information, area: society, title: "Information integrity and public trust"}
     - {id: environment, area: society, title: "Environmental impact (compute, energy)"}
     - {id: rights, area: society, title: "Legal, human and civil rights"}
+
+# Policy and procedure library (`grc docs new`). Each entry is drafted from
+# documents/<template> next to this playbook (a client repo can override either).
+# `satisfies` lists the requirements whose *Documented* leg the approved document supports.
+# `sections` are the headings an approved document must keep (E041).
+# Wording is our own; it paraphrases the intent of the standard and does not reproduce it.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-SCOPE, title: "AIMS Scope and Context", kind: policy, template: scope.md,
+       satisfies: ["4.1", "4.2", "4.3", "4.4"], sections: [Purpose, Context, Interested parties, Scope, Exclusions, Review]}
+    - {id: DOC-AI-POLICY, title: "AI Policy", kind: policy, template: ai-policy.md,
+       satisfies: ["5.1", "5.2", "A.2.2", "A.2.3", "A.2.4"], sections: [Purpose, Scope, Commitments, Principles, Alignment with other policies, Responsibilities, Review]}
+    - {id: DOC-ROLES, title: "AI Roles, Responsibilities and Reporting of Concerns", kind: procedure, template: roles.md,
+       satisfies: ["5.3", "A.3.2", "A.3.3", "A.10.2"], sections: [Purpose, Roles, Reporting concerns, Review]}
+    - {id: DOC-RISK, title: "AI Risk Management Procedure", kind: procedure, template: risk.md,
+       satisfies: ["6.1.1", "6.1.2", "6.1.3", "8.2", "8.3"], sections: [Purpose, Criteria, Risk assessment, Risk treatment, Records, Review]}
+    - {id: DOC-IMPACT, title: "AI System Impact Assessment Procedure", kind: procedure, template: impact.md,
+       satisfies: ["6.1.4", "8.4", "A.5.2", "A.5.3", "A.5.4", "A.5.5"], sections: [Purpose, When an assessment is required, Method, Approval and acceptance, Records, Review]}
+    - {id: DOC-OBJECTIVES, title: "AI Objectives and Planning of Changes", kind: procedure, template: objectives.md,
+       satisfies: ["6.2", "6.3", "A.6.1.2", "A.9.3"], sections: [Purpose, Objectives, Planning, Changes to the AIMS, Review]}
+    - {id: DOC-PEOPLE, title: "Resources, Competence, Awareness and Communication", kind: procedure, template: people.md,
+       satisfies: ["7.1", "7.2", "7.3", "7.4", "A.4.6"], sections: [Purpose, Resources, Competence, Awareness, Communication, Review]}
+    - {id: DOC-DOCINFO, title: "Control of Documented Information", kind: procedure, template: docinfo.md,
+       satisfies: ["7.5"], sections: [Purpose, Creating and updating, Approval, Control, Retention, Review]}
+    - {id: DOC-RESOURCES, title: "AI Resources Inventory Procedure", kind: procedure, template: resources.md,
+       satisfies: ["A.4.2", "A.4.3", "A.4.4", "A.4.5"], sections: [Purpose, What is recorded, Keeping it current, Review]}
+    - {id: DOC-LIFECYCLE, title: "AI System Lifecycle Procedure", kind: procedure, template: lifecycle.md,
+       satisfies: ["8.1", "A.6.1.3", "A.6.2.2", "A.6.2.3", "A.6.2.4", "A.6.2.5", "A.6.2.6", "A.6.2.7", "A.6.2.8"],
+       sections: [Purpose, Lifecycle stages, Verification and validation, Deployment, Operation and monitoring, Event logs, Records, Review]}
+    - {id: DOC-DATA, title: "Data for AI Systems Procedure", kind: procedure, template: data.md,
+       satisfies: ["A.7.2", "A.7.3", "A.7.4", "A.7.5", "A.7.6"], sections: [Purpose, Acquisition, Quality, Provenance, Preparation, Review]}
+    - {id: DOC-COMMS, title: "Information for Users and Interested Parties", kind: procedure, template: comms.md,
+       satisfies: ["A.8.2", "A.8.3", "A.8.4", "A.8.5"], sections: [Purpose, Information for users, External reporting, Incident communication, Review]}
+    - {id: DOC-USE, title: "Responsible Use of AI Systems", kind: policy, template: use.md,
+       satisfies: ["A.9.2", "A.9.4"], sections: [Purpose, Intended use, Responsible use, Review]}
+    - {id: DOC-THIRDPARTY, title: "AI Suppliers, Customers and Third Parties", kind: procedure, template: thirdparty.md,
+       satisfies: ["A.10.3", "A.10.4"], sections: [Purpose, Suppliers, Customers, Review]}
+    - {id: DOC-AUDIT, title: "Monitoring, Measurement and Internal Audit Procedure", kind: procedure, template: audit.md,
+       satisfies: ["9.1", "9.2"], sections: [Purpose, Monitoring and measurement, Internal audit, Records, Review]}
+    - {id: DOC-REVIEW, title: "Management Review Procedure", kind: procedure, template: mgmt-review.md,
+       satisfies: ["9.3"], sections: [Purpose, Frequency and attendees, Inputs, Outputs, Records, Review]}
+    - {id: DOC-IMPROVE, title: "Nonconformity, Corrective Action and Improvement", kind: procedure, template: improve.md,
+       satisfies: ["10.1", "10.2"], sections: [Purpose, Raising a finding, Corrective action, Effectiveness, Continual improvement, Review]}
