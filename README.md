@@ -122,7 +122,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 4. **Gaps become Issues** (`sync-issues.yml`). Each gap becomes an Issue with a hidden ID marker and a milestone per phase. Re-running updates the existing Issues instead of duplicating them. A closed gap closes its Issue.
 5. **Weekly drift check** (`freshness.yml`). This re-evaluates the record against today's date and maintains one `grc-drift` Issue listing expired evidence and overdue gaps.
 6. **Read the reports** on the [`reports` branch](../../tree/reports) (`publish-reports.yml`). It's rebuilt after every merge to `main` and daily; its history is a dated record of readiness.
-7. **Freeze for audits** (`release.yml`). Publish a release from the GitHub UI with a tag such as `v2027.02-stage1`. CI attaches the brief, reports, readiness summary and SHA-256 checksums as of that commit. Validation errors block the package; warnings are listed in the release notes.
+7. **Freeze for audits** (`release.yml`). Publish a release from the GitHub UI with a tag such as `v2027.02-stage1`. CI attaches the reports and the **auditor package**: every report as PDF, an auditor index with requirement → evidence traceability, evidence snapshots, the source record and SHA-256 checksums, as a reproducible zip. Validation errors block the package; warnings are listed in it. See [`docs/AUDITOR-PACKAGE.md`](docs/AUDITOR-PACKAGE.md).
 
 ## Starting a new engagement
 

@@ -13,6 +13,7 @@
   impact        AI system impact assessments: start one per AI system
   docs          Policies and procedures: draft from the library, AI-fill, approve
   review        Management review: schedule one, generate its input pack
+  package       Auditor package: PDFs, auditor index, checksums and a reproducible zip
 """
 from __future__ import annotations
 
@@ -71,25 +72,10 @@ def cmd_build(args) -> int:
         print("\nRefusing to build from invalid data (use --force for a draft).", file=sys.stderr)
         return 1
     out = Path(args.out)
-    import re as _re
-    slug = _re.sub(r"[^a-z0-9]+", "-", model.client.lower()).strip("-") or "client"
-    docx_name = None if args.no_docx else f"{slug}-{model.engagement['framework']}-brief.docx"
-    summary = render_md.render_all(model, findings, out, brief_docx=docx_name, docs_docx=bool(docx_name))
+    from .build import build_outputs
+    summary, docx_name = build_outputs(model, findings, out, with_docx=not args.no_docx)
     if docx_name:
-        from .documents import docs
-        from .render_docx import render_brief, render_document
-        path = render_brief(model, out / docx_name)
-        print(f"brief: {path}")
-        for did in docs(model):
-            render_document(model, did, out / f"doc-{did}.docx")
-        from .render_docx import render_markdown
-        from .review import pack_path, reviews, safe_date
-        for rid, r in reviews(model).items():
-            pk = pack_path(model, rid)
-            if pk.exists() and not r.get("_error"):
-                as_of = safe_date((r.get("pack") or {}).get("as_of") if isinstance(r.get("pack"), dict) else None)
-                render_markdown(model, pk.read_text(encoding="utf-8"), out / f"mr-{rid}-pack.docx",
-                                f"{model.client} — management review input pack ({rid})", as_of or model.today)
+        print(f"brief: {out / docx_name}")
     if args.summary:
         with open(args.summary, "a", encoding="utf-8") as fh:
             fh.write(summary)
@@ -267,6 +253,19 @@ def cmd_review(args) -> int:
     return 0
 
 
+def cmd_package(args) -> int:
+    from . import package
+    model = _model(args)
+    try:
+        log = package.build(model, Path(args.out), label=args.label, force=args.force)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    for line in log:
+        print(line)
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -361,6 +360,12 @@ def main(argv=None) -> int:
     rv.add_argument("--force", action="store_true", help="pack: regenerate even after the review was held (breaks its record)")
     rv.add_argument("--report", help="write a Markdown summary here")
     rv.set_defaults(fn=cmd_review)
+
+    pk = sub.add_parser("package", help="auditor package (PDFs, index, checksums, zip)")
+    pk.add_argument("--out", default="dist")
+    pk.add_argument("--label", default="package", help="e.g. stage1, stage2, surveillance-2028")
+    pk.add_argument("--force", action="store_true", help="package even if validation has errors (a draft)")
+    pk.set_defaults(fn=cmd_package)
 
     args = p.parse_args(argv)
     return args.fn(args)
