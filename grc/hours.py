@@ -297,6 +297,16 @@ def _plain(v):
     return v.isoformat() if isinstance(v, dt.date) else v
 
 
+def clean_match(match: str | None) -> list[str]:
+    """The client/project filter, forgiving of how it was typed: quotes, spaces, a 'HOURS_MATCH=' prefix,
+    and several alternatives separated by commas or '|'."""
+    if not match:
+        return []
+    m = re.sub(r"^\s*HOURS_MATCH\s*[=:]\s*", "", str(match), flags=re.I)
+    parts = [x.strip().strip("'\"“”‘’").strip() for x in re.split(r"[,|\n]", m)]
+    return [x.lower() for x in parts if x]
+
+
 def import_files(model: Engagement, paths: list[Path], match: str | None = None, person: str | None = None,
                  order: str | None = None) -> list[str]:
     existing = [_plain(e) for e in model.hours if isinstance(e, dict)]
@@ -312,8 +322,11 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
                        f"{'month/day' if used_order == 'MDY' else 'day/month'}. Set --date-order (or hours.date_order) to be sure.")
         skipped = {"other client/project": 0, "no date or hours": 0, "already imported or ignored": 0}
         occurrence: dict = {}
+        wanted = clean_match(match)
+        seen_clients = collections.Counter()
         for r in rows:
-            if match and match.lower() not in f"{r['client']} {r['project']}".lower():
+            seen_clients[" / ".join(x for x in (r["client"], r["project"]) if x) or "(no client or project)"] += 1
+            if wanted and not any(w in f"{r['client']} {r['project']}".lower() for w in wanted):
                 skipped["other client/project"] += 1
                 continue
             if not r["date"] or not r["hours"] or r["hours"] <= 0:
@@ -342,6 +355,12 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
             added += 1
         log.append(f"{Path(path).name} ({fmt}): {len(rows)} row(s); " + "; ".join(
             [f"{added} added so far"] + [f"{v} skipped ({k})" for k, v in skipped.items() if v]))
+        if wanted:
+            log.append(f"    client/project filter: {' or '.join(repr(w) for w in wanted)}")
+        if rows and skipped["other client/project"] == len(rows):
+            log.append("[!] the client/project filter skipped every row. Clients/projects in this file: "
+                       + "; ".join(f"{k} ({v})" for k, v in seen_clients.most_common(10))
+                       + ". Check the HOURS_MATCH variable (or --match).")
     _write(model, existing)
     log.append(f"timesheet now has {len(existing)} entries, {round(sum(_num(e['hours']) for e in existing), 2):g} hours")
     return log
