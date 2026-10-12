@@ -40,27 +40,48 @@ def _latin(text: str) -> str:
     return "".join(out)
 
 
-def inline(text: str) -> str:
-    """Markdown inline -> ReportLab paragraph markup (escaped)."""
-    text = _latin(re.sub(r"<[^>]+>", "", text))          # drop raw HTML (e.g. <details>)
-    parts = re.split(r"(`[^`]*`)", text)
-    out = []
-    for part in parts:
-        if part.startswith("`") and part.endswith("`") and len(part) >= 2:
-            out.append(f'<font face="Courier">{html.escape(part[1:-1], quote=False)}</font>')
-            continue
-        s = html.escape(part, quote=False)
+MAX_CELL = 3000   # characters per table cell in the PDF; the full text stays in the Markdown/CSV/source record
 
-        def link(m):
-            label, url = m.group(1), m.group(2)
-            if re.match(r"https?://", url):
-                return f'<link href="{html.escape(url, quote=True)}" color="#1F5F8B">{label}</link>'
-            return label
-        s = re.sub(r"\[([^\]]*)\]\(([^)\s]*)\)", link, s)
-        s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
-        s = re.sub(r"(?<![\w*])_(?!_)(.+?)(?<!_)_(?![\w*])", r"<i>\1</i>", s)
-        out.append(s)
-    return "".join(out)
+
+def inline(text: str) -> str:
+    """Markdown inline -> ReportLab paragraph markup (escaped).
+
+    Code spans and links are lifted out as placeholders first, so emphasis markers inside them (or
+    unbalanced ones around them) can't produce broken markup; `para()` falls back to plain text if
+    the result still doesn't parse.
+    """
+    text = re.sub(r"<br\s*/?>", " ", text, flags=re.I)
+    text = re.sub(r"</?(details|summary)\b[^>]*>", "", text, flags=re.I)
+    tokens: list[str] = []
+
+    def keep(markup: str) -> str:
+        tokens.append(markup)
+        return f"\x00{len(tokens) - 1}\x00"
+
+    def code(m):
+        return keep(f'<font face="Courier">{html.escape(_latin(m.group(1)), quote=False)}</font>')
+
+    def link(m):
+        label, url = m.group(1), m.group(2)
+        label = html.escape(_latin(re.sub(r"[*_`]", "", label)), quote=False)
+        if re.match(r"https?://", url):
+            return keep(f'<link href="{html.escape(url, quote=True)}" color="#1F5F8B">{label}</link>')
+        return keep(label)
+    text = re.sub(r"`([^`]*)`", code, text)
+    text = re.sub(r"\[([^\]]*)\]\(([^)\s]*)\)", link, text)
+    s = html.escape(_latin(text), quote=False)
+    s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
+    s = re.sub(r"(?<![\w*])_(?!_)(.+?)(?<!_)_(?![\w*])", r"<i>\1</i>", s)
+    return re.sub(r"\x00(\d+)\x00", lambda m: tokens[int(m.group(1))], s)
+
+
+def para(text: str, style) -> Paragraph:
+    """A paragraph from Markdown; if the markup is rejected, the same text escaped and unformatted."""
+    try:
+        return Paragraph(inline(text), style)
+    except Exception:  # ReportLab parse error on unusual input
+        plain = re.sub(r"[*_`]", "", re.sub(r"<[^>]*>", "", text))
+        return Paragraph(html.escape(_latin(plain), quote=False), style)
 
 
 def _styles():
@@ -96,8 +117,9 @@ def _table(rows: list[list[str]], width: float, st) -> Table:
             widths = [w - (w - f) * over / extra if w > f else w for w, f in zip(widths, floor)]
         else:
             widths = [w * width / sum(widths) for w in widths]
-    data = [[Paragraph(inline(c), st["head"] if ri == 0 else st["cell"]) for c in r] for ri, r in enumerate(rows)]
-    t = Table(data, colWidths=widths, repeatRows=1)
+    clip = lambda c: c if len(c) <= MAX_CELL else c[:MAX_CELL] + " ... [truncated in the PDF; full text in the CSV / source record]"
+    data = [[para(clip(c), st["head"] if ri == 0 else st["cell"]) for c in r] for ri, r in enumerate(rows)]
+    t = Table(data, colWidths=widths, repeatRows=1, splitInRow=1)   # a tall row may break across pages
     style = [("BACKGROUND", (0, 0), (-1, 0), NAVY), ("VALIGN", (0, 0), (-1, -1), "TOP"),
              ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#CCCCCC")),
              ("LEFTPADDING", (0, 0), (-1, -1), 3), ("RIGHTPADDING", (0, 0), (-1, -1), 3),
@@ -131,7 +153,7 @@ def flowables(md: str, width: float) -> list:
             continue
         if s.startswith("#"):
             level = min(len(s) - len(s.lstrip("#")), 3)
-            out.append(Paragraph(inline(s.lstrip("#").strip()), st[f"h{level}"]))
+            out.append(para(s.lstrip("#").strip(), st[f"h{level}"]))
             i += 1
             continue
         if s.startswith("|"):
@@ -149,7 +171,7 @@ def flowables(md: str, width: float) -> list:
             while i < len(lines) and lines[i].strip().startswith(">"):
                 quote.append(lines[i].strip().lstrip(">").strip())
                 i += 1
-            out.append(Paragraph(inline(" ".join(quote)), st["quote"]))
+            out.append(para(" ".join(quote), st["quote"]))
             continue
         m = re.match(r"^(\s*)([-*]|\d+[.)])\s+(.*)$", lines[i])
         if m:
@@ -164,17 +186,17 @@ def flowables(md: str, width: float) -> list:
                     break
                 items.append((len(m2.group(1)), m2.group(3)))
                 i += 1
-            lf = ListFlowable([ListItem(Paragraph(inline(t), st["p"]), leftIndent=12 + ind * 4) for ind, t in items],
+            lf = ListFlowable([ListItem(para(t, st["p"]), leftIndent=12 + ind * 4) for ind, t in items],
                               bulletType="1" if numbered else "bullet", start=1 if numbered else "\u2022",
                               leftIndent=10, bulletFontSize=7 if not numbered else 8.5)
             out.append(lf)
             continue
-        para = [s]
+        lines_ = [s]
         i += 1
         while i < len(lines) and lines[i].strip() and not re.match(r"^\s*(#|\||>|```|[-*]\s|\d+[.)]\s)", lines[i]):
-            para.append(lines[i].strip())
+            lines_.append(lines[i].strip())
             i += 1
-        out.append(Paragraph(inline(" ".join(para)), st["p"]))
+        out.append(para(" ".join(lines_), st["p"]))
         out.append(Spacer(1, 3))
     return out
 
@@ -192,7 +214,7 @@ def render(md: str, out_path: Path, title: str, footer: str, wide: bool | None =
     width = size[0] - 2 * margin
     story = []
     if banner:
-        story.append(Paragraph(inline(banner), _styles()["quote"]))
+        story.append(para(banner, _styles()["quote"]))
     story += flowables(md, width)
 
     def page(canvas, d):

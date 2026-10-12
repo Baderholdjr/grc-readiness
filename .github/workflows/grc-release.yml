@@ -53,12 +53,11 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           python -m grc package --out dist --label "$TAG"
-          cp dist/*/00-auditor-index.pdf "dist/00-auditor-index-$TAG.pdf"
       - name: Attach package to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          gh release upload "$TAG" out/* dist/*.zip dist/00-auditor-index-*.pdf --clobber
+          gh release upload "$TAG" out/* dist/*.zip dist/*-auditor-index.pdf --clobber
           { gh release view "$TAG" --json body -q .body; echo; echo "---"; cat notes.md; } > body.md
           gh release edit "$TAG" --notes-file body.md
