@@ -1,0 +1,45 @@
+name: Hours
+
+# Drop time-tracker exports (Toggl, Harvest, Clockify, or CSV with date/hours columns) into
+# intake/timesheets/ and push: a "Timesheet update" PR follows. Or Actions -> Hours -> Run workflow
+# with action "log" to record one entry.
+on:
+  push:
+    branches: [main]
+    paths: ["intake/timesheets/**"]
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        options: [log, import]
+        default: log
+      hours: {description: "log: hours (e.g. 2.5)", required: false, default: ""}
+      activity:
+        description: "log: activity"
+        type: choice
+        options: [project_management, kickoff, interviews, documentation, risk_impact, evidence_review, internal_audit,
+                  management_review, remediation, certification, other]
+        default: other
+      date: {description: "log: YYYY-MM-DD (default today)", required: false, default: ""}
+      note: {description: "log: what was done", required: false, default: ""}
+      refs: {description: "log: related ids, comma-separated (GAP-03, A.6.2.5, NC-001)", required: false, default: ""}
+      person: {description: "log: who (default: you)", required: false, default: ""}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  hours:
+    uses: ./.github/workflows/grc-hours.yml
+    with:
+      engine: local
+      action: ${{ github.event_name == 'push' && 'import' || inputs.action }}
+      hours: ${{ inputs.hours }}
+      activity: ${{ inputs.activity }}
+      date: ${{ inputs.date }}
+      note: ${{ inputs.note }}
+      refs: ${{ inputs.refs }}
+      person: ${{ inputs.person }}
+    secrets: inherit

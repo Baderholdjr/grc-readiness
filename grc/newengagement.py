@@ -127,7 +127,7 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
         "ai_usage": [],
         "scope": {},
         "in_place": [],
-        "budget": {"hours_total": hours, "hours_used": 0, "note": "protect time for internal audit and certification support."},
+        "budget": {"hours_total": hours, "note": "protect time for internal audit and certification support."},
         "dates": {"start": start, "stage1": stage1, "stage2": stage2},
         "certification_body": "TBD",
         "team": {"engagement_lead": lead or "Engagement Lead", "analysts": []},
@@ -161,6 +161,10 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
     from .review import write_new
     pb = load_yaml(resource(engagement_dir.parent, "frameworks", framework, "playbook.yaml")) or {}
     write_new(engagement_dir, test["end"], (pb.get("management_review") or {}).get("inputs") or [])
+    (engagement_dir / "hours.yaml").write_text(
+        "# Timesheet. Import time-tracker exports (Actions -> Hours, or `grc hours import`) or log hours\n"
+        "# (`grc hours log`). Hours used, burn by phase and the forecast are computed from these entries.\n\n"
+        "entries: []\n", encoding="utf-8")
     (engagement_dir / "findings.yaml").write_text(
         "# Nonconformities, OFIs and corrective actions (ISO 42001 clause 10.2).\n"
         "# Ids: NC-001 (grade major/minor), OFI-001 (grade ofi). Mirrored to GitHub Issues.\n"

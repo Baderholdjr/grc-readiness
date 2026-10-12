@@ -180,6 +180,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "hours": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Planned hours for this phase (default: the playbook's phase_split of the budget)."
           }
         }
       }

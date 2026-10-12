@@ -14,6 +14,7 @@
   docs          Policies and procedures: draft from the library, AI-fill, approve
   review        Management review: schedule one, generate its input pack
   package       Auditor package: PDFs, auditor index, checksums and a reproducible zip
+  hours         Timesheet: import time-tracker exports, log hours
 """
 from __future__ import annotations
 
@@ -266,6 +267,33 @@ def cmd_package(args) -> int:
     return 0
 
 
+def cmd_hours(args) -> int:
+    from . import hours
+    model = _model(args)
+    try:
+        if args.action == "import":
+            if not args.files:
+                print("error: import needs one or more CSV files", file=sys.stderr)
+                return 2
+            log = hours.import_files(model, [Path(f) for f in args.files], match=args.match, person=args.person)
+        else:
+            person = args.person or os.environ.get("GITHUB_ACTOR") or ""
+            if not person or args.hours is None or not args.activity:
+                print("error: log needs --hours, --activity and --person (or GITHUB_ACTOR)", file=sys.stderr)
+                return 2
+            log = hours.log_entry(model, args.hours, args.activity, person,
+                                  dt.date.fromisoformat(args.date) if args.date else None, args.note or "",
+                                  [r.strip() for r in (args.refs or "").split(",") if r.strip()], args.phase)
+    except (ValueError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    for line in log:
+        print(line)
+    if args.report:
+        Path(args.report).write_text("## Timesheet\n\n```\n" + "\n".join(log) + "\n```\n", encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -366,6 +394,20 @@ def main(argv=None) -> int:
     pk.add_argument("--label", default="package", help="e.g. stage1, stage2, surveillance-2028")
     pk.add_argument("--force", action="store_true", help="package even if validation has errors (a draft)")
     pk.set_defaults(fn=cmd_package)
+
+    hr = sub.add_parser("hours", help="timesheet: import exports or log hours")
+    hr.add_argument("action", choices=["import", "log"])
+    hr.add_argument("files", nargs="*", help="import: Toggl / Harvest / Clockify / generic CSV exports")
+    hr.add_argument("--match", help="import: keep only rows whose client or project contains this text")
+    hr.add_argument("--person", help="who did the work (import: override; log: default $GITHUB_ACTOR)")
+    hr.add_argument("--hours", type=float)
+    hr.add_argument("--activity", help="log: activity id from the playbook (e.g. interviews)")
+    hr.add_argument("--date", help="log: YYYY-MM-DD (default today)")
+    hr.add_argument("--note")
+    hr.add_argument("--refs", help="log: comma-separated gap/finding/requirement ids")
+    hr.add_argument("--phase")
+    hr.add_argument("--report")
+    hr.set_defaults(fn=cmd_hours)
 
     args = p.parse_args(argv)
     return args.fn(args)

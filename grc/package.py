@@ -33,7 +33,7 @@ from . import __version__
 from .model import LEGS, Engagement
 
 SECTIONS = [
-    ("01-overview", "Overview", ("brief", "status", "gap-register")),
+    ("01-overview", "Overview", ("brief", "status", "gap-register", "hours")),
     ("02-applicability", "Applicability", ("soa", "control-matrix")),
     ("03-documented-information", "Documented information", ("documents", "doc-")),
     ("04-risk-and-impact", "Risk and impact", ("impact-assessments", "ia-")),

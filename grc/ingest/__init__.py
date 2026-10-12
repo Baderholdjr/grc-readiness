@@ -19,6 +19,7 @@ from . import ai, apply, draft, extract, templates
 
 LEDGER = ".processed.yaml"
 SKIP = {"README.md", LEDGER, ".gitkeep"}
+EXCLUDE_DIRS = {"timesheets"}
 
 
 def _sha(p: Path) -> str:
@@ -31,6 +32,8 @@ def pending(intake: Path, force: bool = False) -> list[Path]:
     files = []
     for p in sorted(intake.rglob("*")):
         if not p.is_file() or p.name in SKIP or p.name.startswith("~$"):
+            continue
+        if p.relative_to(intake).parts[0] in EXCLUDE_DIRS:   # handled by other commands (e.g. `grc hours`)
             continue
         rel = str(p.relative_to(intake))
         if not force and (ledger.get(rel) or {}).get("sha256") == _sha(p):

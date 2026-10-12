@@ -252,7 +252,9 @@ def render_brief(model: Engagement, out_path: Path) -> Path:
     # 8. Guardrails
     heading(doc, "8. Engagement Guardrails")
     b = e["budget"]
-    g = [f"{b['hours_total']:g} total consulting hours" + (f": {b['note']}" if b.get("note") else ".")]
+    from .hours import hours_used, tracked
+    g = [f"{b['hours_total']:g} total consulting hours" + (f" ({hours_used(model):g} used)" if tracked(model) else "")
+         + (f": {b['note']}" if b.get("note") else ".")]
     g += [model.fmt(x) for x in model.setting("guardrails", pb.get("default_guardrails", []))]
     bullets(doc, g)
 

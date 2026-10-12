@@ -153,7 +153,9 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
               + (f" ({m['mr_actions_overdue']} overdue)" if m.get("mr_actions_overdue") else "")
               if (m.get("mr_last_held") or m.get("mr_actions_open") or model.reviews) else ""),
              f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
-             f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours\n" if m.get("hours_total") else "",
+             (f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours"
+              + (f" · forecast {m['hours_forecast']:g}" if m.get("hours_forecast") is not None else "") + "\n")
+             if m.get("hours_total") else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
     for t in model.playbook["evidence_test"]:
         L = m["legs"][t["key"]]
@@ -385,6 +387,53 @@ def management_reviews(model: Engagement, out: Path, with_docx: bool = False) ->
              f"Last held: {last[0]} on {last[1]}" if last else "No management review held yet (9.3)")]
 
 
+def hours_report(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
+    """hours.md (+ hours.csv): budget burn, phases vs plan, activities, people, weekly trend, forecast."""
+    from . import hours as H
+    if not H.tracked(model):
+        return []
+    budget = H._num((model.engagement.get("budget") or {}).get("hours_total"))
+    used, f = H.total(model), H.forecast(model)
+    acts = {a["id"]: a.get("title", a["id"]) for a in H.method(model)["activities"]}
+    plan, by_phase = H.planned(model), H.by(model, lambda e: H.phase_for(model, e))
+    pct = lambda a, b: f"{a / b:.0%}" if b else "—"
+    L = [f"# {model.client} — hours and budget\n", GEN,
+         _table(["", "Hours"], [["Budget", f"{budget:g}"], ["Used", f"{used:g} ({pct(used, budget)})"],
+                                ["Remaining", f"{budget - used:g}"],
+                                [f"Burn rate (last {f['weeks']} full weeks)", f"{f['rate_per_week']:g} per week"],
+                                [f"Forecast at {f['end']}", f"{f['projected_total']:g}" + (" — **over budget**" if budget and f["projected_total"] > budget else "")],
+                                ["Time elapsed vs budget used", f"{pct(f['elapsed_share'] or 0, 1)} of the schedule · {pct(used, budget)} of the hours"]]),
+         "\n## By phase\n\n",
+         _table(["Phase", "Dates", "Planned", "Used", "Used %", "Remaining"],
+                [[p["id"], f"{p.get('start')} – {p.get('end')}", f"{plan.get(str(p['id']), 0):g}", f"{by_phase.get(str(p['id']), 0):g}",
+                  pct(by_phase.get(str(p["id"]), 0), plan.get(str(p["id"]), 0)),
+                  f"{plan.get(str(p['id']), 0) - by_phase.get(str(p['id']), 0):g}"] for p in H.phases(model)]
+                + ([["(outside any phase)", "—", "—", f"{by_phase['—']:g}", "—", "—"]] if by_phase.get("—") else [])),
+         "\n## By activity\n\n",
+         _table(["Activity", "Hours", "Share"], [[acts.get(k, k), f"{v:g}", pct(v, used)]
+                                                for k, v in sorted(H.by(model, lambda e: e.get("activity")).items(), key=lambda x: -x[1])]),
+         "\n## By person\n\n",
+         _table(["Person", "Hours", "Share"], [[k, f"{v:g}", pct(v, used)]
+                                              for k, v in sorted(H.by(model, lambda e: e.get("person")).items(), key=lambda x: -x[1])]),
+         "\n## By week\n\n"]
+    weeks = H.weekly(model)
+    top = max(weeks.values() or [0]) or 1
+    L.append(_table(["Week of", "Hours", ""], [[str(w), f"{h:g}", "█" * max(1, round(20 * h / top)) if h else ""]
+                                               for w, h in weeks.items()]))
+    refs = H.by(model, lambda e: ", ".join(e.get("refs") or []) or None)
+    refs.pop("—", None)
+    if refs:
+        L += ["\n## Time recorded against gaps, findings and requirements\n\n",
+              _table(["Reference(s)", "Hours"], [[k, f"{v:g}"] for k, v in sorted(refs.items(), key=lambda x: -x[1])[:40]])]
+    (out / "hours.md").write_text("".join(L), encoding="utf-8")
+    rows = [[e.get("id"), e.get("date"), e.get("person"), e.get("hours"), e.get("activity"), H.phase_for(model, e) or "",
+             ", ".join(e.get("refs") or []), e.get("note", ""), e.get("source", "")]
+            for e in sorted(H.entries(model), key=lambda e: (str(e.get("date")), str(e.get("person"))))]
+    _write_csv(out / "hours.csv", ["ID", "Date", "Person", "Hours", "Activity", "Phase", "Refs", "Note", "Source"], rows)
+    return [("Hours and budget", "hours.md", f"{used:g} of {budget:g} hours used ({pct(used, budget)}); forecast "
+             f"{f['projected_total']:g} by {f['end']} ([CSV](hours.csv))")]
+
+
 def _dicts(xs) -> list[dict]:
     return [x for x in xs if isinstance(x, dict)] if isinstance(xs, list) else []
 
@@ -463,7 +512,9 @@ def brief(model: Engagement, out: Path) -> None:
          f"## 7. {pb.get('requirements_heading', 'ISO Requirements')}\n", *[f"- {f(x)}" for x in pb.get("readiness_criteria", [])], "",
          "## 8. Engagement Guardrails\n"]
     b = e["budget"]
-    L.append(f"- {b['hours_total']:g} total consulting hours" + (f": {b['note']}" if b.get("note") else "."))
+    from . import hours as H
+    L.append(f"- {b['hours_total']:g} total consulting hours" + (f" ({H.hours_used(model):g} used)" if H.tracked(model) else "")
+             + (f": {b['note']}" if b.get("note") else "."))
     L += [f"- {f(x)}" for x in model.setting("guardrails", pb.get("default_guardrails", []))]
     L += ["", "## 9. Key Risks\n", *[f"- {f(x)}" for x in model.setting("key_risks", pb.get("default_risks", []))], ""]
     (out / "brief.md").write_text("\n".join(L), encoding="utf-8")
@@ -504,6 +555,6 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     evidence_index(model, out)
     brief(model, out)
     extra = (documents(model, out, docs_docx) + impact_assessments(model, out) + internal_audit(model, out)
-             + corrective_actions(model, out) + management_reviews(model, out, docs_docx))
+             + corrective_actions(model, out) + management_reviews(model, out, docs_docx) + hours_report(model, out))
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)
