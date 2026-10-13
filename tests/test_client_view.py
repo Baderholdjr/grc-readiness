@@ -79,3 +79,49 @@ def test_client_view_is_not_in_the_auditor_package(tmp_path):
 def test_milestones_are_future_and_sorted(tmp_path):
     ms = client_view.milestones(m(setup(tmp_path)))
     assert ms == sorted(ms) and all(d >= TODAY for d, _ in ms)
+
+
+# ---------------------------------------------------------------- review regressions
+def _set(edir, rid, owner="CTO", **legs):
+    p = edir / "controls" / f"{rid}.yaml"
+    d = yaml.safe_load(p.read_text())
+    d["owner"] = owner
+    for k, (st, ev) in legs.items():
+        d["test"][k] = {"status": st, "evidence": ev}
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+
+
+def test_partial_legs_never_drop_a_requirement(tmp_path):
+    edir = setup(tmp_path)
+    ev = yaml.safe_load((edir / "evidence" / "index.yaml").read_text())["evidence"][0]["id"]
+    _set(edir, "7.4", implemented=("partial", [ev]))
+    its = [i for i in client_view.items(m(edir)) if i["ref"] == "7.4"]
+    assert its and any("being reviewed" in a for a in its[0]["ask"])
+
+
+def test_lapsed_document_milestones_and_markdown_escaping(tmp_path):
+    from grc import documents
+    edir = setup(tmp_path)
+    documents.new(m(edir), "DOC-AI-POLICY", mode="templates")
+    md_, body, _ = documents.parse((edir / "documents" / "DOC-AI-POLICY.md").read_text())
+    (edir / "documents" / "DOC-AI-POLICY.md").write_text(documents.dump({**md_, "status": "approved", "approved_on": "2024-01-01"}, body))
+    _set(edir, "5.2", owner="CTO")
+    asks = [a for i in client_view.items(m(edir)) if i["ref"] == "5.2" for a in i["ask"]]
+    assert any("due for review" in a for a in asks) and not any("complete and approve" in a for a in asks)
+    ms = client_view.milestones(load(edir, today=dt.date(2026, 1, 1)))
+    assert any("Stage 1" in t for _, t in ms) and any("Stage 2" in t for _, t in ms)
+    eng = yaml.safe_load((edir / "engagement.yaml").read_text())
+    eng["client"]["name"] = "Acme | Co\n# Not a title"
+    eng["client_view"] = {"contact": "<img src=https://evil.example/x.png>"}
+    (edir / "engagement.yaml").write_text(yaml.safe_dump(eng, sort_keys=False))
+    _set(edir, "5.3", owner="Ops | Team\n## injected")
+    out = client_view.render_md(m(edir), tmp_path / "cv.md").read_text()
+    assert "<img" not in out and "\n# Not a title" not in out and "\n## injected" not in out and "Acme \\| Co" in out
+
+
+def test_owner_case_is_merged_and_review_action_not_duplicated(tmp_path):
+    edir = setup(tmp_path)
+    _set(edir, "5.2", owner="CTO")
+    _set(edir, "5.3", owner="cto")
+    owners = {i["owner"] for i in client_view.items(m(edir)) if i["ref"] in ("5.2", "5.3")}
+    assert len(owners) == 1

@@ -9,7 +9,7 @@ Deliberately left out: hours and budget, the analyst's working rules and engagem
 validation codes, and anything else that only matters inside the engagement team.
 
 Output: client-view.html (one self-contained file: no external resources, safe to email or attach)
-and client-view.md (readable on GitHub). Every value from the record is escaped.
+and client-view.md (readable on GitHub). Every value from the record is escaped in both.
 """
 from __future__ import annotations
 
@@ -77,6 +77,8 @@ def items(model: Engagement) -> list[dict]:
             d = docs.get(did) if did else None
             if d and d["meta"].get("status") == "approved" and documents.is_effective(model, did):
                 asks.append(f"Documented: covered by {did} (approved); we will link it.")
+            elif d and d["meta"].get("status") == "approved":
+                asks.append(f"Documented: {did} is due for review (or changed since approval) — review and re-approve it.")
             elif d:
                 asks.append(f"Documented: {did} is {d['meta'].get('status', 'draft')} — complete and approve it.")
             elif did:
@@ -86,10 +88,16 @@ def items(model: Engagement) -> list[dict]:
         if eff["implemented"] in ("not_started", "claimed"):
             asks.append("In use: " + ("you've told us this is in place — show us where it runs."
                                       if eff["implemented"] == "claimed" else "confirm the process is in use and where it runs."))
-        if eff["evidenced"] in ("not_started", "claimed", "partial"):
+        elif eff["implemented"] == "partial":
+            asks.append("In use: what you've shown us is being reviewed — no action needed for now.")
+        if eff["evidenced"] in ("not_started", "claimed"):
             asks.append(f"Records: share {examples}.")
+        elif eff["evidenced"] == "partial":
+            asks.append(f"Records: some received; share the rest ({examples}).")
         if eff["tested"] != "verified" and all(eff[k] == "verified" for k in ("documented", "implemented", "evidenced")):
             asks.append("Tested: the internal audit will sample it — no action needed until then.")
+        if not asks:   # not ready, but nothing to ask the client for right now
+            asks.append("Being reviewed by the engagement team — no action needed for now.")
         if asks and str(c.get("owner") or "").strip():
             add(c.get("owner"), "Requirement", rid, r["title"], asks, order=60)
         elif asks:
@@ -136,8 +144,12 @@ def items(model: Engagement) -> list[dict]:
                 nr if ia.get("status") == "approved" else None, order=35)
     for a in review.actions(model):
         if a.get("status") == "open":
-            add(a.get("owner"), "Management review action", f"{a['review']}/{a.get('id')}", str(a.get("action") or ""),
+            add(a.get("owner"), "Management review action", f"{a['review']}/{a.get('id')}", "",
                 [str(a.get("action") or "")], a.get("due"), order=25)
+    # one section per person, however the owner name was capitalised
+    canon: dict[str, str] = {}
+    for i in out:
+        i["owner"] = canon.setdefault(i["owner"].lower(), i["owner"])
     out.sort(key=lambda x: (not x["overdue"], x["due"] or dt.date.max, x["order"], x["ref"]))
     return out
 
@@ -162,7 +174,10 @@ def milestones(model: Engagement) -> list[tuple[dt.date, str]]:
     for rid, r in review.reviews(model).items():
         if r.get("status") == "planned" and _d(r.get("planned_on")):
             ms.append((_d(r["planned_on"]), f"Management review {rid}"))
-    return sorted(m for m in ms if m[0] >= model.today)[:8]
+    future = sorted(m for m in ms if m[0] >= model.today)
+    stages = [m for m in future if "certification audit" in m[1]]
+    others = [m for m in future if m not in stages][:8]
+    return sorted(others + stages)
 
 
 def overview(model: Engagement) -> list[tuple[str, str]]:
@@ -180,31 +195,38 @@ def overview(model: Engagement) -> list[tuple[str, str]]:
 
 
 # ------------------------------------------------------------------ Markdown
+def md(v) -> str:
+    """Record text as inert Markdown: one line, no HTML, no tables/links/emphasis from the data."""
+    t = " ".join(str(v if v is not None else "").split())
+    t = t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return re.sub(r"([\\`*_\[\]|#])", r"\\\1", t)
+
+
 def render_md(model: Engagement, path: Path) -> Path:
     its = items(model)
     owners = sorted({i["owner"] for i in its}, key=lambda o: (o == UNASSIGNED, o.lower()))
     cv = model.engagement.get("client_view") or {}
-    L = [f"# {model.client} — readiness for {model.catalog['framework'].get('short_name')}\n\n",
-         f"_As of {model.today}. {cv.get('intro') or 'What has been done, what is coming up, and what we need from you.'}_\n\n"]
+    L = [f"# {md(model.client)} — readiness for {md(model.catalog['framework'].get('short_name'))}\n\n",
+         f"As of {model.today}. {md(cv.get('intro') or 'What has been done, what is coming up, and what we need from you.')}\n\n"]
     if (model.engagement.get("sandbox") or {}).get("enabled"):
         L.append("> **Test engagement.** Some content is simulated data.\n\n")
-    L.append("## Where things stand\n\n| | |\n|---|---|\n" + "".join(f"| {a} | {b} |\n" for a, b in overview(model)))
+    L.append("## Where things stand\n\n| | |\n|---|---|\n" + "".join(f"| {md(a)} | {md(b)} |\n" for a, b in overview(model)))
     ms = milestones(model)
     if ms:
-        L.append("\n## Coming up\n\n" + "".join(f"- **{d}** — {t}\n" for d, t in ms))
+        L.append("\n## Coming up\n\n" + "".join(f"- **{d}** — {md(t)}\n" for d, t in ms))
     L.append(f"\n## What we need from you\n\n{len(its)} open item(s) across {len(owners)} owner(s)"
              f"{', ' + str(sum(i['overdue'] for i in its)) + ' overdue' if any(i['overdue'] for i in its) else ''}.\n")
     for o in owners:
         mine = [i for i in its if i["owner"] == o]
         users = ", ".join("@" + u for u in model.github_users(o)) if o != UNASSIGNED else ""
-        L.append(f"\n### {o}{' (' + users + ')' if users else ''} — {len(mine)} item(s)\n\n")
+        L.append(f"\n### {md(o)}{' (' + md(users) + ')' if users else ''} — {len(mine)} item(s)\n\n")
         if o == UNASSIGNED:
             L.append("_These need an owner. The engagement lead will agree one with you._\n\n")
         for i in mine:
             due = f" — due {i['due']}" + (" **(overdue)**" if i["overdue"] else "") if i["due"] else ""
-            L.append(f"- **{i['kind']} {i['ref']}** {i['title']}{due}\n" + "".join(f"  - {a}\n" for a in i["ask"] if a))
+            L.append(f"- **{md(i['kind'])} {md(i['ref'])}** {md(i['title'])}{due}\n" + "".join(f"  - {md(a)}\n" for a in i["ask"] if a))
     if cv.get("contact"):
-        L.append(f"\n---\nQuestions: {cv['contact']}\n")
+        L.append(f"\n---\nQuestions: {md(cv['contact'])}\n")
     path.write_text("".join(L), encoding="utf-8")
     return path
 
