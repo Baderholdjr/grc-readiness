@@ -452,9 +452,14 @@ async function createSubmission(env, cfg, key, req, email, answer, links, open) 
   return json({ ok: true, id, at: sub.submitted_at.slice(0, 10) });
 }
 
+// A short reference the client can pass on: which step failed and GitHub's status code.
+// 401 = token invalid/expired; 403/404 = token can't reach the repository or lacks a permission.
+const STEP_CODES = { "read base": "R", "create branch": "B", "write file": "F", "open pull request": "P" };
+
 function ghFail(step, res) {
   console.error(`github ${step}: ${res.status}`);
-  return json({ error: "We couldn't send your answer to the engagement team. Nothing was saved. Try again, or contact your engagement lead." }, 502);
+  const ref = `${STEP_CODES[step] || "G"}${res.status}`;
+  return json({ error: `We couldn't send your answer to the engagement team. Nothing was saved. Try again, or contact your engagement lead (reference ${ref}).`, ref }, 502);
 }
 
 // ------------------------------------------------------------------ responses

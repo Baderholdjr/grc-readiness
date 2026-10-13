@@ -180,6 +180,7 @@ test("submit: GitHub failure leaves nothing behind", async () => {
   gh.fail["POST /repos/" + REPO + "/pulls"] = 422;
   const r = await req("/api/submit", { method: "POST", e, body: good });
   assert.equal(r.status, 502);
+  assert.equal((await r.clone().json()).ref, "P422");
   assert.equal(gh.deleted.length, 1);
   assert.equal(Object.keys(gh.refs).length, 1);
   assert.doesNotMatch(await r.text(), /forced|token/);
