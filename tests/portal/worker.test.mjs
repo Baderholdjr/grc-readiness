@@ -26,6 +26,7 @@ function fresh(extra) {
   gh = fakeGitHub();
   installFetch(keys, gh);
   W._resetCertCache();
+  W._resetState();
   return env(pub, extra);
 }
 
@@ -190,12 +191,54 @@ test("submit: not connected (no token or repo) -> 503, pending says not connecte
   assert.deepEqual(await (await req("/api/pending", { e })).json(), { pending: [], connected: false });
 });
 
-test("throttle: too many answers waiting for review", async () => {
+test("throttle: a few per minute per person, and caps on answers waiting for review", async () => {
   const e = fresh();
-  for (let i = 0; i < 15; i++) assert.equal((await req("/api/submit", { method: "POST", e, body: good })).status, 200);
-  assert.equal((await req("/api/submit", { method: "POST", e, body: good })).status, 429);   // per person
-  const r = await req("/api/submit", { method: "POST", e, body: good, token: await mint(keys, { email: "bob@larkspur.example" }) });
-  assert.equal(r.status, 200);
+  for (let i = 0; i < 5; i++) assert.equal((await req("/api/submit", { method: "POST", e, body: good })).status, 200);
+  assert.equal((await req("/api/submit", { method: "POST", e, body: good })).status, 429);   // burst
+  const bob = await mint(keys, { email: "bob@larkspur.example" });
+  assert.equal((await req("/api/submit", { method: "POST", e, body: good, token: bob })).status, 200);
+  // 15 already waiting from one person (new minute: reset the burst window only)
+  const e2 = fresh();
+  for (let i = 0; i < 15; i++) gh.pulls.push({ number: 100 + i, state: "open", body: "Submitted by: `jane@larkspur.example`",
+    created_at: "2026-10-01T00:00:00Z", head: { ref: `portal/${KEY}/SUB-20261001-0000${String(i).padStart(2, "0")}`, repo: { full_name: REPO } } });
+  assert.equal((await req("/api/submit", { method: "POST", e: e2, body: good })).status, 429);
+  assert.equal((await req("/api/submit", { method: "POST", e: e2, body: good, token: bob })).status, 200);
+  for (let i = 0; i < 30; i++) gh.pulls.push({ number: 200 + i, state: "open", body: "", created_at: "2026-10-01T00:00:00Z",
+    head: { ref: `portal/${KEY}/SUB-20261001-1000${String(i).padStart(2, "0")}`, repo: { full_name: REPO } } });
+  const carol = await mint(keys, { email: "carol@larkspur.example" });
+  assert.equal((await req("/api/submit", { method: "POST", e: e2, body: good, token: carol })).status, 429);   // site-wide
+});
+
+test("throttle holds when answers arrive all at once", async () => {
+  const e = fresh();
+  const token = await mint(keys);
+  const results = await Promise.all(Array.from({ length: 30 }, () => req("/api/submit", { method: "POST", e, body: good, token })));
+  const ok = results.filter((r) => r.status === 200).length;
+  assert.ok(ok >= 1 && ok <= 5, `accepted ${ok}`);
+  assert.equal(gh.pulls.length, ok);
+});
+
+test("pending list is reused briefly and refreshed after an answer", async () => {
+  const e = fresh();
+  await req("/api/pending", { e });
+  await req("/api/pending", { e });
+  assert.equal(gh.calls.filter((c) => c.startsWith("GET") && c.endsWith("/pulls")).length, 1);
+  await req("/api/submit", { method: "POST", e, body: good });
+  const p = await (await req("/api/pending", { e })).json();
+  assert.equal(p.pending.length, 1);
+});
+
+test("a branch setting with .. is refused", async () => {
+  const e = fresh({ BASE_BRANCH: "../../../../user/repos" });
+  assert.equal((await req("/api/submit", { method: "POST", e, body: good })).status, 503);
+});
+
+test("a body without Content-Length is still capped", async () => {
+  const e = fresh();
+  const stream = new ReadableStream({ start(c) { for (let i = 0; i < 40; i++) c.enqueue(new TextEncoder().encode("x".repeat(1000))); c.close(); } });
+  const r = new Request(ORIGIN + "/api/submit", { method: "POST", body: stream, duplex: "half",
+    headers: { "Cf-Access-Jwt-Assertion": await mint(keys), "Content-Type": "application/json", Origin: ORIGIN } });
+  assert.equal((await W.default.fetch(r, e)).status, 413);
 });
 
 test("pending ignores pull requests the site did not make", async () => {

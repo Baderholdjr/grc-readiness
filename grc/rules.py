@@ -816,10 +816,10 @@ def check_submissions(model: Engagement) -> list[Finding]:
     out: list[Finding] = []
     if not model.submissions:
         return out
-    from .portal import request_key
+    from .portal import item_key
     from . import client_view
     fw = model.engagement.get("framework", "")
-    open_keys = {request_key(fw, i["kind"], i["ref"]) for i in client_view.items(model)}
+    open_keys = {item_key(fw, i) for i in client_view.items(model)}
     ev_ids = set(model.evidence_index)
     days = int((model.engagement.get("portal") or {}).get("triage_days") or 5)
     for sid, s in model.submissions.items():
@@ -835,7 +835,9 @@ def check_submissions(model: Engagement) -> list[Finding]:
             out.append(Finding("warning", "W171", f"{sid}: a client answer to {req.get('kind')} {req.get('ref')} has waited "
                                f"{(model.today - when).days} days for review - set status to accepted, needs_more (with a note "
                                "the client will see) or withdrawn.", f, sid))
-        if s.get("status") in ("received", "needs_more") and req.get("key") and req.get("key") not in open_keys:
+        # answers to another framework's tab are stored here too; only check this framework's
+        same_fw = str(req.get("framework") or fw) == fw
+        if same_fw and s.get("status") in ("received", "needs_more") and req.get("key") and req.get("key") not in open_keys:
             out.append(Finding("info", "W170", f"{sid}: answers {req.get('kind')} {req.get('ref')}, which is no longer an open "
                                "request (closed, or its wording changed).", f, sid))
         for ev in s.get("evidence") or []:

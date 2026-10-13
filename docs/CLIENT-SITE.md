@@ -64,7 +64,13 @@ Then merge.
 
   If the Access settings are missing, the site refuses everyone (fails closed). It never opens up.
 - **The GitHub token is limited.** It is fine-grained and covers this one repository, with Contents and Pull requests permissions only. It lives as a Worker secret, never in the repository.
-- **Answers are only accepted from the site itself**, as same-origin JSON. They are limited to 4,000 characters and five https links, and are cleaned of control and bidirectional characters. Each person can have at most 15 answers waiting for review, and the site 40.
+- **Answers are only accepted from the site itself**, as same-origin JSON. They are limited to 4,000 characters and five https links, and are cleaned of control and bidirectional characters.
+- **Limits:**
+  - one answer at a time per person, and five per minute
+  - at most 15 answers per person waiting for review, and 40 for the whole site
+  - the list of waiting answers is reused for 20 seconds between page loads
+
+  The per-minute limit is kept by each Worker instance, so it is a speed bump rather than a guarantee. For production, add a Cloudflare rate-limiting rule (see the table below).
 - **No file uploads.** Clients share links to documents in their own systems. Patient or other personal data must never be included; the form requires the client to confirm this, and the Help page says why.
 - **The site loads nothing from third parties.** A strict content-security policy blocks it, and the site has no cookies of its own.
 
@@ -96,6 +102,8 @@ In the client repository, open **Settings → Secrets and variables → Actions 
 | `PORTAL_GITHUB_TOKEN` | In GitHub, go to **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Set **Repository access** to *Only select repositories*, choosing this client repository. Set **Permissions** to **Contents: Read and write** and **Pull requests: Read and write**. Choose an expiry of 90 days or less, and put a reminder in your calendar to replace it. |
 
 Without `PORTAL_GITHUB_TOKEN` the site still works, but read-only.
+
+To **turn answering off** later, revoke the GitHub token (GitHub → Settings → Developer settings → Fine-grained tokens), or remove the Worker's secret in Cloudflare (Worker → **Settings → Variables and Secrets** → delete `GITHUB_TOKEN`). Deleting the repository secret alone isn't enough: the Worker keeps the last token it was given.
 
 ### 3. First deploy
 
@@ -160,6 +168,7 @@ The free setup above is fine for a proof of concept with test or non-sensitive d
 | Users | Up to 50 free | Zero Trust paid plan when you pass 50 users, or when you need logs and longer retention. |
 | GitHub access | Fine-grained token, rotated by hand | A GitHub App installed on each client repository, with short-lived tokens and no personal account in the loop. |
 | Files | Links only | Optional uploads to a private R2 bucket per client, with malware scanning and retention rules, referenced from the evidence index. |
+| Rate limits | Per-instance limits in the Worker | A Cloudflare rate-limiting rule or binding on `/api/submit`, keyed on the signed-in email. |
 | Records | Workers logs | Access audit logs and Worker logs kept with the engagement record. |
 | Agreements | n/a | A data-processing agreement with Cloudflare (and a BAA if any protected health information could ever be involved). Keep the "no patient data" rule either way. |
 

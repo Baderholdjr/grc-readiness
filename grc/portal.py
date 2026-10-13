@@ -47,9 +47,19 @@ LEG_STATUS = {"verified": "checked", "partial": "partly checked", "claimed": "to
 NO_ACTION = "no action needed"
 
 
-def request_key(framework: str, kind: str, ref: str) -> str:
-    """Stable id for a request: the same request keeps its id across builds, so answers stay attached."""
-    return hashlib.sha256(f"{framework}|{kind}|{ref}".encode()).hexdigest()[:12]
+def request_key(framework: str, kind: str, ref: str, asks: list[str] | None = None) -> str:
+    """Stable id for a request: the same request keeps its id across builds, so answers stay attached.
+
+    For a requirement the open asks are part of the id: when what we need changes (for example the
+    document is accepted and now records are needed), it is a new request, and an earlier "Accepted"
+    answer no longer hides it."""
+    extra = "|" + "\n".join(asks) if asks else ""
+    return hashlib.sha256(f"{framework}|{kind}|{ref}{extra}".encode()).hexdigest()[:12]
+
+
+def item_key(framework: str, item: dict) -> str:
+    asks = [str(a) for a in item["ask"] if a] if item["kind"] == "Requirement" else None
+    return request_key(framework, item["kind"], item["ref"], asks)
 
 
 def _d(v) -> dt.date | None:
@@ -63,7 +73,8 @@ def submissions_by_key(model: Engagement) -> dict[str, dict]:
     """The latest well-formed submission for each request key."""
     latest: dict[str, dict] = {}
     for sid, s in model.submissions.items():
-        if not isinstance(s, dict) or s.get("_error") or s.get("status") not in SUB_STATUSES:
+        # withdrawn answers (duplicates, sent by mistake) never hide an earlier accepted one
+        if not isinstance(s, dict) or s.get("_error") or s.get("status") not in SUB_STATUSES or s.get("status") == "withdrawn":
             continue
         req = s.get("request") if isinstance(s.get("request"), dict) else {}
         key = str(req.get("key") or "")
@@ -73,16 +84,15 @@ def submissions_by_key(model: Engagement) -> dict[str, dict]:
     return latest
 
 
-def _requests(model: Engagement) -> list[dict]:
+def _requests(model: Engagement, subs: dict[str, dict]) -> list[dict]:
     fw = model.engagement.get("framework", "")
     req_index = model.requirement_index
-    subs = submissions_by_key(model)
     out = []
     for i in client_view.items(model):
         asks = [str(a) for a in i["ask"] if a]
         aggregate = i["kind"] == "Requirements"            # "N without an owner": the lead resolves it with the client
         action = not aggregate and not all(NO_ACTION in a.lower() for a in asks)
-        key = request_key(fw, i["kind"], i["ref"])
+        key = item_key(fw, i)
         r = req_index.get(i["ref"]) if i["kind"] == "Requirement" else None
         if r:
             why = f"{model.catalog['framework'].get('short_name')} asks for this: {str(r.get('intent') or '').rstrip('.')}."
@@ -150,10 +160,12 @@ def _path(model: Engagement) -> dict:
                          if not t.startswith("Phase starts") and "certification audit" not in t]}
 
 
-def framework_data(model: Engagement) -> dict:
+def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> dict:
+    """One framework tab. `subs`: submissions by request key; answers from every tab are stored in the
+    main engagement (the Worker writes to one repository folder), so the caller passes those."""
     from .rules import metrics
     m = metrics(model)
-    reqs = _requests(model)
+    reqs = _requests(model, submissions_by_key(model) if subs is None else subs)
     needs = [r for r in reqs if r["action"]]
     overdue = sum(1 for r in needs if r["overdue"])
     fw = model.catalog["framework"]
@@ -170,6 +182,11 @@ def framework_data(model: Engagement) -> dict:
 def data(model: Engagement, extra: list[Engagement] | None = None) -> dict:
     cv = model.engagement.get("client_view") or {}
     models = [model] + list(extra or [])
+    subs = submissions_by_key(model)
+    for m in extra or []:            # an engagement used on its own may hold answers too
+        for k, v in submissions_by_key(m).items():
+            if k not in subs or v["at"] > subs[k]["at"]:
+                subs[k] = v
     return {
         "schema": 1,
         "client": model.client,
@@ -177,12 +194,15 @@ def data(model: Engagement, extra: list[Engagement] | None = None) -> dict:
         "intro": str(cv.get("intro") or ""),
         "contact": str(cv.get("contact") or ""),
         "sandbox": bool((model.engagement.get("sandbox") or {}).get("enabled")),
-        "frameworks": [framework_data(m) for m in models],
+        "frameworks": [framework_data(m, subs) for m in models],
     }
 
 
 def _toml(v: str) -> str:
-    return json.dumps(str(v))   # a JSON string is a valid TOML basic string
+    """A TOML basic string. JSON escaping is compatible, but without \\u escapes for non-ASCII
+    (TOML rejects surrogate pairs) and with control characters removed."""
+    v = re.sub(r"[\x00-\x1f\x7f\ud800-\udfff]", "", str(v))
+    return json.dumps(v, ensure_ascii=False)
 
 
 def worker_name(model: Engagement) -> str:

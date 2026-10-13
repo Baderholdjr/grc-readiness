@@ -94,6 +94,7 @@ async function refreshPending() {
 }
 
 function main() { return document.getElementById("main"); }
+function safeDecode(s) { try { return decodeURIComponent(s); } catch (e) { return ""; } }
 
 function renderSwitch() {
   const sw = document.getElementById("fwswitch");
@@ -118,7 +119,8 @@ function render() {
     if (a.dataset.nav === name) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   }
   const m = main();
-  const view = { "": overview, requests, request: () => request(decodeURIComponent(arg || "")), progress, help }[page || ""] || overview;
+  const routes = { "": overview, requests, request: () => request(safeDecode(arg || "")), progress, help };
+  const view = Object.prototype.hasOwnProperty.call(routes, page || "") ? routes[page || ""] : overview;
   const keepScroll = m.dataset.route === route;
   m.dataset.route = route;
   m.replaceChildren(...[].concat(view()));

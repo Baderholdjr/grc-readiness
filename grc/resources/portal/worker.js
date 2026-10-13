@@ -22,6 +22,8 @@ const MAX_LINKS = 5;
 const MAX_OPEN_TOTAL = 40;       // answers waiting for review, whole site
 const MAX_OPEN_PER_PERSON = 15;  // ... per signed-in person
 const SKEW = 60;                 // seconds of clock tolerance on token times
+const BURST = 5;                 // answers per person per minute (per Worker instance; see docs)
+const PENDING_TTL = 20_000;      // ms the open-answer list is reused between page loads
 
 const SECURITY_HEADERS = {
   "Content-Security-Policy":
@@ -159,7 +161,8 @@ async function api(request, env, url, email) {
 function repoConfig(env) {
   const repo = String(env.GITHUB_REPO || "");
   const base = String(env.BASE_BRANCH || "main");
-  if (!/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(repo) || !env.GITHUB_TOKEN || !/^[A-Za-z0-9._\/-]+$/.test(base)) {
+  if (!/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(repo) || !env.GITHUB_TOKEN ||
+      !/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(base) || base.includes("..")) {
     return { ok: false };
   }
   return { ok: true, repo, base };
@@ -181,20 +184,68 @@ async function gh(env, method, path, body) {
 
 const BRANCH_RE = /^portal\/([0-9a-f]{12})\/(SUB-\d{8}-[0-9a-f]{6})$/;
 
-async function openSubmissions(env, cfg) {
-  const res = await gh(env, "GET", `/repos/${cfg.repo}/pulls?state=open&per_page=100`);
-  if (!res.ok) {
-    console.error("list pulls", res.status);
-    return null;
+let pendingCache = { repo: "", at: 0, list: null };
+const inFlight = new Set();          // people with an answer being sent right now
+const recent = new Map();            // email -> times of recent answers
+
+export function _resetState() {
+  pendingCache = { repo: "", at: 0, list: null };
+  inFlight.clear();
+  recent.clear();
+}
+
+async function openSubmissions(env, cfg, fresh = false) {
+  if (!fresh && pendingCache.repo === cfg.repo && pendingCache.list && Date.now() - pendingCache.at < PENDING_TTL) {
+    return pendingCache.list;
+  }
+  const pulls = [];
+  for (let page = 1; page <= 3; page++) {          // up to 300 open pull requests
+    const res = await gh(env, "GET", `/repos/${cfg.repo}/pulls?state=open&per_page=100&page=${page}`);
+    if (!res.ok) {
+      console.error("list pulls", res.status);
+      return null;
+    }
+    const batch = await res.json();
+    pulls.push(...batch);
+    if (batch.length < 100) break;
   }
   const out = [];
-  for (const pr of await res.json()) {
+  for (const pr of pulls) {
     const m = BRANCH_RE.exec((pr.head && pr.head.ref) || "");
     if (!m || !pr.head.repo || pr.head.repo.full_name !== cfg.repo) continue; // only branches the site made, in this repo
     const by = /Submitted by: `([^`]+)`/.exec(pr.body || "");
     out.push({ key: m[1], id: m[2], at: String(pr.created_at || "").slice(0, 10), by: by ? by[1] : "" });
   }
+  pendingCache = { repo: cfg.repo, at: Date.now(), list: out };
   return out;
+}
+
+function shownEmail(email) {
+  return email.replace(/`/g, "'");   // as written in the pull request body
+}
+
+async function readCapped(request, max) {
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const all = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    all.set(c, at);
+    at += c.byteLength;
+  }
+  return new TextDecoder().decode(all);
 }
 
 // Text a person typed: keep what YAML can carry, normalise line breaks, drop control characters.
@@ -283,8 +334,8 @@ async function submit(request, env, url, email) {
   if (!/^application\/json\b/i.test(request.headers.get("Content-Type") || "")) return json({ error: "Expected JSON." }, 415);
   const declared = Number(request.headers.get("Content-Length") || 0);
   if (declared > MAX_BODY) return json({ error: "That answer is too long. Keep it under 4,000 characters." }, 413);
-  const raw = await request.text();
-  if (raw.length > MAX_BODY) return json({ error: "That answer is too long. Keep it under 4,000 characters." }, 413);
+  const raw = await readCapped(request, MAX_BODY);
+  if (raw === null) return json({ error: "That answer is too long. Keep it under 4,000 characters." }, 413);
   let body;
   try {
     body = JSON.parse(raw);
@@ -316,11 +367,28 @@ async function submit(request, env, url, email) {
   const req = await findRequest(env, url, key);
   if (!req) return json({ error: "This request is no longer open. Reload the page to see the current list." }, 409);
 
-  const open = await openSubmissions(env, cfg);
-  if (!open) return json({ error: "We couldn't send your answer. Nothing was saved. Try again in a minute." }, 502);
-  if (open.length >= MAX_OPEN_TOTAL || open.filter((o) => o.by === email).length >= MAX_OPEN_PER_PERSON) {
-    return json({ error: "Many answers are already waiting for review. Try again once the team has caught up." }, 429);
+  // One answer at a time per person, a few per minute, and caps on what waits for review.
+  // These hold per Worker instance; production should add Cloudflare rate limiting (docs/CLIENT-SITE.md).
+  const now0 = Date.now();
+  const times = (recent.get(email) || []).filter((t) => now0 - t < 60_000);
+  if (inFlight.has(email) || times.length >= BURST) {
+    return json({ error: "You've sent several answers in the last minute. Wait a moment and try again." }, 429);
   }
+  inFlight.add(email);
+  recent.set(email, [...times, now0]);
+  try {
+    const open = await openSubmissions(env, cfg, true);
+    if (!open) return json({ error: "We couldn't send your answer. Nothing was saved. Try again in a minute." }, 502);
+    if (open.length >= MAX_OPEN_TOTAL || open.filter((o) => o.by === shownEmail(email)).length >= MAX_OPEN_PER_PERSON) {
+      return json({ error: "Many answers are already waiting for review. Try again once the team has caught up." }, 429);
+    }
+    return await createSubmission(env, cfg, key, req, email, answer, links, open);
+  } finally {
+    inFlight.delete(email);
+  }
+}
+
+async function createSubmission(env, cfg, key, req, email, answer, links, open) {
 
   const now = new Date();
   const id = newId(now);
@@ -360,7 +428,7 @@ async function submit(request, env, url, email) {
     "**Client submission** sent from the client site.",
     "",
     `- Request: ${md(sub.request.kind)} ${md(sub.request.ref)} ${md(sub.request.title)}`,
-    `- Submitted by: \`${email.replace(/`/g, "'")}\` (verified by Cloudflare Access)`,
+    `- Submitted by: \`${shownEmail(email)}\` (verified by Cloudflare Access)`,
     `- File: \`${file}\``,
     "",
     "Before merging, read the answer and open any links under **Files changed**. Then set `status` to",
@@ -379,6 +447,8 @@ async function submit(request, env, url, email) {
   }
   const pr = await res.json();
   await gh(env, "POST", `/repos/${cfg.repo}/issues/${pr.number}/labels`, { labels: ["client-submission"] }).catch(() => {});
+  open.push({ key, id, at: sub.submitted_at.slice(0, 10), by: shownEmail(email) });
+  pendingCache = { repo: cfg.repo, at: Date.now(), list: open };
   return json({ ok: true, id, at: sub.submitted_at.slice(0, 10) });
 }
 

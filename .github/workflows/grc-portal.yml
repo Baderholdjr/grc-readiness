@@ -43,6 +43,7 @@ jobs:
           fi
           python -c "import grc; print('GRC engine', grc.__version__)"
       - name: Build the client site
+        shell: bash   # -o pipefail: a failed build fails the step, even through tee
         run: python -m grc portal --out _portal | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v6
         with:
@@ -66,6 +67,7 @@ jobs:
           fi
       - name: Deploy to Cloudflare
         if: steps.cfg.outputs.deploy == 'true'
+        shell: bash   # -o pipefail: a failed deploy fails the step, even through tee
         working-directory: _portal
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

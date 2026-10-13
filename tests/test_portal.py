@@ -290,3 +290,53 @@ def test_analyst_report_lists_waiting_first_and_stays_out_of_the_auditor_package
     assert text.index("SUB-20261001-bbbbbb") < text.index("SUB-20261002-aaaaaa") and "1 waiting" in text
     assert "submissions.md" in (out / "README.md").read_text()
     assert "submissions.md" in package.SKIP
+
+
+def test_withdrawn_duplicate_does_not_hide_accepted_answer(tmp_path):
+    edir = setup(tmp_path)
+    gid = open_gap(edir)
+    write_sub(edir, sid="SUB-20261001-aaaaaa", status="accepted", reviewed_by="B")
+    write_sub(edir, sid="SUB-20261002-bbbbbb", status="withdrawn", reviewed_by="B", submitted_at="2026-10-02T00:00:00Z")
+    assert gap_request(m(edir), gid)["submission"]["status"] == "accepted"
+
+
+def test_answers_to_a_second_framework_are_read_from_the_main_engagement(tmp_path):
+    edir = setup(tmp_path)
+    other = tmp_path / "second" / "engagement"
+    shutil.copytree(FIXTURE, other)
+    eng = yaml.safe_load((other / "engagement.yaml").read_text())
+    eng["framework"] = "iso42001b"
+    (other / "engagement.yaml").write_text(yaml.safe_dump(eng, sort_keys=False))
+    shutil.copytree(ROOT / "grc" / "resources" / "frameworks" / "iso42001", tmp_path / "second" / "frameworks" / "iso42001b")
+    open_gap(other)
+    second = m(other)
+    gid = next(g["id"] for g in second.gaps if g.get("status") == "open")
+    req = next(r for r in portal.framework_data(second)["requests"] if r["ref"] == gid)
+    (edir / "submissions").mkdir()
+    (edir / "submissions" / "SUB-20261007-cccccc.yaml").write_text(yaml.safe_dump({
+        "id": "SUB-20261007-cccccc", "request": {"key": req["key"], "kind": "Gap", "ref": gid, "framework": "iso42001b"},
+        "submitted_by": "a@b.example", "submitted_at": "2026-10-07T00:00:00Z", "answer": "x", "links": [],
+        "no_sensitive_data": True, "status": "accepted", "reviewed_by": "B"}))
+    d = portal.data(m(edir), [second])
+    r2 = next(r for r in d["frameworks"][1]["requests"] if r["ref"] == gid)
+    assert r2["submission"]["status"] == "accepted"
+    (edir / "submissions" / "SUB-20261007-cccccc.yaml").write_text(
+        (edir / "submissions" / "SUB-20261007-cccccc.yaml").read_text().replace("status: accepted", "status: received"))
+    assert "W170" not in codes(m(edir))
+
+
+def test_requirement_request_gets_a_new_key_when_the_ask_changes(tmp_path):
+    a = {"kind": "Requirement", "ref": "5.2", "ask": ["Documented: x"]}
+    b = {"kind": "Requirement", "ref": "5.2", "ask": ["Records: y"]}
+    g = {"kind": "Gap", "ref": "GAP-01", "ask": ["one"]}
+    assert portal.item_key("f", a) != portal.item_key("f", b)
+    assert portal.item_key("f", g) == portal.item_key("f", dict(g, ask=["changed wording"]))
+
+
+def test_wrangler_toml_survives_unusual_values(tmp_path):
+    edir = setup(tmp_path)
+    eng = yaml.safe_load((edir / "engagement.yaml").read_text())
+    eng["client"]["name"] = "Café 😀 Health\nInc"
+    (edir / "engagement.yaml").write_text(yaml.safe_dump(eng, sort_keys=False, allow_unicode=True))
+    cfg = tomllib.loads(portal.wrangler_toml(m(edir), "acme/x 😀"))
+    assert cfg["vars"]["GITHUB_REPO"] == "acme/x 😀" and cfg["name"].startswith("grc-portal-caf")

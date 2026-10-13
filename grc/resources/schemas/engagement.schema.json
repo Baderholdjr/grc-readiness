@@ -309,7 +309,8 @@
           "description": "Optional second check after Access: only these email domains may use the site"
         },
         "base_branch": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$"
         },
         "triage_days": {
           "type": "integer",
