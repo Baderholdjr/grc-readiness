@@ -261,6 +261,20 @@
         }
       },
       "description": "Use canned test data instead of real Drata/cloud/AI calls (see grc/sandbox.py)."
+    },
+    "client_view": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "intro": {
+          "type": "string",
+          "description": "One line shown under the title of the client view"
+        },
+        "contact": {
+          "type": "string",
+          "description": "Who the client's people should contact with questions"
+        }
+      }
     }
   }
 }
