@@ -11,7 +11,7 @@ The engagement's hours live in `engagement/hours.yaml`, one entry per block of w
   - Activities are inferred from the task, tags and description using the playbook's keywords (`hours.activities`). References such as `GAP-01`, `NC-001` or `A.6.2.5` in the description are picked up when they exist in the record; bare clause numbers (`6.1.2`) are taken only from a `refs` or tags column, so "2.5 hours" isn't read as a clause.
 - **One entry at a time.** Run **Actions → Hours** with `log`: hours, activity, optional date, note and references. The person defaults to whoever runs it. Locally: `python -m grc hours log --hours 2.5 --activity interviews --person ana --note "Release walkthrough" --refs A.6.2.5`.
 
-Timesheet files in `intake/timesheets/` are never sent to document ingestion or AI drafting, and the timesheet is not included in the auditor package (it is engagement economics, not audit evidence).
+Timesheet files in `intake/timesheets/` are never sent to document ingestion or AI drafting, and hours and budget never appear in what auditors receive: the auditor package leaves out the timesheet and the workbook's Hours sheet, its brief and status summary omit hours and budget, and budget warnings (W106, W160, W161, W163) are left out of its known issues.
 
 **In `hours.yaml`:**
 - `aliases: {"Ana Lopez": ana}` merges one person's spellings (tracker name, GitHub user).

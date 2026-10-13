@@ -45,9 +45,6 @@ jobs:
       # Errors block the package; warnings are recorded in the release notes
       # so the package states its own known weaknesses.
       - run: python -m grc validate --summary notes.md
-      - run: python -m grc build --out out
-      - name: Checksums
-        run: cd out && sha256sum * > SHA256SUMS.txt
       - name: Auditor package (PDFs, auditor index, checksums, reproducible zip)
         env:
           TAG: ${{ github.event.release.tag_name }}
@@ -58,6 +55,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          gh release upload "$TAG" out/* dist/*.zip dist/*-auditor-index.pdf --clobber
+          # Only what auditors may see: the package (every report as PDF, the workbook without hours)
+          # and its index. The full internal reports (hours, client view, submissions) stay on the reports branch.
+          gh release upload "$TAG" dist/*.zip dist/*-auditor-index.pdf --clobber
           { gh release view "$TAG" --json body -q .body; echo; echo "---"; cat notes.md; } > body.md
           gh release edit "$TAG" --notes-file body.md

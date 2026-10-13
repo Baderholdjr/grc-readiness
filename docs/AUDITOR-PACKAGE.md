@@ -4,7 +4,7 @@ A single, checksummed bundle of the record as of one commit, for the certificati
 
 ## Producing it
 
-- **For an audit:** publish a release from the GitHub UI (*Releases → Draft a new release*, tag e.g. `v2027.03-stage1`). The release workflow validates the record. Errors block the package; warnings are listed in it. It then attaches the reports, the auditor index PDF and the package zip to the release.
+- **For an audit:** publish a release from the GitHub UI (*Releases → Draft a new release*, tag e.g. `v2027.03-stage1`). The release workflow validates the record. Errors block the package; warnings are listed in it. It then attaches the auditor index PDF and the package zip to the release. The full internal reports (hours, client view, client submissions) stay on the `reports` branch. Share the zip with the auditor rather than access to the Release page: the release notes carry the full validation summary, including budget warnings.
 - **Locally or for a dry run:** `python -m grc package --out dist --label stage1` writes the package folder, its zip and a copy of the index PDF to `dist/`. Use `--force` only for a draft, when the record has validation errors; they are listed in the index.
 
 ## What's inside

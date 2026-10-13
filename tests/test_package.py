@@ -183,3 +183,45 @@ def test_failed_build_leaves_no_debris(tmp_path):
         rp.render = orig
     left = sorted(p.name for p in (tmp_path / "dist").iterdir())
     assert not [n for n in left if n.startswith(".")]
+
+
+def test_auditor_index_leaves_out_budget_warnings(tmp_path):
+    from grc import package
+    assert {"W106", "W160", "W161", "W163"} <= package.INTERNAL_CODES
+
+
+def test_invalid_yaml_in_a_control_file_is_one_clear_error(tmp_path):
+    import shutil
+    from pathlib import Path
+    from grc.model import RecordError, load
+    edir = tmp_path / "engagement"
+    shutil.copytree(Path(__file__).resolve().parent / "fixtures" / "engagement", edir)
+    f = edir / "controls" / "5.2.yaml"
+    f.write_text(f.read_text() + "notes: Policy: approved\n")
+    try:
+        load(edir)
+    except RecordError as exc:
+        msg = str(exc)
+        assert "5.2.yaml" in msg and "line" in msg and "quotes" in msg
+    else:
+        raise AssertionError("expected RecordError")
+
+
+def test_hours_and_budget_stay_out_of_the_package(tmp_path):
+    from grc import hours
+    edir = setup(tmp_path)
+    (edir / "hours.yaml").write_text("entries: []\n")
+    hours.log_entry(load(edir, today=TODAY), 7, "interviews", "ana", on=TODAY - dt.timedelta(days=1))
+    log = package.build(load(edir, today=TODAY), tmp_path / "dist", label="t")
+    root = next(p for p in (tmp_path / "dist").iterdir() if p.is_dir())
+    text = ""
+    for pdf in root.rglob("*.pdf"):
+        text += "".join(page.extract_text() or "" for page in PdfReader(str(pdf)).pages)
+    for md in root.rglob("*.md"):
+        if "08-source-record" not in md.parts:
+            text += md.read_text()
+    assert "consulting hours" not in text and "Budget:" not in text
+    # the internal build still shows them
+    out = tmp_path / "out"
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(out), "--no-docx"]) == 0
+    assert "consulting hours" in (out / "brief.md").read_text()

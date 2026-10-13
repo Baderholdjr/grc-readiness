@@ -165,6 +165,7 @@ The site shows "We couldn't send your answer … (reference X999)". The letter i
 | `R403`, `B403`, `F403` (or 404) | The token can read pull requests but can't read or write files. | In GitHub, go to **Settings → Developer settings → Fine-grained tokens**, open the token, and set **Contents** to **Read and write**. Check that the repository is selected. Saving keeps the same token, so you don't need to redeploy. |
 | `P403` | The token can't open pull requests. | Set **Pull requests** to **Read and write** on the token. |
 | `x401` | The token expired or was revoked. | Create a new token and update the `PORTAL_GITHUB_TOKEN` secret, then re-run **Actions → Client site**. |
+| *(no reference)* "…Try again in a minute." | GitHub refused even to list pull requests: the token expired, was revoked, or lacks *Pull requests* access. | Replace the token or set **Pull requests: Read and write**, update the secret, and re-run **Actions → Client site**. |
 | `B422` | A branch with that name already exists, which is very rare. | Send again. |
 
 For more detail, open the Worker in Cloudflare and go to **Observability → Logs**. Each failure logs its step and status, never the answer itself.

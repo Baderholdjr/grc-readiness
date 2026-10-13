@@ -20,7 +20,8 @@ def build_outputs(model: Engagement, findings, out: Path, with_docx: bool = True
                   internal: bool = True) -> tuple[str, str | None]:
     """Returns (readiness summary markdown, brief .docx file name or None).
     with_docx: also write the Office files (Word brief, documents, review packs; Excel workbook).
-    internal: include engagement economics (the Hours sheet) in the workbook."""
+    internal: include engagement economics (hours and budget) in the brief, the status summary and the workbook."""
+    model.internal = internal       # renderers leave hours and budget out when False (auditor package)
     docx_name = f"{slug(model)}-{model.engagement['framework']}-brief.docx" if with_docx else None
     summary = render_md.render_all(model, findings, out, brief_docx=docx_name, docs_docx=with_docx,
                                    workbook=workbook_name(model) if with_docx else None)
