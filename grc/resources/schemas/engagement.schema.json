@@ -275,6 +275,49 @@
           "description": "Who the client's people should contact with questions"
         }
       }
+    },
+    "portal": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Client site (grc portal): Cloudflare Worker behind Cloudflare Access. See docs/CLIENT-SITE.md.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy the client site from the portal workflow"
+        },
+        "worker_name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
+          "description": "Cloudflare Worker name (default: grc-portal-<client>)"
+        },
+        "access_team": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
+          "description": "Cloudflare Zero Trust team name: <team>.cloudflareaccess.com"
+        },
+        "access_aud": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Application Audience (AUD) tag of the Access application"
+        },
+        "allowed_email_domains": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"
+          },
+          "description": "Optional second check after Access: only these email domains may use the site"
+        },
+        "base_branch": {
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$"
+        },
+        "triage_days": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Warn when a submission waits longer than this (default 5)"
+        }
+      }
     }
   }
 }

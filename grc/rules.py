@@ -81,6 +81,12 @@ def check_schemas(model: Engagement) -> list[Finding]:
         run("findings", {"findings": model.findings}, edir / "findings.yaml")
     for iid, path in model.impact_files.items():
         run("impact-assessment", model.impacts[iid], path, iid)
+    for sid, path in model.submission_files.items():
+        s = model.submissions[sid]
+        if s.get("_error"):
+            out.append(Finding("error", "E001", f"{sid}: {s['_error']}.", _rel(model, path), sid))
+        else:
+            run("submission", s, path, sid)
     for rid, path in model.review_files.items():
         r = model.reviews[rid]
         if isinstance(r, dict) and r.get("_error"):
@@ -805,7 +811,49 @@ def check_collected(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours)
+def check_submissions(model: Engagement) -> list[Finding]:
+    """Answers from the client site: identity, triage and what was filed from them."""
+    out: list[Finding] = []
+    if not model.submissions:
+        return out
+    from .portal import item_key
+    from . import client_view
+    fw = model.engagement.get("framework", "")
+    open_keys = {item_key(fw, i) for i in client_view.items(model)}
+    ev_ids = set(model.evidence_index)
+    days = int((model.engagement.get("portal") or {}).get("triage_days") or 5)
+    for sid, s in model.submissions.items():
+        if not isinstance(s, dict) or s.get("_error"):
+            continue
+        f = _rel(model, model.submission_files[sid])
+        if s.get("id") != sid:
+            out.append(Finding("error", "E070", f"{sid}: id is {s.get('id')!r} but the file is {sid}.yaml - they must match.", f, sid))
+        req = s.get("request") if isinstance(s.get("request"), dict) else {}
+        at = str(s.get("submitted_at") or "")[:10]
+        when = _safe_date(at)
+        if s.get("status") == "received" and when and (model.today - when).days > days:
+            out.append(Finding("warning", "W171", f"{sid}: a client answer to {req.get('kind')} {req.get('ref')} has waited "
+                               f"{(model.today - when).days} days for review - set status to accepted, needs_more (with a note "
+                               "the client will see) or withdrawn.", f, sid))
+        # answers to another framework's tab are stored here too; only check this framework's
+        same_fw = str(req.get("framework") or fw) == fw
+        if same_fw and s.get("status") in ("received", "needs_more") and req.get("key") and req.get("key") not in open_keys:
+            out.append(Finding("info", "W170", f"{sid}: answers {req.get('kind')} {req.get('ref')}, which is no longer an open "
+                               "request (closed, or its wording changed).", f, sid))
+        for ev in s.get("evidence") or []:
+            if ev not in ev_ids:
+                out.append(Finding("warning", "W172", f"{sid}: lists evidence {ev}, which is not in the evidence index.", f, sid))
+    return out
+
+
+def _safe_date(v):
+    try:
+        return dt.date.fromisoformat(str(v)[:10])
+    except ValueError:
+        return None
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions)
 
 
 def validate(model: Engagement) -> list[Finding]:

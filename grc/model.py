@@ -76,6 +76,8 @@ class Engagement:
     hours_meta: dict = field(default_factory=dict)            # its aliases / ignored lists
     reviews: dict[str, dict] = field(default_factory=dict)    # engagement/reviews/MR-YYYY-NN.yaml (9.3)
     review_files: dict[str, Path] = field(default_factory=dict)
+    submissions: dict[str, dict] = field(default_factory=dict)  # engagement/submissions/SUB-*.yaml (from the client site)
+    submission_files: dict[str, Path] = field(default_factory=dict)
     today: dt.date = field(default_factory=dt.date.today)
 
     # ------------------------------------------------------------------ lookups
@@ -315,6 +317,14 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
             data = {"_error": f"not valid YAML ({str(exc).splitlines()[0][:120]})"}
         model.reviews[path.stem] = data
         model.review_files[path.stem] = path
+    sdir = edir / "submissions"
+    for path in sorted(sdir.glob("SUB-*.yaml")) if sdir.is_dir() else []:
+        try:
+            data = load_yaml(path)
+        except Exception as exc:  # written by a web form: report, never crash
+            data = {"_error": f"not valid YAML ({str(exc).splitlines()[0][:120]})"}
+        model.submissions[path.stem] = data if isinstance(data, dict) else {"_error": "not a YAML mapping"}
+        model.submission_files[path.stem] = path
     fnd = edir / "findings.yaml"
     if fnd.exists():
         model.findings = load_yaml(fnd).get("findings", []) or []
