@@ -140,6 +140,8 @@ In the client repository:
 
 **Internal audit (9.2) and corrective actions (10.2):** see [`docs/AUDIT.md`](docs/AUDIT.md). Each new engagement starts with an audit scheduled in its Test phase.
 
+**Client view:** see [`docs/CLIENT-VIEW.md`](docs/CLIENT-VIEW.md). Every build writes `client-view.html`, a single self-contained page for the client's people: progress, upcoming dates, and what each owner needs to do (overdue first). It has no hours, budget or internal notes, so it's safe to email.
+
 **Excel:** every build (unless `--no-docx`) also writes `<client>-<framework>-workbook.xlsx`, linked from the reports page. It has one sheet each for the control matrix, SoA, gaps, evidence, findings, impact assessments, documents, review actions and hours, plus a Summary sheet whose figures are live formulas over the other sheets. It's a read-only export: change the record through PRs. The auditor package includes it without the Hours sheet.
 
 **Hours:** see [`docs/HOURS.md`](docs/HOURS.md). Drop Toggl, Harvest or Clockify exports into `intake/timesheets/` (or run **Actions → Hours → log**); burn by phase, activity and person and a forecast are reported.
