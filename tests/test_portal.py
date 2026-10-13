@@ -340,3 +340,13 @@ def test_wrangler_toml_survives_unusual_values(tmp_path):
     (edir / "engagement.yaml").write_text(yaml.safe_dump(eng, sort_keys=False, allow_unicode=True))
     cfg = tomllib.loads(portal.wrangler_toml(m(edir), "acme/x 😀"))
     assert cfg["vars"]["GITHUB_REPO"] == "acme/x 😀" and cfg["name"].startswith("grc-portal-caf")
+
+
+def test_indented_review_lines_get_a_helpful_message(tmp_path):
+    edir = setup(tmp_path)
+    open_gap(edir)
+    write_sub(edir)
+    f = edir / "submissions" / "SUB-20261001-abcdef.yaml"
+    f.write_text(f.read_text() + "   reviewed_by: B\n   note: x\n")
+    msg = [x.message for x in validate(m(edir)) if x.code == "E001"][0]
+    assert "line" in msg and "left edge" in msg
