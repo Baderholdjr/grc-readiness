@@ -321,8 +321,11 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     for path in sorted(sdir.glob("SUB-*.yaml")) if sdir.is_dir() else []:
         try:
             data = load_yaml(path)
-        except Exception as exc:  # written by a web form: report, never crash
-            data = {"_error": f"not valid YAML ({str(exc).splitlines()[0][:120]})"}
+        except Exception as exc:  # written by a web form, reviewed by hand: report, never crash
+            mark = getattr(exc, "problem_mark", None)
+            where = f" at line {mark.line + 1}" if mark else ""
+            data = {"_error": f"not valid YAML{where} ({str(exc).splitlines()[0][:120]}) - check that every "
+                              "top-level line (status:, reviewed_by:, note: ...) starts at the left edge, with no spaces before it"}
         model.submissions[path.stem] = data if isinstance(data, dict) else {"_error": "not a YAML mapping"}
         model.submission_files[path.stem] = path
     fnd = edir / "findings.yaml"
