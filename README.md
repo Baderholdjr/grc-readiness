@@ -3,7 +3,7 @@
 
 <!-- Published automatically from the main branch. Do not edit this branch. -->
 
-**As of 2026-10-12.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
+**As of 2026-10-13.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
 
 | Report | What it shows |
 |---|---|
@@ -12,6 +12,7 @@
 | [Statement of Applicability](soa.md) | Annex A applicability, justification and status ([CSV](soa.csv)) |
 | [Gap register](gap-register.md) | Open and closed gaps with owners and due dates ([CSV](gap-register.csv)) |
 | [Evidence index](evidence-index.md) | Requirement → evidence traceability ([CSV](evidence-index.csv)) |
+| [Excel workbook](example-client-iso42001-workbook.xlsx?raw=1) | Control matrix, SoA, gaps, evidence, findings, impact assessments, documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet |
 | [Policies and procedures](documents.md) | 0 of 17 library documents approved and current |
 | [Internal audit](internal-audit.md) | Audit programme, per-audit reports and workpaper results (9.2) |
 
