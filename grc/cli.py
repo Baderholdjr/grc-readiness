@@ -15,6 +15,7 @@
   review        Management review: schedule one, generate its input pack
   package       Auditor package: PDFs, auditor index, checksums and a reproducible zip
   hours         Timesheet: import time-tracker exports, log hours
+  portal        Client site: build the deployable bundle (site, data, Cloudflare Worker)
 """
 from __future__ import annotations
 
@@ -295,6 +296,15 @@ def cmd_hours(args) -> int:
     return 0
 
 
+def cmd_portal(args) -> int:
+    from . import portal
+    model = _model(args)
+    extra = [load(e, today=model.today) for e in args.also or []]
+    for log_line in portal.build(model, Path(args.out), repo=args.repo or os.environ.get("GITHUB_REPOSITORY", ""), extra=extra):
+        print(log_line)
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
@@ -410,6 +420,12 @@ def main(argv=None) -> int:
     hr.add_argument("--date-order", choices=["MDY", "DMY"], help="import: how to read dates like 05/09/2026")
     hr.add_argument("--report")
     hr.set_defaults(fn=cmd_hours)
+
+    po = sub.add_parser("portal", help="client site: build the deployable bundle")
+    po.add_argument("--out", default="_portal")
+    po.add_argument("--repo", help="owner/name answers are sent to as pull requests (default: $GITHUB_REPOSITORY)")
+    po.add_argument("--also", action="append", help="another engagement directory (another framework) to show as a tab")
+    po.set_defaults(fn=cmd_portal)
 
     args = p.parse_args(argv)
     return args.fn(args)

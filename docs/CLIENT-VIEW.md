@@ -16,6 +16,8 @@ The reports are written for the engagement team. The **client view** is written 
 
 **Left out on purpose:** hours and budget, the analyst's working rules and engagement risks, validation codes, and internal notes.
 
+For an interactive version that clients can answer, see [the client site](CLIENT-SITE.md).
+
 ## Where to find it
 
 Every build writes `client-view.html` and `client-view.md`, linked from the reports page as **Client view**.

@@ -1,0 +1,83 @@
+name: Client site (reusable)
+
+# Builds the client site from the engagement record and, when it is set up, deploys it to
+# Cloudflare (a Worker behind Cloudflare Access). See docs/CLIENT-SITE.md.
+#   - Always: builds the site and uploads it as a workflow artifact (download it to preview).
+#   - Deploys only when engagement.yaml has portal.enabled: true AND the repository has the
+#     CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets.
+#   - PORTAL_GITHUB_TOKEN (fine-grained, this repository only: Contents + Pull requests read/write)
+#     is handed to the Worker so client answers can become pull requests. Without it the site is
+#     read-only.
+on:
+  workflow_call:
+    inputs:
+      engine:
+        type: string
+        default: pinned
+
+env:
+  WRANGLER: wrangler@4.20.0
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q .
+          else
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            pip install -q -r requirements.txt
+            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+          fi
+          python -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Build the client site
+        run: python -m grc portal --out _portal | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: client-site-${{ github.sha }}
+          path: _portal/
+          retention-days: 30
+      - name: Decide whether to deploy
+        id: cfg
+        env:
+          HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          enabled=$(python -c "import yaml; e=yaml.safe_load(open('engagement/engagement.yaml')) or {}; print(str(bool((e.get('portal') or {}).get('enabled'))).lower())")
+          if [ "$enabled" != "true" ]; then
+            echo "Client site not deployed: set portal.enabled: true in engagement.yaml (docs/CLIENT-SITE.md)." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          elif [ "$HAS_CF" != "true" ]; then
+            echo "::warning title=Client site::portal.enabled is true but the CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secrets are missing - not deployed."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy to Cloudflare
+        if: steps.cfg.outputs.deploy == 'true'
+        working-directory: _portal
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PORTAL_GITHUB_TOKEN: ${{ secrets.PORTAL_GITHUB_TOKEN }}
+        run: |
+          npx --yes "$WRANGLER" deploy | tee deploy.log
+          if [ -n "$PORTAL_GITHUB_TOKEN" ]; then
+            printf '%s' "$PORTAL_GITHUB_TOKEN" | npx --yes "$WRANGLER" secret put GITHUB_TOKEN >/dev/null
+            echo "Answers enabled (GITHUB_TOKEN set on the Worker)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=Client site::PORTAL_GITHUB_TOKEN is not set - the site is read-only (clients can't send answers)."
+          fi
+          url=$(grep -Eo 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1 || true)
+          echo "Deployed: ${url:-see the Cloudflare dashboard}" >> "$GITHUB_STEP_SUMMARY"

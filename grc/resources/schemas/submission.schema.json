@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "submission.schema.json",
+  "title": "Client submission (engagement/submissions/SUB-YYYYMMDD-xxxxxx.yaml)",
+  "description": "Written by the client site when a client answers a request. It arrives as a pull request; the analyst reviews it, sets status, and files any evidence it points to. A submission never changes a control's status by itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "request", "submitted_by", "submitted_at", "answer", "links", "no_sensitive_data", "status"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^SUB-\\d{8}-[0-9a-f]{6}$"},
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "kind", "ref"],
+      "properties": {
+        "key": {"type": "string", "pattern": "^[0-9a-f]{12}$", "description": "Stable id of the request on the client site"},
+        "kind": {"type": "string", "maxLength": 80},
+        "ref": {"type": "string", "maxLength": 120},
+        "title": {"type": "string", "maxLength": 300},
+        "framework": {"type": "string", "maxLength": 40}
+      }
+    },
+    "submitted_by": {"type": "string", "pattern": "^[^@\\s]+@[^@\\s]+$", "maxLength": 254,
+                     "description": "Email from the verified Cloudflare Access login, never from the form"},
+    "submitted_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "answer": {"type": "string", "maxLength": 4000},
+    "links": {"type": "array", "maxItems": 5,
+              "items": {"type": "string", "pattern": "^https://[^\\s]+$", "maxLength": 500}},
+    "no_sensitive_data": {"const": true, "description": "The client confirmed the answer and links hold no patient or personal data"},
+    "status": {"enum": ["received", "accepted", "needs_more", "withdrawn"],
+               "description": "received = waiting for the analyst; accepted / needs_more / withdrawn = the analyst's decision"},
+    "reviewed_by": {"type": "string"},
+    "reviewed_on": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}, {"type": "null"}]},
+    "note": {"type": "string", "maxLength": 1000, "description": "Shown to the client on the site"},
+    "evidence": {"type": "array", "items": {"type": "string", "pattern": "^EV-[0-9]{3,}$"},
+                 "description": "Evidence entries the analyst filed from this submission"}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "needs_more"}}, "required": ["status"]},
+     "then": {"required": ["note"], "properties": {"note": {"minLength": 1}}}},
+    {"if": {"properties": {"status": {"enum": ["accepted", "needs_more", "withdrawn"]}}, "required": ["status"]},
+     "then": {"required": ["reviewed_by"]}}
+  ]
+}

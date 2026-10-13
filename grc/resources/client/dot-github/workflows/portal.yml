@@ -1,0 +1,24 @@
+name: Client site
+
+# Rebuilds the client site after every merge (so it shows the latest record, including answers
+# you've reviewed) and daily (so due dates and "overdue" stay current). See docs/CLIENT-SITE.md.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "41 13 * * *"   # daily 13:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-site
+  cancel-in-progress: true
+
+jobs:
+  site:
+    uses: __ENGINE_REPO__/.github/workflows/grc-portal.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets: inherit

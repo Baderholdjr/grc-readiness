@@ -44,7 +44,7 @@ SECTIONS = [
 # README: the landing page links to the live reports (the index replaces it here).
 # hours: internal engagement economics, not audit evidence.
 # client-view: written for the client's own people, not the auditor.
-SKIP = {"README.md", "hours.md", "hours.csv", "client-view.md", "client-view.html"}
+SKIP = {"README.md", "hours.md", "hours.csv", "client-view.md", "client-view.html", "submissions.md"}
 
 
 def _git(model: Engagement, *args: str) -> str | None:
