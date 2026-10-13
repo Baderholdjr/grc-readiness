@@ -86,10 +86,14 @@ Cloudflare renames screens from time to time. If a label below doesn't match, lo
 ### 1. Cloudflare account and IDs
 
 1. Sign up at dash.cloudflare.com (Free plan).
-2. Find your **Account ID**. It's on the account home page under the account name menu, and on **Workers & Pages** in the right-hand column. Copy it.
+2. Copy your **Account ID**. It is a 32-character code of letters and digits, such as `0f1e2d3c4b5a69788796a5b4c3d2e1f0`. It is **not** your email address. To copy it:
+   - **Quickest:** on the account home page, press **Ctrl+K** (Windows) or **Cmd+K** (Mac), type **Copy account ID**, and press Enter.
+   - **Or:** open **Workers & Pages** and find **Account details** on the right. Select the copy button next to **Account ID**.
 3. Open **Zero Trust** in the sidebar and choose a **team name**, for example `aderhold-grc`. This becomes `aderhold-grc.cloudflareaccess.com`.
 4. Pick the **Free** plan. Cloudflare may ask for a payment card even on the free plan; it isn't charged.
-5. Under **Settings → Authentication**, check that **One-time PIN** is enabled. It is by default.
+5. Turn on email codes. In **Zero Trust → Integrations → Identity providers**, select **Add new identity provider** and choose **One-time PIN**.
+
+   New Zero Trust organizations (since June 2026) start with only the **Cloudflare** identity provider, which lets in people who are members of your Cloudflare account. Clients aren't members, so they need One-time PIN to receive a sign-in code by email.
 
 ### 2. Tokens, as GitHub secrets
 
@@ -121,22 +125,29 @@ Opening that address now says **"This site isn't set up yet"**. That's expected:
 ### 4. Put the login in front
 
 1. Go to **Workers & Pages** and open the Worker (`grc-portal-…`).
-2. Open **Settings → Domains & Routes**. On the **workers.dev** row, choose **Enable Cloudflare Access**. If your dashboard doesn't offer this, use **Zero Trust → Access → Applications → Add an application → Self-hosted** with the workers.dev address as the domain.
-3. In **Zero Trust → Access → Applications**, open the new application.
-   - Copy its **Application Audience (AUD) Tag**, a 64-character code.
-   - Under **Policies**, make sure the only rule is **Allow**, with **Include: Emails** listing exactly the people who should see the site: the client's people and you.
-   - Don't use "Everyone" or a whole email provider such as gmail.com.
-4. Back in `engagement.yaml`, through a pull request:
+2. Select the **Access** tab, then **Protect this Worker behind Access**.
+3. Choose **All traffic**, not "Previews only".
+4. Under **Authentication policy**, pick whichever option is quickest. You'll replace the rule in step 5.
+5. Select **Apply Access**.
+
+   If your dashboard has no Access tab on the Worker, do it from the Zero Trust side instead. Go to **Zero Trust → Access → Applications → Add an application → Self-hosted**, and use the workers.dev address as the domain.
+6. Go to **Zero Trust → Access → Applications** and open the application that was just created.
+   - **Policies:** keep a single **Allow** rule with **Include → Emails**, listing exactly the people who should see the site: the client's people and you.
+     - Don't use "Everyone", a whole email provider such as gmail.com, or "Cloudflare account" (that one only lets your own account's members in).
+     - Under **Login methods** (or **Authentication**), make sure **One-time PIN** is allowed.
+   - **AUD tag:** copy the **Application Audience (AUD) Tag**, a 64-character code. It's on the application's overview, or under **Additional settings** / **Basic information**.
+7. Back in `engagement.yaml`, through a pull request:
 
    ```yaml
    portal:
      enabled: true
      access_team: aderhold-grc            # your team name from step 1
      access_aud: 0123…cdef                # the AUD tag (64 characters)
-     allowed_email_domains: [larkspur.example]   # optional second check; include your own domain if you use the site
+     allowed_email_domains: [larkspur.example]   # optional second check; leave it out while testing with your own address
    ```
 
-5. Merge. After the redeploy, open the address. Cloudflare asks for an email and sends a code, and then the site appears.
+   `allowed_email_domains` is an extra check made by the Worker after Access has let someone in. If you use it, include every domain that needs to sign in, your own too. For a pilot that only you use, with a gmail.com address, leave it out. The email list in the Access policy is what decides who can sign in.
+8. Merge. After the redeploy, open the address. Cloudflare asks for an email and sends a code, and then the site appears.
 
 ### 5. Try it
 
