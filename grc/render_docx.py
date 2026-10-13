@@ -36,8 +36,11 @@ def _el(tag: str, **attrs) -> OxmlElement:
     return e
 
 
+_CTRL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
 def _run(p, text: str, bold=False, color: str | None = None, size: float | None = None):
-    r = p.add_run(text)
+    r = p.add_run(_CTRL.sub("\ufffd", str(text)))   # Word XML can't hold control characters
     r.bold = bold or None
     if color:
         rpr = r._r.get_or_add_rPr()

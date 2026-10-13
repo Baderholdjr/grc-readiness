@@ -22,7 +22,15 @@ def _table(headers, rows) -> str:
     return "\n".join(out) + "\n"
 
 
+def _csv_safe(v):
+    """Spreadsheet apps run cells starting with = + - @ as formulas; record text must stay text."""
+    if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + v
+    return v
+
+
 def _write_csv(path: Path, headers, rows):
+    rows = [[_csv_safe(v) for v in r] for r in rows]
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(headers)
@@ -558,6 +566,6 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
              + corrective_actions(model, out) + management_reviews(model, out, docs_docx) + hours_report(model, out))
     if workbook:
         extra = [("Excel workbook", f"{workbook}?raw=1", "Control matrix, SoA, gaps, evidence, findings, impact assessments, "
-                  "documents, review actions and hours in one workbook, with a live summary sheet")] + extra
+                  "documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet")] + extra
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

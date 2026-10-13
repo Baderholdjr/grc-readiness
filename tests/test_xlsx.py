@@ -42,7 +42,7 @@ def test_build_writes_workbook_with_all_sheets(tmp_path):
     assert labels["Requirements ready"].startswith("=COUNTIFS('Control matrix'!J:J")
     assert labels["Hours used"] == "=SUM(Hours!C:C)"
     g = wb["Gaps"]
-    assert g["J4"].value.startswith("=IF(AND(I4<>\"closed\"") and isinstance(g["F4"].value, dt.datetime)
+    assert g["J4"].value.startswith("=IF(AND(OR(I4=\"open\"") and isinstance(g["F4"].value, dt.datetime)
     assert wb["Hours"]["K4"].value.startswith("=SUMIFS(")
     assert "workbook.xlsx" in (out / "README.md").read_text()
 
@@ -67,3 +67,26 @@ def test_workbook_without_timesheet_and_with_odd_values(tmp_path):
     (edir / "gaps.yaml").write_text(yaml.safe_dump(gaps, sort_keys=False))
     wb = load_workbook(render_workbook(load(edir, today=TODAY), tmp_path / "w.xlsx"))
     assert "Hours" not in wb.sheetnames and wb["Gaps"]["F4"].value == "not a date"
+
+
+def test_record_text_never_becomes_a_formula_and_odd_characters_survive(tmp_path):
+    edir = setup(tmp_path)
+    gaps = yaml.safe_load((edir / "gaps.yaml").read_text())
+    gaps["gaps"][0]["finding"] = '=HYPERLINK("http://evil","x")'
+    gaps["gaps"][1]["finding"] = "bell\x07 and escape\x1b[31m"
+    gaps["gaps"][2]["status"] = "risk_accepted"
+    gaps["gaps"][2]["due"] = "2026-01-01"
+    (edir / "gaps.yaml").write_text(yaml.safe_dump(gaps, sort_keys=False))
+    d = yaml.safe_load((edir / "hours.yaml").read_text())
+    d["entries"][0]["note"] = "=1+1 call\x1b[31m"
+    (edir / "hours.yaml").write_text(yaml.safe_dump(d))
+    out = tmp_path / "out"
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(out), "--force"]) == 0
+    wb = load_workbook(next(out.glob("*-workbook.xlsx")))
+    g = wb["Gaps"]
+    assert g["C4"].data_type == "s" and g["C4"].value.startswith("=HYPERLINK")
+    assert g["J4"].value.startswith("=IF(AND(OR(I4=\"open\"")     # generated formula still a formula
+    assert wb["Hours"]["G4"].data_type == "s"
+    labels = {wb["Summary"].cell(r, 1).value: wb["Summary"].cell(r, 2).value for r in range(4, wb["Summary"].max_row + 1)}
+    assert labels["Open gaps"] == '=COUNTIFS(Gaps!I:I,"open")+COUNTIFS(Gaps!I:I,"in_progress")'
+    assert (out / "gap-register.csv").read_text().count("'=HYPERLINK") == 1

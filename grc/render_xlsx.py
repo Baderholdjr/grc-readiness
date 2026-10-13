@@ -10,6 +10,7 @@ import datetime as dt
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.formatting.rule import CellIsRule, FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
@@ -22,7 +23,7 @@ FILLS = {  # status -> fill colour
     "verified": "C6EFCE", "pass": "C6EFCE", "Ready": "C6EFCE", "approved": "C6EFCE", "closed": "C6EFCE", "done": "C6EFCE",
     "current": "C6EFCE",
     "partial": "FFEB9C", "In progress": "FFEB9C", "in_review": "FFEB9C", "action_planned": "FFEB9C", "implemented": "FFEB9C",
-    "claimed": "DDEBF7", "Unverified claim": "DDEBF7", "draft": "DDEBF7",
+    "claimed": "DDEBF7", "Unverified claim": "DDEBF7", "draft": "DDEBF7", "in_progress": "FFEB9C", "risk_accepted": "EDEDED",
     "FAILING": "FFC7CE", "EXPIRED": "FFC7CE", "missing": "FFC7CE", "open": "FCE4D6", "overdue": "FFC7CE",
 }
 THIN = Side(style="thin", color="D9D9D9")
@@ -55,7 +56,12 @@ def _sheet(wb: Workbook, title: str, headers: list[str], rows: list[list], width
                 v = ", ".join(str(x) for x in v)
             if c_i in date_cols:
                 v = _date(v)
+            is_formula = isinstance(v, str) and v.startswith("=") and getattr(_sheet, "formulas_allowed", None) == (title, c_i)
+            if isinstance(v, str):
+                v = ILLEGAL_CHARACTERS_RE.sub("\ufffd", v)[:32000]
             c = ws.cell(row=r_i, column=c_i, value=v if v not in ("",) else None)
+            if isinstance(v, str) and v[:1] == "=" and not is_formula:
+                c.data_type = "s"     # record text that happens to start with '=' stays text, never a formula
             c.font = Font(name=FONT, size=10)
             c.alignment = Alignment(vertical="top", wrap_text=True)
             c.border = Border(bottom=THIN)
@@ -123,10 +129,12 @@ def render_workbook(model: Engagement, path: Path, include_hours: bool = True) -
     for i, g in enumerate(model.gaps, start=4):
         gap_rows.append([g.get("id"), g.get("area"), model.fmt(str(g.get("finding", ""))), ", ".join(map(str, g.get("requirements") or [])),
                          g.get("owner") or "", g.get("due"), g.get("phase") or "", g.get("severity") or "", g.get("status"),
-                         f'=IF(AND(I{i}<>"closed",ISNUMBER(F{i}),F{i}<Summary!$B$4),Summary!$B$4-F{i},"")'])
+                         f'=IF(AND(OR(I{i}="open",I{i}="in_progress"),ISNUMBER(F{i}),F{i}<Summary!$B$4),Summary!$B$4-F{i},"")'])
+    _sheet.formulas_allowed = ("Gaps", 10)   # only the generated 'Days overdue' column holds formulas
     _sheet(wb, "Gaps", ["ID", "Area", "Finding", "Requirements", "Owner", "Due", "Phase", "Severity", "Status",
                         "Days overdue"], gap_rows, [9, 20, 55, 20, 22, 12, 13, 10, 13, 12],
            status_cols=(9,), date_cols=(6,), note=note)
+    _sheet.formulas_allowed = None
 
     supports: dict[str, list[str]] = {}
     for cid, c in model.controls.items():
@@ -232,8 +240,8 @@ def render_workbook(model: Engagement, path: Path, include_hours: bool = True) -
              "=COUNTIFS('Control matrix'!F:F,\"verified\")+COUNTIFS('Control matrix'!G:G,\"verified\")"
              "+COUNTIFS('Control matrix'!H:H,\"verified\")+COUNTIFS('Control matrix'!I:I,\"verified\")", "Out of 4 per applicable requirement."),
             ("Share of legs verified", "=IF(B5=0,0,B8/(B5*4))", ""),
-            ("Open gaps", "=COUNTA(Gaps!A4:A10000)-COUNTIFS(Gaps!I:I,\"closed\")", ""),
-            ("Overdue gaps", "=COUNTIFS(Gaps!J:J,\">0\")", "Not closed and past their due date."),
+            ("Open gaps", "=COUNTIFS(Gaps!I:I,\"open\")+COUNTIFS(Gaps!I:I,\"in_progress\")", "Open or in progress."),
+            ("Overdue gaps", "=COUNTIFS(Gaps!J:J,\">0\")", "Open or in progress and past their due date."),
             ("Open nonconformities (major)", "=COUNTIFS(Findings!B:B,\"major\",Findings!E:E,\"<>closed\",Findings!E:E,\"<>accepted\")", ""),
             ("Open nonconformities (minor)", "=COUNTIFS(Findings!B:B,\"minor\",Findings!E:E,\"<>closed\",Findings!E:E,\"<>accepted\")", ""),
             ("Evidence failing or expired", "=COUNTIFS(Evidence!G:G,\"FAILING\")+COUNTIFS(Evidence!G:G,\"EXPIRED\")", ""),
