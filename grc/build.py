@@ -12,11 +12,21 @@ def slug(model: Engagement) -> str:
     return re.sub(r"[^a-z0-9]+", "-", model.client.lower()).strip("-") or "client"
 
 
-def build_outputs(model: Engagement, findings, out: Path, with_docx: bool = True) -> tuple[str, str | None]:
-    """Returns (readiness summary markdown, brief .docx file name or None)."""
+def workbook_name(model: Engagement) -> str:
+    return f"{slug(model)}-{model.engagement['framework']}-workbook.xlsx"
+
+
+def build_outputs(model: Engagement, findings, out: Path, with_docx: bool = True,
+                  internal: bool = True) -> tuple[str, str | None]:
+    """Returns (readiness summary markdown, brief .docx file name or None).
+    with_docx: also write the Office files (Word brief, documents, review packs; Excel workbook).
+    internal: include engagement economics (the Hours sheet) in the workbook."""
     docx_name = f"{slug(model)}-{model.engagement['framework']}-brief.docx" if with_docx else None
-    summary = render_md.render_all(model, findings, out, brief_docx=docx_name, docs_docx=with_docx)
+    summary = render_md.render_all(model, findings, out, brief_docx=docx_name, docs_docx=with_docx,
+                                   workbook=workbook_name(model) if with_docx else None)
     if with_docx:
+        from .render_xlsx import render_workbook
+        render_workbook(model, out / workbook_name(model), include_hours=internal)
         from .documents import docs
         from .render_docx import render_brief, render_document, render_markdown
         from .review import pack_path, reviews, safe_date
