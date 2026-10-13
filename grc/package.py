@@ -87,7 +87,7 @@ def source_files(model: Engagement) -> list[Path]:
 
 
 def section_for(name: str, brief: str | None = None) -> str:
-    if name == brief or name in ("brief.md",) or name.endswith("-brief.docx"):
+    if name == brief or name in ("brief.md",) or name.endswith(("-brief.docx", "-workbook.xlsx")):
         return "01-overview"
     stem = name.rsplit(".", 1)[0]
     for folder, _, prefixes in SECTIONS:
@@ -248,7 +248,7 @@ def build(model: Engagement, out: Path, label: str = "package", force: bool = Fa
             stale.unlink()
     root, staging = work / name, work / "reports"
     try:
-        build_outputs(model, findings, staging, with_docx=True)
+        build_outputs(model, findings, staging, with_docx=True, internal=False)
         brief = next((f.name for f in staging.glob("*-brief.docx")), None)
         footer = (f"{model.client} · record as of {model.today} · commit {sha[:12]}{'-dirty' if sha.endswith('-dirty') else ''}"
                   f" · grc-readiness {__version__}")

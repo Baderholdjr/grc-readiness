@@ -547,7 +547,7 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
 
 
 def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx: str | None = None,
-               docs_docx: bool = False) -> str:
+               docs_docx: bool = False, workbook: str | None = None) -> str:
     out.mkdir(parents=True, exist_ok=True)
     control_matrix(model, out)
     soa(model, out)
@@ -556,5 +556,8 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     brief(model, out)
     extra = (documents(model, out, docs_docx) + impact_assessments(model, out) + internal_audit(model, out)
              + corrective_actions(model, out) + management_reviews(model, out, docs_docx) + hours_report(model, out))
+    if workbook:
+        extra = [("Excel workbook", f"{workbook}?raw=1", "Control matrix, SoA, gaps, evidence, findings, impact assessments, "
+                  "documents, review actions and hours in one workbook, with a live summary sheet")] + extra
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

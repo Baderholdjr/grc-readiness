@@ -4,7 +4,7 @@
 
 **GRC-as-code for certification readiness engagements.** Starts with ISO/IEC 42001 (AI management systems) and is built to add more frameworks.
 
-The engagement record lives in this repo as YAML. Git history is the audit trail, pull requests are approvals, and CI enforces the evidence rules. The analyst brief, control matrix, Statement of Applicability, gap register and evidence index are **generated** from the record and never edited by hand.
+The engagement record lives in this repo as YAML. Git history is the audit trail, pull requests are approvals, and CI enforces the evidence rules. The analyst brief, control matrix, Statement of Applicability, gap register, evidence index and an **Excel workbook** of the whole record are **generated** from it and never edited by hand.
 
 ```
  client documents ──upload to intake/──▶ INGEST (templates + Claude drafting) ──┐
@@ -139,6 +139,8 @@ In the client repository:
 5. Settings: protect `main` (require the **`validate / validate`** check and a CODEOWNERS review), and allow GitHub Actions to create pull requests.
 
 **Internal audit (9.2) and corrective actions (10.2):** see [`docs/AUDIT.md`](docs/AUDIT.md). Each new engagement starts with an audit scheduled in its Test phase.
+
+**Excel:** every build also writes `<client>-<framework>-workbook.xlsx`, linked from the reports page. It has one sheet each for the control matrix, SoA, gaps, evidence, findings, impact assessments, documents, review actions and hours, plus a Summary sheet whose figures are live formulas over the other sheets. It's a read-only export: change the record through PRs. The auditor package includes it without the Hours sheet.
 
 **Hours:** see [`docs/HOURS.md`](docs/HOURS.md). Drop Toggl, Harvest or Clockify exports into `intake/timesheets/` (or run **Actions → Hours → log**); burn by phase, activity and person and a forecast are reported.
 
