@@ -123,9 +123,12 @@ def evidence_index(model: Engagement, out: Path):
     audit_rows = [e for e in list(model.workpaper_evidence.values()) + list(impact.evidence_entries(model).values())
                   + list(documents.evidence_entries(model).values()) + list(review.evidence_entries(model).values())
                   if e["id"] in cited]
-    for e in list(model.evidence) + audit_rows:
+    from .mappings import cross_evidence
+    borrowed = [e for eid, e in sorted(cross_evidence(model).items()) if eid in cited]   # cited from another record
+    for e in list(model.evidence) + audit_rows + borrowed:
         exp = model.evidence_expiry(e)
-        rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
+        rows.append([e["id"], e["title"], e["type"], e["location"] + (f" (held in {e['held_in']}/)" if e.get("held_in") else ""),
+                     e["collected"], exp.isoformat() if exp else "",
                      ("**FAILING**" if model.evidence_is_failing(e) else "**EXPIRED**" if model.evidence_is_expired(e) else "yes")
                      + (f" ({e['collector']})" if e.get("collector") else ""), e.get("approved_by", ""),
                      ", ".join(supports.get(e["id"], [])) or "(unused)"])
@@ -545,7 +548,10 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
     if not model.namespace:        # the primary record links to the other frameworks' reports (published in subfolders)
         from .model import discover, load_yaml
         for other in discover(model.root)[1:]:
-            ofw = str((load_yaml(other / "engagement.yaml") or {}).get("framework") or other.name)
+            try:
+                ofw = str((load_yaml(other / "engagement.yaml") or {}).get("framework") or other.name)
+            except SystemExit:
+                ofw = other.name
             rows.append((f"{ofw} reports", f"{other.name}/README.md", f"The {ofw} record ({other.name}/): every report above, for that framework"))
     banner = ("> ⚠️ **SANDBOX ENGAGEMENT.** Drata, cloud and AI-drafted content is simulated test data. "
               "Do not treat these reports as real client evidence.\n\n") if (model.engagement.get("sandbox") or {}).get("enabled") else ""

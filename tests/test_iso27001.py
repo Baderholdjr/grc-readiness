@@ -191,6 +191,7 @@ def codes(m):
 
 def test_evidence_counts_across_records_only_with_a_reviewed_equivalent_mapping(tmp_path):
     root, e42, e27 = _two_records(tmp_path)
+    _set_leg(e42, "7.5", "documented", "verified", ["EV-001"])      # the evidence belongs to 42001's 7.5
     _set_leg(e27, "7.5", "documented", "verified", ["iso42001:EV-001"])
     m27 = load(e27, today=TODAY)
     assert "E080" in codes(m27)                       # engine mapping is only proposed
@@ -238,3 +239,80 @@ def test_reuse_opportunities_report_and_shared_requests(tmp_path):
     r42 = [r for r in d["frameworks"][0]["requests"] if r["kind"] == "Requirement" and r["ref"] == "7.5"]
     assert r42 and r42[0]["also"] == ["ISO 27001 7.5"]
     assert not [r for r in d["frameworks"][1]["requests"] if r["kind"] == "Requirement" and r["ref"] == "7.5"]
+
+
+# ------------------------------------------------------------------ fixes from review
+def test_catalog_entries_have_only_known_keys_and_full_titles():
+    for fw in ("iso27001", "iso42001"):
+        cat = yaml.safe_load((ENGINE / "frameworks" / fw / "catalog.yaml").read_text())
+        for r in cat["requirements"]:
+            assert set(r) <= {"id", "kind", "group", "title", "intent", "evidence_examples"}, (fw, r["id"])
+    t = {r["id"]: r["title"] for r in yaml.safe_load((FW / "catalog.yaml").read_text())["requirements"]}
+    assert t["A.5.22"] == "Monitoring, review and change management of supplier services"
+    assert t["A.8.31"] == "Separation of development, test and production environments"
+
+
+def test_second_record_gets_its_own_intake_and_never_clears_the_main_one(tmp_path):
+    root = tmp_path / "repo"
+    (root / "intake").mkdir(parents=True)
+    (root / "intake" / "client-policy.pdf").write_text("keep me")
+    e27 = root / "engagement-27001"
+    assert main(["--engagement", str(e27), "new-engagement", "--client", "Acme", "--start", "2026-11-02",
+                 "--stage1", "2027-03-15", "--stage2", "2027-05-10", "--framework", "iso27001", "--confirm-reset"]) == 0
+    assert (root / "intake" / "client-policy.pdf").exists()
+    assert (root / "intake-27001" / "README.md").exists()
+
+
+def test_engagements_command_fails_loudly(tmp_path):
+    import io
+    import contextlib
+    root = tmp_path / "repo"
+    root.mkdir()
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+        assert main(["engagements", "--root", str(root)]) == 1
+    assert "no engagement record" in err.getvalue()
+    _new(tmp_path)
+    (root / "engagement-ISO").mkdir()
+    (root / "engagement-x").mkdir()
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+        assert main(["engagements", "--root", str(root)]) == 1
+    assert "engagement-ISO/" in err.getvalue() and "engagement-x/: no engagement.yaml" in err.getvalue()
+
+
+def test_borrowed_evidence_must_belong_to_the_mapped_requirement_and_stays_out_of_unrelated_outputs(tmp_path):
+    root, e42, e27 = _two_records(tmp_path)
+    _review_mapping(root, {("7.5", "7.5")})
+    idx = yaml.safe_load((e42 / "evidence" / "index.yaml").read_text())
+    idx["evidence"].append({"id": "EV-002", "title": "Model registry export", "type": "record", "location": "s3://x",
+                            "collected": "2026-11-01", "valid_for_days": 90})
+    (e42 / "evidence" / "index.yaml").write_text(yaml.safe_dump(idx))
+    _set_leg(e42, "7.5", "documented", "verified", ["EV-001"])
+    _set_leg(e27, "7.5", "implemented", "verified", ["iso42001:EV-002"])     # not 42001 7.5's evidence
+    assert any(f.code == "E080" and "don't cite EV-002" in f.message for f in validate(load(e27, today=TODAY)))
+    _set_leg(e27, "7.5", "implemented", "not_started", [])
+    _set_leg(e27, "7.5", "documented", "verified", ["iso42001:EV-001"])
+    m27 = load(e27, today=TODAY)
+    assert "E080" not in [f.code for f in validate(m27)]
+    out = tmp_path / "o27"
+    assert main(["--engagement", str(e27), "--today", TODAY.isoformat(), "build", "--out", str(out)]) == 0
+    assert "iso42001:EV-001" in (out / "evidence-index.md").read_text() and "held in engagement/" in (out / "evidence-index.md").read_text()
+    import openpyxl
+    wb = openpyxl.load_workbook(next(out.glob("*-workbook.xlsx")))
+    ids = [c.value for c in wb["Evidence"]["A"]]
+    assert "iso42001:EV-001" in ids and "iso42001:EV-002" not in ids
+    labels = [c.value for c in wb["Summary"]["A"] if c.value]
+    assert not any("impact assessment" in str(x) for x in labels)
+    # locations name the record they're in
+    documents.new(m27, "DOC-IS-POLICY", mode="templates")
+    ent = documents.evidence_entries(load(e27, today=TODAY))["DOC-IS-POLICY"]
+    assert ent["location"] == "engagement-27001/documents/DOC-IS-POLICY.md"
+
+
+def test_a_broken_second_record_never_stops_the_main_reports_or_site(tmp_path):
+    root, e42, e27 = _two_records(tmp_path)
+    (e27 / "engagement.yaml").write_text("client: [unclosed\n")
+    out = tmp_path / "o42"
+    assert main(["--engagement", str(e42), "--today", TODAY.isoformat(), "build", "--out", str(out), "--force", "--no-docx"]) == 0
+    assert main(["--engagement", str(e42), "--today", TODAY.isoformat(), "portal", "--out", str(tmp_path / "site"), "--repo", "a/b"]) == 0

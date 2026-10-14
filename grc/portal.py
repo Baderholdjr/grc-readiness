@@ -174,6 +174,7 @@ def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> di
         "system": fw.get("management_system", ""),
         "ready": m["requirements_ready"], "applicable": m["requirements_applicable"], "checks_pct": m["legs_verified_pct"],
         "attention": bool(overdue or m.get("nc_open_major")), "overdue": overdue, "open_requests": len(needs),
+        "nc_major_open": int(m.get("nc_open_major") or 0), "impact_assessments": model.uses_impact_assessments,
         "stats": [{"label": a, "value": b} for a, b in client_view.overview(model)],
         "path": _path(model), "areas": _areas(model), "requests": reqs,
     }
@@ -211,13 +212,16 @@ def _merge_shared(models: list[Engagement], fws: list[dict]) -> list[dict]:
         kept = []
         for r in f["requests"]:
             target = next((by_ref[o] for o in sorted(eq.get(r["ref"], ())) if o in by_ref), None) if r["kind"] == "Requirement" else None
-            if target is None:
+            if target is None or r.get("submission"):     # keep a request the client already answered visible
+                if target is not None:
+                    target.setdefault("also", []).append(f"{f['name']} {r['ref']}")
                 kept.append(r)
                 continue
             target.setdefault("also", []).append(f"{f['name']} {r['ref']}")
         f["requests"] = kept
         needs = [r for r in kept if r["action"]]
         f["open_requests"], f["overdue"] = len(needs), sum(1 for r in needs if r["overdue"])
+        f["attention"] = bool(f["overdue"] or f.get("nc_major_open"))
     return fws
 
 

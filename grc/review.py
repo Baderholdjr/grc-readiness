@@ -162,7 +162,7 @@ def evidence_entries(model: Engagement) -> dict[str, dict]:
         except Exception:
             sound, held = False, None
         out[rid] = {"id": rid, "title": f"Management review {rid}", "type": "record",
-                    "location": f"engagement/reviews/{rid}.yaml", "owner": str(r.get("chair") or ""),
+                    "location": f"{model.record_dir}/reviews/{rid}.yaml", "owner": str(r.get("chair") or ""),
                     "collected": held, "approved_by": str(r.get("minutes_approved_by") or "") if sound else "",
                     "approved_on": safe_date(r.get("minutes_approved_on")), "valid_for_days": days,
                     "source": "review", "result": None if sound else "fail",

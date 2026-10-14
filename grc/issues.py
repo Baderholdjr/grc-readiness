@@ -76,7 +76,7 @@ def issue_body(model: Engagement, g: dict) -> str:
              "", "### What to verify / close", model.fmt(g["finding"]), "", "### Requirements"]
     for r in g.get("requirements", []):
         title = reqs.get(r, {}).get("title", "?")
-        lines.append(f"- `{r}` {title} — [`engagement/controls/{r}.yaml`](../blob/main/engagement/controls/{r}.yaml)")
+        lines.append(f"- `{r}` {title} — [`{model.record_dir}/controls/{r}.yaml`](../blob/main/{model.record_dir}/controls/{r}.yaml)")
     lines += ["", "### Four-part evidence test (update the control YAML in a PR, not here)"]
     for t in model.playbook["evidence_test"]:
         lines.append(f"- [ ] **{t['label']}** — {model.fmt(t['question'])}")
@@ -218,7 +218,7 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
     found: dict[str, dict] = {}
     for label in ("grc-gap", "grc-finding", "grc-review-action"):
         for iss in gh.paged(f"/issues?state=all&labels={label}"):
-            m = re.search(r"<!-- grc:((?:[a-z0-9]+:)?(?:(?:GAP|NC|OFI)-\d+|MR-\d{4}-\d{2}/A-\d+)) -->", iss.get("body") or "")
+            m = re.search(r"<!-- grc:((?:[A-Za-z0-9_-]+:)?(?:(?:GAP|NC|OFI)-\d+|MR-\d{4}-\d{2}/A-\d+)) -->", iss.get("body") or "")
             if m:
                 found[m.group(1)] = iss
     mapping = {}

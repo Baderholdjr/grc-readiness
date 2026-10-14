@@ -142,7 +142,11 @@ def render_workbook(model: Engagement, path: Path, include_hours: bool = True) -
             for e in (((c.get("test") or {}).get(k) or {}).get("evidence") or []):
                 supports.setdefault(str(e), []).append(f"{cid}·{k[0].upper()}")
     ev_rows = []
+    cited = {str(r) for c in model.controls.values() for leg in (c.get("test") or {}).values() if isinstance(leg, dict)
+             for r in leg.get("evidence") or []}
     for e in sorted(model.evidence_index.values(), key=lambda x: str(x["id"])):
+        if ":" in str(e["id"]) and e["id"] not in cited:   # another record's evidence: only where this record cites it
+            continue
         if e.get("source") in ("audit", "impact", "document", "review") and e["id"] not in supports:
             continue
         exp = model.evidence_expiry(e)
@@ -249,6 +253,8 @@ def render_workbook(model: Engagement, path: Path, include_hours: bool = True) -
              f"Out of {len(ia_rows)} AI systems in scope."),
             ("Policies and procedures current and approved", "=COUNTIFS(Documents!J:J,\"Yes\")", f"Out of {len(lib)} in the library."),
             ("Management review actions open", "=COUNTIFS('Review actions'!F:F,\"open\")", "")]
+    if not model.uses_impact_assessments:          # e.g. ISO 27001: no AI systems to assess
+        rows = [r for r in rows if "impact assessment" not in r[0]]
     if include_hours and hours.tracked(model):
         budget = float((model.engagement.get("budget") or {}).get("hours_total") or 0)
         rows += [("Hours budget", budget, "From engagement.yaml (budget.hours_total)."),

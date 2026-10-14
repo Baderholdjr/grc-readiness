@@ -105,7 +105,7 @@ def run(model: Engagement, only: list[str] | None = None, now: dt.datetime | Non
                     "params": params, "collected_at": now.isoformat(), "result": res.result,
                     "summary": res.summary, "findings": res.findings, "details": as_jsonable(res.details),
                     "sha256": res.digest()}
-        rel = f"engagement/evidence/collected/{ev_id}.json"
+        rel = f"{model.record_dir}/evidence/collected/{ev_id}.json"
         if write:
             snap_dir.mkdir(parents=True, exist_ok=True)
             (snap_dir / f"{ev_id}.json").write_text(json.dumps(snapshot, indent=2, sort_keys=False) + "\n", encoding="utf-8")

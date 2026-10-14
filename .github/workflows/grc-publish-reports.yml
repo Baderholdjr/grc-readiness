@@ -42,7 +42,8 @@ jobs:
       # --force: publish even when validation has errors (they are shown on the landing page).
       - name: Build the reports (other frameworks' records go in subfolders)
         run: |
-          for e in $(python -m grc engagements); do
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do
             if [ "$e" = engagement ]; then o=out; else o="out/$e"; fi
             python -m grc --engagement "$e" build --out "$o" --force
           done

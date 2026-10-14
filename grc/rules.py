@@ -890,11 +890,20 @@ def check_mappings(model: Engagement) -> list[Finding]:
                 path = _rel(model, model.control_files[cid])
                 if pre not in sibs:
                     out.append(Finding("error", "E080", f"{cid}.{k} cites {ref}, but this repository has no {pre} record "
-                                       "(engagement-*/ with framework: {pre}).", path, cid))
+                                       f"(engagement-*/ with framework: {pre}).", path, cid))
                 elif not eq[pre].get(cid):
                     out.append(Finding("error", "E080", f"{cid}.{k} cites {ref} from the {pre} record, but no reviewed "
                                        f"'equivalent' mapping links {cid} to a {pre} requirement "
                                        f"(mappings/{M.file_name(fw, pre)}: relationship equivalent, reviewed_by, reviewed_on).", path, cid))
+                else:
+                    # the borrowed evidence must be evidence for the mapped requirement(s) in the other record
+                    eid = str(ref).split(":", 1)[1]
+                    used = {str(e) for o in eq[pre][cid] for lg in LEGS
+                            for e in ((((sibs[pre].controls.get(o) or {}).get("test") or {}).get(lg) or {}).get("evidence") or [])}
+                    if eid not in used:
+                        out.append(Finding("error", "E080", f"{cid}.{k} cites {ref}, but the mapped {pre} requirement(s) "
+                                           f"{', '.join(sorted(eq[pre][cid]))} don't cite {eid}: only evidence for the mapped "
+                                           "requirement can be reused.", path, cid))
     # reuse opportunities: the other record has verified a leg this record hasn't
     for ofw, sib in sibs.items():
         for mine, others in eq[ofw].items():
@@ -906,7 +915,10 @@ def check_mappings(model: Engagement) -> list[Finding]:
                     continue
                 donors = [o for o in sorted(others) if leg_effective(sib, ((sib.controls.get(o) or {}).get("test") or {}).get(k) or {}) == "verified"]
                 if donors:
-                    ev = [e for o in donors for e in (((sib.controls[o].get("test") or {}).get(k) or {}).get("evidence") or [])]
+                    ev = [e for o in donors for e in (((sib.controls[o].get("test") or {}).get(k) or {}).get("evidence") or [])
+                          if ":" not in str(e)]          # only the other record's own evidence can be borrowed
+                    if not ev:
+                        continue
                     out.append(Finding("info", "I180", f"{mine}.{k}: verified in the {ofw} record ({', '.join(donors)}); "
                                        f"evidence there could be cited here as {', '.join(ofw + ':' + str(e) for e in ev[:3]) or '-'}.",
                                        _rel(model, model.control_files[mine]), mine))

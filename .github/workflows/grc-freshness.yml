@@ -43,7 +43,8 @@ jobs:
         run: |
           set +e
           rc=0; : > report.md; : > findings.txt
-          for e in $(python -m grc engagements); do
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do
             [ "$e" = engagement ] || echo "## Record: $e" >> report.md
             python -m grc --engagement "$e" validate --strict --summary report.md >> findings.txt 2>&1 || rc=1
           done

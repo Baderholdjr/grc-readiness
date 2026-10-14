@@ -180,7 +180,13 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
         "as `type: test`, `sample` or `interview`.\n", encoding="utf-8")
     log.append(f"wrote engagement for '{client}' with {len(phases)} phases")
 
-    if intake_dir.exists():
+    if not intake_dir.exists():          # a second framework's record gets its own intake folder
+        intake_dir.mkdir(parents=True)
+        (intake_dir / "README.md").write_text(
+            f"# Client documents for {engagement_dir.name}/\n\nUpload documents for this record here, through a pull request.\n",
+            encoding="utf-8")
+        log.append(f"created {intake_dir}")
+    elif intake_dir.exists():
         for p in intake_dir.iterdir():
             if p.name == "README.md":
                 continue

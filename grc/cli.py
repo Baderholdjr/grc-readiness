@@ -135,21 +135,30 @@ def cmd_collect(args) -> int:
 
 def cmd_ingest(args) -> int:
     from . import ingest
-    report = ingest.run(args.engagement, args.intake, mode=args.mode, force=args.force)
+    report = ingest.run(args.engagement, intake_for(args), mode=args.mode, force=args.force)
     print(report)
     if args.report:
         Path(args.report).write_text(report, encoding="utf-8")
     return 0
 
 
+def intake_for(args) -> str:
+    """The intake folder that belongs to the record: intake/ for engagement/, intake-27001/ for engagement-27001/."""
+    if args.intake:
+        return args.intake
+    e = Path(args.engagement)
+    return str(e.parent / ("intake" + e.name[len("engagement"):] if e.name.startswith("engagement") else "intake"))
+
+
 def cmd_new(args) -> int:
     from . import newengagement
+    intake = intake_for(args)
     if not args.confirm_reset:
-        print("This deletes everything under engagement/ and intake/ (except intake/README.md).\n"
+        print(f"This deletes everything under {args.engagement}/ and {intake}/ (except {intake}/README.md).\n"
               "Re-run with --confirm-reset to proceed.", file=sys.stderr)
         return 2
     try:
-        log = newengagement.reset(Path(args.engagement), Path(args.intake), args.client,
+        log = newengagement.reset(Path(args.engagement), Path(intake), args.client,
                                   dt.date.fromisoformat(args.start), dt.date.fromisoformat(args.stage1),
                                   dt.date.fromisoformat(args.stage2), args.hours, args.framework, args.lead)
     except ValueError as exc:
@@ -298,10 +307,16 @@ def cmd_hours(args) -> int:
 
 
 def cmd_engagements(args) -> int:
-    from .model import discover
-    for p in discover(args.root):
+    from .model import discover, problems_with_records
+    problems = problems_with_records(args.root)
+    for msg in problems:
+        print(f"error: {msg}", file=sys.stderr)
+    found = discover(args.root)
+    if not found:
+        print("error: no engagement record found (engagement/engagement.yaml)", file=sys.stderr)
+    for p in found:
         print(p.as_posix())
-    return 0
+    return 1 if problems or not found else 0
 
 
 def cmd_portal(args) -> int:
@@ -309,9 +324,17 @@ def cmd_portal(args) -> int:
     from .model import discover
     model = _model(args)
     also = args.also
-    if also is None:      # default: every other record in the repository becomes a tab
-        also = [str(p) for p in discover(model.root) if p.resolve() != model.engagement_dir]
-    extra = [load(e, today=model.today) for e in also]
+    extra = []
+    if also is None:      # default: every other record in the repository becomes a tab (a broken one is skipped)
+        for p in discover(model.root):
+            if p.resolve() == model.engagement_dir:
+                continue
+            try:
+                extra.append(load(p, today=model.today))
+            except SystemExit as exc:
+                print(f"warning: {p.name}/ left off the client site: {exc}", file=sys.stderr)
+    else:
+        extra = [load(e, today=model.today) for e in also]
     for log_line in portal.build(model, Path(args.out), repo=args.repo or os.environ.get("GITHUB_REPOSITORY", ""), extra=extra):
         print(log_line)
     return 0
@@ -353,7 +376,7 @@ def main(argv=None) -> int:
     c.set_defaults(fn=cmd_collect)
 
     g = sub.add_parser("ingest", help="draft engagement data from client documents in intake/")
-    g.add_argument("--intake", default="intake")
+    g.add_argument("--intake", help="default: intake/ for engagement/, intake-<name>/ for engagement-<name>/")
     g.add_argument("--mode", choices=["auto", "templates", "ai"], default="auto")
     g.add_argument("--force", action="store_true", help="re-process files already in the ledger")
     g.add_argument("--report", help="write the Markdown report here (PR comment)")
@@ -367,7 +390,7 @@ def main(argv=None) -> int:
     n.add_argument("--hours", type=float, default=200)
     n.add_argument("--framework", default="iso42001")
     n.add_argument("--lead", help="engagement lead name")
-    n.add_argument("--intake", default="intake")
+    n.add_argument("--intake", help="default: intake/ for engagement/, intake-<name>/ for engagement-<name>/")
     n.add_argument("--confirm-reset", action="store_true")
     n.set_defaults(fn=cmd_new)
 

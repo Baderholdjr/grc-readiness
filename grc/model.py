@@ -173,7 +173,7 @@ class Engagement:
                 ok = wp.get("conclusion") == "effective" and reviewed
                 out[f"{aid}/{wid}"] = {
                     "id": f"{aid}/{wid}", "title": f"Internal audit {aid} {wid}: {wp.get('requirement')} {wp.get('title', '')}".strip(),
-                    "type": "test", "location": f"engagement/audit/{aid}/workpapers/{wid}.yaml",
+                    "type": "test", "location": f"{self.record_dir}/audit/{aid}/workpapers/{wid}.yaml",
                     "owner": wp.get("performed_by", ""), "collected": wp.get("performed_on"),
                     "approved_by": wp.get("reviewed_by", ""), "valid_for_days": 365,
                     # not concluded/reviewed -> behaves like failing evidence (not current)
@@ -387,12 +387,39 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     return model
 
 
+RECORD_NAME = re.compile(r"^engagement(-[a-z0-9]+)?$")
+
+
 def discover(root: str | Path = ".") -> list[Path]:
-    """Every engagement record in a repository: engagement/ first, then engagement-*/ (one per extra framework)."""
+    """Every engagement record in a repository: engagement/ first, then engagement-<name>/ (one per extra framework).
+    Only well-named folders that hold an engagement.yaml count; problems_with_records() reports the rest."""
     root = Path(root)
-    found = [p for p in [root / "engagement", *sorted(root.glob("engagement-*"))]
-             if p.is_dir() and (p / "engagement.yaml").is_file()]
-    return found
+    return [p for p in [root / "engagement", *sorted(root.glob("engagement-*"))]
+            if RECORD_NAME.match(p.name) and p.is_dir() and (p / "engagement.yaml").is_file()]
+
+
+def problems_with_records(root: str | Path = ".") -> list[str]:
+    """Folders that look like records but won't be picked up, and records that clash."""
+    root = Path(root)
+    out = []
+    for p in sorted(root.glob("engagement*")):
+        if not p.is_dir():
+            continue
+        if not RECORD_NAME.match(p.name):
+            out.append(f"{p.name}/: record folders must be named engagement or engagement-<lowercase letters/digits>")
+        elif not (p / "engagement.yaml").is_file():
+            out.append(f"{p.name}/: no engagement.yaml, so this record would be skipped")
+    seen: dict[str, str] = {}
+    for p in discover(root):
+        try:
+            fw = str((load_yaml(p / "engagement.yaml") or {}).get("framework") or "iso42001")
+        except SystemExit as exc:
+            out.append(str(exc))
+            continue
+        if fw in seen:
+            out.append(f"{p.name}/ and {seen[fw]}/ both hold framework {fw}: keep one record per framework")
+        seen[fw] = p.name
+    return out
 
 
 def load_schema(name: str) -> dict:

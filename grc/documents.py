@@ -197,7 +197,7 @@ def evidence_entries(model: Engagement) -> dict[str, dict]:
             approved, nr, sound = None, None, False
         out[did] = {
             "id": did, "title": f"{meta.get('title') or did} v{meta.get('version', '?')}", "type": "document",
-            "location": f"engagement/documents/{did}.md", "owner": meta.get("owner", ""),
+            "location": f"{model.record_dir}/documents/{did}.md", "owner": meta.get("owner", ""),
             "collected": approved, "approved_by": meta.get("approver", "") if sound else "",
             "approved_on": approved,
             "valid_for_days": max((nr - approved).days, 1) if (approved and nr) else 365, "source": "document",

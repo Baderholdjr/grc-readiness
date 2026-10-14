@@ -37,7 +37,7 @@ REQS = {"type": "array", "items": S, "description": "requirement ids from the pr
 
 OUTPUT_SCHEMA = _obj({
     "client_overview": {"type": "array", "items": S, "description": "3-5 factual bullets about the organization"},
-    "ai_usage": {"type": "array", "items": S, "description": "3-5 factual bullets about AI use and AIMS scope"},
+    "ai_usage": {"type": "array", "items": S, "description": "3-5 factual bullets about the systems, information and (where relevant) AI use in the proposed management-system scope"},
     "scope_statement": {"type": "string"},
     "in_place": {"type": "array", "items": _obj({"foundation": S, "examples": S, "requirements": REQS, "source": SRC})},
     "inventory": {"type": "array", "items": _obj({"name": S, "kind": {"enum": INVENTORY_KINDS}, "owner": S,

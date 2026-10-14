@@ -47,7 +47,8 @@ jobs:
       - name: Validate every record (errors block the package)
         run: |
           rc=0
-          for e in $(python -m grc engagements); do
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do
             [ "$e" = engagement ] || echo "## Record: $e" >> notes.md
             python -m grc --engagement "$e" validate --summary notes.md || rc=1
           done
@@ -56,7 +57,8 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          for e in $(python -m grc engagements); do python -m grc --engagement "$e" package --out dist --label "$TAG"; done
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do python -m grc --engagement "$e" package --out dist --label "$TAG"; done
       - name: Attach package to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

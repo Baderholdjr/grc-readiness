@@ -107,7 +107,9 @@ test:
     evidence: [iso42001:DOC-DOCINFO]     # the approved ISO 42001 document control procedure
 ```
 
-The evidence keeps its own rules: expiry, approval, and failing collector checks all apply as if it were local. It stays in one index and is never copied.
+The evidence keeps its own rules: expiry, approval, and failing collector checks all apply as if it were local. It is never copied. This record's evidence index and workbook list it with the folder it's held in, and only where this record cites it.
+
+The cited item must be evidence **for the mapped requirement** in the other record: one of that requirement's legs must cite it. You can't borrow an unrelated record just because a mapping exists.
 
 | Code | Severity | Rule |
 |---|---|---|
