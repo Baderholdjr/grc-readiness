@@ -203,7 +203,7 @@ def render_brief(model: Engagement, out_path: Path) -> Path:
     bullets(doc, [model.fmt(x) for x in e["client"].get("overview", [])])
 
     # 2. AI usage
-    heading(doc, "2. AI Usage")
+    heading(doc, f"2. {pb.get('usage_heading', 'AI Usage')}")
     bullets(doc, [model.fmt(x) for x in e.get("ai_usage", [])])
 
     # 3. In place

@@ -1,0 +1,209 @@
+# ISO/IEC 27001:2022 requirement catalog (information security management systems)
+#
+# COPYRIGHT NOTE: This file holds requirement identifiers, short titles, and
+# OUR OWN plain-language interpretation and evidence expectations. It does not
+# reproduce the standard's text. Teams must work from a licensed copy of
+# ISO/IEC 27001:2022 (and ISO/IEC 27002:2022 for control guidance) when interpreting a requirement.
+#
+# kind: clause  -> mandatory management-system requirement (Clauses 4-10). Cannot be excluded.
+# kind: control -> Annex A reference control. Applicability is decided in the Statement of
+#                  Applicability (SoA); exclusions need a documented justification.
+
+framework:
+  id: iso27001
+  name: ISO/IEC 27001:2022
+  short_name: ISO 27001
+  management_system: Information security management system (ISMS)
+  source: https://www.iso.org/standard/27001
+
+groups:
+  - {id: "4",   title: "Context of the organization"}
+  - {id: "5",   title: "Leadership"}
+  - {id: "6",   title: "Planning"}
+  - {id: "7",   title: "Support"}
+  - {id: "8",   title: "Operation"}
+  - {id: "9",   title: "Performance evaluation"}
+  - {id: "10",  title: "Improvement"}
+  - {id: "A.5", title: "Organizational controls"}
+  - {id: "A.6", title: "People controls"}
+  - {id: "A.7", title: "Physical controls"}
+  - {id: "A.8", title: "Technological controls"}
+
+requirements:
+  # ---------------------------------------------------------------- Clauses 4-10
+  - {id: "4.1", kind: clause, group: "4", title: Understanding the organization and its context,
+     intent: "Know the internal and external issues that affect the organization's ability to protect its information.",
+     evidence_examples: [Context analysis, Issues register]}
+  - {id: "4.2", kind: clause, group: "4", title: Understanding the needs and expectations of interested parties,
+     intent: "Identify interested parties, their information security requirements, and which of them the ISMS will address.",
+     evidence_examples: [Interested-party register, Legal and contractual requirements list]}
+  - {id: "4.3", kind: clause, group: "4", title: Determining the scope of the information security management system,
+     intent: "Define and approve the ISMS boundaries, including interfaces and dependencies with activities outside it.",
+     evidence_examples: [Approved scope statement, Scope approval record]}
+  - {id: "4.4", kind: clause, group: "4", title: Information security management system,
+     intent: "Establish, run, maintain and continually improve the ISMS and the processes it needs.",
+     evidence_examples: [ISMS manual or process map]}
+  - {id: "5.1", kind: clause, group: "5", title: Leadership and commitment,
+     intent: "Top management visibly directs the ISMS, provides resources and builds it into business processes.",
+     evidence_examples: [Leadership meeting minutes, Resource approvals]}
+  - {id: "5.2", kind: clause, group: "5", title: Policy,
+     intent: "An approved information security policy fits the organization's purpose, sets direction for objectives, includes commitments, and is communicated.",
+     evidence_examples: [Approved information security policy, Communication record]}
+  - {id: "5.3", kind: clause, group: "5", title: Organizational roles, responsibilities and authorities,
+     intent: "Information security roles are assigned and communicated, including who reports on ISMS performance to top management.",
+     evidence_examples: [RACI or role descriptions, Appointment records]}
+  - {id: "6.1.1", kind: clause, group: "6", title: Actions to address risks and opportunities - general,
+     intent: "Plan how the ISMS deals with risks and opportunities arising from context and interested parties.",
+     evidence_examples: [Risks and opportunities register]}
+  - {id: "6.1.2", kind: clause, group: "6", title: Information security risk assessment,
+     intent: "A defined, repeatable risk assessment process with acceptance criteria, identified risk owners, and consistent results.",
+     evidence_examples: [Risk assessment methodology, Risk register]}
+  - {id: "6.1.3", kind: clause, group: "6", title: Information security risk treatment,
+     intent: "Choose treatment options, compare needed controls with Annex A, produce a Statement of Applicability and a treatment plan approved by risk owners.",
+     evidence_examples: [Statement of Applicability, Risk treatment plan, Risk owner approvals]}
+  - {id: "6.2", kind: clause, group: "6", title: Information security objectives and planning to achieve them,
+     intent: "Measurable information security objectives, with plans saying what, who, by when and how results are judged.",
+     evidence_examples: [Objectives register, Objective tracking]}
+  - {id: "6.3", kind: clause, group: "6", title: Planning of changes,
+     intent: "Changes to the ISMS are carried out in a planned way.",
+     evidence_examples: [ISMS change log, Change plans]}
+  - {id: "7.1", kind: clause, group: "7", title: Resources,
+     intent: "Resources needed for the ISMS are determined and provided.",
+     evidence_examples: [Budget or resource plan]}
+  - {id: "7.2", kind: clause, group: "7", title: Competence,
+     intent: "People affecting information security are competent, with gaps addressed and evidence kept.",
+     evidence_examples: [Competence matrix, Training records, Certifications]}
+  - {id: "7.3", kind: clause, group: "7", title: Awareness,
+     intent: "People know the policy, their contribution, and the consequences of not conforming.",
+     evidence_examples: [Awareness training completion, Acknowledgements]}
+  - {id: "7.4", kind: clause, group: "7", title: Communication,
+     intent: "Decide what is communicated about information security, when, to whom and how.",
+     evidence_examples: [Communication plan, Communication records]}
+  - {id: "7.5", kind: clause, group: "7", title: Documented information,
+     intent: "Required documented information is created, approved, controlled, versioned and available.",
+     evidence_examples: [Document control procedure, Version history]}
+  - {id: "8.1", kind: clause, group: "8", title: Operational planning and control,
+     intent: "Processes needed to meet requirements are planned, controlled and evidenced, including externally provided ones.",
+     evidence_examples: [Operational procedures, Process records]}
+  - {id: "8.2", kind: clause, group: "8", title: Information security risk assessment (operation),
+     intent: "Risk assessments are performed at planned intervals and on significant change, with results retained.",
+     evidence_examples: [Dated risk assessment results]}
+  - {id: "8.3", kind: clause, group: "8", title: Information security risk treatment (operation),
+     intent: "The risk treatment plan is carried out and its results retained.",
+     evidence_examples: [Treatment plan status, Implementation records]}
+  - {id: "9.1", kind: clause, group: "9", title: Monitoring, measurement, analysis and evaluation,
+     intent: "Decide what to measure, how and when, analyse the results, and evaluate ISMS performance and effectiveness.",
+     evidence_examples: [Metrics definitions, Performance reports]}
+  - {id: "9.2", kind: clause, group: "9", title: Internal audit,
+     intent: "A planned internal audit programme with defined criteria and scope, objective auditors, and reported results.",
+     evidence_examples: [Audit programme, Audit reports]}
+  - {id: "9.3", kind: clause, group: "9", title: Management review,
+     intent: "Top management reviews the ISMS at planned intervals, considering the required inputs, and records decisions.",
+     evidence_examples: [Management review minutes]}
+  - {id: "10.1", kind: clause, group: "10", title: Continual improvement,
+     intent: "The suitability, adequacy and effectiveness of the ISMS are continually improved.",
+     evidence_examples: [Improvement log]}
+  - {id: "10.2", kind: clause, group: "10", title: Nonconformity and corrective action,
+     intent: "Nonconformities are corrected, root causes found and fixed, and the effectiveness of actions checked.",
+     evidence_examples: [Corrective action register, Root cause analyses]}
+
+  # ---------------------------------------------------------------- A.5 Organizational controls (37)
+  - {id: "A.5.1",  kind: control, group: "A.5", title: Policies for information security, intent: "Approved, published and acknowledged information security policies, reviewed on a schedule and on change.", evidence_examples: [Policy set, Acknowledgement records]}
+  - {id: "A.5.2",  kind: control, group: "A.5", title: Information security roles and responsibilities, intent: "Information security responsibilities are defined and assigned.", evidence_examples: [Role descriptions, RACI]}
+  - {id: "A.5.3",  kind: control, group: "A.5", title: Segregation of duties, intent: "Conflicting duties and responsibilities are separated to limit misuse or error.", evidence_examples: [Segregation matrix, Access reviews]}
+  - {id: "A.5.4",  kind: control, group: "A.5", title: Management responsibilities, intent: "Managers require staff and contractors to apply security according to policy.", evidence_examples: [Manager briefings, Policy acknowledgements]}
+  - {id: "A.5.5",  kind: control, group: "A.5", title: Contact with authorities, intent: "Contacts with relevant authorities are established and kept current.", evidence_examples: [Authority contact list]}
+  - {id: "A.5.6",  kind: control, group: "A.5", title: Contact with special interest groups, intent: "Contacts with security forums and professional groups are maintained.", evidence_examples: [Memberships, Forum participation]}
+  - {id: "A.5.7",  kind: control, group: "A.5", title: Threat intelligence, intent: "Information about threats is collected and analysed to produce usable intelligence.", evidence_examples: [Threat intelligence feeds, Threat reports]}
+  - {id: "A.5.8",  kind: control, group: "A.5", title: Information security in project management, intent: "Security is built into project management.", evidence_examples: [Project security checklist, Project risk records]}
+  - {id: "A.5.9",  kind: control, group: "A.5", title: Inventory of information and other associated assets, intent: "An owned, current inventory of information and associated assets.", evidence_examples: [Asset inventory]}
+  - {id: "A.5.10", kind: control, group: "A.5", title: Acceptable use of information and other associated assets, intent: "Rules for acceptable use and handling of information and assets are defined and applied.", evidence_examples: [Acceptable use policy, Acknowledgements]}
+  - {id: "A.5.11", kind: control, group: "A.5", title: Return of assets, intent: "Assets are returned when employment or contracts change or end.", evidence_examples: [Offboarding checklists]}
+  - {id: "A.5.12", kind: control, group: "A.5", title: Classification of information, intent: "Information is classified by its security needs.", evidence_examples: [Classification scheme]}
+  - {id: "A.5.13", kind: control, group: "A.5", title: Labelling of information, intent: "Information is labelled according to the classification scheme.", evidence_examples: [Labelling procedure, Labelled samples]}
+  - {id: "A.5.14", kind: control, group: "A.5", title: Information transfer, intent: "Rules and agreements protect information transferred inside and outside the organization.", evidence_examples: [Transfer rules, Data transfer agreements]}
+  - {id: "A.5.15", kind: control, group: "A.5", title: Access control, intent: "Access to information and assets follows business and security requirements.", evidence_examples: [Access control policy]}
+  - {id: "A.5.16", kind: control, group: "A.5", title: Identity management, intent: "The full lifecycle of identities is managed.", evidence_examples: [Joiner-mover-leaver records, Identity provider configuration]}
+  - {id: "A.5.17", kind: control, group: "A.5", title: Authentication information, intent: "Allocation and management of authentication information is controlled, including user guidance.", evidence_examples: [Password and MFA standard, Credential issuance records]}
+  - {id: "A.5.18", kind: control, group: "A.5", title: Access rights, intent: "Access rights are granted, reviewed, changed and removed under policy.", evidence_examples: [Access requests, Periodic access reviews]}
+  - {id: "A.5.19", kind: control, group: "A.5", title: Information security in supplier relationships, intent: "Risks from suppliers' products and services are managed.", evidence_examples: [Supplier security policy, Supplier risk assessments]}
+  - {id: "A.5.20", kind: control, group: "A.5", title: Addressing information security within supplier agreements, intent: "Supplier agreements include the relevant security requirements.", evidence_examples: [Contract security clauses, DPAs]}
+  - {id: "A.5.21", kind: control, group: "A.5", title: Managing information security in the ICT supply chain, intent: "Security risks in the ICT product and service supply chain are managed.", evidence_examples: [Supply chain requirements, Software bill of materials]}
+  - {id: "A.5.22", kind: control, group: "A.5", title: Monitoring, review and change management of supplier services, intent: "Supplier security practice and service delivery are monitored, reviewed and changes managed.", evidence_examples: [Supplier review records, Supplier reports]}
+  - {id: "A.5.23", kind: control, group: "A.5", title: Information security for use of cloud services, intent: "Acquiring, using, managing and exiting cloud services follows defined security requirements.", evidence_examples: [Cloud security standard, Shared responsibility matrix]}
+  - {id: "A.5.24", kind: control, group: "A.5", title: Information security incident management planning and preparation, intent: "Incident management processes, roles and responsibilities are planned and set up.", evidence_examples: [Incident response plan]}
+  - {id: "A.5.25", kind: control, group: "A.5", title: Assessment and decision on information security events, intent: "Security events are assessed and classified as incidents or not.", evidence_examples: [Triage records]}
+  - {id: "A.5.26", kind: control, group: "A.5", title: Response to information security incidents, intent: "Incidents are responded to under documented procedures.", evidence_examples: [Incident tickets, Response records]}
+  - {id: "A.5.27", kind: control, group: "A.5", title: Learning from information security incidents, intent: "Knowledge from incidents strengthens controls.", evidence_examples: [Post-incident reviews]}
+  - {id: "A.5.28", kind: control, group: "A.5", title: Collection of evidence, intent: "Evidence about security events is identified, collected and preserved properly.", evidence_examples: [Evidence handling procedure, Chain-of-custody records]}
+  - {id: "A.5.29", kind: control, group: "A.5", title: Information security during disruption, intent: "Security is maintained at an appropriate level during disruption.", evidence_examples: [Continuity plans with security requirements]}
+  - {id: "A.5.30", kind: control, group: "A.5", title: ICT readiness for business continuity, intent: "ICT readiness is planned, implemented, maintained and tested against continuity objectives.", evidence_examples: [Recovery objectives, DR test results]}
+  - {id: "A.5.31", kind: control, group: "A.5", title: Legal, statutory, regulatory and contractual requirements, intent: "Relevant legal, regulatory and contractual security requirements are identified and kept current.", evidence_examples: [Legal and regulatory register]}
+  - {id: "A.5.32", kind: control, group: "A.5", title: Intellectual property rights, intent: "Intellectual property rights are protected.", evidence_examples: [Licence management records]}
+  - {id: "A.5.33", kind: control, group: "A.5", title: Protection of records, intent: "Records are protected from loss, destruction, falsification and unauthorized access or release.", evidence_examples: [Records retention schedule]}
+  - {id: "A.5.34", kind: control, group: "A.5", title: Privacy and protection of PII, intent: "Privacy and personal data protection requirements are met.", evidence_examples: [Privacy program records, Records of processing]}
+  - {id: "A.5.35", kind: control, group: "A.5", title: Independent review of information security, intent: "The approach to information security is independently reviewed at intervals and on significant change.", evidence_examples: [Independent review or external audit reports]}
+  - {id: "A.5.36", kind: control, group: "A.5", title: Compliance with policies, rules and standards for information security, intent: "Compliance with security policies and standards is regularly checked.", evidence_examples: [Compliance checks, Exception register]}
+  - {id: "A.5.37", kind: control, group: "A.5", title: Documented operating procedures, intent: "Operating procedures for information processing facilities are documented and available.", evidence_examples: [Runbooks, Standard operating procedures]}
+
+  # ---------------------------------------------------------------- A.6 People controls (8)
+  - {id: "A.6.1", kind: control, group: "A.6", title: Screening, intent: "Candidates are background-checked before joining and as appropriate afterwards.", evidence_examples: [Screening records (counts only)]}
+  - {id: "A.6.2", kind: control, group: "A.6", title: Terms and conditions of employment, intent: "Employment agreements state security responsibilities.", evidence_examples: [Contract templates]}
+  - {id: "A.6.3", kind: control, group: "A.6", title: Information security awareness, education and training, intent: "People receive security awareness and role-relevant training, with regular updates.", evidence_examples: [Training completion rates]}
+  - {id: "A.6.4", kind: control, group: "A.6", title: Disciplinary process, intent: "A communicated disciplinary process covers security policy violations.", evidence_examples: [Disciplinary policy]}
+  - {id: "A.6.5", kind: control, group: "A.6", title: Responsibilities after termination or change of employment, intent: "Security duties that continue after leaving or changing role are defined and communicated.", evidence_examples: [Exit acknowledgements]}
+  - {id: "A.6.6", kind: control, group: "A.6", title: Confidentiality or non-disclosure agreements, intent: "Confidentiality agreements reflect protection needs and are reviewed and signed.", evidence_examples: [NDA template, Signed NDA records]}
+  - {id: "A.6.7", kind: control, group: "A.6", title: Remote working, intent: "Security measures protect information accessed, processed or stored while working remotely.", evidence_examples: [Remote working policy, Endpoint controls]}
+  - {id: "A.6.8", kind: control, group: "A.6", title: Information security event reporting, intent: "People can and do report observed or suspected security events promptly.", evidence_examples: [Reporting channel, Event reports]}
+
+  # ---------------------------------------------------------------- A.7 Physical controls (14)
+  - {id: "A.7.1",  kind: control, group: "A.7", title: Physical security perimeters, intent: "Perimeters protect areas holding information and associated assets.", evidence_examples: [Site security plan]}
+  - {id: "A.7.2",  kind: control, group: "A.7", title: Physical entry, intent: "Secure areas are protected by entry controls and access points.", evidence_examples: [Badge access logs, Visitor logs]}
+  - {id: "A.7.3",  kind: control, group: "A.7", title: Securing offices, rooms and facilities, intent: "Physical security is designed and applied to offices, rooms and facilities.", evidence_examples: [Facility security assessments]}
+  - {id: "A.7.4",  kind: control, group: "A.7", title: Physical security monitoring, intent: "Premises are monitored for unauthorized physical access.", evidence_examples: [CCTV and alarm records]}
+  - {id: "A.7.5",  kind: control, group: "A.7", title: Protecting against physical and environmental threats, intent: "Protection against natural disasters, attacks and accidents is designed and applied.", evidence_examples: [Environmental risk assessment]}
+  - {id: "A.7.6",  kind: control, group: "A.7", title: Working in secure areas, intent: "Rules for working in secure areas are defined and applied.", evidence_examples: [Secure area rules]}
+  - {id: "A.7.7",  kind: control, group: "A.7", title: Clear desk and clear screen, intent: "Clear desk and clear screen rules are defined and enforced.", evidence_examples: [Clear desk policy, Screen lock configuration]}
+  - {id: "A.7.8",  kind: control, group: "A.7", title: Equipment siting and protection, intent: "Equipment is sited securely and protected.", evidence_examples: [Data centre or office layout controls]}
+  - {id: "A.7.9",  kind: control, group: "A.7", title: Security of assets off-premises, intent: "Assets used off-site are protected.", evidence_examples: [Off-site equipment rules, Disk encryption]}
+  - {id: "A.7.10", kind: control, group: "A.7", title: Storage media, intent: "Storage media are managed through their lifecycle under the classification scheme.", evidence_examples: [Media handling procedure]}
+  - {id: "A.7.11", kind: control, group: "A.7", title: Supporting utilities, intent: "Facilities are protected from power and other utility failures.", evidence_examples: [UPS and generator maintenance]}
+  - {id: "A.7.12", kind: control, group: "A.7", title: Cabling security, intent: "Power and data cabling are protected from interception, interference or damage.", evidence_examples: [Cabling standards]}
+  - {id: "A.7.13", kind: control, group: "A.7", title: Equipment maintenance, intent: "Equipment is maintained correctly to stay available and intact.", evidence_examples: [Maintenance logs]}
+  - {id: "A.7.14", kind: control, group: "A.7", title: Secure disposal or re-use of equipment, intent: "Sensitive data and licensed software are removed or securely overwritten before disposal or re-use.", evidence_examples: [Disposal certificates]}
+
+  # ---------------------------------------------------------------- A.8 Technological controls (34)
+  - {id: "A.8.1",  kind: control, group: "A.8", title: User endpoint devices, intent: "Information on, processed by or reachable through endpoint devices is protected.", evidence_examples: [MDM configuration, Endpoint compliance report]}
+  - {id: "A.8.2",  kind: control, group: "A.8", title: Privileged access rights, intent: "Privileged access is restricted and managed.", evidence_examples: [Privileged account list, Privileged access reviews]}
+  - {id: "A.8.3",  kind: control, group: "A.8", title: Information access restriction, intent: "Access to information and assets is restricted according to the access control policy.", evidence_examples: [Role-based access configuration]}
+  - {id: "A.8.4",  kind: control, group: "A.8", title: Access to source code, intent: "Read and write access to source code, development tools and libraries is managed.", evidence_examples: [Repository permissions, Branch protection]}
+  - {id: "A.8.5",  kind: control, group: "A.8", title: Secure authentication, intent: "Secure authentication technologies and procedures match access restrictions.", evidence_examples: [MFA enforcement, SSO configuration]}
+  - {id: "A.8.6",  kind: control, group: "A.8", title: Capacity management, intent: "Resource use is monitored and adjusted against current and expected capacity needs.", evidence_examples: [Capacity monitoring, Autoscaling configuration]}
+  - {id: "A.8.7",  kind: control, group: "A.8", title: Protection against malware, intent: "Malware protection is in place, supported by user awareness.", evidence_examples: [Endpoint protection coverage]}
+  - {id: "A.8.8",  kind: control, group: "A.8", title: Management of technical vulnerabilities, intent: "Vulnerabilities are identified, evaluated and remediated in a timely way.", evidence_examples: [Vulnerability scans, Patch SLAs and records]}
+  - {id: "A.8.9",  kind: control, group: "A.8", title: Configuration management, intent: "Secure configurations are established, documented, implemented, monitored and reviewed.", evidence_examples: [Baseline configurations, Configuration drift monitoring]}
+  - {id: "A.8.10", kind: control, group: "A.8", title: Information deletion, intent: "Information is deleted when no longer required.", evidence_examples: [Retention and deletion procedure, Deletion records]}
+  - {id: "A.8.11", kind: control, group: "A.8", title: Data masking, intent: "Data masking is applied according to access policy, business needs and law.", evidence_examples: [Masking standard, Masked data samples]}
+  - {id: "A.8.12", kind: control, group: "A.8", title: Data leakage prevention, intent: "Measures detect and prevent unauthorized disclosure of sensitive information.", evidence_examples: [DLP configuration, DLP alerts]}
+  - {id: "A.8.13", kind: control, group: "A.8", title: Information backup, intent: "Backups are kept and regularly tested under an agreed backup policy.", evidence_examples: [Backup policy, Restore test results]}
+  - {id: "A.8.14", kind: control, group: "A.8", title: Redundancy of information processing facilities, intent: "Processing facilities have enough redundancy to meet availability needs.", evidence_examples: [Multi-zone architecture, Failover tests]}
+  - {id: "A.8.15", kind: control, group: "A.8", title: Logging, intent: "Logs of activities, exceptions, faults and relevant events are produced, stored, protected and analysed.", evidence_examples: [Logging standard, Log retention configuration]}
+  - {id: "A.8.16", kind: control, group: "A.8", title: Monitoring activities, intent: "Networks, systems and applications are monitored for anomalous behaviour and acted on.", evidence_examples: [SIEM alerts, Monitoring runbooks]}
+  - {id: "A.8.17", kind: control, group: "A.8", title: Clock synchronization, intent: "System clocks are synchronized to approved time sources.", evidence_examples: [NTP configuration]}
+  - {id: "A.8.18", kind: control, group: "A.8", title: Use of privileged utility programs, intent: "Utility programs that can override controls are restricted and tightly controlled.", evidence_examples: [Restricted tools list]}
+  - {id: "A.8.19", kind: control, group: "A.8", title: Installation of software on operational systems, intent: "Software installation on operational systems is managed securely.", evidence_examples: [Software installation controls, Allow lists]}
+  - {id: "A.8.20", kind: control, group: "A.8", title: Networks security, intent: "Networks and network devices are secured, managed and controlled.", evidence_examples: [Network diagrams, Firewall rules review]}
+  - {id: "A.8.21", kind: control, group: "A.8", title: Security of network services, intent: "Security mechanisms, service levels and requirements of network services are defined and monitored.", evidence_examples: [Network service requirements]}
+  - {id: "A.8.22", kind: control, group: "A.8", title: Segregation of networks, intent: "Groups of services, users and systems are segregated on networks.", evidence_examples: [Network segmentation design]}
+  - {id: "A.8.23", kind: control, group: "A.8", title: Web filtering, intent: "Access to external websites is managed to reduce exposure to malicious content.", evidence_examples: [Web filtering configuration]}
+  - {id: "A.8.24", kind: control, group: "A.8", title: Use of cryptography, intent: "Rules for effective use of cryptography, including key management, are defined and applied.", evidence_examples: [Cryptography standard, Key management records]}
+  - {id: "A.8.25", kind: control, group: "A.8", title: Secure development life cycle, intent: "Rules for secure development of software and systems are established and applied.", evidence_examples: [Secure SDLC policy]}
+  - {id: "A.8.26", kind: control, group: "A.8", title: Application security requirements, intent: "Security requirements are identified, specified and approved when developing or acquiring applications.", evidence_examples: [Security requirements in designs or tickets]}
+  - {id: "A.8.27", kind: control, group: "A.8", title: Secure system architecture and engineering principles, intent: "Secure engineering principles are defined, documented, maintained and applied.", evidence_examples: [Architecture principles, Design reviews]}
+  - {id: "A.8.28", kind: control, group: "A.8", title: Secure coding, intent: "Secure coding principles are applied to software development.", evidence_examples: [Code review records, SAST results]}
+  - {id: "A.8.29", kind: control, group: "A.8", title: Security testing in development and acceptance, intent: "Security testing is defined and carried out in the development lifecycle.", evidence_examples: [Security test plans, Penetration test reports]}
+  - {id: "A.8.30", kind: control, group: "A.8", title: Outsourced development, intent: "Outsourced development activities are directed, monitored and reviewed.", evidence_examples: [Outsourcing contracts, Supplier code reviews]}
+  - {id: "A.8.31", kind: control, group: "A.8", title: Separation of development, test and production environments, intent: "Development, test and production environments are separated and secured.", evidence_examples: [Environment separation, Access restrictions]}
+  - {id: "A.8.32", kind: control, group: "A.8", title: Change management, intent: "Changes to processing facilities and systems follow change management procedures.", evidence_examples: [Change tickets, Approved pull requests]}
+  - {id: "A.8.33", kind: control, group: "A.8", title: Test information, intent: "Test information is chosen, protected and managed appropriately.", evidence_examples: [Test data rules]}
+  - {id: "A.8.34", kind: control, group: "A.8", title: Protection of information systems during audit testing, intent: "Audit tests and assurance activities on operational systems are planned and agreed to limit disruption.", evidence_examples: [Audit test agreements]}

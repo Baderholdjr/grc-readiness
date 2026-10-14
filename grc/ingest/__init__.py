@@ -80,7 +80,7 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
     if for_ai:
         try:
             result = ai.draft([(n, t) for n, t, _ in for_ai], model.requirements, model.gaps, model.client,
-                              model=settings.get("model"), transport=transport)
+                              model=settings.get("model"), transport=transport, framework=model.framework_name)
             combined = draft.merge(combined, result)
             for n, _, p in for_ai:
                 notes.append(f"`{n}`: " + ("sandbox AI draft (canned, sandbox/ai_draft.json)" if sandbox.active()

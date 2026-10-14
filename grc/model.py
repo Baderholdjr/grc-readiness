@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -102,6 +103,24 @@ class Engagement:
     @property
     def client(self) -> str:
         return self.engagement["client"]["name"]
+
+    @property
+    def framework_name(self) -> str:
+        """e.g. ISO/IEC 27001:2022"""
+        fw = self.catalog.get("framework") or {}
+        return str(fw.get("name") or fw.get("short_name") or "the standard")
+
+    @property
+    def system_abbrev(self) -> str:
+        """The management system's short name, e.g. AIMS or ISMS (from the catalog)."""
+        m = re.search(r"\(([A-Z]{2,6})\)", str((self.catalog.get("framework") or {}).get("management_system") or ""))
+        return m.group(1) if m else "management system"
+
+    @property
+    def uses_impact_assessments(self) -> bool:
+        """ISO 42001 assesses AI systems' impacts; frameworks whose playbook requires none (ISO 27001) don't."""
+        from .impact import method
+        return bool(method(self)["required_for_kinds"])
 
     @property
     def requirements(self) -> list[dict]:

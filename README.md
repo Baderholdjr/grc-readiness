@@ -156,7 +156,11 @@ In the client repository:
 
 **No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud, Jira, SharePoint/Drive, model registry and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 
-## Adding a framework
+## Frameworks
+
+Two are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 65 requirements, 17 policy and procedure templates, AI impact assessments) and **ISO/IEC 27001:2022** (`iso27001`, information security; 25 clauses and 93 Annex A controls, 20 policy and procedure templates). Start an ISO 27001 record with `python -m grc --engagement engagement-27001 new-engagement --framework iso27001 …`.
+
+### Adding a framework
 
 Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id>` in `engagement.yaml`. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
 

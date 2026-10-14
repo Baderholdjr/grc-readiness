@@ -242,12 +242,12 @@ def context(model: Engagement) -> dict[str, str]:
         "inventory_table": _table(["ID", "Name", "Kind", "Owner", "In scope"],
                                   [[i.get("id"), i.get("name"), str(i.get("kind", "")).replace("_", " "), i.get("owner"),
                                     "no" if i.get("in_scope") is False else "yes"] for i in inv])
-                           if inv else "[[TODO: list AI resources]]",
+                           if inv else "[[TODO: list the resources and assets in scope]]",
         "suppliers_table": _table(["ID", "Name", "Kind", "Owner"],
                                   [[i.get("id"), i.get("name"), str(i.get("kind", "")).replace("_", " "), i.get("owner")]
                                    for i in inv if i.get("kind") in ("supplier_service", "infrastructure", "model")])
                            if any(i.get("kind") in ("supplier_service", "infrastructure", "model") for i in inv)
-                           else "[[TODO: list AI suppliers]]",
+                           else "[[TODO: list the suppliers in scope]]",
         "impact_required_kinds": ", ".join(str(k).replace("_", " ") for k in m["required_for_kinds"]),
         "impact_review_cycle": cycle,
         "impact_categories_table": _table(["Category", "Affects", "Covers"],
@@ -323,7 +323,7 @@ def load_again(model: Engagement) -> Engagement:
 
 
 # ------------------------------------------------------------------ AI fill
-SYSTEM = """grc-docs: You help a GRC analyst complete an ISO/IEC 42001 policy or procedure for a client.
+SYSTEM = """grc-docs: You help a GRC analyst complete an {framework} policy or procedure for a client.
 The document contains numbered markers like [[TODO#3: guidance]]. For each marker, write replacement text ONLY
 if the engagement facts or client documents provided support it. Otherwise return null for that marker.
 
@@ -415,7 +415,7 @@ def _call(model: Engagement, did: str, prompt: str, transport=None) -> dict:
     key = "sandbox" if sandbox.active() else os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not key and transport is None:
         raise AIUnavailable("ANTHROPIC_API_KEY is not set")
-    body = {"model": os.environ.get("GRC_MODEL") or DEFAULT_MODEL, "max_tokens": 16000, "system": SYSTEM,
+    body = {"model": os.environ.get("GRC_MODEL") or DEFAULT_MODEL, "max_tokens": 16000, "system": SYSTEM.replace("{framework}", model.framework_name),
             "messages": [{"role": "user", "content": prompt}],
             "output_config": {"format": {"type": "json_schema", "schema": FILL_SCHEMA}}}
     try:
