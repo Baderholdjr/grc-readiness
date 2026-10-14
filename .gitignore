@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 *.tmp
 ~$*.docx
+docs/manual/_build/

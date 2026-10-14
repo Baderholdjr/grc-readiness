@@ -24,9 +24,26 @@ def resource(repo_root: Path, *parts: str) -> Path:
 LEGS = ("documented", "implemented", "evidenced", "tested")
 
 
-def load_yaml(path: Path) -> Any:
+class RecordError(SystemExit):
+    """A record file can't be read. Raised as SystemExit so the CLI prints one clear line, not a traceback."""
+
+
+def read_yaml(path: Path) -> Any:
+    """Like load_yaml, but lets yaml.YAMLError through (for files whose errors are reported as findings)."""
     with open(path, encoding="utf-8") as fh:
         return yaml.safe_load(fh) or {}
+
+
+def load_yaml(path: Path) -> Any:
+    with open(path, encoding="utf-8") as fh:
+        try:
+            return yaml.safe_load(fh) or {}
+        except yaml.YAMLError as exc:
+            mark = getattr(exc, "problem_mark", None)
+            where = f" at line {mark.line + 1}" if mark else ""
+            problem = getattr(exc, "problem", None) or str(exc).splitlines()[0]
+            raise RecordError(f"error: {path}: not valid YAML{where} ({problem}). Check the indentation of that line "
+                              "against the lines around it, and put quotes around text that contains a colon.") from None
 
 
 def to_date(value: Any) -> dt.date | None:
@@ -79,6 +96,7 @@ class Engagement:
     submissions: dict[str, dict] = field(default_factory=dict)  # engagement/submissions/SUB-*.yaml (from the client site)
     submission_files: dict[str, Path] = field(default_factory=dict)
     today: dt.date = field(default_factory=dt.date.today)
+    internal: bool = True     # False while building what auditors receive: no hours or budget
 
     # ------------------------------------------------------------------ lookups
     @property
@@ -312,7 +330,7 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     rdir = edir / "reviews"
     for path in sorted(rdir.glob("MR-*.yaml")) if rdir.is_dir() else []:
         try:
-            data = load_yaml(path)
+            data = read_yaml(path)
         except Exception as exc:  # report, don't crash
             data = {"_error": f"not valid YAML ({str(exc).splitlines()[0][:120]})"}
         model.reviews[path.stem] = data
@@ -320,7 +338,7 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     sdir = edir / "submissions"
     for path in sorted(sdir.glob("SUB-*.yaml")) if sdir.is_dir() else []:
         try:
-            data = load_yaml(path)
+            data = read_yaml(path)
         except Exception as exc:  # written by a web form, reviewed by hand: report, never crash
             mark = getattr(exc, "problem_mark", None)
             where = f" at line {mark.line + 1}" if mark else ""

@@ -44,6 +44,8 @@ SECTIONS = [
 # README: the landing page links to the live reports (the index replaces it here).
 # hours: internal engagement economics, not audit evidence.
 # client-view: written for the client's own people, not the auditor.
+# Engagement economics (hours and budget): for the engagement team, never in what auditors receive.
+INTERNAL_CODES = {"W106", "W160", "W161", "W163"}
 SKIP = {"README.md", "hours.md", "hours.csv", "client-view.md", "client-view.html", "submissions.md"}
 
 
@@ -137,7 +139,7 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
     ev = model.evidence_index
     sandbox = bool((e.get("sandbox") or {}).get("enabled"))
     errors = [f for f in findings if f.severity == "error"]
-    warnings = [f for f in findings if f.severity == "warning"]
+    warnings = [f for f in findings if f.severity == "warning" and f.code not in INTERNAL_CODES]
     L = [f"# {model.client} — {fw.get('short_name', fw.get('name'))} auditor package ({label})\n\n"]
     if sandbox:
         L.append("> **SANDBOX ENGAGEMENT.** Collector and AI-drafted content in this package is simulated test data.\n\n")

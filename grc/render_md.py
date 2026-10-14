@@ -163,7 +163,7 @@ def summary_markdown(model: Engagement, findings: list[Finding], m: dict | None 
              f"- **Expired evidence:** {len(m['evidence_stale'])} · **Failing collector checks:** {len(m.get('evidence_failing', []))}",
              (f"- **Budget:** {m['hours_used']:g} / {m['hours_total']:g} hours"
               + (f" · forecast {m['hours_forecast']:g}" if m.get("hours_forecast") is not None else "") + "\n")
-             if m.get("hours_total") else "",
+             if m.get("hours_total") and model.internal else "",
              "| Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |", "|---|---|---|---|---|"]
     for t in model.playbook["evidence_test"]:
         L = m["legs"][t["key"]]
@@ -521,8 +521,9 @@ def brief(model: Engagement, out: Path) -> None:
          "## 8. Engagement Guardrails\n"]
     b = e["budget"]
     from . import hours as H
-    L.append(f"- {b['hours_total']:g} total consulting hours" + (f" ({H.hours_used(model):g} used)" if H.tracked(model) else "")
-             + (f": {b['note']}" if b.get("note") else "."))
+    if model.internal:
+        L.append(f"- {b['hours_total']:g} total consulting hours" + (f" ({H.hours_used(model):g} used)" if H.tracked(model) else "")
+                 + (f": {b['note']}" if b.get("note") else "."))
     L += [f"- {f(x)}" for x in model.setting("guardrails", pb.get("default_guardrails", []))]
     L += ["", "## 9. Key Risks\n", *[f"- {f(x)}" for x in model.setting("key_risks", pb.get("default_risks", []))], ""]
     (out / "brief.md").write_text("\n".join(L), encoding="utf-8")

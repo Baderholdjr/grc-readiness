@@ -257,7 +257,7 @@ def render_brief(model: Engagement, out_path: Path) -> Path:
     b = e["budget"]
     from .hours import hours_used, tracked
     g = [f"{b['hours_total']:g} total consulting hours" + (f" ({hours_used(model):g} used)" if tracked(model) else "")
-         + (f": {b['note']}" if b.get("note") else ".")]
+         + (f": {b['note']}" if b.get("note") else ".")] if model.internal else []
     g += [model.fmt(x) for x in model.setting("guardrails", pb.get("default_guardrails", []))]
     bullets(doc, g)
 

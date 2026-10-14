@@ -22,7 +22,7 @@ A new engagement schedules its first review at the end of the Test phase, before
    4. **Performance:** readiness and the evidence-test breakdown; nonconformities by grade and status, and overdue ones; expired evidence and failing automated checks; internal audit results; the objectives document.
    5. **Risks and impacts:** each AI system's impact assessment (status, highest residual risk, accepted risks, conditions, next review), and open gaps by severity.
    6. **Improvement:** open OFIs, and policies and procedures not yet approved.
-   7. **Resources:** engagement hours, and requirements without an accountable owner.
+   7. **Resources:** requirements without an accountable owner, plus discussion prompts. Consulting hours are not included; they are the engagement team's economics.
 
    The record stores the pack's date and SHA-256. Merge the PR and circulate the pack (Markdown, or Word from the reports). You can refresh it until the review is held; after that it is frozen.
 3. **Record the meeting.** In a PR, set `status: held`, `held_on`, `chair`, `attendees`; write `notes` for **every** input; record `decisions` (record "no change needed" explicitly if that was the decision) and `actions` with an owner and due date. CI blocks an incomplete record (**E051**).

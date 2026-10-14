@@ -329,11 +329,10 @@ def pack_markdown(model: Engagement, rid: str) -> str:
 
     # 7. resources
     section("resources")
-    b = model.engagement.get("budget") or {}
+    # Consulting hours are the engagement team's economics, not the AIMS's resources: not in the pack.
     no_owner = [r["id"] for r in model.requirements if model.is_applicable(r["id"])
                 and not str(model.controls.get(r["id"], {}).get("owner") or "").strip()]
-    L.append(f"- Engagement hours: {b.get('hours_used', 0):g} of {b.get('hours_total', 0):g}.\n"
-             f"- Applicable requirements without an accountable owner: **{len(no_owner)}**.\n"
+    L.append(f"- Applicable requirements without an accountable owner: **{len(no_owner)}**.\n"
              "\n_For discussion: people, skills, tools and budget the AIMS needs for the next period._\n")
     out = head
     for n, key in enumerate(order, start=1):
