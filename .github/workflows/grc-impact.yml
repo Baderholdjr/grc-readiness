@@ -5,6 +5,10 @@ name: AI impact assessment (reusable)
 on:
   workflow_call:
     inputs:
+      engagement:
+        description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"
+        type: string
+        default: engagement
       engine:
         type: string
         default: pinned
@@ -15,7 +19,13 @@ on:
 jobs:
   impact:
     runs-on: ubuntu-latest
+    env:
+      GRC_ENGAGEMENT: ${{ inputs.engagement }}
     steps:
+      - name: Check the record folder
+        run: |
+          [[ "$GRC_ENGAGEMENT" =~ ^engagement(-[a-z0-9]+)?$ ]] || {
+            echo "::error::engagement must be 'engagement' or 'engagement-<name>' (lowercase letters and digits)"; exit 1; }
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -25,7 +35,7 @@ jobs:
           BASE: ${{ github.event.repository.default_branch }}
         run: |
           [[ "$SYSTEM" =~ ^(all|INV-[0-9]+)$ ]] || { echo "::error::system must be an inventory id (INV-001) or 'all'"; exit 1; }
-          BRANCH="impact/new"  # one branch for all runs, so numbering never collides
+          BRANCH="impact/new${GRC_ENGAGEMENT#engagement}"  # one branch for all runs, so numbering never collides
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
             git fetch -q origin "$BRANCH"
             git checkout -q -B "$BRANCH" FETCH_HEAD
@@ -68,11 +78,11 @@ jobs:
           SYSTEM: ${{ inputs.system }}
           BASE: ${{ github.event.repository.default_branch }}
         run: |
-          BRANCH="impact/new"  # one branch for all runs, so numbering never collides
+          BRANCH="impact/new${GRC_ENGAGEMENT#engagement}"  # one branch for all runs, so numbering never collides
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q -B "$BRANCH"
-          [ -d engagement/impact ] && git add -A engagement/impact
+          [ -d "$GRC_ENGAGEMENT"/impact ] && git add -A "$GRC_ENGAGEMENT"/impact
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git commit -q -m "AI impact assessment: start for $SYSTEM"
           git push origin "$BRANCH"

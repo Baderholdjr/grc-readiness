@@ -18,7 +18,7 @@ from .draft import OUTPUT_SCHEMA
 API_URL = os.environ.get("ANTHROPIC_API_URL") or "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 
-SYSTEM = """You are a GRC analyst assistant preparing an ISO/IEC 42001 certification-readiness engagement.
+SYSTEM = """You are a GRC analyst assistant preparing an {framework} certification-readiness engagement.
 You extract facts from client documents into a fixed JSON structure.
 
 Rules:
@@ -54,7 +54,7 @@ def build_prompt(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps
 
 
 def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[dict], client: str,
-          model: str | None = None, transport=None) -> dict:
+          model: str | None = None, transport=None, framework: str = "ISO/IEC 42001") -> dict:
     from .. import sandbox
     key = "sandbox" if sandbox.active() else os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not key and transport is None:
@@ -62,7 +62,7 @@ def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[
     body = {
         "model": model or os.environ.get("GRC_MODEL") or DEFAULT_MODEL,
         "max_tokens": 32000,
-        "system": SYSTEM,
+        "system": SYSTEM.replace("{framework}", framework),
         "messages": [{"role": "user", "content": build_prompt(docs, catalog, existing_gaps, client)}],
         "output_config": {"format": {"type": "json_schema", "schema": OUTPUT_SCHEMA}},
     }

@@ -5,7 +5,8 @@ LEG_ALIASES = {"documented": "documented", "implemented": "implemented", "eviden
                "evidence exists": "evidenced", "evidence": "evidenced", "tested": "tested",
                "d": "documented", "i": "implemented", "e": "evidenced", "t": "tested"}
 EVIDENCE_TYPES = ["document", "record", "config", "log", "test", "sample", "interview", "screenshot"]
-INVENTORY_KINDS = ["ai_system", "sdlc_tool", "infrastructure", "model", "dataset", "supplier_service"]
+INVENTORY_KINDS = ["ai_system", "sdlc_tool", "infrastructure", "model", "dataset", "supplier_service",
+                   "application", "information_asset", "endpoint", "facility"]
 SEVERITIES = ["high", "medium", "low"]
 
 
@@ -36,7 +37,7 @@ REQS = {"type": "array", "items": S, "description": "requirement ids from the pr
 
 OUTPUT_SCHEMA = _obj({
     "client_overview": {"type": "array", "items": S, "description": "3-5 factual bullets about the organization"},
-    "ai_usage": {"type": "array", "items": S, "description": "3-5 factual bullets about AI use and AIMS scope"},
+    "ai_usage": {"type": "array", "items": S, "description": "3-5 factual bullets about the systems, information and (where relevant) AI use in the proposed management-system scope"},
     "scope_statement": {"type": "string"},
     "in_place": {"type": "array", "items": _obj({"foundation": S, "examples": S, "requirements": REQS, "source": SRC})},
     "inventory": {"type": "array", "items": _obj({"name": S, "kind": {"enum": INVENTORY_KINDS}, "owner": S,

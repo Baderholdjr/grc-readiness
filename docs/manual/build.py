@@ -203,7 +203,7 @@ def build(out: Path) -> Path:
 <div class="wrap">
 {''.join(nav)}
 <main>
-<header class="cover"><p class="kicker">GRC Readiness Engine · ISO/IEC 42001</p><h1>User manual</h1>
+<header class="cover"><p class="kicker">GRC Readiness Engine · ISO/IEC 42001 · ISO/IEC 27001</p><h1>User manual</h1>
 <p class="meta">Engine version {version} · Product guide, training guide and troubleshooting guide</p></header>
 {html_body}
 </main></div>"""

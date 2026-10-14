@@ -123,9 +123,12 @@ def evidence_index(model: Engagement, out: Path):
     audit_rows = [e for e in list(model.workpaper_evidence.values()) + list(impact.evidence_entries(model).values())
                   + list(documents.evidence_entries(model).values()) + list(review.evidence_entries(model).values())
                   if e["id"] in cited]
-    for e in list(model.evidence) + audit_rows:
+    from .mappings import cross_evidence
+    borrowed = [e for eid, e in sorted(cross_evidence(model).items()) if eid in cited]   # cited from another record
+    for e in list(model.evidence) + audit_rows + borrowed:
         exp = model.evidence_expiry(e)
-        rows.append([e["id"], e["title"], e["type"], e["location"], e["collected"], exp.isoformat() if exp else "",
+        rows.append([e["id"], e["title"], e["type"], e["location"] + (f" (held in {e['held_in']}/)" if e.get("held_in") else ""),
+                     e["collected"], exp.isoformat() if exp else "",
                      ("**FAILING**" if model.evidence_is_failing(e) else "**EXPIRED**" if model.evidence_is_expired(e) else "yes")
                      + (f" ({e['collector']})" if e.get("collector") else ""), e.get("approved_by", ""),
                      ", ".join(supports.get(e["id"], [])) or "(unused)"])
@@ -218,7 +221,7 @@ def audit_report(model: Engagement, a: dict, out: Path) -> None:
              ["Scope", "all applicable requirements" if a.get("scope") == "all" else ", ".join(a.get("scope", []))],
              ["Excluded", ", ".join(a.get("exclude", []) or []) or "—"],
              ["Requirements in scope", len(in_scope(model, a))],
-             ["Criteria", "; ".join(a.get("criteria", []) or ["ISO/IEC 42001:2023"])],
+             ["Criteria", "; ".join(a.get("criteria", []) or [model.framework_name])],
              ["Auditors", ", ".join(a.get("auditors", [])) + (f" (lead: {a['lead_auditor']})" if a.get("lead_auditor") else "")],
              ["Planned", f"{a['planned']['start']} → {a['planned']['end']}"],
              ["Report", f"issued {rep['issued']}, approved by {rep.get('approved_by', '?')}" if rep.get("issued") else "not issued"],
@@ -498,7 +501,7 @@ def brief(model: Engagement, out: Path) -> None:
          f"**{e.get('subtitle', 'Analyst Orientation')}**\n",
          f"> **TLDR:** {f(e.get('tldr') or pb.get('tldr_template', ''))}\n",
          "## 1. Client Overview\n", *[f"- {f(x)}" for x in e['client'].get('overview', [])], "",
-         "## 2. AI Usage\n", *[f"- {f(x)}" for x in e.get('ai_usage', [])], "",
+         f"## 2. {pb.get('usage_heading', 'AI Usage')}\n", *[f"- {f(x)}" for x in e.get('ai_usage', [])], "",
          "## 3. What is already in place\n",
          _table(["Foundation", "Examples"], [[x["foundation"], f(x["examples"])] for x in e.get("in_place", [])]),
          "## 4. Gap Analysis\n", f"> {f(pb.get('gap_callout', ''))}\n",
@@ -542,6 +545,14 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
         ("Gap register", "gap-register.md", "Open and closed gaps with owners and due dates ([CSV](gap-register.csv))"),
         ("Evidence index", "evidence-index.md", "Requirement → evidence traceability ([CSV](evidence-index.csv))"),
     ] + list(extra_rows or [])
+    if not model.namespace:        # the primary record links to the other frameworks' reports (published in subfolders)
+        from .model import discover, load_yaml
+        for other in discover(model.root)[1:]:
+            try:
+                ofw = str((load_yaml(other / "engagement.yaml") or {}).get("framework") or other.name)
+            except SystemExit:
+                ofw = other.name
+            rows.append((f"{ofw} reports", f"{other.name}/README.md", f"The {ofw} record ({other.name}/): every report above, for that framework"))
     banner = ("> ⚠️ **SANDBOX ENGAGEMENT.** Drata, cloud and AI-drafted content is simulated test data. "
               "Do not treat these reports as real client evidence.\n\n") if (model.engagement.get("sandbox") or {}).get("enabled") else ""
     L = [f"# {model.client} — {fw} readiness reports\n", banner,
@@ -566,7 +577,8 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     extra = (documents(model, out, docs_docx) + impact_assessments(model, out) + internal_audit(model, out)
              + corrective_actions(model, out) + management_reviews(model, out, docs_docx) + hours_report(model, out))
     from . import client_view, portal
-    extra = client_view.render(model, out) + portal.report(model, out) + extra
+    from . import mappings
+    extra = client_view.render(model, out) + portal.report(model, out) + extra + mappings.report(model, out)
     if workbook:
         extra = [("Excel workbook", f"{workbook}?raw=1", "Control matrix, SoA, gaps, evidence, findings, impact assessments, "
                   "documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet")] + extra

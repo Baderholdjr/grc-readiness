@@ -145,7 +145,7 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
         L.append("> **SANDBOX ENGAGEMENT.** Collector and AI-drafted content in this package is simulated test data.\n\n")
     L.append(_table(["Item", "Detail"], [
         ["Organisation", model.client], ["Standard", fw.get("name")],
-        ["AIMS scope", model.fmt(str((e.get("scope") or {}).get("statement") or "—"))],
+        [f"{model.system_abbrev} scope", model.fmt(str((e.get("scope") or {}).get("statement") or "—"))],
         ["Certification body", e.get("certification_body") or "—"],
         ["Stage 1 / Stage 2", f"{(e.get('dates') or {}).get('stage1', '—')} / {(e.get('dates') or {}).get('stage2', '—')}"],
         ["Record as of", str(model.today)],
@@ -171,8 +171,9 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
              f"- Open gaps: {m['gaps_open']} of {m['gaps_total']}. Open nonconformities: {m.get('nc_open_major', 0)} major, "
              f"{m.get('nc_open_minor', 0)} minor.\n"
              f"- Policies and procedures approved and current: {m.get('docs_approved', 0)} of {m.get('docs_required', 0)}. "
-             f"AI systems with a current impact assessment: {m.get('ia_current', 0)} of {m.get('ia_required', 0)}.\n"
-             f"- Last management review held: {m.get('mr_last_held') or 'none yet'}.\n")
+             + (f"AI systems with a current impact assessment: {m.get('ia_current', 0)} of {m.get('ia_required', 0)}.\n"
+                if model.uses_impact_assessments else "\n")
+             + f"- Last management review held: {m.get('mr_last_held') or 'none yet'}.\n")
     L.append("\n## 3. Requirement → evidence traceability\n\n")
     rows = []
     for r in model.requirements:

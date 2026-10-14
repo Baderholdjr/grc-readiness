@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       system: {description: "AI system inventory id (e.g. INV-001) or all", required: true, default: all}
+      engagement: {description: "Record folder: engagement (main) or engagement-27001 etc. for another framework", required: false, default: engagement}
 
 permissions:
   contents: write
@@ -16,5 +17,6 @@ jobs:
     uses: ./.github/workflows/grc-impact.yml
     with:
       engine: local
+      engagement: ${{ inputs.engagement }}
       system: ${{ inputs.system }}
     secrets: inherit

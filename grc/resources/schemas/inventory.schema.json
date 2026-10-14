@@ -33,7 +33,11 @@
               "infrastructure",
               "model",
               "dataset",
-              "supplier_service"
+              "supplier_service",
+              "application",
+              "information_asset",
+              "endpoint",
+              "facility"
             ]
           },
           "owner": {

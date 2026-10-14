@@ -40,7 +40,13 @@ jobs:
           fi
           python -c "import grc; print('GRC engine', grc.__version__)"
       # --force: publish even when validation has errors (they are shown on the landing page).
-      - run: python -m grc build --out out --force
+      - name: Build the reports (other frameworks' records go in subfolders)
+        run: |
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do
+            if [ "$e" = engagement ]; then o=out; else o="out/$e"; fi
+            python -m grc --engagement "$e" build --out "$o" --force
+          done
       - name: Commit to the reports branch
         env:
           SHA: ${{ github.sha }}

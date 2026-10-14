@@ -188,7 +188,9 @@ def overview(model: Engagement) -> list[tuple[str, str]]:
             ("Evidence checks complete", f"{m['legs_verified_pct']}%"),
             ("Open gaps", str(m["gaps_open"])),
             ("Policies and procedures approved", f"{m.get('docs_approved', 0)} of {m.get('docs_required', 0)}"),
-            ("AI systems with an approved impact assessment", f"{m.get('ia_current', 0)} of {m.get('ia_required', 0)}")]
+            ]
+    if model.uses_impact_assessments:
+        rows.append(("AI systems with an approved impact assessment", f"{m.get('ia_current', 0)} of {m.get('ia_required', 0)}"))
     if m.get("findings_total"):
         rows.append(("Open nonconformities", f"{m.get('nc_open_major', 0)} major · {m.get('nc_open_minor', 0)} minor"))
     return rows

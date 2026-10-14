@@ -116,7 +116,7 @@ def evidence_entries(model: Engagement) -> dict[str, dict]:
     for iid, ia in model.impacts.items():
         if not isinstance(ia, dict):
             out[iid] = {"id": iid, "title": f"AI impact assessment {iid} (malformed)", "type": "record",
-                        "location": f"engagement/impact/{iid}.yaml", "owner": "", "collected": None,
+                        "location": f"{model.record_dir}/impact/{iid}.yaml", "owner": "", "collected": None,
                         "valid_for_days": 1, "source": "impact", "result": "fail", "notes": "malformed file"}
             continue
         approved = safe_date(ia.get("approved_on"))
@@ -125,7 +125,7 @@ def evidence_entries(model: Engagement) -> dict[str, dict]:
         ok = is_effective(model, ia)
         out[iid] = {
             "id": iid, "title": f"AI impact assessment {iid}: {ia.get('title', ia.get('system', ''))}",
-            "type": "record", "location": f"engagement/impact/{iid}.yaml", "owner": ia.get("assessor", ""),
+            "type": "record", "location": f"{model.record_dir}/impact/{iid}.yaml", "owner": ia.get("assessor", ""),
             "collected": approved, "approved_by": ia.get("approver", ""), "approved_on": approved,
             "valid_for_days": max(days, 1), "source": "impact",
             # past review -> plain expiry (E007); anything else that isn't effective -> failing (E015)

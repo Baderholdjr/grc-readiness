@@ -42,8 +42,13 @@ jobs:
         id: check
         run: |
           set +e
-          python -m grc validate --strict --summary report.md > findings.txt 2>&1
-          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          rc=0; : > report.md; : > findings.txt
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do
+            [ "$e" = engagement ] || echo "## Record: $e" >> report.md
+            python -m grc --engagement "$e" validate --strict --summary report.md >> findings.txt 2>&1 || rc=1
+          done
+          echo "exit=$rc" >> "$GITHUB_OUTPUT"
           cat findings.txt
           cat report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Update tracking issue

@@ -210,6 +210,7 @@ function rows(list) {
     if (r.owner) meta.push(h("span", {}, r.owner));
     if (r.due) meta.push(h("span", { class: r.overdue ? "due-late" : "" }, r.overdue ? `Overdue since ${fmt(r.due)}` : `Due ${fmt(r.due)}`));
     meta.push(h("span", {}, `${r.kind} ${r.ref}`));
+    if (r.also && r.also.length) meta.push(h("span", {}, `Also counts toward ${r.also.join(", ")}`));
     if (S.data.frameworks.length > 1) meta.push(h("span", {}, r.fwName));
     let side;
     if (st.kind === "sent") side = h("span", { class: "pill sent" }, st.label);
@@ -267,7 +268,8 @@ function request(key) {
     h("h1", {}, r.title || `${r.kind} ${r.ref}`),
     h("p", { class: "facts" },
       h("span", {}, "Owner ", h("b", {}, r.owner)),
-      r.due ? h("span", { class: r.overdue ? "due-late" : "" }, r.overdue ? `Overdue since ${fmt(r.due, true)}` : `Due ${fmt(r.due, true)}`) : h("span", {}, "No due date yet")),
+      r.due ? h("span", { class: r.overdue ? "due-late" : "" }, r.overdue ? `Overdue since ${fmt(r.due, true)}` : `Due ${fmt(r.due, true)}`) : h("span", {}, "No due date yet"),
+      r.also && r.also.length ? h("span", {}, "Also counts toward ", h("b", {}, r.also.join(", "))) : null),
     h("div", { class: "block" }, h("h3", {}, "What we need"), h("ul", {}, r.asks.map((a) => h("li", {}, a)))),
     r.why ? h("div", { class: "block" }, h("h3", {}, "Why this matters"), h("p", {}, r.why)) : null,
     r.examples.length ? h("div", { class: "block" }, h("h3", {}, "What good evidence looks like"), h("ul", {}, r.examples.map((x) => h("li", {}, x)))) : null);
@@ -383,11 +385,11 @@ function help() {
   const terms = [
     ["Readiness", "How close your organization is to passing the certification audit.", "Measured per requirement of the standard: a requirement is ready when all four evidence checks pass."],
     ["The four checks", "For each requirement we confirm that it's written down, that it happens, that there are records, and that someone has checked it works.", "Documented, Implemented (In use), Evidenced (Records), Tested. Only the engagement team's review marks a check as passed."],
-    ["Request", "Something we need from someone at your organization: an answer, a document or a link to records.", "Generated from open gaps, evidence checks, policies awaiting approval, impact assessments, audit findings and management review actions."],
+    ["Request", "Something we need from someone at your organization: an answer, a document or a link to records.", "Generated from open gaps, evidence checks, policies awaiting approval, assessments, audit findings and management review actions."],
     ["Sending an answer", "Your answer goes to your engagement team, who review it before anything changes. You'll see 'Sent', then 'Accepted' or a note asking for more.", "Each answer becomes a reviewed change (a pull request) in the engagement record. It never marks a requirement as ready on its own."],
     ["Gap", "Something missing that needs to be put in place before the audit.", "An item in the gap register, with an owner, due date and closing evidence."],
     ["Policy or procedure", "A document that says how your organization does something, approved by the right person.", "Documented information required by the standard; tracked with owner, approver, version and review date."],
-    ["Impact assessment", "A written look at how one of your AI systems could affect people, and what you do about it.", "AI system impact assessment (ISO/IEC 42001 clause 6.1.4 and Annex A.5)."],
+    ...(S.data.frameworks.some((f) => f.impact_assessments) ? [["Impact assessment", "A written look at how one of your AI systems could affect people, and what you do about it.", "AI system impact assessment (ISO/IEC 42001 clause 6.1.4 and Annex A.5)."]] : []),
     ["Internal audit finding", "Something your internal audit found that needs correcting, or an optional suggestion.", "Nonconformity (major or minor) or opportunity for improvement, with root cause and corrective action (clause 10.2)."],
     ["Management review", "A regular meeting where your leadership looks at how the program is doing and agrees actions.", "Clause 9.3 management review, with required inputs, decisions and actions."],
     ["Stage 1 and Stage 2 audits", "The two visits by the certification body. Stage 1 checks you're prepared; Stage 2 checks everything works in practice.", "Certification audit stages under ISO/IEC 17021-1."],

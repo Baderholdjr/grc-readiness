@@ -12,6 +12,12 @@ on:
       stage2: {description: "Planned Stage 2 audit (YYYY-MM-DD)", required: true}
       hours: {description: "Consulting hours budget", required: true, default: "200"}
       lead: {description: "Engagement lead", required: false}
+      framework:
+        description: "Framework"
+        type: choice
+        options: [iso42001, iso27001]
+        default: iso42001
+      engagement: {description: "Record folder: engagement (main) or engagement-27001 etc. for a second framework", required: false, default: engagement}
 
 permissions:
   contents: write
@@ -29,4 +35,6 @@ jobs:
       stage2: ${{ inputs.stage2 }}
       hours: ${{ inputs.hours }}
       lead: ${{ inputs.lead }}
+      framework: ${{ inputs.framework }}
+      engagement: ${{ inputs.engagement }}
     secrets: inherit

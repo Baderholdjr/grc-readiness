@@ -368,14 +368,37 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 ## 18. Frameworks
 
-> **In plain terms:** ISO 42001 is built in. More standards, starting with ISO 27001, can be added without changing how the tool works. Work done for one standard will then count towards another where they overlap.
+> **In plain terms:** ISO 42001 (AI) and ISO 27001 (information security) are both built in. A client working towards both gets one workspace with two records, one per standard, and sees both on the client site as two tabs. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
 
-> **For GRC practitioners:** A framework is a requirement catalog (identifiers, titles and *paraphrased* intent, never the standard's text) plus a playbook (phases, document library, methods). Cross-framework mappings (equivalent, subset, superset, related) are planned. Only an `equivalent` mapping will let evidence count for both standards.
+> **For GRC practitioners:** Each standard keeps its own record:
+> - its own Statement of Applicability, gaps and policies
+> - its own internal audit, management review and auditor package
+>
+> **Mappings:** proposed mappings link the two standards' requirements as *equivalent*, *related*, *subset* or *superset*. Only a reviewed *equivalent* mapping lets evidence from one record be cited in the other; the others are pointers for the analyst.
+>
+> **Borrowed evidence:** it keeps its own freshness and approval rules.
+>
+> **Shipped for ISO 27001:**
+> - the catalog: 25 clauses and 93 Annex A controls, our own paraphrase
+> - a 20-document ISMS library covering every requirement once
+> - no impact assessments
 
 > **Under the hood:**
-> - A framework lives in `frameworks/<id>/catalog.yaml` and `playbook.yaml`; set `framework:` in `engagement.yaml` to use it.
-> - The client site shows one tab per framework (`grc portal --also <dir>`).
-> - Mappings will live in `mappings/`.
+> - **Where each framework lives:** `frameworks/<id>/catalog.yaml`, `playbook.yaml` and `documents/`.
+> - **Second record:** a second framework's record lives in `engagement-<name>/`. `python -m grc engagements` lists the records.
+> - **Workflows:** the record-wide workflows loop over every record. The ones you run by hand take an **engagement** input.
+> - **Mappings:** in `mappings/<a>__<b>.yaml`. The engine's are proposals; copy one to the repository root and fill `reviewed_by` and `reviewed_on`.
+> - **Citing across records:** cite as `<framework>:<id>`, for example `iso42001:DOC-DOCINFO`.
+> - **Rules:** E080, E081, I180.
+> - **Report:** `cross-framework.md` in each record's reports.
+> - Details: `docs/FRAMEWORKS.md`.
+
+| | ISO 42001 | ISO 27001 |
+|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls |
+| Policy and procedure library | 17 documents | 20 documents |
+| Impact assessments | Yes (AI systems) | No |
+| Proposed mappings between them | 4 equivalent, 35 related | (same file) |
 
 ## 19. Boundaries: what the tool will and won't do
 
@@ -411,7 +434,8 @@ Run from a client repository (or the engine repo) with the engine installed. Two
 | `python -m grc review new DATE` / `review pack MR-…` | Management review |
 | `python -m grc package --out dist --label stage1` | Auditor package |
 | `python -m grc hours import FILES… [--match …]` / `hours log …` | Timesheet |
-| `python -m grc portal --out _portal [--repo OWNER/REPO] [--also DIR]` | Client site bundle |
+| `python -m grc portal --out _portal [--repo OWNER/REPO] [--also DIR]` | Client site bundle (other records become tabs automatically) |
+| `python -m grc engagements` | List the records in this repository (`engagement/`, `engagement-*/`) |
 
 ## Appendix B: Workflows
 
@@ -462,6 +486,8 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | E050–E052 | error | Management review: unknown inputs, incomplete record, actions without owner, due date or evidence |
 | E060 | error | Timesheet entry invalid |
 | E070 | error | Client submission id doesn't match its file name |
+| E080 | error | Evidence cited from another framework's record (`iso42001:EV-001`) with no such record, or no reviewed equivalent mapping for this requirement |
+| E081 | error | Cross-framework mapping file invalid (schema, frameworks, unknown requirement ids) |
 | W101 | warning | Evidence expiring soon |
 | W102 | warning | Operates in practice but isn't in an approved document |
 | W103 | warning | Open gap or finding with no owner |
@@ -479,6 +505,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W170 | info | Submission answers a request that is no longer open |
 | W171 | warning | Client submission waiting for review longer than `triage_days` (default 5) |
 | W172 | warning | Submission lists evidence that isn't in the index |
+| I180 | info | Reuse opportunity: the other framework's record has verified a mapped leg; its evidence could be cited here |
 | I201 | info | Client claim not yet backed by evidence (the follow-up list) |
 
 ## Appendix D: Glossary

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mapping.schema.json",
+  "title": "Cross-framework mapping (mappings/<a>__<b>.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["frameworks", "mappings"],
+  "properties": {
+    "frameworks": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "pattern": "^[a-z0-9]+$"}},
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["relationship"],
+        "properties": {
+          "relationship": {"enum": ["equivalent", "related", "subset", "superset"]},
+          "note": {"type": "string"},
+          "reviewed_by": {"type": "string"},
+          "reviewed_on": {"anyOf": [{"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"}, {"type": "null"}]}
+        },
+        "patternProperties": {"^[a-z0-9]+$": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -80,9 +80,15 @@ jobs:
           MLFLOW_TRACKING_USERNAME: ${{ vars.MLFLOW_TRACKING_USERNAME }}
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
         run: |
-          python -m grc collect --report report.md
-          python -m grc validate --summary validate.md > /dev/null 2>&1 || true
-          { echo; echo "---"; cat validate.md; } >> report.md
+          : > report.md
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do
+            [ "$e" = engagement ] || { echo; echo "## Record: $e"; } >> report.md
+            python -m grc --engagement "$e" collect --report part.md
+            python -m grc --engagement "$e" validate --summary validate.md > /dev/null 2>&1 || true
+            { cat part.md; echo; echo "---"; cat validate.md; } >> report.md
+            rm -f part.md validate.md
+          done
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open or update the refresh PR
@@ -92,7 +98,8 @@ jobs:
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add engagement/evidence engagement/controls
+          engs=$(python -m grc engagements) || exit 1
+          for e in $engs; do git add "$e/evidence" "$e/controls"; done
           if git diff --cached --quiet; then echo "No evidence changes."; exit 0; fi
           git commit -q -m "Evidence refresh $(date -u +%F)"
           git push -f origin "$BRANCH"

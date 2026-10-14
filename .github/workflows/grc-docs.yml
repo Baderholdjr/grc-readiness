@@ -6,6 +6,10 @@ name: Policies and procedures (reusable)
 on:
   workflow_call:
     inputs:
+      engagement:
+        description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"
+        type: string
+        default: engagement
       engine:
         type: string
         default: pinned
@@ -22,7 +26,13 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
+    env:
+      GRC_ENGAGEMENT: ${{ inputs.engagement }}
     steps:
+      - name: Check the record folder
+        run: |
+          [[ "$GRC_ENGAGEMENT" =~ ^engagement(-[a-z0-9]+)?$ ]] || {
+            echo "::error::engagement must be 'engagement' or 'engagement-<name>' (lowercase letters and digits)"; exit 1; }
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -38,9 +48,9 @@ jobs:
           if [ "$ACTION" = approve ]; then
             [ "$DOCUMENT" != all ] || { echo "::error::approve one document at a time"; exit 1; }
             [ -n "$APPROVER" ] || { echo "::error::approve needs the approver"; exit 1; }
-            BRANCH="docs/approve-$DOCUMENT"
+            BRANCH="docs/approve-$DOCUMENT${GRC_ENGAGEMENT#engagement}"
           else
-            BRANCH="docs/drafts"
+            BRANCH="docs/drafts${GRC_ENGAGEMENT#engagement}"
           fi
           echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
@@ -97,7 +107,7 @@ jobs:
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q -B "$BRANCH"
-          [ -d engagement/documents ] && git add -A engagement/documents
+          [ -d "$GRC_ENGAGEMENT"/documents ] && git add -A "$GRC_ENGAGEMENT"/documents
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git commit -q -m "Documents: $ACTION $DOCUMENT"
           git push origin "$BRANCH"

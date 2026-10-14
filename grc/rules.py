@@ -853,7 +853,79 @@ def _safe_date(v):
         return None
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions)
+def check_mappings(model: Engagement) -> list[Finding]:
+    """Cross-framework reuse: mapping files are sound, and evidence from another record is cited only
+    where a reviewed equivalent mapping allows it."""
+    from . import mappings as M
+    out: list[Finding] = []
+    sibs = M.siblings(model)
+    fw = model.engagement.get("framework", "")
+    for ofw, sib in sibs.items():
+        path = M.mapping_path(model, ofw)
+        if not path.exists():
+            continue
+        rel = _rel(model, path) if path.is_relative_to(model.root) else f"(engine) mappings/{path.name}"
+        data = M.raw(model, ofw)
+        v = Draft202012Validator(load_schema("mapping"), format_checker=FormatChecker())
+        for err in v.iter_errors(jsonable(data)):
+            loc = "/".join(str(x) for x in err.path) or "(root)"
+            out.append(Finding("error", "E081", f"Mapping file: {loc}: {err.message}", rel))
+        if sorted(data.get("frameworks") or []) != sorted([fw, ofw]):
+            out.append(Finding("error", "E081", f"Mapping file must list frameworks [{fw}, {ofw}].", rel))
+        for i, m in enumerate(data.get("mappings") or []):
+            if not isinstance(m, dict):
+                continue
+            for side, index in ((fw, model.requirement_index), (ofw, sib.requirement_index)):
+                rid = m.get(side)
+                if rid is None or str(rid) not in index:
+                    out.append(Finding("error", "E081", f"Mapping {i + 1}: {side} requirement {rid!r} is not in the {side} catalog.", rel))
+    eq = {ofw: M.equivalents(model, ofw) for ofw in sibs}
+    for cid, c in model.controls.items():
+        test = c.get("test") if isinstance(c.get("test"), dict) else {}
+        for k in LEGS:
+            for ref in (test.get(k) or {}).get("evidence") or []:
+                if ":" not in str(ref):
+                    continue
+                pre = str(ref).split(":", 1)[0]
+                path = _rel(model, model.control_files[cid])
+                if pre not in sibs:
+                    out.append(Finding("error", "E080", f"{cid}.{k} cites {ref}, but this repository has no {pre} record "
+                                       f"(engagement-*/ with framework: {pre}).", path, cid))
+                elif not eq[pre].get(cid):
+                    out.append(Finding("error", "E080", f"{cid}.{k} cites {ref} from the {pre} record, but no reviewed "
+                                       f"'equivalent' mapping links {cid} to a {pre} requirement "
+                                       f"(mappings/{M.file_name(fw, pre)}: relationship equivalent, reviewed_by, reviewed_on).", path, cid))
+                else:
+                    # the borrowed evidence must be evidence for the mapped requirement(s) in the other record
+                    eid = str(ref).split(":", 1)[1]
+                    used = {str(e) for o in eq[pre][cid] for lg in LEGS
+                            for e in ((((sibs[pre].controls.get(o) or {}).get("test") or {}).get(lg) or {}).get("evidence") or [])}
+                    if eid not in used:
+                        out.append(Finding("error", "E080", f"{cid}.{k} cites {ref}, but the mapped {pre} requirement(s) "
+                                           f"{', '.join(sorted(eq[pre][cid]))} don't cite {eid}: only evidence for the mapped "
+                                           "requirement can be reused.", path, cid))
+    # reuse opportunities: the other record has verified a leg this record hasn't
+    for ofw, sib in sibs.items():
+        for mine, others in eq[ofw].items():
+            if mine not in model.controls or not model.is_applicable(mine):
+                continue
+            my_test = model.controls[mine].get("test") or {}
+            for k in LEGS:
+                if leg_effective(model, my_test.get(k) or {}) == "verified":
+                    continue
+                donors = [o for o in sorted(others) if leg_effective(sib, ((sib.controls.get(o) or {}).get("test") or {}).get(k) or {}) == "verified"]
+                if donors:
+                    ev = [e for o in donors for e in (((sib.controls[o].get("test") or {}).get(k) or {}).get("evidence") or [])
+                          if ":" not in str(e)]          # only the other record's own evidence can be borrowed
+                    if not ev:
+                        continue
+                    out.append(Finding("info", "I180", f"{mine}.{k}: verified in the {ofw} record ({', '.join(donors)}); "
+                                       f"evidence there could be cited here as {', '.join(ofw + ':' + str(e) for e in ev[:3]) or '-'}.",
+                                       _rel(model, model.control_files[mine]), mine))
+    return out
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings)
 
 
 def validate(model: Engagement) -> list[Finding]:

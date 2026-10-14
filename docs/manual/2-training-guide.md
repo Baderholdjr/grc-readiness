@@ -28,6 +28,7 @@ You don't need a terminal. Every step can be done from the GitHub website. Where
 12. [Hours](#module-12-hours)
 13. [Prepare for Stage 1](#module-13-prepare-for-stage-1)
 14. [Your weekly routine](#module-14-your-weekly-routine)
+15. [Add a second framework (ISO 27001)](#module-15-add-a-second-framework-iso-27001)
 - [Appendix: screenshots to add](#appendix-screenshots-to-add)
 
 ---
@@ -380,6 +381,34 @@ Then open the **`reports` branch**. Its landing page lists every report. Start w
 | Weekly | Import timesheets; check `hours.md` |
 | Before each client meeting | Open the client site or client view with them |
 | Monthly | Read the brief end to end; check W1xx warnings trend down |
+
+## Module 15: Add a second framework (ISO 27001)
+
+**Goal:** the client works towards ISO 27001 as well, without mixing the two records.
+
+1. **Create the record.** Run **Actions → New engagement → Run workflow** with:
+   - the client and dates
+   - **framework** `iso27001`
+   - **engagement** `engagement-27001`
+
+   Merge the pull request. It adds `engagement-27001/` (118 control files, the phases, an internal audit and a management review) and `intake-27001/`. The main record isn't touched.
+2. **Set it up as in Modules 2–5:** owners, gaps, collectors. Everything happens inside `engagement-27001/`.
+3. **Use the engagement input** whenever you run *Policies and procedures*, *Internal audit* or *Management review* for ISO 27001. Its document library has 20 ISMS documents.
+4. **Review the mappings.**
+   1. Copy the engine's `mappings/iso27001__iso42001.yaml` to `mappings/` in the client repository.
+   2. Go through each line with the client.
+   3. For the ones you accept, fill `reviewed_by` and `reviewed_on`.
+
+   Only the four `equivalent` lines can let evidence count twice:
+   - 6.3 planning of changes
+   - 7.5 documented information
+   - 10.1 continual improvement
+   - 10.2 corrective action
+5. **Reuse evidence.** When the ISO 42001 record has verified, say, 7.5 *Documented*, validation shows an I180 hint on the ISO 27001 side. Cite the evidence there as `iso42001:<id>`.
+6. **Check the reports.**
+   - **Reports branch:** the ISO 27001 reports are in the `engagement-27001/` folder, linked from the landing page.
+   - **Cross-framework mappings:** `cross-framework.md` shows each mapping and whether it has been reviewed.
+   - **Client site:** it shows an ISO 27001 tab. A shared request appears once, marked "Also counts toward ISO 27001".
 
 ---
 

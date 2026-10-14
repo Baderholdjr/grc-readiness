@@ -1,0 +1,188 @@
+# Framework playbook: reusable engagement content for ISO/IEC 27001:2022 readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+
+title_suffix: ISO 27001 Project Brief
+tldr_template: "Help {client} turn its existing security practices and technical controls into a complete, auditable information security management system (ISMS)."
+usage_heading: Information and Systems in Scope
+requirements_heading: ISO 27001 Readiness Criteria
+
+# The four-part evidence test. Every control file records a status for each leg.
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the requirement formally defined?
+  - key: implemented
+    label: Implemented
+    question: Is the process actually in use?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing execution?
+  - key: tested
+    label: Tested
+    question: Does sampling/interview evidence support consistent operation?
+
+gap_callout: Treat client readiness statements as hypotheses until evidence shows the control is documented, implemented, evidenced, and operating.
+
+working_rule: If a control is described but you cannot trace it to an owner, current artifact, and operating evidence, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - ISMS scope, information security policy, objectives, roles and responsibilities are approved and understood.
+  - The risk assessment and treatment process has run; the Statement of Applicability justifies every Annex A control and is approved by risk owners.
+  - Asset inventory, access control, supplier security, incident management, continuity and secure development are documented and operating.
+  - Required processes have operated long enough to produce credible records for auditor sampling.
+  - Internal audit has tested the ISMS; findings have owners and corrective actions.
+  - Management review has considered ISMS performance, risk treatment status, audit results, changes and improvement actions.
+  - Stage 1 findings are closed or controlled before Stage 2; process owners can explain what they do and show evidence.
+
+phases:
+  - id: validate
+    objective: "Validate & establish"
+    deliverables:
+      - Kickoff and owner alignment
+      - Validate gap-analysis claims and evidence
+      - Finalize ISMS scope, interfaces and dependencies
+      - Build clause/control matrix and remediation tracker
+      - Confirm certification-body milestones
+  - id: governance
+    objective: Build governance
+    deliverables:
+      - Approve the information security policy and topic-specific policies
+      - Formalize roles, objectives and the risk method
+      - Complete the asset inventory and classification scheme
+      - Run the risk assessment; draft the Statement of Applicability
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Approve the risk treatment plan and SoA
+      - Close control gaps (access, suppliers, incident, continuity, SDLC)
+      - Launch awareness training
+      - Operationalize monitoring and collect evidence
+  - id: test
+    objective: Test the ISMS
+    deliverables:
+      - Perform ISO 27001 internal audit
+      - Test continuity and incident response
+      - Complete corrective actions
+      - Conduct formal management review
+      - Prepare certification evidence package
+  - id: stage1
+    objective: Stage 1
+    deliverables:
+      - Run readiness/mock audit
+      - Close internal-audit findings
+      - Evidence cleanup and owner preparation
+      - Support Stage 1 audit
+  - id: stage2
+    objective: "Stage 2 & closure"
+    deliverables:
+      - Close Stage 1 findings
+      - Prepare process owners for interviews
+      - Support Stage 2 audit
+      - Respond to findings and corrective actions
+
+needs:
+  - Maintain the clause/control mapping, evidence index, remediation tracker, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test; flag unsupported or ambiguous readiness claims.
+  - Draft and revise policies, procedures and the Statement of Applicability for lead review - do not invent operating practices.
+  - Support the risk assessment by gathering asset, threat and control evidence and tracking treatment actions.
+  - Prepare test samples, record objective evidence, and document exceptions for the internal audit.
+  - Organize Stage 1/Stage 2 evidence so an auditor can trace each requirement to a current, approved artifact or record.
+
+default_guardrails:
+  - "{client} owns implementation and evidence production; our team structures, reviews, tests, and challenges."
+  - Prefer durable, auditable processes over one-time documents created solely for certification.
+  - Escalate scope changes, major control redesign, legal/contract questions, or unsupported high-risk claims to the engagement lead.
+
+default_risks:
+  - Overstated readiness or evidence that reflects design rather than operation.
+  - A Statement of Applicability that isn't driven by the risk assessment.
+  - Late implementation that leaves too little operating history before Stage 2.
+  - Internal-audit or management-review slippage.
+
+# ISO 27001 has no AI system impact assessment: nothing in the inventory requires one.
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`). Each entry is drafted from documents/<template>.
+# Together the documents cover every clause and Annex A control exactly once.
+# Wording is our own; it paraphrases the intent of the standard and does not reproduce it.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-ISMS-SCOPE, title: "ISMS Scope and Context", kind: policy, template: scope.md,
+       satisfies: ["4.1", "4.2", "4.3", "4.4"], sections: [Purpose, Context, Interested parties, Scope, Exclusions, Review]}
+    - {id: DOC-IS-POLICY, title: "Information Security Policy", kind: policy, template: is-policy.md,
+       satisfies: ["5.1", "5.2", "A.5.1", "A.5.4", "A.5.36"], sections: [Purpose, Scope, Commitments, Topic-specific policies, Responsibilities, Compliance, Review]}
+    - {id: DOC-IS-ROLES, title: "Information Security Roles and Responsibilities", kind: procedure, template: roles.md,
+       satisfies: ["5.3", "A.5.2", "A.5.3", "A.5.5", "A.5.6"], sections: [Purpose, Roles, Segregation of duties, External contacts, Review]}
+    - {id: DOC-IS-RISK, title: "Information Security Risk Management", kind: procedure, template: risk.md,
+       satisfies: ["6.1.1", "6.1.2", "6.1.3", "8.2", "8.3", "A.5.7"], sections: [Purpose, Criteria, Risk assessment, Risk treatment, Statement of Applicability, Threat intelligence, Records, Review]}
+    - {id: DOC-IS-OBJECTIVES, title: "Objectives and Planning of Changes", kind: procedure, template: objectives.md,
+       satisfies: ["6.2", "6.3", "A.5.8"], sections: [Purpose, Objectives, Changes to the ISMS, Security in projects, Review]}
+    - {id: DOC-IS-PEOPLE, title: "People Security, Competence, Awareness and Communication", kind: procedure, template: people.md,
+       satisfies: ["7.1", "7.2", "7.3", "7.4", "A.6.1", "A.6.2", "A.6.3", "A.6.4", "A.6.5", "A.6.6"],
+       sections: [Purpose, Resources, Before employment, During employment, Leaving or changing role, Communication, Review]}
+    - {id: DOC-IS-DOCINFO, title: "Control of Documented Information and Records", kind: procedure, template: docinfo.md,
+       satisfies: ["7.5", "A.5.33", "A.5.37"], sections: [Purpose, Creating and updating, Approval, Control, Records, Operating procedures, Review]}
+    - {id: DOC-IS-ASSETS, title: "Asset Management and Information Handling", kind: procedure, template: assets.md,
+       satisfies: ["A.5.9", "A.5.10", "A.5.11", "A.5.12", "A.5.13", "A.5.14", "A.7.10", "A.8.10", "A.8.11", "A.8.12"],
+       sections: [Purpose, Inventory, Acceptable use, Classification and labelling, Transfer, Media and deletion, Data protection, Review]}
+    - {id: DOC-IS-ACCESS, title: "Access Control", kind: policy, template: access.md,
+       satisfies: ["A.5.15", "A.5.16", "A.5.17", "A.5.18", "A.8.2", "A.8.3", "A.8.4", "A.8.5", "A.8.18"],
+       sections: [Purpose, Principles, Identities, Authentication, Granting and reviewing access, Privileged access, Source code, Review]}
+    - {id: DOC-IS-SUPPLIER, title: "Supplier and Cloud Security", kind: procedure, template: supplier.md,
+       satisfies: ["A.5.19", "A.5.20", "A.5.21", "A.5.22", "A.5.23"], sections: [Purpose, Supplier assessment, Agreements, Supply chain, Monitoring, Cloud services, Review]}
+    - {id: DOC-IS-INCIDENT, title: "Information Security Incident Management", kind: procedure, template: incident.md,
+       satisfies: ["A.5.24", "A.5.25", "A.5.26", "A.5.27", "A.5.28", "A.6.8"], sections: [Purpose, Reporting, Triage, Response, Evidence, Lessons learned, Review]}
+    - {id: DOC-IS-CONTINUITY, title: "Information Security Continuity, Backup and Redundancy", kind: procedure, template: continuity.md,
+       satisfies: ["A.5.29", "A.5.30", "A.8.13", "A.8.14"], sections: [Purpose, Security during disruption, ICT readiness, Backup, Redundancy, Testing, Review]}
+    - {id: DOC-IS-COMPLIANCE, title: "Legal, Regulatory, Privacy and Independent Review", kind: procedure, template: compliance.md,
+       satisfies: ["A.5.31", "A.5.32", "A.5.34", "A.5.35"], sections: [Purpose, Legal and contractual requirements, Intellectual property, Privacy, Independent review, Review]}
+    - {id: DOC-IS-ENDPOINT, title: "Endpoints, Remote Working and Clear Desk", kind: policy, template: endpoint.md,
+       satisfies: ["A.6.7", "A.7.7", "A.7.9", "A.8.1"], sections: [Purpose, Endpoint devices, Remote working, Off-premises assets, Clear desk and screen, Review]}
+    - {id: DOC-IS-PHYSICAL, title: "Physical and Environmental Security", kind: procedure, template: physical.md,
+       satisfies: ["A.7.1", "A.7.2", "A.7.3", "A.7.4", "A.7.5", "A.7.6", "A.7.8", "A.7.11", "A.7.12", "A.7.13", "A.7.14"],
+       sections: [Purpose, Sites and perimeters, Entry and monitoring, Secure areas, Equipment, Disposal, Review]}
+    - {id: DOC-IS-OPS, title: "Operations Security", kind: procedure, template: operations.md,
+       satisfies: ["8.1", "A.8.6", "A.8.7", "A.8.8", "A.8.9", "A.8.15", "A.8.16", "A.8.17", "A.8.19", "A.8.20", "A.8.21", "A.8.22", "A.8.23", "A.8.24"],
+       sections: [Purpose, Operational planning, Capacity and malware, Vulnerabilities and configuration, Logging and monitoring, Software installation, Networks, Cryptography, Review]}
+    - {id: DOC-IS-SDLC, title: "Secure Development and Change Management", kind: procedure, template: sdlc.md,
+       satisfies: ["A.8.25", "A.8.26", "A.8.27", "A.8.28", "A.8.29", "A.8.30", "A.8.31", "A.8.32", "A.8.33", "A.8.34"],
+       sections: [Purpose, Requirements and architecture, Secure coding, Security testing, Environments and test data, Outsourced development, Change management, Audit testing, Review]}
+    - {id: DOC-IS-AUDIT, title: "Monitoring, Measurement and Internal Audit Procedure", kind: procedure, template: audit.md,
+       satisfies: ["9.1", "9.2"], sections: [Purpose, Monitoring and measurement, Internal audit, Records, Review]}
+    - {id: DOC-IS-REVIEW, title: "Management Review Procedure", kind: procedure, template: mgmt-review.md,
+       satisfies: ["9.3"], sections: [Purpose, Frequency and attendees, Inputs, Outputs, Records, Review]}
+    - {id: DOC-IS-IMPROVE, title: "Nonconformity, Corrective Action and Improvement", kind: procedure, template: improve.md,
+       satisfies: ["10.1", "10.2"], sections: [Purpose, Raising a finding, Corrective action, Effectiveness, Continual improvement, Review]}
+
+# Management review (9.3). The inputs ISO 27001 asks top management to consider.
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous management reviews"}
+    - {id: context_changes, title: "Changes in external and internal issues relevant to the ISMS"}
+    - {id: interested_parties, title: "Changes in the needs and expectations of interested parties"}
+    - {id: performance, title: "Information security performance: nonconformities and corrective actions, monitoring and measurement, audit results, objectives"}
+    - {id: interested_party_feedback, title: "Feedback from interested parties"}
+    - {id: risks_and_impacts, title: "Results of risk assessment and status of the risk treatment plan"}
+    - {id: improvement, title: "Opportunities for continual improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.12, governance: 0.22, implement: 0.28, test: 0.18, stage1: 0.1, stage2: 0.1}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and scoping", keywords: [kickoff, kick-off, scoping, scope]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, procedures and documentation", keywords: [policy, procedure, document, drafting, soa]}
+    - {id: risk_impact, title: "Risk assessment and treatment", keywords: [risk, treatment, assessment]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, collector]}
+    - {id: internal_audit, title: "Internal audit", keywords: [internal audit, audit, workpaper, sample]}
+    - {id: management_review, title: "Management review", keywords: [management review, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: certification, title: "Certification audit support", keywords: [stage 1, stage 2, stage1, stage2, certification, auditor]}
+    - {id: other, title: "Other", keywords: []}

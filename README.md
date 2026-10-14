@@ -112,6 +112,8 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | E060 | error | Timesheet entry invalid (future date, unknown activity/phase/reference, duplicate, more than 14 h per person per day) |
 | W160 / W161 / W163 | warning | Phase over its planned hours · forecast over budget · manual hours_used disagrees with the timesheet |
 | W130–W133 | warning | AI system without an impact assessment · assessment not yet approved · past its review date · residual higher than inherent |
+| E080 / E081 | error | Evidence cited from another framework's record without a reviewed equivalent mapping / mapping file invalid |
+| I180 | info | Reuse opportunity: the other framework's record has verified a mapped leg |
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
@@ -156,7 +158,11 @@ In the client repository:
 
 **No credentials yet?** Set `sandbox: {enabled: true}` in `engagement.yaml` to run Drata, cloud, Jira, SharePoint/Drive, model registry and AI drafting against canned data in `sandbox/`. Everything produced is labelled `[SANDBOX]`.
 
-## Adding a framework
+## Frameworks
+
+Two are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 65 requirements, 17 policy and procedure templates, AI impact assessments) and **ISO/IEC 27001:2022** (`iso27001`, information security; 25 clauses and 93 Annex A controls, 20 policy and procedure templates). A client working towards both keeps two records in one repository (`engagement/` and `engagement-27001/`); every workflow handles both, the client site shows one tab per framework, and reviewed cross-framework mappings let one piece of evidence count for both. See [`docs/FRAMEWORKS.md`](docs/FRAMEWORKS.md).
+
+### Adding a framework
 
 Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id>` in `engagement.yaml`. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
 
