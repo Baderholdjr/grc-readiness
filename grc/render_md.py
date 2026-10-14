@@ -542,6 +542,11 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
         ("Gap register", "gap-register.md", "Open and closed gaps with owners and due dates ([CSV](gap-register.csv))"),
         ("Evidence index", "evidence-index.md", "Requirement → evidence traceability ([CSV](evidence-index.csv))"),
     ] + list(extra_rows or [])
+    if not model.namespace:        # the primary record links to the other frameworks' reports (published in subfolders)
+        from .model import discover, load_yaml
+        for other in discover(model.root)[1:]:
+            ofw = str((load_yaml(other / "engagement.yaml") or {}).get("framework") or other.name)
+            rows.append((f"{ofw} reports", f"{other.name}/README.md", f"The {ofw} record ({other.name}/): every report above, for that framework"))
     banner = ("> ⚠️ **SANDBOX ENGAGEMENT.** Drata, cloud and AI-drafted content is simulated test data. "
               "Do not treat these reports as real client evidence.\n\n") if (model.engagement.get("sandbox") or {}).get("enabled") else ""
     L = [f"# {model.client} — {fw} readiness reports\n", banner,
@@ -566,7 +571,8 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     extra = (documents(model, out, docs_docx) + impact_assessments(model, out) + internal_audit(model, out)
              + corrective_actions(model, out) + management_reviews(model, out, docs_docx) + hours_report(model, out))
     from . import client_view, portal
-    extra = client_view.render(model, out) + portal.report(model, out) + extra
+    from . import mappings
+    extra = client_view.render(model, out) + portal.report(model, out) + extra + mappings.report(model, out)
     if workbook:
         extra = [("Excel workbook", f"{workbook}?raw=1", "Control matrix, SoA, gaps, evidence, findings, impact assessments, "
                   "documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet")] + extra

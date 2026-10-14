@@ -37,9 +37,20 @@ jobs:
           fi
           python -c "import grc; print('GRC engine', grc.__version__)"
       - name: Validate engagement (four-part evidence test, schemas, gaps)
-        run: python -m grc validate --format github --summary "$GITHUB_STEP_SUMMARY"
+        run: |
+          # Every record in the repo: engagement/ plus engagement-*/ (one per extra framework).
+          rc=0
+          for e in $(python -m grc engagements); do
+            [ "$e" = engagement ] || echo "### Record: $e" >> "$GITHUB_STEP_SUMMARY"
+            python -m grc --engagement "$e" validate --format github --summary "$GITHUB_STEP_SUMMARY" || rc=1
+          done
+          exit $rc
       - name: Build reports and brief
-        run: python -m grc build --out out
+        run: |
+          for e in $(python -m grc engagements); do
+            if [ "$e" = engagement ]; then o=out; else o="out/$e"; fi
+            python -m grc --engagement "$e" build --out "$o"
+          done
       - uses: actions/upload-artifact@v6
         with:
           name: readiness-reports-${{ github.sha }}

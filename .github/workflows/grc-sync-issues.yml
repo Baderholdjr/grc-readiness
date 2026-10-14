@@ -37,8 +37,10 @@ jobs:
             git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
           fi
           python -c "import grc; print('GRC engine', grc.__version__)"
-      - run: python -m grc validate
+      - name: Validate every record
+        run: for e in $(python -m grc engagements); do python -m grc --engagement "$e" validate; done
       - name: Sync
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python -m grc sync-issues --apply
+        # a second framework's issues are namespaced (iso27001:GAP-01) and titled [ISO 27001]
+        run: for e in $(python -m grc engagements); do python -m grc --engagement "$e" sync-issues --apply; done

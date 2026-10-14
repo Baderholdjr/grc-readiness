@@ -105,6 +105,17 @@ class Engagement:
         return self.engagement["client"]["name"]
 
     @property
+    def namespace(self) -> str:
+        """'' for the repository's primary record (engagement/); the framework id (e.g. iso27001) for any other
+        record in the same repository, used to keep issue markers and milestones apart."""
+        return "" if self.engagement_dir.name == "engagement" else str(self.engagement.get("framework") or self.engagement_dir.name)
+
+    @property
+    def record_dir(self) -> str:
+        """The record folder's name in the repository, e.g. engagement or engagement-27001."""
+        return self.engagement_dir.name
+
+    @property
     def framework_name(self) -> str:
         """e.g. ISO/IEC 27001:2022"""
         fw = self.catalog.get("framework") or {}
@@ -140,6 +151,8 @@ class Engagement:
         idx.update(documents.evidence_entries(self))
         from . import review
         idx.update(review.evidence_entries(self))
+        from .mappings import cross_evidence
+        idx.update(cross_evidence(self))     # '<framework>:<id>' from other records in the repo (rules decide if allowed)
         return idx
 
     @property
@@ -372,6 +385,14 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
             if isinstance(f, dict) and f.get("requirement") is not None:
                 f["requirement"] = str(f["requirement"])
     return model
+
+
+def discover(root: str | Path = ".") -> list[Path]:
+    """Every engagement record in a repository: engagement/ first, then engagement-*/ (one per extra framework)."""
+    root = Path(root)
+    found = [p for p in [root / "engagement", *sorted(root.glob("engagement-*"))]
+             if p.is_dir() and (p / "engagement.yaml").is_file()]
+    return found
 
 
 def load_schema(name: str) -> dict:

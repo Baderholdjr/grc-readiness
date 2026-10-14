@@ -45,6 +45,8 @@ Entries marked **(seen in the pilot)** happened during the Larkspur pilot, so th
 | "You've sent several answers…" / "Many answers are already waiting…" | [T-26](#t-26-answer-limits) |
 | Client still sees "Sent, waiting for review" after you merged | [T-27](#t-27-the-client-site-doesnt-show-your-decision-yet) |
 | Cloudflare screens don't match the instructions | [T-28](#t-28-cloudflare-screens-dont-match-the-instructions) |
+| E080 when citing evidence from the other framework's record | [T-29](#t-29-e080-evidence-from-the-other-frameworks-record) |
+| A second framework's workflow changed the wrong record | [T-30](#t-30-a-workflow-acted-on-the-wrong-record) |
 
 ---
 
@@ -363,6 +365,27 @@ For more detail, open the Worker in Cloudflare and look under **Observability �
 **Fix:** use the dashboard's search box (Ctrl/Cmd+K) with the name of what you need, for example "Copy account ID", "Identity providers" or "Access applications". The Cloudflare developer documentation has the current navigation. Tell the engine maintainer so `docs/CLIENT-SITE.md` and this manual can be updated.
 
 ---
+
+## Two frameworks
+
+### T-29: E080, evidence from the other framework's record
+
+**What you see:** `E080 7.5.documented cites iso42001:DOC-DOCINFO from the iso42001 record, but no reviewed 'equivalent' mapping links 7.5 to a iso42001 requirement`.
+
+**Why:** evidence can count for two standards only where a person has confirmed the two requirements are equivalent. The engine's mappings are proposals until reviewed, and *related* mappings never allow it.
+
+**Fix:**
+1. Copy the engine's `mappings/iso27001__iso42001.yaml` to `mappings/` at the repository root, if it isn't there yet.
+2. On the line for this requirement, check the relationship. If it is `equivalent` and you agree, fill `reviewed_by` and `reviewed_on`, then merge.
+3. If the requirements aren't really equivalent, collect evidence in this record instead.
+
+If the message says "this repository has no … record", the prefix is wrong, or the other record (`engagement-*/` with that `framework:`) doesn't exist.
+
+### T-30: A workflow acted on the wrong record
+
+**Why:** workflows you run by hand default to the main record, `engagement`.
+
+**Fix:** run it again with the **engagement** input set to the other record, for example `engagement-27001`, and close the pull request that went to the wrong record. Branches for a second record end in its suffix (`docs/drafts-27001`), so you can tell them apart.
 
 ## When you need help
 

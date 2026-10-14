@@ -10,6 +10,7 @@ on:
         required: true
         type: choice
         options: [plan, sample]
+      engagement: {description: "Record folder: engagement (main) or engagement-27001 etc. for another framework", required: false, default: engagement}
 
 permissions:
   contents: write
@@ -21,6 +22,7 @@ jobs:
     uses: ./.github/workflows/grc-audit.yml
     with:
       engine: local
+      engagement: ${{ inputs.engagement }}
       audit: ${{ inputs.audit }}
       action: ${{ inputs.action }}
     secrets: inherit

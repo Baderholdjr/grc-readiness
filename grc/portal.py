@@ -194,8 +194,31 @@ def data(model: Engagement, extra: list[Engagement] | None = None) -> dict:
         "intro": str(cv.get("intro") or ""),
         "contact": str(cv.get("contact") or ""),
         "sandbox": bool((model.engagement.get("sandbox") or {}).get("enabled")),
-        "frameworks": [framework_data(m, subs) for m in models],
+        "frameworks": _merge_shared(models, [framework_data(m, subs) for m in models]),
     }
+
+
+def _merge_shared(models: list[Engagement], fws: list[dict]) -> list[dict]:
+    """A requirement request that a reviewed *equivalent* mapping ties to an open request of the first framework
+    is shown once, on the first framework's tab, marked "also counts toward ..." (one answer serves both)."""
+    from . import mappings
+    if len(fws) < 2:
+        return fws
+    first, first_fw = fws[0], models[0].engagement.get("framework", "")
+    by_ref = {r["ref"]: r for r in first["requests"] if r["kind"] == "Requirement" and r["action"]}
+    for m, f in zip(models[1:], fws[1:]):
+        eq = mappings.equivalents(m, first_fw)
+        kept = []
+        for r in f["requests"]:
+            target = next((by_ref[o] for o in sorted(eq.get(r["ref"], ())) if o in by_ref), None) if r["kind"] == "Requirement" else None
+            if target is None:
+                kept.append(r)
+                continue
+            target.setdefault("also", []).append(f"{f['name']} {r['ref']}")
+        f["requests"] = kept
+        needs = [r for r in kept if r["action"]]
+        f["open_requests"], f["overdue"] = len(needs), sum(1 for r in needs if r["overdue"])
+    return fws
 
 
 def _toml(v: str) -> str:

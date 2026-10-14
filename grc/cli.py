@@ -16,6 +16,7 @@
   package       Auditor package: PDFs, auditor index, checksums and a reproducible zip
   hours         Timesheet: import time-tracker exports, log hours
   portal        Client site: build the deployable bundle (site, data, Cloudflare Worker)
+  engagements   List the engagement records in this repository (one per framework)
 """
 from __future__ import annotations
 
@@ -296,10 +297,21 @@ def cmd_hours(args) -> int:
     return 0
 
 
+def cmd_engagements(args) -> int:
+    from .model import discover
+    for p in discover(args.root):
+        print(p.as_posix())
+    return 0
+
+
 def cmd_portal(args) -> int:
     from . import portal
+    from .model import discover
     model = _model(args)
-    extra = [load(e, today=model.today) for e in args.also or []]
+    also = args.also
+    if also is None:      # default: every other record in the repository becomes a tab
+        also = [str(p) for p in discover(model.root) if p.resolve() != model.engagement_dir]
+    extra = [load(e, today=model.today) for e in also]
     for log_line in portal.build(model, Path(args.out), repo=args.repo or os.environ.get("GITHUB_REPOSITORY", ""), extra=extra):
         print(log_line)
     return 0
@@ -307,7 +319,8 @@ def cmd_portal(args) -> int:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--engagement", default="engagement", help="engagement directory (default: engagement)")
+    p.add_argument("--engagement", default=os.environ.get("GRC_ENGAGEMENT") or "engagement",
+                   help="engagement directory (default: $GRC_ENGAGEMENT, else engagement)")
     p.add_argument("--today", help="evaluate as of this date (YYYY-MM-DD); default: today")
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -424,8 +437,13 @@ def main(argv=None) -> int:
     po = sub.add_parser("portal", help="client site: build the deployable bundle")
     po.add_argument("--out", default="_portal")
     po.add_argument("--repo", help="owner/name answers are sent to as pull requests (default: $GITHUB_REPOSITORY)")
-    po.add_argument("--also", action="append", help="another engagement directory (another framework) to show as a tab")
+    po.add_argument("--also", action="append", help="another engagement directory (another framework) to show as a tab "
+                    "(default: every engagement-*/ record next to the main one)")
     po.set_defaults(fn=cmd_portal)
+
+    en = sub.add_parser("engagements", help="list the engagement records in this repository (engagement/, engagement-*/)")
+    en.add_argument("--root", default=".")
+    en.set_defaults(fn=cmd_engagements)
 
     args = p.parse_args(argv)
     return args.fn(args)

@@ -113,7 +113,21 @@ def finding_body(model: Engagement, f: dict) -> str:
 
 
 def tracked_items(model: Engagement) -> list[dict]:
-    """Everything mirrored to Issues: gaps and findings, in one shape."""
+    """Everything mirrored to Issues: gaps, findings and review actions, in one shape. A second framework's
+    record in the same repository gets namespaced markers ("iso27001:GAP-01") and a [ISO 27001] title prefix."""
+    items = _items(model)
+    ns = model.namespace
+    for it in items:
+        it["gid"] = it["id"]
+        if ns:
+            it["id"] = f"{ns}:{it['gid']}"
+            it["body"] = it["body"].replace(f"<!-- grc:{it['gid']} -->", f"<!-- grc:{it['id']} -->", 1)
+            it["body"] = it["body"].replace("`engagement/", f"`{model.record_dir}/")
+            it["title"] = f"[{model.catalog['framework'].get('short_name', ns)}] {it['title']}"
+    return items
+
+
+def _items(model: Engagement) -> list[dict]:
     items = []
     for g in model.gaps:
         items.append({"kind": "gap", "noun": "gap", "file": "gaps.yaml", "id": g["id"],
@@ -190,7 +204,7 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
     milestones = {m["title"]: m for m in gh.paged("/milestones?state=all")}
     ms_number = {}
     for ph in model.phases:
-        title = f"{ph['label']} — {ph['objective']}"
+        title = (f"{model.catalog['framework'].get('short_name')} " if model.namespace else "") + f"{ph['label']} — {ph['objective']}"
         body = {"title": title, "due_on": f"{ph['end']}T23:59:59Z",
                 "description": "Deliverables:\n" + "\n".join(f"- {d}" for d in ph["deliverables"])}
         if title in milestones:
@@ -204,7 +218,7 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
     found: dict[str, dict] = {}
     for label in ("grc-gap", "grc-finding", "grc-review-action"):
         for iss in gh.paged(f"/issues?state=all&labels={label}"):
-            m = re.search(r"<!-- grc:((?:GAP|NC|OFI)-\d+|MR-\d{4}-\d{2}/A-\d+) -->", iss.get("body") or "")
+            m = re.search(r"<!-- grc:((?:[a-z0-9]+:)?(?:(?:GAP|NC|OFI)-\d+|MR-\d{4}-\d{2}/A-\d+)) -->", iss.get("body") or "")
             if m:
                 found[m.group(1)] = iss
     mapping = {}
@@ -228,7 +242,7 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
                 gh.call("PATCH", f"/issues/{num}", {"state": "closed"})
             log.append(f"created #{num} {it['id']}")
         if it["kind"] == "gap":
-            mapping[it["id"]] = num
+            mapping[it["gid"]] = num
         # Overdue reminder: one comment per item per due date, mentioning the owners.
         due = str(it.get("due") or "")
         if due and it["open"] and dt.date.fromisoformat(due) < model.today:
@@ -237,7 +251,7 @@ def sync(model: Engagement, repo: str | None, token: str | None, dry_run: bool =
             if not any(marker in (c.get("body") or "") for c in comments):
                 who = " ".join(f"@{u}" for u in model.github_users(it.get("owner"))) or f"**{it.get('owner') or 'Owner'}**"
                 gh.call("POST", f"/issues/{num}/comments", {"body": f"{marker}\n⏰ {who}: this {it['noun']} was due **{due}**. "
-                        f"Please update it (or its due date) in `engagement/{it['file']}` through a PR."})
+                        f"Please update it (or its due date) in `{model.record_dir}/{it['file']}` through a PR."})
                 log.append(f"overdue reminder on #{num} {it['id']}")
     if write_back:
         write_issue_numbers(model.engagement_dir / "gaps.yaml", mapping)

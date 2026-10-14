@@ -12,6 +12,7 @@ on:
         type: choice
         options: [new, pack]
       target: {description: "new: planned date YYYY-MM-DD; pack: review id (MR-2027-01)", required: false, default: ""}
+      engagement: {description: "Record folder: engagement (main) or engagement-27001 etc. for another framework", required: false, default: engagement}
 
 permissions:
   contents: write
@@ -23,6 +24,7 @@ jobs:
     uses: ./.github/workflows/grc-review.yml
     with:
       engine: local
+      engagement: ${{ inputs.engagement }}
       action: ${{ inputs.action }}
       target: ${{ inputs.target }}
     secrets: inherit

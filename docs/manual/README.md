@@ -1,6 +1,6 @@
 # GRC Readiness Engine: User Manual
 
-Engine version 0.12.2 · ISO/IEC 42001 · October 2026
+Engine version 0.13.0 · ISO/IEC 42001 and ISO/IEC 27001 · October 2026
 
 This manual covers the GRC Readiness Engine: a set of tools on GitHub that run a certification-readiness engagement from kickoff to the Stage 2 audit. It has three parts:
 

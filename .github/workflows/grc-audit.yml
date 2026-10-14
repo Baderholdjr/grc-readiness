@@ -6,6 +6,10 @@ name: Internal audit (reusable)
 on:
   workflow_call:
     inputs:
+      engagement:
+        description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"
+        type: string
+        default: engagement
       engine:
         type: string
         default: pinned
@@ -19,7 +23,13 @@ on:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    env:
+      GRC_ENGAGEMENT: ${{ inputs.engagement }}
     steps:
+      - name: Check the record folder
+        run: |
+          [[ "$GRC_ENGAGEMENT" =~ ^engagement(-[a-z0-9]+)?$ ]] || {
+            echo "::error::engagement must be 'engagement' or 'engagement-<name>' (lowercase letters and digits)"; exit 1; }
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -29,7 +39,7 @@ jobs:
           ACTION: ${{ inputs.action }}
           BASE: ${{ github.event.repository.default_branch }}
         run: |
-          BRANCH="audit/$AUDIT-$ACTION"
+          BRANCH="audit/$AUDIT-$ACTION${GRC_ENGAGEMENT#engagement}"
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
             git fetch -q origin "$BRANCH"
             git checkout -q -B "$BRANCH" FETCH_HEAD
@@ -75,11 +85,11 @@ jobs:
           ACTION: ${{ inputs.action }}
           BASE: ${{ github.event.repository.default_branch }}
         run: |
-          BRANCH="audit/$AUDIT-$ACTION"
+          BRANCH="audit/$AUDIT-$ACTION${GRC_ENGAGEMENT#engagement}"
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -q -B "$BRANCH"
-          git add -A engagement/audit
+          git add -A "$GRC_ENGAGEMENT"/audit
           if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
           git commit -q -m "Internal audit $AUDIT: $ACTION"
           git push origin "$BRANCH"
@@ -88,7 +98,7 @@ jobs:
               echo "Next: merge, then run **Actions → Internal audit** with action \`sample\`."
             else
               echo "Next: merge, then complete each workpaper (results, conclusion, summary, performed_by/on) in PRs."
-              echo "A second person sets reviewed_by/on. Raise findings in \`engagement/findings.yaml\`."
+              echo "A second person sets reviewed_by/on. Raise findings in \`$GRC_ENGAGEMENT/findings.yaml\`."
             fi; } > body.md
           NUM=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
           if [ -z "$NUM" ]; then

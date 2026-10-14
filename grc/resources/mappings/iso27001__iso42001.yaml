@@ -1,0 +1,246 @@
+# PROPOSED mappings between ISO/IEC 27001:2022 and ISO/IEC 42001:2023 (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against licensed copies of both standards and the client's actual processes,
+# and fill reviewed_by and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count
+# for both records (cited as "<framework>:<id>", e.g. iso42001:DOC-DOCINFO). `related` mappings are pointers.
+# Our own judgement; no text of either standard is reproduced.
+
+frameworks:
+- iso27001
+- iso42001
+mappings:
+- iso27001: '4.1'
+  iso42001: '4.1'
+  relationship: related
+  note: One context analysis can cover both if it addresses information security and AI issues.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '4.2'
+  iso42001: '4.2'
+  relationship: related
+  note: One interested-party register can cover both; requirements differ.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '4.3'
+  iso42001: '4.3'
+  relationship: related
+  note: Scopes are set separately and may differ.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '4.4'
+  iso42001: '4.4'
+  relationship: related
+  note: An integrated management system can run both.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '5.1'
+  iso42001: '5.1'
+  relationship: related
+  note: Same leadership forum; commitments differ by subject.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '5.2'
+  iso42001: '5.2'
+  relationship: related
+  note: Information security policy and AI policy are different documents.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '5.3'
+  iso42001: '5.3'
+  relationship: related
+  note: One roles document can assign both; roles differ.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: 6.1.1
+  iso42001: 6.1.1
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: 6.1.2
+  iso42001: 6.1.2
+  relationship: related
+  note: One risk method can serve both if it covers AI-specific risks.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: 6.1.3
+  iso42001: 6.1.3
+  relationship: related
+  note: Separate Statements of Applicability.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '6.2'
+  iso42001: '6.2'
+  relationship: related
+  note: Objectives differ by subject.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '6.3'
+  iso42001: '6.3'
+  relationship: equivalent
+  note: One controlled process for changes to an integrated management system.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '7.1'
+  iso42001: '7.1'
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '7.2'
+  iso42001: '7.2'
+  relationship: related
+  note: Competence needs differ (security vs AI).
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '7.3'
+  iso42001: '7.3'
+  relationship: related
+  note: Awareness content differs.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '7.4'
+  iso42001: '7.4'
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '7.5'
+  iso42001: '7.5'
+  relationship: equivalent
+  note: One document control procedure and repository can control both systems' documented information.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '8.1'
+  iso42001: '8.1'
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '8.2'
+  iso42001: '8.2'
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '8.3'
+  iso42001: '8.3'
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '9.1'
+  iso42001: '9.1'
+  relationship: related
+  note: Measures differ.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '9.2'
+  iso42001: '9.2'
+  relationship: related
+  note: An integrated audit programme is possible, but each standard's scope must be audited.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '9.3'
+  iso42001: '9.3'
+  relationship: related
+  note: An integrated review is possible, but each standard's required inputs must be covered.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '10.1'
+  iso42001: '10.1'
+  relationship: equivalent
+  note: One continual improvement process.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: '10.2'
+  iso42001: '10.2'
+  relationship: equivalent
+  note: One nonconformity and corrective action process and register.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.1
+  iso42001: A.2.2
+  relationship: related
+  note: Topic-specific policies; the AI policy is separate.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.1
+  iso42001: A.2.3
+  relationship: related
+  note: Alignment of the AI policy with other policies, including information security.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.2
+  iso42001: A.3.2
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.6.8
+  iso42001: A.3.3
+  relationship: related
+  note: Reporting channels can be shared.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.9
+  iso42001: A.4.2
+  relationship: related
+  note: Asset inventory vs AI resource documentation.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.6
+  iso42001: A.4.5
+  relationship: related
+  note: Capacity of system and computing resources.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.25
+  iso42001: A.6.1.3
+  relationship: related
+  note: Secure development vs responsible AI design and development.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.29
+  iso42001: A.6.2.4
+  relationship: related
+  note: Security testing vs AI verification and validation.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.32
+  iso42001: A.6.2.5
+  relationship: related
+  note: Change management vs AI system deployment.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.16
+  iso42001: A.6.2.6
+  relationship: related
+  note: Monitoring activities vs AI system operation and monitoring.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.15
+  iso42001: A.6.2.8
+  relationship: related
+  note: AI event logs are a narrower case of logging.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.26
+  iso42001: A.8.4
+  relationship: related
+  note: Incident response vs communication of AI incidents.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.19
+  iso42001: A.10.3
+  relationship: related
+  note: Supplier security vs AI suppliers.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.5.20
+  iso42001: A.10.3
+  relationship: related
+  note: ''
+  reviewed_by: ''
+  reviewed_on: null

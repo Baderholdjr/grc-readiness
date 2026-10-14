@@ -210,6 +210,7 @@ function rows(list) {
     if (r.owner) meta.push(h("span", {}, r.owner));
     if (r.due) meta.push(h("span", { class: r.overdue ? "due-late" : "" }, r.overdue ? `Overdue since ${fmt(r.due)}` : `Due ${fmt(r.due)}`));
     meta.push(h("span", {}, `${r.kind} ${r.ref}`));
+    if (r.also && r.also.length) meta.push(h("span", {}, `Also counts toward ${r.also.join(", ")}`));
     if (S.data.frameworks.length > 1) meta.push(h("span", {}, r.fwName));
     let side;
     if (st.kind === "sent") side = h("span", { class: "pill sent" }, st.label);
@@ -267,7 +268,8 @@ function request(key) {
     h("h1", {}, r.title || `${r.kind} ${r.ref}`),
     h("p", { class: "facts" },
       h("span", {}, "Owner ", h("b", {}, r.owner)),
-      r.due ? h("span", { class: r.overdue ? "due-late" : "" }, r.overdue ? `Overdue since ${fmt(r.due, true)}` : `Due ${fmt(r.due, true)}`) : h("span", {}, "No due date yet")),
+      r.due ? h("span", { class: r.overdue ? "due-late" : "" }, r.overdue ? `Overdue since ${fmt(r.due, true)}` : `Due ${fmt(r.due, true)}`) : h("span", {}, "No due date yet"),
+      r.also && r.also.length ? h("span", {}, "Also counts toward ", h("b", {}, r.also.join(", "))) : null),
     h("div", { class: "block" }, h("h3", {}, "What we need"), h("ul", {}, r.asks.map((a) => h("li", {}, a)))),
     r.why ? h("div", { class: "block" }, h("h3", {}, "Why this matters"), h("p", {}, r.why)) : null,
     r.examples.length ? h("div", { class: "block" }, h("h3", {}, "What good evidence looks like"), h("ul", {}, r.examples.map((x) => h("li", {}, x)))) : null);
