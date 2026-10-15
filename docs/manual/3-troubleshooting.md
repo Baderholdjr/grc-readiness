@@ -47,6 +47,7 @@ Entries marked **(seen in the pilot)** happened during the Larkspur pilot, so th
 | Cloudflare screens don't match the instructions | [T-28](#t-28-cloudflare-screens-dont-match-the-instructions) |
 | E080 when citing evidence from the other framework's record | [T-29](#t-29-e080-evidence-from-the-other-frameworks-record) |
 | A second framework's workflow changed the wrong record | [T-30](#t-30-a-workflow-acted-on-the-wrong-record) |
+| SOC 2: E002 after adding a category, or E016 | [T-31](#t-31-soc-2-e002-after-adding-a-category-or-e016) |
 
 ---
 
@@ -366,7 +367,7 @@ For more detail, open the Worker in Cloudflare and look under **Observability �
 
 ---
 
-## Two frameworks
+## Several frameworks
 
 ### T-29: E080, evidence from the other framework's record
 
@@ -386,6 +387,14 @@ If the message says "this repository has no … record", the prefix is wrong, or
 **Why:** workflows you run by hand default to the main record, `engagement`.
 
 **Fix:** run it again with the **engagement** input set to the other record, for example `engagement-27001`, and close the pull request that went to the wrong record. Branches for a second record end in its suffix (`docs/drafts-27001`), so you can tell them apart.
+
+### T-31: SOC 2: E002 after adding a category, or E016
+
+**What you see:** after adding a category (say `privacy`) to `scope.categories` in a SOC 2 record, *validate* fails with many `E002 No assessment file for requirement P1.1 …`; or it fails with `E016 scope.categories: 'privcy' is not a category of SOC 2`.
+
+**Why:** each criterion in a chosen category needs its assessment file, and the files are only created by `grc init`. E016 is a misspelt category; the valid ones are `availability`, `confidentiality`, `processing_integrity` and `privacy` (Security is always included).
+
+**Fix:** correct the spelling, then run `python -m grc --engagement engagement-soc2 init` and commit the new files in the same pull request. Then run *Policies and procedures* to draft the new category's document.
 
 ## When you need help
 

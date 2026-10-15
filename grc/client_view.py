@@ -154,6 +154,11 @@ def items(model: Engagement) -> list[dict]:
     return out
 
 
+def stage_names(model: Engagement) -> set[str]:
+    """What the two audit milestones are called (ISO: Stage 1/2 audit; SOC 2: observation period start/end)."""
+    return {model.term("stage1"), model.term("stage2")}
+
+
 def milestones(model: Engagement) -> list[tuple[dt.date, str]]:
     from . import review
     e = model.engagement
@@ -165,9 +170,9 @@ def milestones(model: Engagement) -> list[tuple[dt.date, str]]:
             ms.append((_d(p["start"]), f"Phase starts: {name}"))
     d = e.get("dates") or {}
     if _d(d.get("stage1")):
-        ms.append((_d(d["stage1"]), "Stage 1 certification audit"))
+        ms.append((_d(d["stage1"]), model.term("stage1")))
     if _d(d.get("stage2")):
-        ms.append((_d(d["stage2"]), "Stage 2 certification audit"))
+        ms.append((_d(d["stage2"]), model.term("stage2")))
     for a in model.audits:
         if isinstance(a, dict) and _d((a.get("planned") or {}).get("start")):
             ms.append((_d(a["planned"]["start"]), f"Internal audit {a.get('id')} begins"))
@@ -175,7 +180,7 @@ def milestones(model: Engagement) -> list[tuple[dt.date, str]]:
         if r.get("status") == "planned" and _d(r.get("planned_on")):
             ms.append((_d(r["planned_on"]), f"Management review {rid}"))
     future = sorted(m for m in ms if m[0] >= model.today)
-    stages = [m for m in future if "certification audit" in m[1]]
+    stages = [m for m in future if m[1] in stage_names(model)]
     others = [m for m in future if m not in stages][:8]
     return sorted(others + stages)
 

@@ -39,7 +39,7 @@ def compute_phases(start: dt.date, stage1: dt.date, stage2: dt.date) -> list[dic
     prep_end = stage1.replace(day=1) - dt.timedelta(days=1)
     total = (prep_end - start).days + 1
     if total < 56:
-        raise ValueError("leave at least 8 weeks between the start and the Stage 1 month")
+        raise ValueError("leave at least 8 weeks between the start and the month of the first audit milestone (--stage1)")
     phases, cursor = [], start
     for i, (pid, share) in enumerate(PREP_PHASES):
         end = prep_end if i == len(PREP_PHASES) - 1 else cursor + dt.timedelta(days=max(7, round(total * share)) - 1)
@@ -110,9 +110,20 @@ owners:
 
 
 def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, stage1: dt.date,
-          stage2: dt.date, hours: float, framework: str = "iso42001", lead: str | None = None) -> list[str]:
+          stage2: dt.date, hours: float, framework: str = "iso42001", lead: str | None = None,
+          categories: list[str] | None = None) -> list[str]:
     log = []
     phases = compute_phases(start, stage1, stage2)
+    if categories:      # optional parts of the framework (SOC 2: availability, confidentiality, ...)
+        from .model import load_yaml as _lyc, resource as _resc
+        known = [str(c.get("id")) for c in (_lyc(_resc(engagement_dir.parent, "frameworks", framework, "catalog.yaml")) or {})
+                 .get("categories") or [] if isinstance(c, dict)]
+        bad = [c for c in categories if c not in known]
+        if bad:
+            raise ValueError(f"unknown categor{'y' if len(bad) == 1 else 'ies'} for {framework}: {', '.join(bad)}"
+                             + (f" (choose from: {', '.join(known)})" if known else " (this framework has no optional categories)"))
+    from .model import TERM_DEFAULTS, load_yaml as _ly0, resource as _res0
+    _terms = {**TERM_DEFAULTS, **((_ly0(_res0(engagement_dir.parent, "frameworks", framework, "playbook.yaml")) or {}).get("terms") or {})}
     if engagement_dir.exists():
         shutil.rmtree(engagement_dir)
         log.append(f"removed {engagement_dir}")
@@ -123,11 +134,11 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
     eng = {
         "framework": framework,
         "client": {"name": client, "overview": []},
-        "subtitle": f"Analyst Orientation | Certification readiness and gap closure | {start.year}-{stage2.year}",
+        "subtitle": f"Analyst Orientation | {_terms['focus']} | {start.year}-{stage2.year}",
         "ai_usage": [],
-        "scope": {},
+        "scope": {"categories": list(categories)} if categories else {},
         "in_place": [],
-        "budget": {"hours_total": hours, "note": "protect time for internal audit and certification support."},
+        "budget": {"hours_total": hours, "note": "protect time for internal audit and external audit support."},
         "dates": {"start": start, "stage1": stage1, "stage2": stage2},
         "certification_body": "TBD",
         "team": {"engagement_lead": lead or "Engagement Lead", "analysts": []},
@@ -143,7 +154,9 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
     (engagement_dir / "evidence" / "index.yaml").write_text(
         "# Evidence index: POINTERS to artifacts held in the client's systems (entered by people).\n"
         "# Collector-produced evidence lives in collected.yaml (machine-owned).\n\nevidence: []\n", encoding="utf-8")
-    (engagement_dir / "collectors.yaml").write_text(COLLECTORS, encoding="utf-8")
+    # the repo self-checks evidence how the record itself is controlled (ISO 7.5 documented information; SOC 2 CC8.1)
+    (engagement_dir / "collectors.yaml").write_text(
+        COLLECTORS.replace('"7.5:', f'"{_terms["record_control_ref"]}:'), encoding="utf-8")
     (engagement_dir / "owners.yaml").write_text(OWNERS, encoding="utf-8")
     test = next(p for p in phases if p["id"] == "test")
     from .model import load_yaml as _ly, resource as _res
@@ -151,9 +164,10 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
     fw_short, fw_name = fw.get("short_name", framework), fw.get("name", framework)
     import re as _re
     ms = (_re.search(r"\(([A-Z]{2,6})\)", str(fw.get("management_system") or "")) or [None, "management system"])[1]
+    ms = str(_terms.get("system") or ms)   # SOC 2: "system"
     (engagement_dir / "audit").mkdir()
     (engagement_dir / "audit" / "program.yaml").write_text(
-        f"# Internal audit programme ({fw_short} clause 9.2).\n"
+        f"# Internal audit programme ({fw_short} {_terms['internal_audit_ref']}).\n"
         "# 1. Set auditors (they must not own any control in scope) and confirm scope/dates.\n"
         "# 2. Actions -> Internal audit -> plan, then sample. Complete workpapers; raise findings in findings.yaml.\n"
         "# 3. Move status: planned -> fieldwork -> reporting -> closed (CI checks each step).\n\n"
@@ -171,7 +185,7 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
         "# (`grc hours log`). Hours used, burn by phase and the forecast are computed from these entries.\n\n"
         "entries: []\n", encoding="utf-8")
     (engagement_dir / "findings.yaml").write_text(
-        f"# Nonconformities, OFIs and corrective actions ({fw_short} clause 10.2).\n"
+        f"# Nonconformities, OFIs and corrective actions ({fw_short} {_terms['corrective_ref']}).\n"
         "# Ids: NC-001 (grade major/minor), OFI-001 (grade ofi). Mirrored to GitHub Issues.\n"
         "# Lifecycle: open -> action_planned -> implemented -> closed (effectiveness reviewed by someone else).\n\n"
         "findings: []\n", encoding="utf-8")

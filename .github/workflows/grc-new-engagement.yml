@@ -12,7 +12,7 @@ on:
         type: string
         default: engagement
       framework:
-        description: "Framework id: iso42001 or iso27001"
+        description: "Framework id: iso42001, iso27001 or soc2"
         type: string
         default: iso42001
       engine:
@@ -37,6 +37,10 @@ on:
       lead:
         type: string
         required: false
+      categories:
+        description: "Optional categories in scope, comma-separated (SOC 2: availability,confidentiality,processing_integrity,privacy)"
+        type: string
+        required: false
 
 jobs:
   new:
@@ -44,12 +48,15 @@ jobs:
     env:
       GRC_ENGAGEMENT: ${{ inputs.engagement }}
       FRAMEWORK: ${{ inputs.framework }}
+      CATEGORIES: ${{ inputs.categories }}
     steps:
       - name: Check the record folder
         run: |
           [[ "$GRC_ENGAGEMENT" =~ ^engagement(-[a-z0-9]+)?$ ]] || {
             echo "::error::engagement must be 'engagement' or 'engagement-<name>' (lowercase letters and digits)"; exit 1; }
           [[ "$FRAMEWORK" =~ ^[a-z0-9]+$ ]] || { echo "::error::framework must be an id such as iso27001"; exit 1; }
+          [[ -z "$CATEGORIES" || "$CATEGORIES" =~ ^[a-z_]+(,[a-z_]+)*$ ]] || {
+            echo "::error::categories must be a comma-separated list such as availability,confidentiality"; exit 1; }
           # the main record uses intake/; another framework's record gets its own intake folder
           if [ "$GRC_ENGAGEMENT" = engagement ]; then echo "INTAKE=intake" >> "$GITHUB_ENV"
           else echo "INTAKE=intake${GRC_ENGAGEMENT#engagement}" >> "$GITHUB_ENV"; fi
@@ -86,7 +93,7 @@ jobs:
         run: |
           python -m grc new-engagement --client "$CLIENT" --start "$START" --stage1 "$STAGE1" \
             --stage2 "$STAGE2" --hours "$HOURS" ${LEAD:+--lead "$LEAD"} --framework "$FRAMEWORK" \
-            --intake "$INTAKE" --confirm-reset
+            --intake "$INTAKE" ${CATEGORIES:+--categories "$CATEGORIES"} --confirm-reset
           python -m grc validate
       - name: Open the PR
         env:

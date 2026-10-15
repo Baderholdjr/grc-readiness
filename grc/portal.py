@@ -34,8 +34,8 @@ SUB_STATUSES = ("received", "accepted", "needs_more", "withdrawn")
 WHY = {
     "Gap": "We found this during the readiness review. Closing it is part of the plan we agreed with you.",
     "Opportunity for improvement": "The internal audit suggested this. It is optional, but auditors like to see that suggestions are considered.",
-    "Minor nonconformity": "The internal audit found this. Certification auditors check that findings like this are corrected.",
-    "Major nonconformity": "The internal audit found this, and it would block certification until it is corrected.",
+    "Minor nonconformity": "The internal audit found this. External auditors check that findings like this are corrected.",
+    "Major nonconformity": "The internal audit found this, and it would block {goal} until it is corrected.",
     "Policy / procedure": "Auditors expect a current, approved document that says how this is done.",
     "Impact assessment": "Each AI system needs a written assessment of how it could affect people, approved before use and kept up to date.",
     "Management review action": "Your leadership agreed this action at the management review.",
@@ -98,7 +98,7 @@ def _requests(model: Engagement, subs: dict[str, dict]) -> list[dict]:
             why = f"{model.catalog['framework'].get('short_name')} asks for this: {str(r.get('intent') or '').rstrip('.')}."
             examples = [str(x) for x in r.get("evidence_examples") or []]
         else:
-            why = WHY.get(i["kind"], "")
+            why = WHY.get(i["kind"], "").replace("{goal}", model.term("goal"))
             examples = ["The completed document, approved by its owner"] if i["kind"] == "Policy / procedure" else []
         if aggregate:
             why = "Each requirement needs one accountable person at your organization. Your engagement lead will agree these with you."
@@ -125,21 +125,38 @@ def _areas(model: Engagement) -> list[dict]:
     for g in groups:
         reqs = []
         for r in model.requirements:
-            if str(r.get("group")) != str(g.get("id")):
+            if str(r.get("group")) != str(g.get("id")) or not model.in_category_scope(r["id"]):
                 continue
             state = requirement_state(model, r["id"])
             test = (model.controls.get(r["id"]) or {}).get("test") or {}
-            reqs.append({"id": r["id"], "title": r.get("title", ""), "kind": r.get("kind", ""), "state": state,
+            reqs.append({"id": r["id"], "title": r.get("title", ""), "kind": r.get("kind", ""),
+                         "kind_label": model.kind(r.get("kind"))["label"], "state": state,
                          "plain": STATE_WORDS.get(state, state),
                          "legs": {k: LEG_STATUS.get(leg_effective(model, test.get(k) or {}), "not started") for k in LEGS}})
         if not reqs:
             continue
         applicable = [x for x in reqs if x["state"] != "Excluded"]
-        out.append({"id": str(g.get("id")), "title": g.get("title", ""), "total": len(applicable),
+        sec, note = _section(model, g, reqs)
+        out.append({"id": str(g.get("id")), "title": g.get("title", ""), "section": sec, "section_note": note,
+                    "total": len(applicable),
                     "ready": sum(1 for x in applicable if x["state"] == "Ready"),
                     "underway": sum(1 for x in applicable if x["state"] in ("In progress", "Unverified claim")),
                     "requirements": reqs})
     return out
+
+
+def _section(model: Engagement, group: dict, reqs: list[dict]) -> tuple[str, str]:
+    """Which heading an area sits under on the Progress page. ISO: the management system clauses, then the
+    Annex A controls. SOC 2: one heading per category (Security first, then the optional ones chosen)."""
+    first = model.requirement_index.get(reqs[0]["id"], {}) if reqs else {}
+    cat = model.category_index.get(str(first.get("category") or ""))
+    if cat:
+        return (str(cat.get("title")), "" if cat.get("required") else
+                "An optional part of SOC 2 your organization chose to include in its report.")
+    if str(group.get("id", "")).startswith("A."):
+        return ("Controls", "Reference controls your organization applies where relevant. Ones that don't apply are "
+                            "marked as such, with a recorded reason.")
+    return ("Management system requirements", "")
 
 
 def _path(model: Engagement) -> dict:
@@ -153,11 +170,11 @@ def _path(model: Engagement) -> dict:
                            "start": _d(p["start"]).isoformat(), "end": _d(p["end"]).isoformat()})
     d = e.get("dates") or {}
     stages = [{"name": n, "date": _d(d.get(k)).isoformat()} for k, n in
-              (("stage1", "Stage 1 audit"), ("stage2", "Stage 2 audit")) if _d(d.get(k))]
+              (("stage1", model.term("stage1")), ("stage2", model.term("stage2"))) if _d(d.get(k))]
     return {"phases": phases, "stages": stages,
             # phases and audit stages are drawn on the path; list only the other dated events
             "upcoming": [{"date": x.isoformat(), "text": t} for x, t in client_view.milestones(model)
-                         if not t.startswith("Phase starts") and "certification audit" not in t]}
+                         if not t.startswith("Phase starts") and t not in client_view.stage_names(model)]}
 
 
 def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> dict:
@@ -172,6 +189,10 @@ def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> di
     return {
         "key": model.engagement.get("framework", ""), "name": fw.get("short_name", ""), "full_name": fw.get("name", ""),
         "system": fw.get("management_system", ""),
+        "terms": {"goal": model.term("goal"), "stage1": model.term("stage1"), "stage2": model.term("stage2"),
+                  "countdown": model.term("countdown")},
+        "glossary": [{"term": str(g.get("term")), "plain": str(g.get("plain")), "tech": str(g.get("tech") or "")}
+                     for g in model.playbook.get("glossary") or [] if isinstance(g, dict) and g.get("term")],
         "ready": m["requirements_ready"], "applicable": m["requirements_applicable"], "checks_pct": m["legs_verified_pct"],
         "attention": bool(overdue or m.get("nc_open_major")), "overdue": overdue, "open_requests": len(needs),
         "nc_major_open": int(m.get("nc_open_major") or 0), "impact_assessments": model.uses_impact_assessments,

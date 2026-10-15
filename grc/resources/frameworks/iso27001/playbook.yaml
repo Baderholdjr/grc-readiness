@@ -6,6 +6,12 @@ tldr_template: "Help {client} turn its existing security practices and technical
 usage_heading: Information and Systems in Scope
 requirements_heading: ISO 27001 Readiness Criteria
 
+# Framework-specific entries for the client site's Help page.
+glossary:
+  - term: Stage 1 and Stage 2 audits
+    plain: "The two visits by the certification body. Stage 1 checks you're prepared; Stage 2 checks everything works in practice."
+    tech: Certification audit stages under ISO/IEC 17021-1.
+
 # The four-part evidence test. Every control file records a status for each leg.
 evidence_test:
   - key: documented

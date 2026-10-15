@@ -1,0 +1,263 @@
+# SOC 2 requirement catalog: the AICPA Trust Services Criteria (2017, with revised points of focus, 2022).
+#
+# COPYRIGHT NOTE: The Trust Services Criteria are copyright of the AICPA. This file holds the criterion
+# identifiers, short titles and OUR OWN plain-language interpretation and evidence expectations. It does not
+# reproduce the criteria or their points of focus. Teams must work from the AICPA's published criteria
+# (free to download from aicpa-cima.com) when interpreting a criterion.
+#
+# A SOC 2 report is an attestation by a CPA firm (the service auditor), not a certification. The client
+# chooses which categories are in scope: Security (the common criteria, CC1-CC9) is always included;
+# Availability, Confidentiality, Processing Integrity and Privacy are optional. Choose them in
+# engagement.yaml under scope.categories.
+#
+# kind: criterion -> every criterion in a chosen category applies. A criterion can be marked not
+#                    applicable only with a justification (it will need explaining in the system description).
+
+framework:
+  id: soc2
+  name: SOC 2 (AICPA Trust Services Criteria, 2017, revised points of focus 2022)
+  short_name: SOC 2
+  management_system: System of internal control over the service (the SOC 2 system)
+  source: https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022
+
+kinds:
+  criterion: {label: "Trust Services Criterion", short: "Criterion", mandatory: false}
+
+categories:
+  - {id: security,             title: "Security (common criteria)", short: "Security", required: true}
+  - {id: availability,         title: "Availability",               short: "Availability"}
+  - {id: confidentiality,      title: "Confidentiality",            short: "Confidentiality"}
+  - {id: processing_integrity, title: "Processing Integrity",       short: "Processing integrity"}
+  - {id: privacy,              title: "Privacy",                    short: "Privacy"}
+
+groups:
+  - {id: CC1, title: "Control environment"}
+  - {id: CC2, title: "Communication and information"}
+  - {id: CC3, title: "Risk assessment"}
+  - {id: CC4, title: "Monitoring activities"}
+  - {id: CC5, title: "Control activities"}
+  - {id: CC6, title: "Logical and physical access controls"}
+  - {id: CC7, title: "System operations"}
+  - {id: CC8, title: "Change management"}
+  - {id: CC9, title: "Risk mitigation"}
+  - {id: A1,  title: "Availability"}
+  - {id: C1,  title: "Confidentiality"}
+  - {id: PI1, title: "Processing integrity"}
+  - {id: P1,  title: "Privacy: notice"}
+  - {id: P2,  title: "Privacy: choice and consent"}
+  - {id: P3,  title: "Privacy: collection"}
+  - {id: P4,  title: "Privacy: use, retention and disposal"}
+  - {id: P5,  title: "Privacy: access"}
+  - {id: P6,  title: "Privacy: disclosure and notification"}
+  - {id: P7,  title: "Privacy: quality"}
+  - {id: P8,  title: "Privacy: monitoring and enforcement"}
+
+requirements:
+  # ------------------------------------------------------------ CC1 Control environment
+  - {id: "CC1.1", kind: criterion, category: security, group: CC1, title: "Integrity and ethical values",
+     intent: "Leadership sets and enforces standards of conduct, people acknowledge them, and departures are dealt with.",
+     evidence_examples: [Code of conduct, Signed acknowledgements, Disciplinary or ethics case records]}
+  - {id: "CC1.2", kind: criterion, category: security, group: CC1, title: "Board oversight",
+     intent: "A board or equivalent body, independent of management, oversees how internal control is designed and operates.",
+     evidence_examples: [Board or oversight committee charter, Minutes showing security and risk updates]}
+  - {id: "CC1.3", kind: criterion, category: security, group: CC1, title: "Structure, reporting lines and authority",
+     intent: "Management sets the organizational structure, reporting lines and responsibilities needed to meet the service's objectives.",
+     evidence_examples: [Organization chart, Role descriptions, Delegation of authority]}
+  - {id: "CC1.4", kind: criterion, category: security, group: CC1, title: "Competence",
+     intent: "The organization hires, develops and keeps people with the skills its objectives need, and checks them before they start.",
+     evidence_examples: [Background check records, Job descriptions, Training records, Performance reviews]}
+  - {id: "CC1.5", kind: criterion, category: security, group: CC1, title: "Accountability",
+     intent: "People are held accountable for their internal control responsibilities through measures, incentives and consequences.",
+     evidence_examples: [Performance objectives covering security duties, Policy acknowledgements, Sanctions procedure]}
+
+  # ------------------------------------------------------------ CC2 Communication and information
+  - {id: "CC2.1", kind: criterion, category: security, group: CC2, title: "Quality information",
+     intent: "The organization gets or produces relevant, reliable information to run its controls, including an inventory of system components.",
+     evidence_examples: [System inventory, Data flow diagrams, Monitoring dashboards]}
+  - {id: "CC2.2", kind: criterion, category: security, group: CC2, title: "Internal communication",
+     intent: "Objectives, responsibilities and security expectations are communicated internally, with a way to raise concerns.",
+     evidence_examples: [Security awareness training, Policy portal, Whistleblower or concern-reporting channel]}
+  - {id: "CC2.3", kind: criterion, category: security, group: CC2, title: "External communication",
+     intent: "Commitments, system changes and how to report problems are communicated to customers, users and other outside parties.",
+     evidence_examples: [Customer agreements and terms, Status page, Published security contact, Change notifications]}
+
+  # ------------------------------------------------------------ CC3 Risk assessment
+  - {id: "CC3.1", kind: criterion, category: security, group: CC3, title: "Objectives",
+     intent: "Objectives are clear enough that risks to achieving them can be identified and assessed.",
+     evidence_examples: [Documented service commitments and system requirements, Security objectives]}
+  - {id: "CC3.2", kind: criterion, category: security, group: CC3, title: "Risk identification and analysis",
+     intent: "Risks to the objectives, including from vendors and business partners, are identified and analysed to decide how to manage them.",
+     evidence_examples: [Risk assessment methodology, Dated risk register, Risk treatment decisions]}
+  - {id: "CC3.3", kind: criterion, category: security, group: CC3, title: "Fraud risk",
+     intent: "The risk assessment considers the potential for fraud, including incentives, opportunities and override of controls.",
+     evidence_examples: [Fraud risk section of the risk assessment]}
+  - {id: "CC3.4", kind: criterion, category: security, group: CC3, title: "Significant change",
+     intent: "Changes that could significantly affect internal control (business, technology, leadership, vendors) are identified and assessed.",
+     evidence_examples: [Risk reassessment triggers, Change-driven risk reviews]}
+
+  # ------------------------------------------------------------ CC4 Monitoring activities
+  - {id: "CC4.1", kind: criterion, category: security, group: CC4, title: "Ongoing and separate evaluations",
+     intent: "Controls are checked through ongoing monitoring and separate evaluations, such as internal audits, to confirm they are present and working.",
+     evidence_examples: [Internal audit or readiness assessment reports, Control monitoring results, Penetration test reports]}
+  - {id: "CC4.2", kind: criterion, category: security, group: CC4, title: "Communicating deficiencies",
+     intent: "Control deficiencies are reported promptly to those who can fix them, including senior management and the board, and are tracked to closure.",
+     evidence_examples: [Deficiency or findings log, Corrective action tracking, Board or management reporting]}
+
+  # ------------------------------------------------------------ CC5 Control activities
+  - {id: "CC5.1", kind: criterion, category: security, group: CC5, title: "Selecting control activities",
+     intent: "Control activities are chosen and developed to bring identified risks down to acceptable levels.",
+     evidence_examples: [Control matrix mapped to risks]}
+  - {id: "CC5.2", kind: criterion, category: security, group: CC5, title: "Technology general controls",
+     intent: "General controls over technology (infrastructure, security, access, development and change) support the objectives.",
+     evidence_examples: [IT general controls inventory, Technology standards]}
+  - {id: "CC5.3", kind: criterion, category: security, group: CC5, title: "Policies and procedures",
+     intent: "Control activities are put into practice through approved policies and the procedures that carry them out.",
+     evidence_examples: [Approved policy set, Procedures, Policy review records]}
+
+  # ------------------------------------------------------------ CC6 Logical and physical access
+  - {id: "CC6.1", kind: criterion, category: security, group: CC6, title: "Logical access security",
+     intent: "Access to information assets is protected with access control software, network architecture, encryption and an asset inventory.",
+     evidence_examples: [Identity provider and SSO configuration, Encryption at rest settings, Asset inventory, Network architecture]}
+  - {id: "CC6.2", kind: criterion, category: security, group: CC6, title: "User registration and removal",
+     intent: "New users are registered and authorized before credentials are issued, and access is removed when no longer needed.",
+     evidence_examples: [Access request and approval records, Joiner and leaver tickets, Deprovisioning timeliness]}
+  - {id: "CC6.3", kind: criterion, category: security, group: CC6, title: "Role-based access and least privilege",
+     intent: "Access is granted, changed and removed based on roles, least privilege and segregation of duties, and reviewed periodically.",
+     evidence_examples: [Role definitions, Periodic access reviews, Privileged access list]}
+  - {id: "CC6.4", kind: criterion, category: security, group: CC6, title: "Physical access",
+     intent: "Physical access to facilities and protected assets (data centres, offices, backup media) is restricted to authorized people.",
+     evidence_examples: [Badge access lists and reviews, Cloud provider SOC report (if carved out), Visitor logs]}
+  - {id: "CC6.5", kind: criterion, category: security, group: CC6, title: "Disposal of assets",
+     intent: "Data is removed or made unrecoverable before physical assets are disposed of or reused.",
+     evidence_examples: [Media disposal procedure, Certificates of destruction, Device wipe records]}
+  - {id: "CC6.6", kind: criterion, category: security, group: CC6, title: "Protection from outside threats",
+     intent: "Access from outside the system boundary is controlled and protected, for example by firewalls, MFA and secure remote access.",
+     evidence_examples: [Firewall and security group rules, MFA enforcement, VPN or zero-trust access configuration]}
+  - {id: "CC6.7", kind: criterion, category: security, group: CC6, title: "Data in transit and removal",
+     intent: "Moving or removing information is limited to authorized users and processes and protected, including encryption in transit.",
+     evidence_examples: [TLS configuration, Data loss prevention settings, Removable media controls]}
+  - {id: "CC6.8", kind: criterion, category: security, group: CC6, title: "Malicious and unauthorized software",
+     intent: "Unauthorized or malicious software is prevented or detected and acted on.",
+     evidence_examples: [Endpoint protection coverage, Software allow lists, Malware alerts and response]}
+
+  # ------------------------------------------------------------ CC7 System operations
+  - {id: "CC7.1", kind: criterion, category: security, group: CC7, title: "Vulnerability and configuration monitoring",
+     intent: "Configuration changes that introduce weaknesses, and newly discovered vulnerabilities, are detected and handled.",
+     evidence_examples: [Vulnerability scan results, Configuration baselines and drift alerts, Patch records]}
+  - {id: "CC7.2", kind: criterion, category: security, group: CC7, title: "Anomaly monitoring",
+     intent: "System components are monitored for unusual activity that could indicate attacks, errors or failures, and the anomalies are analysed.",
+     evidence_examples: [Logging and SIEM configuration, Alert rules, Alert triage records]}
+  - {id: "CC7.3", kind: criterion, category: security, group: CC7, title: "Evaluating security events",
+     intent: "Security events are evaluated to decide whether they are incidents that could stop the organization meeting its objectives.",
+     evidence_examples: [Event triage procedure, Triage records with decisions]}
+  - {id: "CC7.4", kind: criterion, category: security, group: CC7, title: "Incident response",
+     intent: "Confirmed security incidents are contained, fixed and communicated under a defined incident response programme.",
+     evidence_examples: [Incident response plan, Incident tickets and timelines, Tabletop exercise records]}
+  - {id: "CC7.5", kind: criterion, category: security, group: CC7, title: "Recovery from incidents",
+     intent: "The organization recovers from incidents, learns from them and improves controls to prevent recurrence.",
+     evidence_examples: [Post-incident reviews, Recovery records, Follow-up actions]}
+
+  # ------------------------------------------------------------ CC8 Change management
+  - {id: "CC8.1", kind: criterion, category: security, group: CC8, title: "Change management",
+     intent: "Changes to infrastructure, data, software and procedures are authorized, designed, tested, approved and recorded before they go live.",
+     evidence_examples: [Change management policy, Approved pull requests with reviews, Deployment records, Emergency change records]}
+
+  # ------------------------------------------------------------ CC9 Risk mitigation
+  - {id: "CC9.1", kind: criterion, category: security, group: CC9, title: "Business disruption risk",
+     intent: "Risks from business disruption are identified and mitigated, for example through continuity planning and insurance.",
+     evidence_examples: [Business continuity plan, Business impact analysis, Insurance coverage]}
+  - {id: "CC9.2", kind: criterion, category: security, group: CC9, title: "Vendor and business partner risk",
+     intent: "Risks from vendors and business partners are assessed and managed, with commitments in agreements and ongoing monitoring.",
+     evidence_examples: [Vendor inventory, Vendor risk assessments, Vendor SOC reports reviewed, Contract security clauses]}
+
+  # ------------------------------------------------------------ A1 Availability (optional)
+  - {id: "A1.1", kind: criterion, category: availability, group: A1, title: "Capacity management",
+     intent: "Current processing capacity and use are monitored and evaluated, and capacity is added to meet availability commitments.",
+     evidence_examples: [Capacity monitoring dashboards, Autoscaling configuration, Capacity reviews]}
+  - {id: "A1.2", kind: criterion, category: availability, group: A1, title: "Environmental protection, backup and recovery infrastructure",
+     intent: "Environmental protections, backups and recovery infrastructure are in place and maintained to meet availability commitments.",
+     evidence_examples: [Backup configuration and monitoring, Multi-zone or multi-region design, Data centre environmental controls (or provider report)]}
+  - {id: "A1.3", kind: criterion, category: availability, group: A1, title: "Recovery testing",
+     intent: "Recovery plans and procedures are tested to confirm the system can be restored as committed.",
+     evidence_examples: [Restore test results, Disaster recovery exercise reports]}
+
+  # ------------------------------------------------------------ C1 Confidentiality (optional)
+  - {id: "C1.1", kind: criterion, category: confidentiality, group: C1, title: "Identifying and protecting confidential information",
+     intent: "Confidential information is identified and protected as committed, including who may access it and how long it is kept.",
+     evidence_examples: [Data classification policy, Confidential data inventory, Retention schedule]}
+  - {id: "C1.2", kind: criterion, category: confidentiality, group: C1, title: "Disposing of confidential information",
+     intent: "Confidential information is disposed of when its retention period ends, in line with commitments.",
+     evidence_examples: [Deletion procedure, Deletion logs, Customer data deletion on contract end]}
+
+  # ------------------------------------------------------------ PI1 Processing integrity (optional)
+  - {id: "PI1.1", kind: criterion, category: processing_integrity, group: PI1, title: "Processing specifications",
+     intent: "The organization defines and communicates what the system processes and the specifications it must meet, so processing can be checked.",
+     evidence_examples: [Data definitions, Product or service specifications]}
+  - {id: "PI1.2", kind: criterion, category: processing_integrity, group: PI1, title: "Input controls",
+     intent: "System inputs are checked for completeness and accuracy against the specifications.",
+     evidence_examples: [Input validation rules, Rejected input logs]}
+  - {id: "PI1.3", kind: criterion, category: processing_integrity, group: PI1, title: "Processing controls",
+     intent: "Processing is complete, accurate and timely, and errors are detected and corrected.",
+     evidence_examples: [Job monitoring, Reconciliation reports, Error handling records]}
+  - {id: "PI1.4", kind: criterion, category: processing_integrity, group: PI1, title: "Output controls",
+     intent: "Outputs are complete and accurate, delivered only to intended recipients, and on time.",
+     evidence_examples: [Output reconciliation, Distribution controls]}
+  - {id: "PI1.5", kind: criterion, category: processing_integrity, group: PI1, title: "Storing inputs, processing items and outputs",
+     intent: "Inputs, items in processing and outputs are stored completely and accurately, protected and retained as specified.",
+     evidence_examples: [Storage integrity checks, Retention configuration]}
+
+  # ------------------------------------------------------------ P Privacy (optional)
+  - {id: "P1.1", kind: criterion, category: privacy, group: P1, title: "Privacy notice",
+     intent: "People are told about the organization's privacy practices, in a clear and timely notice, and the notice is kept current.",
+     evidence_examples: [Published privacy notice, Notice review history]}
+  - {id: "P2.1", kind: criterion, category: privacy, group: P2, title: "Choice and consent",
+     intent: "People are told what choices they have about their personal information, and consent is obtained and recorded where needed.",
+     evidence_examples: [Consent records, Preference management, Consent wording]}
+  - {id: "P3.1", kind: criterion, category: privacy, group: P3, title: "Collection limited to purpose",
+     intent: "Personal information is collected only as needed for the stated purposes and by fair and lawful means.",
+     evidence_examples: [Data inventory with purposes, Collection forms reviewed]}
+  - {id: "P3.2", kind: criterion, category: privacy, group: P3, title: "Explicit consent for collection",
+     intent: "Where explicit consent is required, people are told the consequences of refusing and their consent is recorded.",
+     evidence_examples: [Explicit consent flows, Consent logs]}
+  - {id: "P4.1", kind: criterion, category: privacy, group: P4, title: "Use limited to purpose",
+     intent: "Personal information is used only for the purposes people were told about.",
+     evidence_examples: [Purpose limitation controls, Data use reviews]}
+  - {id: "P4.2", kind: criterion, category: privacy, group: P4, title: "Retention",
+     intent: "Personal information is kept only as long as needed for its purposes and commitments.",
+     evidence_examples: [Retention schedule, Retention enforcement]}
+  - {id: "P4.3", kind: criterion, category: privacy, group: P4, title: "Secure disposal",
+     intent: "Personal information is securely disposed of when no longer needed.",
+     evidence_examples: [Disposal procedure, Deletion records]}
+  - {id: "P5.1", kind: criterion, category: privacy, group: P5, title: "Access by data subjects",
+     intent: "People can see the personal information held about them, after their identity is confirmed.",
+     evidence_examples: [Access request procedure, Request log with response times]}
+  - {id: "P5.2", kind: criterion, category: privacy, group: P5, title: "Correction",
+     intent: "People can correct or add to their personal information, and corrections are passed on where needed.",
+     evidence_examples: [Correction requests handled, Propagation to third parties]}
+  - {id: "P6.1", kind: criterion, category: privacy, group: P6, title: "Disclosure to third parties",
+     intent: "Personal information is disclosed to third parties only for stated purposes and with consent where needed.",
+     evidence_examples: [Third-party disclosure register, Data processing agreements]}
+  - {id: "P6.2", kind: criterion, category: privacy, group: P6, title: "Record of authorized disclosures",
+     intent: "A complete, accurate record is kept of authorized disclosures of personal information.",
+     evidence_examples: [Disclosure log]}
+  - {id: "P6.3", kind: criterion, category: privacy, group: P6, title: "Record of unauthorized disclosures",
+     intent: "Unauthorized disclosures, including breaches, are recorded completely and accurately.",
+     evidence_examples: [Privacy incident log]}
+  - {id: "P6.4", kind: criterion, category: privacy, group: P6, title: "Third-party privacy commitments",
+     intent: "Vendors and others receiving personal information commit to protecting it, and their compliance is checked.",
+     evidence_examples: [Data processing agreements, Vendor privacy assessments]}
+  - {id: "P6.5", kind: criterion, category: privacy, group: P6, title: "Third-party breach notification",
+     intent: "Vendors and others commit to telling the organization promptly about unauthorized disclosures.",
+     evidence_examples: [Breach notification clauses, Vendor notification records]}
+  - {id: "P6.6", kind: criterion, category: privacy, group: P6, title: "Breach notification",
+     intent: "Affected people, regulators and others are notified of breaches and incidents as committed and as the law requires.",
+     evidence_examples: [Breach notification procedure, Notification records]}
+  - {id: "P6.7", kind: criterion, category: privacy, group: P6, title: "Accounting of disclosures",
+     intent: "On request, people can get an account of the personal information held about them and of its disclosures.",
+     evidence_examples: [Accounting request procedure, Responses issued]}
+  - {id: "P7.1", kind: criterion, category: privacy, group: P7, title: "Data quality",
+     intent: "Personal information is kept accurate, complete, current and relevant for its purposes.",
+     evidence_examples: [Data quality checks, Update processes]}
+  - {id: "P8.1", kind: criterion, category: privacy, group: P8, title: "Inquiries, complaints and compliance monitoring",
+     intent: "Privacy inquiries, complaints and disputes are received, resolved and communicated, and privacy compliance is monitored.",
+     evidence_examples: [Complaint log, Privacy compliance reviews, Corrective actions]}

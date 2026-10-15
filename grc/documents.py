@@ -117,7 +117,10 @@ def config(model: Engagement) -> dict:
         days = min(max(int(cfg.get("review_every_days") or 365), 1), MAX_REVIEW_DAYS)
     except (TypeError, ValueError):
         days = 365
-    return {"review_every_days": days, "library": cfg.get("library") or []}
+    # a document that only serves optional categories the client didn't choose (SOC 2 Privacy, say) isn't needed
+    lib = [e for e in cfg.get("library") or []
+           if not e.get("satisfies") or any(model.in_category_scope(str(r)) for r in e["satisfies"])]
+    return {"review_every_days": days, "library": lib}
 
 
 def library(model: Engagement) -> dict[str, dict]:

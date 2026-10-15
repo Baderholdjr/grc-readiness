@@ -4,6 +4,12 @@
 title_suffix: ISO 42001 Project Brief
 tldr_template: "Help {client} turn an existing set of AI practices and technical controls into a complete, auditable AI management system (AIMS)."
 
+# Framework-specific entries for the client site's Help page.
+glossary:
+  - term: Stage 1 and Stage 2 audits
+    plain: "The two visits by the certification body. Stage 1 checks you're prepared; Stage 2 checks everything works in practice."
+    tech: Certification audit stages under ISO/IEC 17021-1.
+
 # The four-part evidence test. Every control file records a status for each leg.
 evidence_test:
   - key: documented

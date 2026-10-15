@@ -160,7 +160,7 @@ In the client repository:
 
 ## Frameworks
 
-Two are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 65 requirements, 17 policy and procedure templates, AI impact assessments) and **ISO/IEC 27001:2022** (`iso27001`, information security; 25 clauses and 93 Annex A controls, 20 policy and procedure templates). A client working towards both keeps two records in one repository (`engagement/` and `engagement-27001/`); every workflow handles both, the client site shows one tab per framework, and reviewed cross-framework mappings let one piece of evidence count for both. See [`docs/FRAMEWORKS.md`](docs/FRAMEWORKS.md).
+Three are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 65 requirements, 17 policy and procedure templates, AI impact assessments), **ISO/IEC 27001:2022** (`iso27001`, information security; 25 clauses and 93 Annex A controls, 20 policy and procedure templates) and **SOC 2** (`soc2`, the AICPA Trust Services Criteria; 33 common criteria plus the optional Availability, Confidentiality, Processing Integrity and Privacy categories, 18 policy and procedure templates). A client working towards both keeps two records in one repository (`engagement/` and `engagement-27001/`); every workflow handles both, the client site shows one tab per framework, and reviewed cross-framework mappings let one piece of evidence count for both. See [`docs/FRAMEWORKS.md`](docs/FRAMEWORKS.md).
 
 ### Adding a framework
 

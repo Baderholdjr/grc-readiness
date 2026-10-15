@@ -6,8 +6,33 @@
 |---|---|---|---|---|
 | `iso42001` | ISO/IEC 42001:2023 (AI management system, AIMS) | 27 clauses + 38 Annex A controls | 17 documents | AI system impact assessments (6.1.4, 8.4, A.5) |
 | `iso27001` | ISO/IEC 27001:2022 (information security, ISMS) | 25 clauses + 93 Annex A controls | 20 documents | No impact assessments; risk treatment and the Statement of Applicability drive Annex A |
+| `soc2` | SOC 2 (AICPA Trust Services Criteria, 2017, revised points of focus 2022) | 33 common criteria (Security) + 28 in optional categories | 18 documents (fewer if categories are left out) | An attestation, not a certification; the client chooses categories; see [SOC 2](#soc-2) |
 
-Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' text. Work from licensed copies.
+Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria.
+
+## SOC 2
+
+A SOC 2 report is an attestation by a CPA firm (the *service auditor*), not a certificate. The engine runs a SOC 2 record the same way as an ISO record: four-part evidence test, gaps, documents, internal audit (readiness assessment), management review, auditor package and client site. What differs:
+
+**Categories.** Security (the common criteria, CC1–CC9) is always in scope. Availability, Confidentiality, Processing Integrity and Privacy are optional. Choose them when you start the record (`--categories availability,confidentiality`, or the **categories** input of *New engagement*), or later in `engagement.yaml`:
+
+```yaml
+scope:
+  statement: The Larkspur clinical scheduling platform and the people and processes that run it.
+  categories: [availability, confidentiality]
+```
+
+Criteria in categories you didn't choose are left out everywhere: no assessment files, no requests, no documents (the Privacy Program isn't drafted unless Privacy is chosen). If you add a category later, validation reports the missing assessment files (E002) until you run `python -m grc init` (or *Validate* on a branch, then commit the new files). A category name the framework doesn't have is an error (E016).
+
+**Applicability.** Every criterion in a chosen category applies. A criterion can be marked `applicable: false` only with a `justification`, which the system description will need to explain (E004 otherwise). The *Criteria Applicability* report (`soa.md`) takes the place of the ISO Statement of Applicability and lists the left-out categories with their reason.
+
+**Dates.** `dates.stage1` is the **observation period start** (also the as-of date of a Type 1 report, if the client wants one first); `dates.stage2` is the **observation period end**, when Type 2 fieldwork begins. The client site counts down to the observation period, and reports, the auditor package and the Help page use SOC 2 wording. Phases run from scoping through a readiness assessment to the observation period.
+
+**References.** The internal audit evidences CC4.1, the corrective action register CC4.2, and the management (and board) review CC1.2.
+
+**Mapping.** `mappings/iso27001__soc2.yaml` proposes 6 equivalent, 1 subset and 41 related pairs between ISO 27001 and SOC 2, for clients pursuing both. As with every engine mapping, nothing counts until it is reviewed in the client repository.
+
+**Wording for other frameworks.** All of this comes from the SOC 2 catalog (`kinds:`, `categories:`) and playbook (`terms:`, `glossary:`). A new framework sets the same keys to use its own words; ISO wording is the default.
 
 ## One client, two frameworks: two records in one repository
 
@@ -128,10 +153,11 @@ A requirement request that a reviewed equivalent mapping ties to an open request
 
 ## Adding another framework
 
-1. Add `frameworks/<id>/catalog.yaml` (clauses and controls, paraphrased) and `playbook.yaml`:
+1. Add `frameworks/<id>/catalog.yaml` (requirements, paraphrased; optional `kinds:` and `categories:`) and `playbook.yaml`:
    - phases and readiness criteria
    - document library with templates in `frameworks/<id>/documents/`
    - management review inputs
    - `impact_assessment: {required_for_kinds: []}` unless the framework needs impact assessments
+   - `terms:` and `glossary:` if the framework's words differ from ISO's (see `frameworks/soc2/playbook.yaml`)
 2. Make sure the document library covers every requirement exactly once. The tests check this for the built-in frameworks.
 3. Optionally, add proposed mappings in `mappings/<a>__<b>.yaml`.

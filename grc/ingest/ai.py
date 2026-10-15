@@ -18,7 +18,7 @@ from .draft import OUTPUT_SCHEMA
 API_URL = os.environ.get("ANTHROPIC_API_URL") or "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 
-SYSTEM = """You are a GRC analyst assistant preparing an {framework} certification-readiness engagement.
+SYSTEM = """You are a GRC analyst assistant preparing an {framework} readiness engagement.
 You extract facts from client documents into a fixed JSON structure.
 
 Rules:
