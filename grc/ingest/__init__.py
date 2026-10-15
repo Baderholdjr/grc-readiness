@@ -79,7 +79,8 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
     from .. import sandbox
     if for_ai:
         try:
-            result = ai.draft([(n, t) for n, t, _ in for_ai], model.requirements, model.gaps, model.client,
+            result = ai.draft([(n, t) for n, t, _ in for_ai],
+                              [r for r in model.requirements if model.in_category_scope(r["id"])], model.gaps, model.client,
                               model=settings.get("model"), transport=transport, framework=model.framework_name)
             combined = draft.merge(combined, result)
             for n, _, p in for_ai:

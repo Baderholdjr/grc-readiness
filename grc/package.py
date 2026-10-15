@@ -6,7 +6,7 @@ Produces dist/<client>-<framework>-<label>-<as-of>/ and the same as a .zip:
 
     00-auditor-index.pdf / .md      how to read the package; requirement -> evidence traceability; contents
     01-overview/                    brief (PDF, Word), readiness status, gap register
-    02-applicability/               Statement of Applicability, control matrix (PDF, CSV)
+    02-applicability/               Statement of Applicability (SOC 2: criteria applicability), control matrix
     03-documented-information/      policy and procedure register; each document (PDF, Word)
     04-risk-and-impact/             AI impact assessments
     05-evidence/                    evidence index (PDF, CSV) and collector snapshots (JSON)
@@ -145,9 +145,10 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
         L.append("> **SANDBOX ENGAGEMENT.** Collector and AI-drafted content in this package is simulated test data.\n\n")
     L.append(_table(["Item", "Detail"], [
         ["Organisation", model.client], ["Standard", fw.get("name")],
-        [f"{model.system_abbrev} scope", model.fmt(str((e.get("scope") or {}).get("statement") or "—"))],
-        ["Certification body", e.get("certification_body") or "—"],
-        ["Stage 1 / Stage 2", f"{(e.get('dates') or {}).get('stage1', '—')} / {(e.get('dates') or {}).get('stage2', '—')}"],
+        [f"{model.system_abbrev[:1].upper()}{model.system_abbrev[1:]} scope", model.fmt(str((e.get("scope") or {}).get("statement") or "—"))],
+        [model.term("audit_body"), e.get("certification_body") or "—"],
+        [f"{model.term('stage1')} / {model.term('stage2')}",
+         f"{(e.get('dates') or {}).get('stage1', '—')} / {(e.get('dates') or {}).get('stage2', '—')}"],
         ["Record as of", str(model.today)],
         ["Source commit", sha + (" (uncommitted changes in the engagement folder: this package can't be rebuilt from "
                                  "the commit alone)" if sha.endswith("-dirty") else "")],
@@ -179,6 +180,8 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
     for r in model.requirements:
         rid = r["id"]
         c = model.controls.get(rid, {})
+        if not model.in_category_scope(rid):     # listed with its reason in the applicability document
+            continue
         if not model.is_applicable(rid):
             rows.append([rid, r["title"], "excluded", "—", "—", "—", "—", "—"])
             continue

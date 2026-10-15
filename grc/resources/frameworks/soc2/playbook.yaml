@@ -1,0 +1,225 @@
+# Framework playbook: reusable engagement content for SOC 2 readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+#
+# A SOC 2 report is an attestation by a CPA firm, not a certification. In the engagement record the two
+# audit dates mean: dates.stage1 = the observation period starts (also the as-of date of a Type 1 report,
+# if the client wants one first); dates.stage2 = the observation period ends and Type 2 fieldwork begins.
+
+title_suffix: SOC 2 Project Brief
+tldr_template: "Help {client} turn its existing security practices into controls that meet the Trust Services Criteria, operate consistently through the observation period, and stand up to a SOC 2 examination."
+usage_heading: Services, Systems and Data in Scope
+requirements_heading: SOC 2 Readiness Criteria
+
+# Wording used across reports, the client site and the auditor package.
+terms:
+  goal: a clean SOC 2 report
+  audit_body: Service auditor (CPA firm)
+  focus: SOC 2 examination readiness and gap closure
+  stage1: Observation period start
+  stage2: Observation period end
+  countdown: observation period starts
+  system: system
+  applicability_title: Criteria Applicability
+  applicability_short: Applicability
+  applicability_intro: "Trust Services Criteria in the categories chosen for this engagement, with a justification for any criterion marked not applicable (it must be explained in the system description), and implementation status."
+  internal_audit_ref: CC4.1
+  corrective_ref: CC4.2
+  review_ref: CC1.2
+  record_control_ref: CC8.1
+  scope_ref: CC2.1
+  objectives_ref: CC3.1
+  risk_ref: CC3.2
+  review_required: "no"
+  applicability_id_header: Criterion
+
+# Framework-specific entries for the client site's Help page.
+glossary:
+  - term: SOC 2 report
+    plain: "A report from an independent CPA firm saying whether your controls meet the criteria you chose. Your customers ask for it to trust you with their data."
+    tech: "Examination under AICPA attestation standards (AT-C 105 and 205) against the Trust Services Criteria."
+  - term: Type 1 and Type 2
+    plain: "A Type 1 report checks your controls are designed properly on one day. A Type 2 report checks they actually worked over a period of months."
+    tech: "Type 1: suitability of design as of a date. Type 2: suitability of design and operating effectiveness over a period (usually 3-12 months)."
+  - term: Observation period
+    plain: "The months the auditor will look back over. Controls need to run, and leave records, every time they should during this period."
+    tech: "The period covered by the Type 2 examination, agreed with the service auditor."
+  - term: Categories
+    plain: "The parts of SOC 2 you chose. Security is always included; Availability, Confidentiality, Processing Integrity and Privacy are optional."
+    tech: "Trust Services categories; the common criteria (CC1-CC9) apply to every SOC 2 examination."
+  - term: Carve-out and subservice organizations
+    plain: "Providers you rely on, such as your cloud host. Their own SOC report covers what they do; you show you check it."
+    tech: "Subservice organizations presented with the carve-out method; complementary subservice organization controls (CSOCs) and user entity controls (CUECs) are listed in the system description."
+  - term: Exception
+    plain: "A time a control didn't happen as described, such as a missed access review. A few may be acceptable; the auditor reports them."
+    tech: "Deviation found in testing of operating effectiveness, reported in section 4 of the SOC 2 report."
+
+# The four-part evidence test. Every control file records a status for each leg.
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the control described in a policy, procedure or the system description?
+  - key: implemented
+    label: Implemented
+    question: Is the control actually in use?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing the control ran every time it should during the period?
+  - key: tested
+    label: Tested
+    question: Does a sample, tested the way a service auditor would, show no exceptions?
+
+gap_callout: Treat client readiness statements as hypotheses until evidence shows the control is documented, in use, leaves records every time it runs, and passes a sample test.
+
+working_rule: If a control is described but you cannot trace it to an owner, a criterion, and records from the period, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The system boundary, services, principal service commitments and system requirements are defined and approved, and the categories in scope are chosen.
+  - Every criterion in scope is met by named controls with owners; any criterion marked not applicable is justified.
+  - Policies are approved, communicated and acknowledged; risk, vendor and access reviews have run at least once.
+  - Subservice organizations are identified, their SOC reports reviewed, and complementary controls recorded.
+  - Controls have operated, with records, from the start of the observation period; readiness testing found no unresolved exceptions.
+  - A draft system description is ready for the service auditor; owners can explain their controls and pull evidence on request.
+
+phases:
+  - id: validate
+    objective: "Scope & validate"
+    deliverables:
+      - Kickoff and owner alignment
+      - Define the system boundary, services and principal commitments
+      - Choose the categories in scope and Type 1 / Type 2 approach
+      - Validate gap-analysis claims and evidence
+      - Shortlist and engage the service auditor (CPA firm)
+  - id: governance
+    objective: "Policies & risk"
+    deliverables:
+      - Approve the information security policy set
+      - Run the risk assessment, including fraud and vendor risk
+      - Build the control matrix mapped to the criteria
+      - Identify subservice organizations and review their SOC reports
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Close control gaps (access, change, monitoring, incident, vendor)
+      - Launch awareness training and policy acknowledgements
+      - Run the first access review, vendor review and backup restore test
+      - Turn on evidence collection
+  - id: test
+    objective: "Readiness assessment"
+    deliverables:
+      - Test controls the way the service auditor will (sample-based)
+      - Fix exceptions and re-test
+      - Draft the system description
+      - Management and board review of readiness
+  - id: stage1
+    objective: "Type 1 & go-live"
+    deliverables:
+      - Confirm every control is operating from day one of the period
+      - Support a Type 1 examination if the client wants one
+      - Agree the evidence request list with the service auditor
+  - id: stage2
+    objective: "Observation & Type 2"
+    deliverables:
+      - Keep periodic controls on schedule (reviews, tests, training)
+      - Track and remediate any exceptions
+      - Support Type 2 fieldwork and evidence requests
+      - Review the draft report and management's response
+
+needs:
+  - Maintain the criteria/control matrix, evidence index, remediation tracker, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test; flag controls that leave no record each time they run.
+  - Draft and revise policies, procedures and the system description for lead review - do not invent operating practices.
+  - Track periodic controls (access reviews, vendor reviews, restore tests, training) so none is missed during the observation period.
+  - Prepare samples the way a service auditor would, record exceptions, and track them to closure.
+  - Organize evidence by criterion and period so the service auditor's request list can be answered quickly.
+
+default_guardrails:
+  - "{client} owns its controls and evidence; our team structures, reviews, tests, and challenges."
+  - "We prepare {client}; we don't perform the SOC 2 examination. The service auditor must be independent of {client}, and a firm that both advises and examines must not take on management responsibilities."
+  - Prefer controls that run on their own and leave records over controls that rely on memory.
+  - Escalate scope changes, carve-out decisions, legal or contract commitments, and unsupported high-risk claims to the engagement lead.
+
+default_risks:
+  - Controls designed well but not run every time during the observation period (exceptions in a Type 2).
+  - Service commitments in customer contracts that the controls don't actually support.
+  - Subservice organizations without a current SOC report, or complementary controls nobody owns.
+  - Starting the observation period before periodic controls have run at least once.
+
+# SOC 2 has no AI system impact assessment: nothing in the inventory requires one.
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`). Each entry is drafted from documents/<template>.
+# Together the documents cover every criterion exactly once; documents for optional categories the client
+# didn't choose are left out automatically. Wording is our own and does not reproduce the AICPA criteria.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-SOC-GOVERNANCE, title: "Governance, Ethics and Oversight", kind: policy, template: governance.md,
+       satisfies: ["CC1.1", "CC1.2", "CC1.3", "CC1.5"], sections: [Purpose, Code of conduct, Oversight, Structure and authority, Accountability, Review]}
+    - {id: DOC-SOC-PEOPLE, title: "Personnel Security and Awareness", kind: procedure, template: people.md,
+       satisfies: ["CC1.4", "CC2.2"], sections: [Purpose, Hiring, Training and awareness, Internal communication, Reporting concerns, Review]}
+    - {id: DOC-SOC-SYSTEM, title: "System Description, Commitments and External Communication", kind: procedure, template: system.md,
+       satisfies: ["CC2.1", "CC2.3", "CC3.1"], sections: [Purpose, System boundary, Commitments and requirements, Information for controls, External communication, Review]}
+    - {id: DOC-SOC-RISK, title: "Risk Assessment and Control Selection", kind: procedure, template: risk.md,
+       satisfies: ["CC3.2", "CC3.3", "CC3.4", "CC5.1"], sections: [Purpose, Method, Fraud risk, Significant change, Selecting controls, Records, Review]}
+    - {id: DOC-SOC-MONITORING, title: "Control Monitoring, Internal Audit and Deficiencies", kind: procedure, template: monitoring.md,
+       satisfies: ["CC4.1", "CC4.2"], sections: [Purpose, Ongoing monitoring, Internal audit, Deficiencies, Records, Review]}
+    - {id: DOC-SOC-ISPOLICY, title: "Information Security Policy", kind: policy, template: is-policy.md,
+       satisfies: ["CC5.2", "CC5.3"], sections: [Purpose, Scope, Technology controls, Policy set, Exceptions, Review]}
+    - {id: DOC-SOC-ACCESS, title: "Access Control", kind: policy, template: access.md,
+       satisfies: ["CC6.1", "CC6.2", "CC6.3", "CC6.6"], sections: [Purpose, Principles, Joiners and leavers, Access reviews, Privileged access, Remote and external access, Encryption at rest, Review]}
+    - {id: DOC-SOC-PHYSICAL, title: "Physical Security and Asset Disposal", kind: procedure, template: physical.md,
+       satisfies: ["CC6.4", "CC6.5"], sections: [Purpose, Facilities, Cloud providers, Disposal, Review]}
+    - {id: DOC-SOC-DATA, title: "Data Transmission and Endpoint Protection", kind: procedure, template: data.md,
+       satisfies: ["CC6.7", "CC6.8"], sections: [Purpose, Data in transit, Removable media and data loss, Malware protection, Software installation, Review]}
+    - {id: DOC-SOC-OPERATIONS, title: "Vulnerability Management and Security Monitoring", kind: procedure, template: operations.md,
+       satisfies: ["CC7.1", "CC7.2"], sections: [Purpose, Vulnerability management, Configuration management, Logging and monitoring, Alert handling, Review]}
+    - {id: DOC-SOC-INCIDENT, title: "Incident Response", kind: procedure, template: incident.md,
+       satisfies: ["CC7.3", "CC7.4", "CC7.5"], sections: [Purpose, Reporting, Triage, Response, Recovery and lessons learned, Testing, Review]}
+    - {id: DOC-SOC-CHANGE, title: "Change Management and Secure Development", kind: procedure, template: change.md,
+       satisfies: ["CC8.1"], sections: [Purpose, Scope of changes, Authorization and review, Testing, Deployment, Emergency changes, Infrastructure and configuration, Review]}
+    - {id: DOC-SOC-CONTINUITY, title: "Business Continuity", kind: procedure, template: continuity.md,
+       satisfies: ["CC9.1"], sections: [Purpose, Business impact, Continuity plan, Insurance, Testing, Review]}
+    - {id: DOC-SOC-VENDOR, title: "Vendor and Subservice Organization Management", kind: procedure, template: vendor.md,
+       satisfies: ["CC9.2"], sections: [Purpose, Vendor inventory, Assessment, Agreements, Subservice organizations, Monitoring, Review]}
+    - {id: DOC-SOC-AVAILABILITY, title: "Availability, Backup and Disaster Recovery", kind: procedure, template: availability.md,
+       satisfies: ["A1.1", "A1.2", "A1.3"], sections: [Purpose, Commitments, Capacity, Backup, Recovery infrastructure, Recovery testing, Review]}
+    - {id: DOC-SOC-CONFIDENTIALITY, title: "Confidential Information Handling", kind: procedure, template: confidentiality.md,
+       satisfies: ["C1.1", "C1.2"], sections: [Purpose, Identifying confidential information, Protection, Retention, Disposal, Review]}
+    - {id: DOC-SOC-PROCESSING, title: "Processing Integrity", kind: procedure, template: processing.md,
+       satisfies: ["PI1.1", "PI1.2", "PI1.3", "PI1.4", "PI1.5"], sections: [Purpose, Specifications, Inputs, Processing, Outputs, Storage, Review]}
+    - {id: DOC-SOC-PRIVACY, title: "Privacy Program", kind: policy, template: privacy.md,
+       satisfies: ["P1.1", "P2.1", "P3.1", "P3.2", "P4.1", "P4.2", "P4.3", "P5.1", "P5.2", "P6.1", "P6.2", "P6.3", "P6.4", "P6.5", "P6.6", "P6.7", "P7.1", "P8.1"],
+       sections: [Purpose, Notice, Choice and consent, Collection, Use and retention, Disposal, Access and correction, Disclosure to third parties, Breach notification, Data quality, Inquiries and complaints, Review]}
+
+# Management (and board) review of the control environment: the oversight evidence for CC1.2 and CC4.2.
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: system_changes, content: context_changes, title: "Changes to the services, system boundary, commitments or organization"}
+    - {id: control_performance, content: performance, title: "Control performance: monitoring results, exceptions, deficiencies and their remediation"}
+    - {id: risks, content: risks_and_impacts, title: "Results of the risk assessment, including fraud and vendor risk, and treatment status"}
+    - {id: vendors, content: suppliers, title: "Subservice organizations and key vendors: SOC report reviews and issues"}
+    - {id: incidents, title: "Security incidents and lessons learned"}
+    - {id: resources, title: "Adequacy of resources for the control environment"}
+    - {id: improvement, title: "Opportunities for improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.14, governance: 0.2, implement: 0.28, test: 0.18, stage1: 0.08, stage2: 0.12}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and scoping", keywords: [kickoff, kick-off, scoping, scope, system boundary]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, procedures and system description", keywords: [policy, procedure, document, drafting, system description]}
+    - {id: risk_impact, title: "Risk and vendor assessment", keywords: [risk, vendor, subservice, assessment]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, collector, sample]}
+    - {id: internal_audit, title: "Readiness assessment", keywords: [internal audit, readiness assessment, audit, workpaper]}
+    - {id: management_review, title: "Management review", keywords: [management review, board, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, exception, corrective]}
+    - {id: certification, title: "Service auditor support", keywords: [type 1, type 2, fieldwork, soc 2 auditor, cpa, auditor]}
+    - {id: other, title: "Other", keywords: []}

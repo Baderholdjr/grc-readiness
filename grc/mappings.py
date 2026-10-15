@@ -125,13 +125,20 @@ def report(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
     total = reviewed_eq = 0
     for ofw, sib in sibs.items():
         other_short = (sib.catalog.get("framework") or {}).get("short_name", ofw)
-        ps = pairs(model, ofw)
+        # a pair is listed only if both requirements are in scope (SOC 2 categories the client chose)
+        ps = [p for p in pairs(model, ofw) if not (p["mine"] in model.requirement_index and not model.in_category_scope(p["mine"]))
+              and not (p["other"] in sib.requirement_index and not sib.in_category_scope(p["other"]))]
         total += len(ps)
         reviewed_eq += sum(1 for p in ps if p["reviewed"] and p["relationship"] == "equivalent")
         L.append(f"\n## {md(fw_short)} ↔ {md(other_short)} (`{sib.record_dir}/`)\n\n")
         if not ps:
-            L.append(f"No mapping file yet. Copy the engine's `mappings/{file_name(model.engagement.get('framework', ''), ofw)}` "
-                     "to the repository root to start.\n")
+            name = file_name(model.engagement.get("framework", ""), ofw)
+            if not mapping_path(model, ofw).exists():
+                L.append(f"No mappings between these frameworks yet (no `mappings/{name}` in the repository or the engine).\n")
+            elif not pairs(model, ofw):
+                L.append(f"No mapping file yet. Copy the engine's `mappings/{name}` to the repository root to start.\n")
+            else:
+                L.append("None of the mapped requirements are in the scope of both records.\n")
             continue
         L.append(f"| {md(fw_short)} | State here | {md(other_short)} | State there | Relationship | Reviewed | Note |\n"
                  "|---|---|---|---|---|---|---|\n")

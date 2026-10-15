@@ -8,16 +8,17 @@ on:
     inputs:
       client: {description: "Client name", required: true}
       start: {description: "Engagement start (YYYY-MM-DD)", required: true}
-      stage1: {description: "Planned Stage 1 audit (YYYY-MM-DD)", required: true}
-      stage2: {description: "Planned Stage 2 audit (YYYY-MM-DD)", required: true}
+      stage1: {description: "Planned Stage 1 audit, or SOC 2 observation period start (YYYY-MM-DD)", required: true}
+      stage2: {description: "Planned Stage 2 audit, or SOC 2 observation period end (YYYY-MM-DD)", required: true}
       hours: {description: "Consulting hours budget", required: true, default: "200"}
       lead: {description: "Engagement lead", required: false}
       framework:
         description: "Framework"
         type: choice
-        options: [iso42001, iso27001]
+        options: [iso42001, iso27001, soc2]
         default: iso42001
-      engagement: {description: "Record folder: engagement (main) or engagement-27001 etc. for a second framework", required: false, default: engagement}
+      engagement: {description: "Record folder: engagement (main) or engagement-27001, engagement-soc2 etc. for another framework", required: false, default: engagement}
+      categories: {description: "SOC 2 only: optional categories, comma-separated (availability,confidentiality,processing_integrity,privacy)", required: false}
 
 permissions:
   contents: write
@@ -37,4 +38,5 @@ jobs:
       lead: ${{ inputs.lead }}
       framework: ${{ inputs.framework }}
       engagement: ${{ inputs.engagement }}
+      categories: ${{ inputs.categories }}
     secrets: inherit

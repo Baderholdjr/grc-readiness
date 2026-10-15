@@ -24,6 +24,34 @@ def resource(repo_root: Path, *parts: str) -> Path:
     return local if local.exists() else ENGINE.joinpath(*parts)
 LEGS = ("documented", "implemented", "evidenced", "tested")
 
+# Requirement kinds used by the ISO catalogs. Other catalogs declare theirs under `kinds:`.
+KIND_DEFAULTS = {
+    "clause": {"label": "Clause", "short": "Clause", "mandatory": True},
+    "control": {"label": "Annex A control", "short": "Annex A", "mandatory": False},
+}
+
+# Wording that differs between frameworks. A playbook overrides any of these under `terms:`.
+TERM_DEFAULTS = {
+    "goal": "certification",                       # "Path to certification", "would block certification"
+    "audit_body": "Certification body",
+    "focus": "Certification readiness and gap closure",  # new-engagement subtitle
+    "stage1": "Stage 1 audit",                     # what dates.stage1 and dates.stage2 mean
+    "stage2": "Stage 2 audit",
+    "countdown": "Stage 1 audit is",               # site: "Your ISO 27001 Stage 1 audit is in 12 days."
+    "applicability_title": "Statement of Applicability",
+    "applicability_short": "SoA",
+    "applicability_intro": "Annex A controls with inclusion/exclusion justification and implementation status.",
+    "internal_audit_ref": "9.2",                   # requirement the internal audit evidences
+    "corrective_ref": "10.2",                      # requirement the corrective action register evidences
+    "review_ref": "9.3",                           # requirement the management review evidences
+    "record_control_ref": "7.5",
+    "review_required": "yes",                      # "no": a missing management review isn't warned about (SOC 2)
+    "applicability_id_header": "Control",          # first column of the applicability report
+    "scope_ref": "4.3",                            # requirements whose library documents the review pack reports on
+    "objectives_ref": "6.2",
+    "risk_ref": "6.1.2",                   # requirement the engagement repo's own branch protection evidences
+}
+
 
 class RecordError(SystemExit):
     """A record file can't be read. Raised as SystemExit so the CLI prints one clear line, not a traceback."""
@@ -123,7 +151,9 @@ class Engagement:
 
     @property
     def system_abbrev(self) -> str:
-        """The management system's short name, e.g. AIMS or ISMS (from the catalog)."""
+        """The management system's short name, e.g. AIMS or ISMS (from the catalog); SOC 2 says 'system'."""
+        if (self.playbook.get("terms") or {}).get("system"):
+            return str(self.playbook["terms"]["system"])
         m = re.search(r"\(([A-Z]{2,6})\)", str((self.catalog.get("framework") or {}).get("management_system") or ""))
         return m.group(1) if m else "management system"
 
@@ -245,9 +275,55 @@ class Engagement:
             return self.engagement[key]
         return self.playbook.get(key, default)
 
+    # ------------------------------------------------- framework vocabulary
+    def kind(self, kind: str | None) -> dict:
+        """How a catalog defines a kind of requirement: its label and whether it can be excluded.
+        ISO catalogs use clause (mandatory) and control (Annex A, excludable with a justification);
+        other catalogs declare their own under `kinds:`."""
+        k = str(kind or "")
+        base = KIND_DEFAULTS.get(k, {"label": k.title() or "Requirement", "mandatory": False})
+        return {**base, **((self.catalog.get("kinds") or {}).get(k) or {})}
+
+    def kind_label(self, req: dict) -> str:
+        """Short label for a requirement's kind in tables: 'Clause', 'Annex A', or a SOC 2 category."""
+        cat = self.category_index.get(str(req.get("category") or ""))
+        if cat:
+            return str(cat.get("short") or cat.get("title"))
+        info = self.kind(req.get("kind"))
+        return str(info.get("short") or info.get("label"))
+
+    def is_mandatory(self, req_id: str) -> bool:
+        return bool(self.kind(self.requirement_index.get(req_id, {}).get("kind")).get("mandatory"))
+
+    @property
+    def category_index(self) -> dict[str, dict]:
+        """Optional parts of a framework the client chooses (SOC 2: Availability, Confidentiality, ...)."""
+        return {str(c["id"]): c for c in self.catalog.get("categories") or [] if isinstance(c, dict) and c.get("id")}
+
+    @property
+    def categories_in_scope(self) -> set[str]:
+        chosen = (self.engagement.get("scope") or {}).get("categories") or []
+        return {k for k, c in self.category_index.items() if c.get("required")} | \
+               {str(c) for c in chosen if str(c) in self.category_index}
+
+    def in_category_scope(self, req_id: str) -> bool:
+        """False only for a requirement in an optional category the client hasn't chosen."""
+        cat = str(self.requirement_index.get(req_id, {}).get("category") or "")
+        return not cat or cat not in self.category_index or cat in self.categories_in_scope
+
+    def gap_in_scope(self, gap: dict) -> bool:
+        """False for a gap whose requirements all sit in SOC 2 categories the client didn't choose."""
+        reqs = [str(r) for r in gap.get("requirements") or [] if str(r) in self.requirement_index]
+        return not reqs or any(self.in_category_scope(r) for r in reqs)
+
+    def term(self, key: str) -> str:
+        """Framework wording (playbook `terms:`), e.g. what the two audit milestones are called."""
+        return str((self.playbook.get("terms") or {}).get(key) or TERM_DEFAULTS[key])
+
     def is_applicable(self, req_id: str) -> bool:
-        req = self.requirement_index.get(req_id, {})
-        if req.get("kind") == "clause":
+        if not self.in_category_scope(req_id):
+            return False
+        if self.is_mandatory(req_id):
             return True
         return self.controls.get(req_id, {}).get("applicable", True)
 

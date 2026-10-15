@@ -114,7 +114,7 @@ def check_structure(model: Engagement) -> list[Finding]:
     req_ids = model.requirement_index
     # E002 every requirement has an assessment file
     for rid in req_ids:
-        if rid not in model.controls:
+        if rid not in model.controls and model.in_category_scope(rid):
             out.append(Finding("error", "E002", f"No assessment file for requirement {rid}. Run `python -m grc init`.",
                                _rel(model, model.engagement_dir / "controls"), rid))
     # E003 unknown control ids / filename mismatch
@@ -143,10 +143,22 @@ def check_applicability(model: Engagement) -> list[Finding]:
         if not req:
             continue
         path = _rel(model, model.control_files[cid])
-        if req["kind"] == "clause" and c.get("applicable") is False:
-            out.append(Finding("error", "E004", f"Clause {cid} is mandatory and cannot be excluded.", path, cid))
-        if req["kind"] == "control" and c.get("applicable") is False and not (c.get("justification") or "").strip():
-            out.append(Finding("error", "E004", f"Annex A control {cid} is excluded without a justification (needed for the SoA).", path, cid))
+        label = model.kind(req.get("kind"))["label"]
+        if c.get("applicable") is False and model.is_mandatory(cid):
+            out.append(Finding("error", "E004", f"{label} {cid} is mandatory and cannot be excluded.", path, cid))
+        elif c.get("applicable") is False and model.in_category_scope(cid) and not (c.get("justification") or "").strip():
+            out.append(Finding("error", "E004", f"{label} {cid} is excluded without a justification "
+                               f"(needed for the {model.term('applicability_title')}).", path, cid))
+    # E016 optional parts of the framework (SOC 2 categories) must exist in the catalog
+    chosen = (model.engagement.get("scope") or {}).get("categories") or []
+    if chosen and not model.category_index:
+        out.append(Finding("error", "E016", f"scope.categories is set, but {model.catalog['framework']['short_name']} "
+                           "has no optional categories to choose.", _rel(model, model.engagement_dir / "engagement.yaml")))
+    for c in chosen if model.category_index else []:
+        if str(c) not in model.category_index:
+            out.append(Finding("error", "E016", f"scope.categories: '{c}' is not a category of "
+                               f"{model.catalog['framework']['short_name']} (choose from: {', '.join(model.category_index)}).",
+                               _rel(model, model.engagement_dir / "engagement.yaml")))
     return out
 
 
@@ -275,6 +287,10 @@ def check_gaps(model: Engagement) -> list[Finding]:
         if ph and ph not in phases:
             out.append(Finding("error", "E010", f"{gid} references unknown phase '{ph}'.", path, gid))
         open_ = g.get("status") in ("open", "in_progress")
+        if open_ and not model.gap_in_scope(g):
+            out.append(Finding("warning", "W112", f"{gid} is open, but its requirements are all in categories outside "
+                               "this engagement's scope (scope.categories): close it or add the category back.", path, gid))
+            open_ = False      # not chased: no owner/due warnings, no client request, no open issue
         if open_ and not g.get("owner"):
             out.append(Finding("warning", "W103", f"{gid} is open with no owner.", path, gid))
         due = g.get("due")
@@ -306,7 +322,7 @@ def check_engagement(model: Engagement) -> list[Finding]:
     d = model.engagement.get("dates", {})
     try:
         if d and dt.date.fromisoformat(str(d["stage1"])) >= dt.date.fromisoformat(str(d["stage2"])):
-            out.append(Finding("error", "E014", "Stage 1 must be before Stage 2.", path))
+            out.append(Finding("error", "E014", f"dates.stage1 ({model.term('stage1')}) must be before dates.stage2 ({model.term('stage2')}).", path))
     except (KeyError, ValueError):
         pass
     prev_end = None
@@ -359,12 +375,13 @@ def check_audit(model: Engagement) -> list[Finding]:
             _check_one_finding(model, f, fpath, out)
         except (KeyError, TypeError, ValueError, AttributeError) as exc:
             out.append(Finding("error", "E000", f"{f.get('id', '?')}: could not evaluate this finding ({exc!r}).", fpath, str(f.get("id"))))
-    # W121: clause 9.2 can't be operating without a completed audit
-    c92 = model.controls.get("9.2", {}).get("test", {})
+    # W121: the internal audit requirement (ISO 9.2, SOC 2 CC4.1) can't be operating without a completed audit
+    ref = model.term("internal_audit_ref")
+    c92 = model.controls.get(ref, {}).get("test", {})
     if any((c92.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and \
             not any(a.get("status") in ("reporting", "closed") for a in model.audits):
-        out.append(Finding("warning", "W121", "9.2 is marked verified but no internal audit has reached reporting.",
-                           _rel(model, model.control_files.get("9.2")), "9.2"))
+        out.append(Finding("warning", "W121", f"{ref} is marked verified but no internal audit has reached reporting.",
+                           _rel(model, model.control_files.get(ref)), ref))
     return out
 
 
@@ -736,13 +753,15 @@ def check_reviews(model: Engagement) -> list[Finding]:
     if last and (model.today - last[1]).days > int(cfg["review_every_days"]):
         out.append(Finding("warning", "W151", f"The last management review ({last[0]}) was held on {last[1]}, more than "
                            f"{cfg['review_every_days']} days ago.", rpath, last[0]))
+    required = model.term("review_required") != "no"   # SOC 2: oversight can be shown other ways (board minutes)
     stage1 = safe_date((model.engagement.get("dates") or {}).get("stage1"))
-    if not last and stage1 and 0 <= (stage1 - model.today).days <= int(cfg["warn_before_stage1_days"]):
-        out.append(Finding("warning", "W151", f"No management review has been held and the Stage 1 audit is on {stage1}.", rpath, None))
-    c93 = model.controls.get("9.3", {}).get("test", {})
-    if any((c93.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and not last:
-        out.append(Finding("warning", "W153", "9.3 is marked verified but no management review is recorded as held.",
-                           _rel(model, model.control_files.get("9.3")), "9.3"))
+    if required and not last and stage1 and 0 <= (stage1 - model.today).days <= int(cfg["warn_before_stage1_days"]):
+        out.append(Finding("warning", "W151", f"No management review has been held, and the {model.term('stage1')} date is {stage1}.", rpath, None))
+    ref = model.term("review_ref")
+    c93 = model.controls.get(ref, {}).get("test", {})
+    if required and any((c93.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and not last:
+        out.append(Finding("warning", "W153", f"{ref} is marked verified but no management review is recorded as held.",
+                           _rel(model, model.control_files.get(ref)), ref))
     return out
 
 
@@ -898,7 +917,7 @@ def check_mappings(model: Engagement) -> list[Finding]:
                 else:
                     # the borrowed evidence must be evidence for the mapped requirement(s) in the other record
                     eid = str(ref).split(":", 1)[1]
-                    used = {str(e) for o in eq[pre][cid] for lg in LEGS
+                    used = {str(e) for o in eq[pre][cid] if sibs[pre].is_applicable(o) for lg in LEGS
                             for e in ((((sibs[pre].controls.get(o) or {}).get("test") or {}).get(lg) or {}).get("evidence") or [])}
                     if eid not in used:
                         out.append(Finding("error", "E080", f"{cid}.{k} cites {ref}, but the mapped {pre} requirement(s) "
@@ -913,7 +932,7 @@ def check_mappings(model: Engagement) -> list[Finding]:
             for k in LEGS:
                 if leg_effective(model, my_test.get(k) or {}) == "verified":
                     continue
-                donors = [o for o in sorted(others) if leg_effective(sib, ((sib.controls.get(o) or {}).get("test") or {}).get(k) or {}) == "verified"]
+                donors = [o for o in sorted(others) if sib.is_applicable(o) and leg_effective(sib, ((sib.controls.get(o) or {}).get("test") or {}).get(k) or {}) == "verified"]
                 if donors:
                     ev = [e for o in donors for e in (((sib.controls[o].get("test") or {}).get(k) or {}).get("evidence") or [])
                           if ":" not in str(e)]          # only the other record's own evidence can be borrowed
@@ -988,13 +1007,14 @@ def metrics(model: Engagement) -> dict:
         for k in LEGS:
             legs[k][leg_effective(model, c.get("test", {}).get(k, {}))] += 1
     states: dict[str, int] = {}
-    for r in model.requirements:
+    scoped = [r for r in model.requirements if model.in_category_scope(r["id"])]   # SOC 2: chosen categories only
+    for r in scoped:
         s = requirement_state(model, r["id"])
         states[s] = states.get(s, 0) + 1
     ready = states.get("Ready", 0)
     total_legs = len(applicable) * 4
     verified_legs = sum(v["verified"] for v in legs.values())
-    gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
+    gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress") and model.gap_in_scope(g))
     cited = {r for c in model.controls.values() for leg in (c.get("test") or {}).values()
              for r in (leg or {}).get("evidence", []) or []}
     from . import documents, impact, review
@@ -1008,7 +1028,7 @@ def metrics(model: Engagement) -> dict:
     return {
         "as_of": model.today.isoformat(),
         "framework": model.catalog["framework"]["short_name"],
-        "requirements_total": len(model.requirements),
+        "requirements_total": len(scoped),
         "requirements_applicable": len(applicable),
         "requirements_ready": ready,
         "states": states,

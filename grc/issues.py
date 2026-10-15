@@ -135,7 +135,8 @@ def _items(model: Engagement) -> list[dict]:
                       "body": issue_body(model, g),
                       "labels": ["grc-gap"] + ([f"severity:{g['severity']}"] if g.get("severity") else [])
                       + ([f"phase:{g['phase']}"] if g.get("phase") else []),
-                      "open": g["status"] in ("open", "in_progress"), "owner": g.get("owner"),
+                      # a gap whose SOC 2 categories were all taken out of scope is no longer chased
+                      "open": g["status"] in ("open", "in_progress") and model.gap_in_scope(g), "owner": g.get("owner"),
                       "due": g.get("due"), "phase": g.get("phase")})
     for f in model.findings:
         items.append({"kind": "finding", "noun": "finding", "file": "findings.yaml", "id": f["id"],
@@ -148,7 +149,7 @@ def _items(model: Engagement) -> list[dict]:
         if a.get("status") == "cancelled" and not a.get("issue"):
             continue
         key = f"{a['review']}/{a.get('id')}"
-        body = (f"<!-- grc:{key} -->\n**Management review action** from {a['review']} ({model.catalog['framework'].get('short_name', 'ISO')} 9.3).\n\n"
+        body = (f"<!-- grc:{key} -->\n**Management review action** from {a['review']} ({model.catalog['framework'].get('short_name', 'ISO')} {model.term('review_ref')}).\n\n"
                 f"- **Action:** {a.get('action', '')}\n- **Owner:** {a.get('owner') or '—'}\n- **Due:** {a.get('due') or '—'}\n"
                 + (f"- **Decision:** {a['decision']}\n" if a.get("decision") else "")
                 + f"\nClose it in `engagement/reviews/{a['review']}.yaml` (status: done, closed_on, evidence) through a PR; "

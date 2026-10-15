@@ -92,10 +92,10 @@ def cmd_init(args) -> int:
     cdir.mkdir(parents=True, exist_ok=True)
     created = 0
     for r in model.requirements:
-        if r["id"] in model.controls:
+        if r["id"] in model.controls or not model.in_category_scope(r["id"]):
             continue
         data = {"id": r["id"]}
-        if r["kind"] == "control":
+        if not model.is_mandatory(r["id"]):
             data["applicable"] = True
             data["justification"] = ""
         data.update({"owner": "", "implementation": "",
@@ -160,7 +160,8 @@ def cmd_new(args) -> int:
     try:
         log = newengagement.reset(Path(args.engagement), Path(intake), args.client,
                                   dt.date.fromisoformat(args.start), dt.date.fromisoformat(args.stage1),
-                                  dt.date.fromisoformat(args.stage2), args.hours, args.framework, args.lead)
+                                  dt.date.fromisoformat(args.stage2), args.hours, args.framework, args.lead,
+                                  [c.strip() for c in (args.categories or "").split(",") if c.strip()])
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -385,11 +386,13 @@ def main(argv=None) -> int:
     n = sub.add_parser("new-engagement", help="reset engagement/ and intake/ for a new client")
     n.add_argument("--client", required=True)
     n.add_argument("--start", required=True, help="YYYY-MM-DD")
-    n.add_argument("--stage1", required=True, help="planned Stage 1 audit date")
-    n.add_argument("--stage2", required=True, help="planned Stage 2 audit date")
+    n.add_argument("--stage1", required=True, help="first audit milestone: ISO Stage 1 audit; SOC 2 observation period start")
+    n.add_argument("--stage2", required=True, help="second audit milestone: ISO Stage 2 audit; SOC 2 observation period end")
     n.add_argument("--hours", type=float, default=200)
     n.add_argument("--framework", default="iso42001")
     n.add_argument("--lead", help="engagement lead name")
+    n.add_argument("--categories", help="optional categories in scope, comma-separated "
+                   "(SOC 2: availability,confidentiality,processing_integrity,privacy; Security is always included)")
     n.add_argument("--intake", help="default: intake/ for engagement/, intake-<name>/ for engagement-<name>/")
     n.add_argument("--confirm-reset", action="store_true")
     n.set_defaults(fn=cmd_new)

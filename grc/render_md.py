@@ -50,11 +50,12 @@ def _evidence_for(c: dict) -> list[str]:
 def control_matrix(model: Engagement, out: Path):
     headers = ["ID", "Requirement", "Type", "Owner", "Documented", "Implemented", "Evidenced", "Tested", "State", "Gaps", "Evidence"]
     rows, csv_rows = [], []
-    for r in model.requirements:
+    reqs = [r for r in model.requirements if model.in_category_scope(r["id"])]   # SOC 2: chosen categories only
+    for r in reqs:
         c = model.controls.get(r["id"], {})
         eff = {k: leg_effective(model, c.get("test", {}).get(k, {})) for k in LEGS}
         state = requirement_state(model, r["id"])
-        kind = "Clause" if r["kind"] == "clause" else "Annex A"
+        kind = model.kind_label(r)
         ev = _evidence_for(c)
         gaps = c.get("gaps", []) or []
         if state == "Excluded":
@@ -69,9 +70,9 @@ def control_matrix(model: Engagement, out: Path):
           f"{m['legs_verified_pct']}% of evidence-test legs verified · {m['gaps_open']} open gaps.\n\n",
           "Legend: ✅ verified · 🟡 partial · ❔ client claim, not yet evidenced · ⬜ not started\n\n"]
     for grp in model.catalog["groups"]:
-        grows = [row for row, r in zip(rows, model.requirements) if r["group"] == grp["id"]]
+        grows = [row for row, r in zip(rows, reqs) if r["group"] == grp["id"]]
         if grows:
-            prefix = "Clause " if not grp["id"].startswith("A.") else ""
+            prefix = "Clause " if str(grp["id"]).replace(".", "").isdigit() else ""
             md.append(f"## {prefix}{grp['id']} {grp['title']}\n\n")
             md.append(_table(headers, grows) + "\n")
     (out / "control-matrix.md").write_text("".join(md), encoding="utf-8")
@@ -80,19 +81,33 @@ def control_matrix(model: Engagement, out: Path):
 
 # -------------------------------------------------- statement of applicability
 def soa(model: Engagement, out: Path):
-    headers = ["Control", "Title", "Applicable", "Justification", "Implementation", "State", "Owner"]
+    rows = applicability_rows(model)
+    title = model.term("applicability_title")
+    md = [f"# {model.client} — {title} (draft)\n", GEN, model.term("applicability_intro"),
+          f" Approval of the {title} is recorded by merging the PR that changes it.\n\n", _table(applicability_headers(model), rows)]
+    (out / "soa.md").write_text("".join(md), encoding="utf-8")
+    _write_csv(out / "soa.csv", applicability_headers(model), rows)
+
+
+def applicability_headers(model: Engagement) -> list[str]:
+    return [model.term("applicability_id_header"), "Title", "Applicable", "Justification", "Implementation", "State", "Owner"]
+
+
+def applicability_rows(model: Engagement) -> list[list]:
+    """The requirements a client may exclude (ISO Annex A; every SOC 2 criterion), with the decision and reason.
+    A SOC 2 criterion in a category the client didn't choose is listed as not applicable for that reason."""
     rows = []
     for r in model.requirements:
-        if r["kind"] != "control":
+        if model.is_mandatory(r["id"]):
             continue
         c = model.controls.get(r["id"], {})
-        rows.append([r["id"], r["title"], "Yes" if c.get("applicable", True) else "No",
+        if not model.in_category_scope(r["id"]):
+            rows.append([r["id"], r["title"], "No", f"{model.kind_label(r)} is not in the scope of this engagement.",
+                         "", "Excluded", ""])
+            continue
+        rows.append([r["id"], r["title"], "Yes" if model.is_applicable(r["id"]) else "No",
                      c.get("justification", ""), c.get("implementation", ""), requirement_state(model, r["id"]), c.get("owner", "")])
-    md = [f"# {model.client} — Statement of Applicability (draft)\n", GEN,
-          "Annex A controls with inclusion/exclusion justification and implementation status. "
-          "Approval of the SoA is recorded by merging the PR that changes it.\n\n", _table(headers, rows)]
-    (out / "soa.md").write_text("".join(md), encoding="utf-8")
-    _write_csv(out / "soa.csv", headers, rows)
+    return rows
 
 
 # ---------------------------------------------------------------- gap register
@@ -193,7 +208,7 @@ def internal_audit(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
     if not model.audits:
         return []
     rows = []
-    prog = [f"# {model.client} — internal audit programme (9.2)\n", GEN]
+    prog = [f"# {model.client} — internal audit programme ({model.term('internal_audit_ref')})\n", GEN]
     prog_rows = []
     for a in model.audits:
         st = audit_status(model, a["id"])
@@ -205,7 +220,7 @@ def internal_audit(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
         audit_report(model, a, out)
     prog.append(_table(["Audit", "Title", "Status", "Planned", "Auditors", "Workpapers", "Findings"], prog_rows))
     (out / "internal-audit.md").write_text("".join(prog), encoding="utf-8")
-    rows.append(("Internal audit", "internal-audit.md", "Audit programme, per-audit reports and workpaper results (9.2)"))
+    rows.append(("Internal audit", "internal-audit.md", f"Audit programme, per-audit reports and workpaper results ({model.term('internal_audit_ref')})"))
     return rows
 
 
@@ -261,10 +276,10 @@ def corrective_actions(model: Engagement, out: Path) -> list[tuple[str, str, str
                      f["description"], f.get("owner", ""), f.get("due", ""), f["status"], f.get("root_cause", ""),
                      f.get("corrective_action", ""),
                      ("yes" if eff.get("effective") else "no") + f" ({eff.get('reviewed_on')})" if eff else ""])
-    md = [f"# {model.client} — nonconformities & corrective actions (10.2)\n", GEN, _table(headers, rows)]
+    md = [f"# {model.client} — nonconformities & corrective actions ({model.term('corrective_ref')})\n", GEN, _table(headers, rows)]
     (out / "corrective-actions.md").write_text("".join(md), encoding="utf-8")
     _write_csv(out / "corrective-actions.csv", headers, rows)
-    return [("Corrective actions", "corrective-actions.md", "Nonconformities, OFIs and corrective actions (10.2) ([CSV](corrective-actions.csv))")]
+    return [("Corrective actions", "corrective-actions.md", f"Nonconformities, OFIs and corrective actions ({model.term('corrective_ref')}) ([CSV](corrective-actions.csv))")]
 
 
 def impact_assessments(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
@@ -388,14 +403,14 @@ def management_reviews(model: Engagement, out: Path, with_docx: bool = False) ->
             intact = (r.get("pack") or {}).get("sha256") == file_hash(pk) if isinstance(r.get("pack"), dict) else False
             note = "" if intact else "> ⚠️ This pack does not match the fingerprint in the review record.\n\n"
             (out / f"mr-{rid}-pack.md").write_text(note + pk.read_text(encoding="utf-8"), encoding="utf-8")
-    L = [f"# {model.client} — management reviews (9.3)\n", GEN,
+    L = [f"# {model.client} — management reviews ({model.term('review_ref')})\n", GEN,
          "Each review has a frozen input pack (what management was shown), the notes against every required input, "
          "decisions and actions. Actions are tracked as GitHub Issues until done.\n\n",
          _table(["Review", "Planned", "Held", "Status", "Actions", "Input pack"], rows)]
     (out / "management-reviews.md").write_text("".join(L), encoding="utf-8")
     last = last_held(model)
     return [("Management reviews", "management-reviews.md",
-             f"Last held: {last[0]} on {last[1]}" if last else "No management review held yet (9.3)")]
+             f"Last held: {last[0]} on {last[1]}" if last else f"No management review held yet ({model.term('review_ref')})")]
 
 
 def hours_report(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
@@ -541,7 +556,7 @@ def index(model: Engagement, findings: list[Finding], out: Path, brief_docx: str
         ("Analyst brief", "brief.md", "The 9-section orientation brief" +
          (f" · [download Word]({brief_docx}?raw=1)" if brief_docx else "")),
         ("Control matrix", "control-matrix.md", "Every requirement with the four-part evidence test ([CSV](control-matrix.csv))"),
-        ("Statement of Applicability", "soa.md", "Annex A applicability, justification and status ([CSV](soa.csv))"),
+        (model.term("applicability_title"), "soa.md", "Which requirements apply, with justification and status ([CSV](soa.csv))"),
         ("Gap register", "gap-register.md", "Open and closed gaps with owners and due dates ([CSV](gap-register.csv))"),
         ("Evidence index", "evidence-index.md", "Requirement → evidence traceability ([CSV](evidence-index.csv))"),
     ] + list(extra_rows or [])
@@ -580,7 +595,7 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     from . import mappings
     extra = client_view.render(model, out) + portal.report(model, out) + extra + mappings.report(model, out)
     if workbook:
-        extra = [("Excel workbook", f"{workbook}?raw=1", "Control matrix, SoA, gaps, evidence, findings, impact assessments, "
+        extra = [("Excel workbook", f"{workbook}?raw=1", f"Control matrix, {model.term('applicability_short')}, gaps, evidence, findings, impact assessments, "
                   "documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet")] + extra
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

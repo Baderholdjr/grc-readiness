@@ -368,7 +368,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 ## 18. Frameworks
 
-> **In plain terms:** ISO 42001 (AI) and ISO 27001 (information security) are both built in. A client working towards both gets one workspace with two records, one per standard, and sees both on the client site as two tabs. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
+> **In plain terms:** ISO 42001 (AI), ISO 27001 (information security) and SOC 2 are built in. A client working towards more than one gets one workspace with a record per framework, and sees each on the client site as its own tab. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
 
 > **For GRC practitioners:** Each standard keeps its own record:
 > - its own Statement of Applicability, gaps and policies
@@ -382,6 +382,11 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - the catalog: 25 clauses and 93 Annex A controls, our own paraphrase
 > - a 20-document ISMS library covering every requirement once
 > - no impact assessments
+>
+> **Shipped for SOC 2:**
+> - the AICPA Trust Services Criteria: 33 common criteria (Security) plus 28 in the optional Availability, Confidentiality, Processing Integrity and Privacy categories, in our own words
+> - an 18-document library covering every criterion once; documents for categories the client didn't choose are left out
+> - a proposed mapping to ISO 27001 (4 equivalent, 2 subset, 1 superset, 42 related)
 
 > **Under the hood:**
 > - **Where each framework lives:** `frameworks/<id>/catalog.yaml`, `playbook.yaml` and `documents/`.
@@ -391,14 +396,33 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - **Citing across records:** cite as `<framework>:<id>`, for example `iso42001:DOC-DOCINFO`.
 > - **Rules:** E080, E081, I180.
 > - **Report:** `cross-framework.md` in each record's reports.
+> - **Framework wording:** a catalog can declare its own requirement `kinds:` and optional `categories:`; a playbook its `terms:` (milestone names, applicability report title) and Help-page `glossary:`. ISO wording is the default.
 > - Details: `docs/FRAMEWORKS.md`.
 
-| | ISO 42001 | ISO 27001 |
-|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls |
-| Policy and procedure library | 17 documents | 20 documents |
-| Impact assessments | Yes (AI systems) | No |
-| Proposed mappings between them | 4 equivalent, 35 related | (same file) |
+### SOC 2
+
+> **In plain terms:** A SOC 2 report is what many customers ask for before they trust a company with their data. An independent CPA firm checks the controls and writes the report; we get the client ready for that. Security is always included; the client chooses whether to add Availability, Confidentiality, Processing Integrity or Privacy. Instead of two audit visits, SOC 2 has an *observation period*: months in which every control has to run, and leave records, each time it should.
+
+> **For GRC practitioners:**
+> - **Categories** are chosen per record (`scope.categories`). Criteria outside them disappear from requests, reports and the document library.
+> - **Applicability:** every criterion in a chosen category applies; one marked not applicable needs a justification for the system description (E004). The *Criteria Applicability* report replaces the Statement of Applicability.
+> - **Dates:** `stage1` is the observation period start (and Type 1 as-of date, if any); `stage2` is the observation period end. The phases run from scoping through a readiness assessment to the observation period.
+> - **References:** internal audit → CC4.1, corrective actions → CC4.2, management and board review → CC1.2.
+> - **Independence:** we prepare the client; the examination is done by a CPA firm independent of the client, which must not have taken on management responsibilities for it.
+
+> **Under the hood:**
+> - Start a record with `new-engagement --framework soc2 --categories availability,confidentiality` (or the *categories* input of the New engagement workflow).
+> - Adding a category later: set `scope.categories`, then `python -m grc init` creates the new assessment files (E002 until then). An unknown category is E016.
+> - Catalog and playbook: `frameworks/soc2/`. Mapping: `mappings/iso27001__soc2.yaml`.
+
+| | ISO 42001 | ISO 27001 | SOC 2 |
+|---|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) |
+| Impact assessments | Yes (AI systems) | No | No |
+| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) |
+| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) |
 
 ## 19. Boundaries: what the tool will and won't do
 
@@ -407,7 +431,8 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 - **It never marks a control verified by itself.** Automation proposes; people decide in a reviewed pull request.
 - **It doesn't judge sufficiency.** It checks that evidence exists, is current, is the right type and is traceable. Whether it is *enough* is the analyst's and auditor's call.
 - **It doesn't hold confidential artifacts.** The evidence index stores pointers, dates and approvers. Artifacts stay in the client's systems, and every client repository stays private.
-- **It doesn't reproduce ISO text.** The catalog paraphrases the standard. Work from a licensed copy.
+- **It doesn't reproduce ISO text or the AICPA criteria.** The catalogs paraphrase them. Work from a licensed copy of the standard and the AICPA's published criteria.
+- **It doesn't perform the SOC 2 examination.** Only a CPA firm independent of the client can. A firm that both advises and examines a client must not take on management responsibilities, or its independence is impaired.
 - **GitHub plan limits.** On GitHub Free, private repositories can't use branch protection or rulesets. That means the requirement that `validate` passes and that CODEOWNERS approve is **not enforced** by GitHub, only by your own practice. (The pilot's own check, EV-101, reports exactly this.) For real client engagements, use a plan that supports protected branches on private repositories (GitHub Team or Pro).
 - **Client site in proof-of-concept mode.** The free Cloudflare setup is for test data. Before real client data goes through it, move to single sign-on, a custom domain, a GitHub App and rate limiting (`docs/CLIENT-SITE.md`).
 
@@ -468,7 +493,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | E000 | error | A rule couldn't be evaluated on a record (usually malformed data also reported elsewhere) |
 | E001 | error | A file doesn't match its schema; or a submission, review or document header isn't valid YAML (other files stop validation with a "not valid YAML at line N" message) |
 | E002 / E003 | error | A requirement has no assessment file / a file isn't in the catalog |
-| E004 | error | Annex A exclusion without justification, or a mandatory clause excluded |
+| E004 | error | Annex A control or SOC 2 criterion marked not applicable without a justification, or a mandatory clause excluded |
 | E005 | error | Leg is verified but cites no evidence |
 | E006 | error | Cites evidence that isn't in the index |
 | E007 | error | Leg is verified but its evidence has expired (or the document, assessment or review is past review) |
@@ -478,8 +503,9 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | E011 | error | Duplicate evidence, gap, finding or audit id; or a collector check uses a human-owned evidence id |
 | E012 | error | Evidence type doesn't fit the leg |
 | E013 | error | Gap closed without valid closure evidence |
-| E014 | error | Dates out of order: Stage 1 not before Stage 2, a phase ending before it starts, an audit ending before it starts |
+| E014 | error | Dates out of order: Stage 1 not before Stage 2 (SOC 2: observation start not before its end), a phase ending before it starts, an audit ending before it starts |
 | E015 | error | Leg verified on evidence whose check is failing, or on an unsound document, assessment or review |
+| E016 | error | `scope.categories` names a category the framework doesn't have (or the framework has no optional categories) |
 | E020–E022, E024–E026 | error | Internal audit: independence, status ahead of work, incomplete workpapers, finding lifecycle, unknown references, Tested verified with an open major NC |
 | E030–E032 | error | Impact assessment: unknown references, approved while incomplete or by its assessor, residual risk not acceptable or not accepted |
 | E040–E042 | error | Documents: unknown requirement, approved while incomplete or self-approved, changed after approval |
@@ -496,6 +522,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W107 | warning | A phase overlaps the previous one |
 | W108 / W109 | warning | A collector check is failing / ran but errored |
 | W110 / W111 | warning | Client claim with no owner / owner not in owners.yaml |
+| W112 | warning | SOC 2: an open gap whose requirements are all in categories taken out of scope; it is no longer chased (no request, issue closed) |
 | W120–W123 | warning | Finding past due; 9.2 verified while no audit has reached reporting or closed; audit overrunning; in-scope requirement without a workpaper |
 | W124 / W125 | warning | Audit scope or exclude entry matches no requirement / a workpaper cited on a different requirement from the one it tested |
 | W130–W133 | warning | AI system without an assessment; not yet approved; past review; residual above inherent |

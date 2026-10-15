@@ -268,10 +268,10 @@ def parse_csv(text: str, order: str | None = None) -> tuple[str, list[dict], str
     return fmt, rows, used_order, ambiguous
 
 
-REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|MR-\d{4}-\d{2}|AUD-\d{4}-\d{2}|[A-Z]\.\d+(?:\.\d+)*|\d{1,2}\.\d+(?:\.\d+)*)\b")
+REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|MR-\d{4}-\d{2}|AUD-\d{4}-\d{2}|(?:CC|PI|[ACP])\d+\.\d+|[A-Z]\.\d+(?:\.\d+)*|\d{1,2}\.\d+(?:\.\d+)*)\b")
 # In free-text notes only unambiguous ids count ("2.5 hours" is not clause 2.5); bare clause numbers
 # like 6.1.2 are taken from the refs/tags columns.
-NOTE_REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|MR-\d{4}-\d{2}|AUD-\d{4}-\d{2}|[A-Z]\.\d+(?:\.\d+)+)\b")
+NOTE_REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|MR-\d{4}-\d{2}|AUD-\d{4}-\d{2}|(?:CC|PI|[ACP])\d+\.\d+|[A-Z]\.\d+(?:\.\d+)+)\b")
 
 
 def known_refs(model: Engagement) -> set[str]:

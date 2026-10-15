@@ -63,6 +63,14 @@
           "items": {
             "type": "string"
           }
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "description": "Optional categories of the framework in scope (SOC 2: availability, confidentiality, processing_integrity, privacy). Required categories are always in scope."
         }
       }
     },
@@ -129,12 +137,14 @@
         "stage1": {
           "type": "string",
           "format": "date",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "First audit milestone: ISO Stage 1 audit; SOC 2 observation period start (Type 1 as-of date)."
         },
         "stage2": {
           "type": "string",
           "format": "date",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Second audit milestone: ISO Stage 2 audit; SOC 2 observation period end."
         },
         "target_certificate": {
           "type": "string",

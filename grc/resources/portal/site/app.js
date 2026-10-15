@@ -65,7 +65,7 @@ async function boot() {
   S.fw = S.data.frameworks.some((f) => f.key === saved) ? saved : (S.data.frameworks[0] || {}).key;
   S.owner = store("owner");
   document.getElementById("client").textContent = S.data.client;
-  document.title = `${S.data.client}: certification readiness`;
+  document.title = `${S.data.client}: readiness`;
   document.getElementById("sandbox").hidden = !S.data.sandbox;
   document.getElementById("asof").textContent = `Information as of ${fmt(S.data.as_of, true)}.`;
   document.getElementById("contact").textContent = S.data.contact ? `Questions: ${S.data.contact}` : "";
@@ -134,8 +134,10 @@ function overview() {
   const late = reqs.filter((r) => r.overdue).length;
   const stage1 = f.path.stages[0];
   const until = stage1 ? daysBetween(S.data.as_of, stage1.date) : null;
+  // "Stage 1 audit is" (ISO) or "observation period starts" (SOC 2)
+  const soon = (f.terms && f.terms.countdown) || "Stage 1 audit is";
   const head = stage1 && until >= 0
-    ? `${until === 0 ? "Your " + f.name + " Stage 1 audit is today." : `Your ${f.name} Stage 1 audit is in ${plural(until, "day")}.`}`
+    ? `${until === 0 ? `Your ${f.name} ${soon} today.` : `Your ${f.name} ${soon} in ${plural(until, "day")}.`}`
     : `Your ${f.name} readiness`;
   const nextDue = reqs.filter((r) => r.due && !r.overdue).map((r) => r.due).sort()[0];
   const lede = h("p", { class: "lede" },
@@ -193,13 +195,14 @@ function pathView(f) {
   const items = phases.map((p) => ({ date: p.start, end: p.end, title: p.name, sub: `${fmt(p.start)} to ${fmt(p.end, true)}`, kind: "phase" }))
     .concat(stages.map((s) => ({ date: s.date, title: s.name, sub: fmt(s.date, true), kind: "stage" })))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
-  const list = h("ol", { class: "path-list", "aria-label": "Path to certification" }, items.map((it) => {
+  const goal = (f.terms && f.terms.goal) || "certification";
+  const list = h("ol", { class: "path-list", "aria-label": `Path to ${goal}` }, items.map((it) => {
     let cls = it.kind === "stage" ? "stage" : "";
     if ((it.end || it.date) < today) cls += " done";
     else if (it.date <= today) cls += " now";
     return h("li", { class: cls.trim() }, h("b", {}, it.title), h("span", {}, it.sub + (cls.includes("now") ? " (now)" : "")));
   }));
-  return h("section", { class: "path", "aria-label": "Path to certification" }, track, list);
+  return h("section", { class: "path", "aria-label": `Path to ${goal}` }, track, list);
 }
 
 // ------------------------------------------------------------------ requests
@@ -353,16 +356,22 @@ function progress() {
   const f = fwData();
   const showTech = store("tech") === "1";
   const tech = h("input", { type: "checkbox", checked: showTech, onchange: (e) => { store("tech", e.target.checked ? "1" : "0"); render(); } });
-  const groups = [["Management system requirements", f.areas.filter((a) => !a.id.startsWith("A."))],
-                  ["Controls", f.areas.filter((a) => a.id.startsWith("A."))]];
+  // areas come grouped under headings chosen by the engine (ISO: clauses, then controls; SOC 2: by category)
+  const groups = [];
+  for (const a of f.areas) {
+    const sec = a.section || "Requirements";
+    let g = groups.find((x) => x[0] === sec);
+    if (!g) groups.push(g = [sec, [], a.section_note || ""]);
+    g[1].push(a);
+  }
   const out = [h("h1", {}, `${f.name} progress`),
     h("p", { class: "lede" }, `${f.ready} of ${f.applicable} requirements are fully ready, and ${f.checks_pct}% of the evidence checks are complete. Open an area to see each requirement.`),
     h("p", { class: "legend" }, h("span", {}, h("i", { style: { background: "var(--pine)" } }), "Done"), h("span", {}, h("i", { style: { background: "var(--pine-mid)" } }), "Under way"), h("span", {}, h("i", { style: { background: "var(--paper)", border: "1px solid var(--rule)" } }), "Not started")),
     h("label", { class: "toggle" }, tech, "Show technical detail (requirement numbers and the four evidence checks)")];
-  for (const [title, areas] of groups) {
+  for (const [title, areas, note] of groups) {
     if (!areas.length) continue;
     out.push(h("h2", {}, title));
-    if (title === "Controls") out.push(h("p", { class: "section-note" }, "Reference controls your organization applies where relevant. Ones that don't apply are marked as such, with a recorded reason."));
+    if (note) out.push(h("p", { class: "section-note" }, note));
     out.push(h("ul", { class: "areas" }, areas.map((a) => {
       const total = a.total || 1;
       return h("li", {}, h("details", { class: "area" },
@@ -373,7 +382,7 @@ function progress() {
         h("ul", { class: "reqs" }, a.requirements.map((q) => h("li", {},
           h("span", {}, showTech ? `${q.id} ` : "", q.title),
           h("span", { class: q.state === "Ready" ? "pill ok" : "pill" }, q.plain),
-          showTech ? h("span", { class: "tech" }, `${q.kind === "control" ? "Annex A control" : "Clause"} · state: ${q.state} · ` +
+          showTech ? h("span", { class: "tech" }, `${q.kind_label || q.kind} · state: ${q.state} · ` +
             Object.entries(q.legs).map(([k, v]) => `${LEG_NAMES[k]}: ${v}`).join("; ")) : null)))));
     })));
   }
@@ -382,18 +391,29 @@ function progress() {
 
 // ------------------------------------------------------------------ help
 function help() {
+  // "ISO 27001 9.3; SOC 2 CC1.2": the requirement each framework on this site ties a term to
+  const refs = (key) => { const r = S.data.frameworks.filter((f) => f.terms && f.terms[key]).map((f) => `${f.name} ${f.terms[key]}`);
+    return r.length ? ` (${r.join("; ")})` : ""; };
   const terms = [
-    ["Readiness", "How close your organization is to passing the certification audit.", "Measured per requirement of the standard: a requirement is ready when all four evidence checks pass."],
+    ["Readiness", "How close your organization is to passing its audit.", "Measured per requirement of the standard: a requirement is ready when all four evidence checks pass."],
     ["The four checks", "For each requirement we confirm that it's written down, that it happens, that there are records, and that someone has checked it works.", "Documented, Implemented (In use), Evidenced (Records), Tested. Only the engagement team's review marks a check as passed."],
     ["Request", "Something we need from someone at your organization: an answer, a document or a link to records.", "Generated from open gaps, evidence checks, policies awaiting approval, assessments, audit findings and management review actions."],
     ["Sending an answer", "Your answer goes to your engagement team, who review it before anything changes. You'll see 'Sent', then 'Accepted' or a note asking for more.", "Each answer becomes a reviewed change (a pull request) in the engagement record. It never marks a requirement as ready on its own."],
     ["Gap", "Something missing that needs to be put in place before the audit.", "An item in the gap register, with an owner, due date and closing evidence."],
     ["Policy or procedure", "A document that says how your organization does something, approved by the right person.", "Documented information required by the standard; tracked with owner, approver, version and review date."],
     ...(S.data.frameworks.some((f) => f.impact_assessments) ? [["Impact assessment", "A written look at how one of your AI systems could affect people, and what you do about it.", "AI system impact assessment (ISO/IEC 42001 clause 6.1.4 and Annex A.5)."]] : []),
-    ["Internal audit finding", "Something your internal audit found that needs correcting, or an optional suggestion.", "Nonconformity (major or minor) or opportunity for improvement, with root cause and corrective action (clause 10.2)."],
-    ["Management review", "A regular meeting where your leadership looks at how the program is doing and agrees actions.", "Clause 9.3 management review, with required inputs, decisions and actions."],
-    ["Stage 1 and Stage 2 audits", "The two visits by the certification body. Stage 1 checks you're prepared; Stage 2 checks everything works in practice.", "Certification audit stages under ISO/IEC 17021-1."],
+    ["Internal audit finding", "Something your internal audit found that needs correcting, or an optional suggestion.", `Nonconformity (major or minor) or opportunity for improvement, with root cause and corrective action${refs("corrective_ref")}.`],
+    ["Management review", "A regular meeting where your leadership looks at how the program is doing and agrees actions.", `Management review with required inputs, decisions and actions${refs("review_ref")}.`],
   ];
+  // terms that belong to one framework (ISO audit stages, SOC 2 observation period ...) come from its playbook
+  const seen = new Set(terms.map((t) => t[0]));
+  S.data.frameworks.forEach((f) => {
+    let glossary = f.glossary || [];
+    // a client repo may keep an older copy of an ISO playbook with no glossary: keep the audit-stage entry
+    if (!glossary.length && (!f.terms || f.terms.stage1 === "Stage 1 audit"))
+      glossary = [{ term: "Stage 1 and Stage 2 audits", plain: "The two visits by the certification body. Stage 1 checks you're prepared; Stage 2 checks everything works in practice.", tech: "Certification audit stages under ISO/IEC 17021-1." }];
+    glossary.forEach((g) => { if (!seen.has(g.term)) { seen.add(g.term); terms.push([g.term, g.plain, g.tech]); } });
+  });
   const out = [h("h1", {}, "Help"),
     h("p", { class: "lede" }, "What the words on this site mean. The first line is the plain version; the smaller line is the technical one your specialists may use."),
     h("dl", { class: "terms" }, terms.map(([t, plain, techTxt]) => h("div", {}, h("dt", {}, t), h("dd", {}, plain), h("dd", { class: "techterm" }, techTxt)))),

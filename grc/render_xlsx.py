@@ -106,23 +106,21 @@ def render_workbook(model: Engagement, path: Path, include_hours: bool = True) -
     # ---------------------------------------------------------- data sheets
     cm_rows = []
     for r in model.requirements:
+        if not model.in_category_scope(r["id"]):       # SOC 2 categories the client didn't choose
+            continue
         c = model.controls.get(r["id"], {})
         excluded = not model.is_applicable(r["id"])
         legs = ["excluded" if excluded else leg_effective(model, (c.get("test") or {}).get(k) or {}) for k in LEGS]
         ev = sorted({str(x) for k in LEGS for x in (((c.get("test") or {}).get(k) or {}).get("evidence") or [])})
-        cm_rows.append([r["id"], r["title"], "Clause" if r["kind"] == "clause" else "Annex A",
+        cm_rows.append([r["id"], r["title"], model.kind_label(r),
                         "No" if excluded else "Yes", c.get("owner") or "", *legs, requirement_state(model, r["id"]),
                         ", ".join(c.get("gaps") or []), ", ".join(ev)])
     _sheet(wb, "Control matrix", ["ID", "Requirement", "Type", "Applicable", "Owner", "Documented", "Implemented",
                                   "Evidenced", "Tested", "State", "Gaps", "Evidence"], cm_rows,
            [9, 42, 9, 11, 24, 13, 13, 13, 13, 16, 14, 30], status_cols=(6, 7, 8, 9, 10), note=note)
 
-    soa_rows = [[r["id"], r["title"], "Yes" if model.is_applicable(r["id"]) else "No",
-                 model.controls.get(r["id"], {}).get("justification") or "",
-                 model.controls.get(r["id"], {}).get("implementation") or "", requirement_state(model, r["id"]),
-                 model.controls.get(r["id"], {}).get("owner") or ""]
-                for r in model.requirements if r["kind"] == "control"]
-    _sheet(wb, "SoA", ["Control", "Title", "Applicable", "Justification", "Implementation", "State", "Owner"], soa_rows,
+    from .render_md import applicability_headers, applicability_rows
+    _sheet(wb, model.term("applicability_short"), applicability_headers(model), applicability_rows(model),
            [9, 40, 11, 45, 55, 16, 24], status_cols=(6,), note=note)
 
     gap_rows = []
