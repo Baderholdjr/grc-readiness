@@ -113,6 +113,12 @@ nav.toc ol ol{padding-left:12px;border-left:1px solid var(--rule);margin:2px 0 8
 nav.toc ol ol a{color:var(--muted);font-size:13px}
 main{min-width:0;max-width:760px}
 header.cover{border-bottom:1px solid var(--rule);padding-bottom:28px;margin-bottom:12px}
+.brand{margin:0 0 18px}
+.brand .logo{display:block;width:clamp(200px,40vw,310px);height:auto;border-radius:8px}
+.brand .logo-dark{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .brand .logo-light{display:none} :root:not([data-theme="light"]) .brand .logo-dark{display:block}}
+:root[data-theme="dark"] .brand .logo-light{display:none} :root[data-theme="dark"] .brand .logo-dark{display:block}
+:root[data-theme="light"] .brand .logo-dark{display:none} :root[data-theme="light"] .brand .logo-light{display:block}
 header.cover .kicker{font-size:14px;color:var(--muted);margin:0 0 6px}
 header.cover h1{font:600 clamp(32px,5vw,46px)/1.1 var(--display);color:var(--navy);margin:0;text-wrap:balance}
 header.cover .meta{color:var(--muted);margin:12px 0 0}
@@ -195,6 +201,11 @@ def build(out: Path) -> Path:
         nav.append("</li>")
     nav.append("</ol></nav>")
     version = re.search(r"Engine version ([0-9.]+)", (HERE / "README.md").read_text()).group(1)
+    # ONI brand mark, same treatment as the Aderhold A.R.C. manual: light artwork, dark artwork in dark theme.
+    logo_html = ('<div class="brand">'
+                 '<img class="logo logo-light" src="images/oni-logo-light.png" alt="ONI: The Human Element in AI" width="310" height="146">'
+                 '<img class="logo logo-dark" src="images/oni-logo-dark.png" alt="ONI: The Human Element in AI" width="310" height="146">'
+                 '</div>')
     page = f"""<title>GRC Readiness Manual</title>
 <meta name="description" content="User manual for the GRC Readiness Engine: product guide, training guide and troubleshooting.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,7 +214,7 @@ def build(out: Path) -> Path:
 <div class="wrap">
 {''.join(nav)}
 <main>
-<header class="cover"><p class="kicker">GRC Readiness Engine · ISO/IEC 42001 · ISO/IEC 27001</p><h1>User manual</h1>
+<header class="cover">{logo_html}<p class="kicker">GRC Readiness Engine · an ONI service · ISO/IEC 42001 · ISO/IEC 27001</p><h1>User manual</h1>
 <p class="meta">Engine version {version} · Product guide, training guide and troubleshooting guide</p></header>
 {html_body}
 </main></div>"""
