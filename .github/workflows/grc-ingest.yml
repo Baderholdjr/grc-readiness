@@ -3,6 +3,7 @@ name: Ingest client documents (reusable)
 # Upload client documents to intake/ in a PR. This drafts engagement data from
 # them (templates imported as-is; other documents drafted by Claude if enabled),
 # commits the draft to the same PR, and comments a report for review.
+# Every record reads its own folder: engagement/ <- intake/, engagement-27001/ <- intake-27001/, ...
 # Called by thin wrappers in each repo; the triggers and permissions live there.
 on:
   workflow_call:
@@ -45,13 +46,24 @@ jobs:
       - name: Ingest
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python -m grc ingest --report ingest-report.md
+        run: |
+          engs=$(python -m grc engagements) || exit 1
+          : > ingest-report.md
+          for e in $engs; do
+            python -m grc --engagement "$e" ingest --report "report-$e.md"
+            # only records whose folder had new or changed files get a section
+            if ! grep -q "^No new or changed files" "report-$e.md"; then
+              { [ "$e" = engagement ] || printf '## Record %s/\n\n' "$e"; cat "report-$e.md"; echo; } >> ingest-report.md
+            fi
+            rm -f "report-$e.md"
+          done
+          [ -s ingest-report.md ] || echo "No new or changed files in any intake folder." > ingest-report.md
       - name: Commit the draft to this PR
         id: commit
         run: |
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A engagement intake
+          git add -A -- $(ls -d engagement engagement-* intake intake-* 2>/dev/null)
           if git diff --cached --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git commit -q -m "Ingest: draft engagement data from intake documents"
           git push

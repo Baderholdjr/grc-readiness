@@ -51,7 +51,7 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
     sandbox.configure(model)
     todo = files if files is not None else pending(intake, force)
     if not todo:
-        return "No new or changed files in intake/.\n"
+        return f"No new or changed files in {intake.name}/.\n"
     settings = model.engagement.get("ingest", {}) or {}
     ai_allowed = mode in ("auto", "ai") and settings.get("ai_drafting", False)
 

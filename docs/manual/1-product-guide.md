@@ -449,7 +449,7 @@ Run from a client repository (or the engine repo) with the engine installed. Two
 | `python -m grc init` | Create a control file for any catalog requirement without one |
 | `python -m grc sync-issues [--apply]` | Mirror gaps to Issues and milestones (dry run by default) |
 | `python -m grc collect [--only EV-…] [--dry-run]` | Run evidence collectors |
-| `python -m grc ingest` | Draft the record from new files in `intake/` |
+| `python -m grc ingest` | Draft the record from new files in its intake folder (`intake/`, or `intake-27001/` for `engagement-27001/`) |
 | `python -m grc new-engagement --client … --start … --stage1 … --stage2 … --confirm-reset` | Reset the record for a new client |
 | `python -m grc codeowners` | Write control owners into CODEOWNERS |
 | `python -m grc bootstrap --dir DIR --engine-repo OWNER/REPO` | Write a new thin client repository |
@@ -472,7 +472,7 @@ In each client repository, under **Actions**:
 | Publish reports | After merge to main; daily | Rebuilds the `reports` branch |
 | Client site | After merge to main; daily | Builds the client site and deploys it to Cloudflare when configured |
 | Collect evidence | Daily, or Run workflow | Runs collectors; opens the *Evidence refresh* PR |
-| Ingest client documents | PRs that add files to `intake/` | Drafts the record from documents |
+| Ingest client documents | PRs that add files to `intake/` or `intake-<name>/` | Drafts each record from the documents in its own folder |
 | Sync gap register to GitHub Issues | Merges that change gaps, findings, owners, reviews or `engagement.yaml`; daily | Issues, milestones, reminders |
 | Weekly evidence freshness check | Mondays | Maintains the `grc-drift` issue |
 | Policies and procedures | Run workflow | `new`, `fill` or `approve` documents |

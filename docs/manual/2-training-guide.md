@@ -392,7 +392,7 @@ Then open the **`reports` branch**. Its landing page lists every report. Start w
    - **engagement** `engagement-27001`
 
    Merge the pull request. It adds `engagement-27001/` (118 control files, the phases, an internal audit and a management review) and `intake-27001/`. The main record isn't touched.
-2. **Set it up as in Modules 2–5:** owners, gaps, collectors. Everything happens inside `engagement-27001/`.
+2. **Set it up as in Modules 2–5:** owners, gaps, collectors. Everything happens inside `engagement-27001/`. Upload this record's documents to `intake-27001/`; a document that serves both standards goes in both `intake/` and `intake-27001/`.
 3. **Use the engagement input** whenever you run *Policies and procedures*, *Internal audit* or *Management review* for ISO 27001. Its document library has 20 ISMS documents.
 4. **Review the mappings.**
    1. Copy the engine's `mappings/iso27001__iso42001.yaml` to `mappings/` in the client repository.

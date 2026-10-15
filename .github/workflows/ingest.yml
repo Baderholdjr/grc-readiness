@@ -5,7 +5,7 @@ name: Ingest client documents
 # commits the draft to the same PR, and comments a report for review.
 on:
   pull_request:
-    paths: ["intake/**"]
+    paths: ["intake/**", "intake-*/**"]
 
 permissions:
   contents: write
