@@ -138,7 +138,7 @@ def test_record_wide_workflows_loop_over_every_record_and_scripts_parse():
     import subprocess
     wf = Path(__file__).resolve().parent.parent / ".github" / "workflows"
     for name in ("grc-validate.yml", "grc-publish-reports.yml", "grc-collect.yml", "grc-freshness.yml",
-                 "grc-sync-issues.yml", "grc-release.yml"):
+                 "grc-sync-issues.yml", "grc-release.yml", "grc-ingest.yml"):
         assert "python -m grc engagements" in (wf / name).read_text(), name
     for name in ("grc-audit.yml", "grc-docs.yml", "grc-review.yml", "grc-impact.yml", "grc-new-engagement.yml"):
         text = (wf / name).read_text()
@@ -316,3 +316,17 @@ def test_a_broken_second_record_never_stops_the_main_reports_or_site(tmp_path):
     out = tmp_path / "o42"
     assert main(["--engagement", str(e42), "--today", TODAY.isoformat(), "build", "--out", str(out), "--force", "--no-docx"]) == 0
     assert main(["--engagement", str(e42), "--today", TODAY.isoformat(), "portal", "--out", str(tmp_path / "site"), "--repo", "a/b"]) == 0
+
+
+def test_each_record_ingests_its_own_intake_folder(tmp_path):
+    root, e42, e27 = _two_records(tmp_path)
+    (root / "intake-27001" / "gaps.csv").write_text(
+        "area,finding,requirements,owner,due,severity,phase\n"
+        "Suppliers,No supplier assessments,A.5.19,COO,2026-12-01,high,governance\n")
+    assert main(["--engagement", str(e27), "--today", TODAY.isoformat(), "ingest", "--mode", "templates"]) == 0
+    assert any("A.5.19" in g.get("requirements", []) for g in load(e27, today=TODAY).gaps)
+    assert not load(e42, today=TODAY).gaps          # the main record is untouched
+    from grc import ingest
+    assert ingest.run(e42, root / "intake") == "No new or changed files in intake/.\n"
+    wf = (Path(__file__).resolve().parent.parent / "grc" / "resources" / "client" / "dot-github" / "workflows" / "ingest.yml")
+    assert '"intake-*/**"' in wf.read_text()

@@ -91,9 +91,9 @@ Their branches are suffixed (`docs/drafts-27001`), so the two records never shar
 
 **Locally**, pass `--engagement engagement-27001` before the command, or set `GRC_ENGAGEMENT=engagement-27001`. `python -m grc engagements` lists the records.
 
-**Not yet per record:**
-- **Document ingestion** reads `intake/` for the main record only. For the second record, run `python -m grc --engagement engagement-27001 ingest` locally.
-- **Hours** are kept in the main record (one engagement budget).
+**Document ingestion** is per record: each record reads its own folder (`intake/` for `engagement/`, `intake-27001/` for `engagement-27001/`), and the pull request gets one report section per record that had new files. Upload a document to every folder whose framework it serves. Client repositories set up before engine 0.14.1 need `"intake-*/**"` added to the `paths:` of `.github/workflows/ingest.yml`.
+
+**Not yet per record:** hours are kept in the main record (one engagement budget).
 
 ## Cross-framework reuse
 
