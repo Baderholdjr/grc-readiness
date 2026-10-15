@@ -135,7 +135,8 @@ def _items(model: Engagement) -> list[dict]:
                       "body": issue_body(model, g),
                       "labels": ["grc-gap"] + ([f"severity:{g['severity']}"] if g.get("severity") else [])
                       + ([f"phase:{g['phase']}"] if g.get("phase") else []),
-                      "open": g["status"] in ("open", "in_progress"), "owner": g.get("owner"),
+                      # a gap whose SOC 2 categories were all taken out of scope is no longer chased
+                      "open": g["status"] in ("open", "in_progress") and model.gap_in_scope(g), "owner": g.get("owner"),
                       "due": g.get("due"), "phase": g.get("phase")})
     for f in model.findings:
         items.append({"kind": "finding", "noun": "finding", "file": "findings.yaml", "id": f["id"],

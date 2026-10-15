@@ -214,6 +214,8 @@ def pack_markdown(model: Engagement, rid: str) -> str:
     configured = method(model)["inputs"]
     titles = {i["id"]: i.get("title") or i["id"] for i in configured}
     order = [i["id"] for i in configured]
+    # a playbook input can reuse a built-in section under its own id: {id: control_performance, content: performance}
+    content = {i["id"]: str(i.get("content") or i["id"]) for i in configured}
     head = L = [f"# {model.client} — management review input pack ({rid})\n",
          f"Prepared from the GRC record as of **{model.today}** for the review planned on {r.get('planned_on')}. "
          f"Previous management review: {f'{prev[0]} on {prev[1]}' if prev else 'none held yet'}. "
@@ -248,10 +250,11 @@ def pack_markdown(model: Engagement, rid: str) -> str:
     ai = impact.required_systems(model)
     if model.uses_impact_assessments:
         L.append(f"- AI systems in scope: **{len(ai)}** ({', '.join(str(s.get('name')) for s in ai) or 'none'}).\n")
-    scope_id = _doc_for(model, "4.3") or "DOC-SCOPE"
-    scope = documents.docs(model).get(scope_id)
-    L.append(f"- Scope and context document ({scope_id}): **{scope['meta'].get('status') if scope else 'not started'}**"
-             f"{'' if not scope else ', version ' + str(scope['meta'].get('version'))}.\n")
+    scope_id = _doc_for(model, model.term("scope_ref"))
+    scope = documents.docs(model).get(scope_id) if scope_id else None
+    if scope_id:
+        L.append(f"- Scope and context document ({scope_id}): **{scope['meta'].get('status') if scope else 'not started'}**"
+                 f"{'' if not scope else ', version ' + str(scope['meta'].get('version'))}.\n")
     L.append(f"\nDocuments approved {'since ' + str(since) if since else 'to date'}:\n\n")
     L.append(_table(["Document", "Title", "Version", "Approved", "Approver"], changed))
     L.append("\n_For discussion: new laws or guidance, changes in technology, threats or suppliers, organisational changes._\n")
@@ -297,9 +300,10 @@ def pack_markdown(model: Engagement, rid: str) -> str:
                       c.get("not_effective", 0) + c.get("partially_effective", 0),
                       len([f for f in model.findings if isinstance(f, dict) and f.get("audit") == a.get("id")])])
     L.append(_table(["Audit", "Status", "Workpapers", "Effective", "Not effective", "Findings"], arows))
-    obj_id = _doc_for(model, "6.2") or "DOC-OBJECTIVES"
-    obj = documents.docs(model).get(obj_id)
-    L.append(f"\n**Objectives:** tracked in {obj_id} ({obj['meta'].get('status') if obj else 'not started'}).\n")
+    obj_id = _doc_for(model, model.term("objectives_ref"))
+    obj = documents.docs(model).get(obj_id) if obj_id else None
+    if obj_id:
+        L.append(f"\n**Objectives:** tracked in {obj_id} ({obj['meta'].get('status') if obj else 'not started'}).\n")
 
     # 5. risks and impacts
     section("risks_and_impacts")
@@ -319,7 +323,7 @@ def pack_markdown(model: Engagement, rid: str) -> str:
                      f"{top} {impact.band(model, top)}" if top else "—", accepted, len(ia.get("conditions") or []), nr or "—"])
     if model.uses_impact_assessments:
         L.append(_table(["System", "Name", "Assessment", "Highest residual", "Accepted risks", "Conditions", "Next review"], rows))
-    risk_doc = _doc_for(model, "6.1.2")
+    risk_doc = _doc_for(model, model.term("risk_ref"))
     if risk_doc:
         rd = documents.docs(model).get(risk_doc)
         L.append(f"\nRisk method ({risk_doc}): {rd['meta'].get('status') if rd else 'not started'}. "
@@ -349,9 +353,22 @@ def pack_markdown(model: Engagement, rid: str) -> str:
                 and not str(model.controls.get(r["id"], {}).get("owner") or "").strip()]
     L.append(f"- Applicable requirements without an accountable owner: **{len(no_owner)}**.\n"
              f"\n_For discussion: people, skills, tools and budget the {model.system_abbrev} needs for the next period._\n")
+    # 8. incidents and 9. suppliers: used by playbooks that ask for them (SOC 2)
+    section("incidents")
+    inc = [[f["id"], f.get("grade"), f.get("requirement"), f.get("status"), f.get("description")] for f in model.findings
+           if isinstance(f, dict) and f.get("source") == "incident"]
+    L.append("Findings raised from security incidents:\n\n" + _table(["Finding", "Grade", "Requirement", "Status", "Description"], inc))
+    L.append("\n_For discussion: incidents since the last review, how they were handled, and lessons learned._\n")
+    section("suppliers")
+    sup = [[i.get("id"), i.get("name"), i.get("owner")] for i in model.inventory
+           if isinstance(i, dict) and i.get("kind") in ("supplier_service", "infrastructure") and i.get("in_scope") is not False]
+    L.append("Suppliers and subservice organizations in scope:\n\n" + _table(["ID", "Name", "Owner"], sup))
+    L.append("\n_For discussion: their latest SOC reports or assessments, exceptions noted, and complementary controls._\n")
+
     out = head
     for n, key in enumerate(order, start=1):
-        out += [f"\n## {n}. {titles[key]}\n\n"] + (sections.get(key) or ["_No generated data for this input; record the discussion in the review._\n"])
+        out += [f"\n## {n}. {titles[key]}\n\n"] + (sections.get(content[key]) or
+                                                    ["_No generated data for this input; record the discussion in the review._\n"])
     out.append("\n---\n_Record notes against each numbered input, decisions and actions in the review record._\n")
     return "".join(out)
 

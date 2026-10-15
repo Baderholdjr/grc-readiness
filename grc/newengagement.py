@@ -118,6 +118,7 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
         from .model import load_yaml as _lyc, resource as _resc
         known = [str(c.get("id")) for c in (_lyc(_resc(engagement_dir.parent, "frameworks", framework, "catalog.yaml")) or {})
                  .get("categories") or [] if isinstance(c, dict)]
+        categories = list(dict.fromkeys(categories))     # a category named twice counts once
         bad = [c for c in categories if c not in known]
         if bad:
             raise ValueError(f"unknown categor{'y' if len(bad) == 1 else 'ies'} for {framework}: {', '.join(bad)}"

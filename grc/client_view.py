@@ -108,7 +108,7 @@ def items(model: Engagement) -> list[dict]:
              "; ".join(unowned[:60]) + (" …" if len(unowned) > 60 else "")], order=5)
 
     for g in model.gaps:
-        if g.get("status") in ("open", "in_progress"):
+        if g.get("status") in ("open", "in_progress") and model.gap_in_scope(g):
             add(g.get("owner"), "Gap", g.get("id"), g.get("area"), [model.fmt(str(g.get("finding") or ""))],
                 g.get("due") or by_phase_end.get(str(g.get("phase"))), order=20)
     for f in model.findings:

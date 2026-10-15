@@ -4,7 +4,7 @@
 # repository, check each line against ISO/IEC 27001 and the AICPA criteria and the client's actual controls,
 # and fill reviewed_by and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count
 # for both records (cited as "<framework>:<id>", e.g. iso27001:EV-012). The rest are pointers.
-# `subset` means the ISO 27001 requirement (first framework) is narrower than the SOC 2 criterion.
+# `subset`: the ISO 27001 requirement (first framework) is narrower than the SOC 2 criterion; `superset`: wider.
 # Our own judgement; no text of either is reproduced. The AICPA publishes mappings of the criteria to
 # other frameworks on aicpa-cima.com, which reviewers may find useful.
 
@@ -20,8 +20,8 @@ mappings:
   reviewed_on: null
 - iso27001: A.8.7
   soc2: CC6.8
-  relationship: equivalent
-  note: Both require malware to be prevented or detected and acted on.
+  relationship: subset
+  note: ISO malware protection; CC6.8 also covers unauthorized software (ISO A.8.19).
   reviewed_by: ''
   reviewed_on: null
 - iso27001: A.5.25
@@ -44,8 +44,8 @@ mappings:
   reviewed_on: null
 - iso27001: A.8.10
   soc2: C1.2
-  relationship: equivalent
-  note: Both require information to be deleted when no longer required; SOC 2 ties it to confidentiality commitments.
+  relationship: superset
+  note: ISO deletion covers all information; C1.2 only confidential information, tied to commitments.
   reviewed_by: ''
   reviewed_on: null
 - iso27001: '9.2'
@@ -298,5 +298,11 @@ mappings:
   soc2: P8.1
   relationship: related
   note: Privacy and protection of personal information.
+  reviewed_by: ''
+  reviewed_on: null
+- iso27001: A.8.19
+  soc2: CC6.8
+  relationship: related
+  note: Software installation controls cover the unauthorized-software half of CC6.8.
   reviewed_by: ''
   reviewed_on: null

@@ -287,6 +287,10 @@ def check_gaps(model: Engagement) -> list[Finding]:
         if ph and ph not in phases:
             out.append(Finding("error", "E010", f"{gid} references unknown phase '{ph}'.", path, gid))
         open_ = g.get("status") in ("open", "in_progress")
+        if open_ and not model.gap_in_scope(g):
+            out.append(Finding("warning", "W112", f"{gid} is open, but its requirements are all in categories outside "
+                               "this engagement's scope (scope.categories): close it or add the category back.", path, gid))
+            open_ = False      # not chased: no owner/due warnings, no client request, no open issue
         if open_ and not g.get("owner"):
             out.append(Finding("warning", "W103", f"{gid} is open with no owner.", path, gid))
         due = g.get("due")
@@ -749,12 +753,13 @@ def check_reviews(model: Engagement) -> list[Finding]:
     if last and (model.today - last[1]).days > int(cfg["review_every_days"]):
         out.append(Finding("warning", "W151", f"The last management review ({last[0]}) was held on {last[1]}, more than "
                            f"{cfg['review_every_days']} days ago.", rpath, last[0]))
+    required = model.term("review_required") != "no"   # SOC 2: oversight can be shown other ways (board minutes)
     stage1 = safe_date((model.engagement.get("dates") or {}).get("stage1"))
-    if not last and stage1 and 0 <= (stage1 - model.today).days <= int(cfg["warn_before_stage1_days"]):
-        out.append(Finding("warning", "W151", f"No management review has been held and the {model.term('stage1')} is on {stage1}.", rpath, None))
+    if required and not last and stage1 and 0 <= (stage1 - model.today).days <= int(cfg["warn_before_stage1_days"]):
+        out.append(Finding("warning", "W151", f"No management review has been held, and the {model.term('stage1')} date is {stage1}.", rpath, None))
     ref = model.term("review_ref")
     c93 = model.controls.get(ref, {}).get("test", {})
-    if any((c93.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and not last:
+    if required and any((c93.get(k) or {}).get("status") == "verified" for k in ("evidenced", "tested")) and not last:
         out.append(Finding("warning", "W153", f"{ref} is marked verified but no management review is recorded as held.",
                            _rel(model, model.control_files.get(ref)), ref))
     return out
@@ -912,7 +917,7 @@ def check_mappings(model: Engagement) -> list[Finding]:
                 else:
                     # the borrowed evidence must be evidence for the mapped requirement(s) in the other record
                     eid = str(ref).split(":", 1)[1]
-                    used = {str(e) for o in eq[pre][cid] for lg in LEGS
+                    used = {str(e) for o in eq[pre][cid] if sibs[pre].is_applicable(o) for lg in LEGS
                             for e in ((((sibs[pre].controls.get(o) or {}).get("test") or {}).get(lg) or {}).get("evidence") or [])}
                     if eid not in used:
                         out.append(Finding("error", "E080", f"{cid}.{k} cites {ref}, but the mapped {pre} requirement(s) "
@@ -927,7 +932,7 @@ def check_mappings(model: Engagement) -> list[Finding]:
             for k in LEGS:
                 if leg_effective(model, my_test.get(k) or {}) == "verified":
                     continue
-                donors = [o for o in sorted(others) if leg_effective(sib, ((sib.controls.get(o) or {}).get("test") or {}).get(k) or {}) == "verified"]
+                donors = [o for o in sorted(others) if sib.is_applicable(o) and leg_effective(sib, ((sib.controls.get(o) or {}).get("test") or {}).get(k) or {}) == "verified"]
                 if donors:
                     ev = [e for o in donors for e in (((sib.controls[o].get("test") or {}).get(k) or {}).get("evidence") or [])
                           if ":" not in str(e)]          # only the other record's own evidence can be borrowed
@@ -1002,13 +1007,14 @@ def metrics(model: Engagement) -> dict:
         for k in LEGS:
             legs[k][leg_effective(model, c.get("test", {}).get(k, {}))] += 1
     states: dict[str, int] = {}
-    for r in model.requirements:
+    scoped = [r for r in model.requirements if model.in_category_scope(r["id"])]   # SOC 2: chosen categories only
+    for r in scoped:
         s = requirement_state(model, r["id"])
         states[s] = states.get(s, 0) + 1
     ready = states.get("Ready", 0)
     total_legs = len(applicable) * 4
     verified_legs = sum(v["verified"] for v in legs.values())
-    gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress"))
+    gaps_open = sum(1 for g in model.gaps if g.get("status") in ("open", "in_progress") and model.gap_in_scope(g))
     cited = {r for c in model.controls.values() for leg in (c.get("test") or {}).values()
              for r in (leg or {}).get("evidence", []) or []}
     from . import documents, impact, review
@@ -1022,7 +1028,7 @@ def metrics(model: Engagement) -> dict:
     return {
         "as_of": model.today.isoformat(),
         "framework": model.catalog["framework"]["short_name"],
-        "requirements_total": len(model.requirements),
+        "requirements_total": len(scoped),
         "requirements_applicable": len(applicable),
         "requirements_ready": ready,
         "states": states,

@@ -144,9 +144,9 @@ def test_site_tab_uses_soc2_terms_and_glossary(tmp_path):
     assert [s["name"] for s in f["path"]["stages"]] == ["Observation period start", "Observation period end"]
     assert not [u for u in f["path"]["upcoming"] if u["text"].startswith("Observation period")]
     assert "Observation period" in [g["term"] for g in f["glossary"]]
-    assert f["applicable"] == 38 and not f["impact_assessments"]
+    assert f["applicable"] == 38 and not f["impact_assessments"] and f["terms"]["review_ref"] == "CC1.2"
     js = (ENGINE / "portal" / "site" / "app.js").read_text()
-    assert "Annex A control" not in js and "Stage 1 and Stage 2" not in js and "f.glossary" in js
+    assert "Annex A control" not in js and "f.glossary" in js and 'refs("review_ref")' in js
 
 
 # ------------------------------------------------------------------ categories and applicability
@@ -195,6 +195,9 @@ def test_iso_wording_is_unchanged(tmp_path):
     assert main(["--engagement", str(edir), "new-engagement", "--client", "A", "--start", "2026-11-02", "--stage1",
                  "2027-03-15", "--stage2", "2027-05-10", "--framework", "iso27001", "--intake", str(root / "intake"),
                  "--confirm-reset"]) == 0
+    out = tmp_path / "out"
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(out), "--no-docx"]) == 0
+    assert (out / "soa.csv").read_text().startswith("Control,")
     _set(edir, "4.1", applicable=False)
     _set(edir, "A.5.7", applicable=False)
     msgs = [f.message for f in validate(load(edir, today=TODAY)) if f.code == "E004"]
@@ -249,3 +252,54 @@ def test_mapping_ids_exist_and_evidence_is_shared_through_a_reviewed_equivalent(
                  "--also", str(esoc)]) == 0
     data = json.loads((site / "public" / "portal.json").read_text())
     assert [f["key"] for f in data["frameworks"]] == ["iso27001", "soc2"]
+    # the cross-framework report leaves out criteria in categories not chosen (privacy here)
+    out = tmp_path / "outsoc"
+    assert main(["--engagement", str(esoc), "--today", TODAY.isoformat(), "build", "--out", str(out), "--no-docx"]) == 0
+    xf = (out / "cross-framework.md").read_text()
+    assert "| CC8.1 |" in xf and "P4.3" not in xf and "Bernard Aderhold" in xf
+
+
+# ------------------------------------------------------------------ fixes from review
+def test_review_pack_fills_every_soc2_input(tmp_path):
+    from grc import review
+    edir = _new(tmp_path)
+    m = load(edir, today=TODAY)
+    rid = next(iter(review.reviews(m)))
+    text = review.pack_markdown(m, rid)
+    for title in ("Control performance", "Changes to the services", "Results of the risk assessment",
+                  "Subservice organizations", "Security incidents"):
+        sec = text.split(title, 1)[1].split("\n## ", 1)[0]
+        assert "No generated data" not in sec, title
+    assert "DOC-SCOPE" not in text and "DOC-OBJECTIVES" not in text and "DOC-SOC-RISK" in text
+    # SOC 2 doesn't require a management review before the observation period
+    assert "W151" not in codes(load(edir, today=dt.date(2027, 3, 1)))
+
+
+def test_timesheet_refs_recognise_soc2_ids():
+    from grc.hours import NOTE_REF, REF
+    assert REF.findall("CC6.1;A1.2;PI1.3;P6.1;C1.2;A.8.32;9.2") == ["CC6.1", "A1.2", "PI1.3", "P6.1", "C1.2", "A.8.32", "9.2"]
+    assert NOTE_REF.findall("access review CC6.3 took 2.5 hours") == ["CC6.3"]
+
+
+def test_gaps_and_mappings_outside_the_chosen_categories_are_not_chased(tmp_path):
+    from grc import client_view, issues
+    from grc.rules import metrics
+    edir = _new(tmp_path, categories="availability,privacy")
+    (edir / "gaps.yaml").write_text(yaml.safe_dump({"gaps": [
+        {"id": "GAP-01", "area": "Privacy notice", "finding": "No notice.", "requirements": ["P1.1"], "owner": "CTO",
+         "due": "2026-12-01", "phase": "governance", "severity": "low", "status": "open"}]}))
+    m = load(edir, today=TODAY)
+    assert "W112" not in codes(m) and metrics(m)["gaps_open"] == 1
+    p = edir / "engagement.yaml"
+    e = yaml.safe_load(p.read_text())
+    e["scope"] = {"categories": ["availability"]}
+    p.write_text(yaml.safe_dump(e, sort_keys=False))
+    m = load(edir, today=TODAY)
+    assert "W112" in codes(m) and metrics(m)["gaps_open"] == 0
+    assert not [i for i in client_view.items(m) if i["kind"] == "Gap"]
+    assert not next(i for i in issues._items(m) if i["id"] == "GAP-01")["open"]
+    assert metrics(m)["requirements_total"] == 36
+    # applicability CSV keeps a framework-appropriate first column
+    out = tmp_path / "out"
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(out), "--no-docx"]) == 0
+    assert (out / "soa.csv").read_text().startswith("Criterion,")

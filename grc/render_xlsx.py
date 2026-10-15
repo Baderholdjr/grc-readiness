@@ -119,8 +119,8 @@ def render_workbook(model: Engagement, path: Path, include_hours: bool = True) -
                                   "Evidenced", "Tested", "State", "Gaps", "Evidence"], cm_rows,
            [9, 42, 9, 11, 24, 13, 13, 13, 13, 16, 14, 30], status_cols=(6, 7, 8, 9, 10), note=note)
 
-    from .render_md import APPLICABILITY_HEADERS, applicability_rows
-    _sheet(wb, model.term("applicability_short"), APPLICABILITY_HEADERS, applicability_rows(model),
+    from .render_md import applicability_headers, applicability_rows
+    _sheet(wb, model.term("applicability_short"), applicability_headers(model), applicability_rows(model),
            [9, 40, 11, 45, 55, 16, 24], status_cols=(6,), note=note)
 
     gap_rows = []

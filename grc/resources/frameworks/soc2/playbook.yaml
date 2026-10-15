@@ -26,6 +26,11 @@ terms:
   corrective_ref: CC4.2
   review_ref: CC1.2
   record_control_ref: CC8.1
+  scope_ref: CC2.1
+  objectives_ref: CC3.1
+  risk_ref: CC3.2
+  review_required: "no"
+  applicability_id_header: Criterion
 
 # Framework-specific entries for the client site's Help page.
 glossary:
@@ -129,7 +134,7 @@ needs:
 
 default_guardrails:
   - "{client} owns its controls and evidence; our team structures, reviews, tests, and challenges."
-  - "We do not perform or sign the SOC 2 examination; independence rules mean the service auditor must be a separate CPA firm."
+  - "We prepare {client}; we don't perform the SOC 2 examination. The service auditor must be independent of {client}, and a firm that both advises and examines must not take on management responsibilities."
   - Prefer controls that run on their own and leave records over controls that rely on memory.
   - Escalate scope changes, carve-out decisions, legal or contract commitments, and unsupported high-risk claims to the engagement lead.
 
@@ -193,10 +198,10 @@ management_review:
   warn_before_stage1_days: 60
   inputs:
     - {id: previous_actions, title: "Status of actions from previous reviews"}
-    - {id: system_changes, title: "Changes to the services, system boundary, commitments or organization"}
-    - {id: control_performance, title: "Control performance: monitoring results, exceptions, deficiencies and their remediation"}
-    - {id: risks, title: "Results of the risk assessment, including fraud and vendor risk, and treatment status"}
-    - {id: vendors, title: "Subservice organizations and key vendors: SOC report reviews and issues"}
+    - {id: system_changes, content: context_changes, title: "Changes to the services, system boundary, commitments or organization"}
+    - {id: control_performance, content: performance, title: "Control performance: monitoring results, exceptions, deficiencies and their remediation"}
+    - {id: risks, content: risks_and_impacts, title: "Results of the risk assessment, including fraud and vendor risk, and treatment status"}
+    - {id: vendors, content: suppliers, title: "Subservice organizations and key vendors: SOC report reviews and issues"}
     - {id: incidents, title: "Security incidents and lessons learned"}
     - {id: resources, title: "Adequacy of resources for the control environment"}
     - {id: improvement, title: "Opportunities for improvement"}

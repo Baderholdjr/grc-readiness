@@ -386,7 +386,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > **Shipped for SOC 2:**
 > - the AICPA Trust Services Criteria: 33 common criteria (Security) plus 28 in the optional Availability, Confidentiality, Processing Integrity and Privacy categories, in our own words
 > - an 18-document library covering every criterion once; documents for categories the client didn't choose are left out
-> - a proposed mapping to ISO 27001 (6 equivalent, 1 subset, 41 related)
+> - a proposed mapping to ISO 27001 (4 equivalent, 2 subset, 1 superset, 42 related)
 
 > **Under the hood:**
 > - **Where each framework lives:** `frameworks/<id>/catalog.yaml`, `playbook.yaml` and `documents/`.
@@ -408,7 +408,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - **Applicability:** every criterion in a chosen category applies; one marked not applicable needs a justification for the system description (E004). The *Criteria Applicability* report replaces the Statement of Applicability.
 > - **Dates:** `stage1` is the observation period start (and Type 1 as-of date, if any); `stage2` is the observation period end. The phases run from scoping through a readiness assessment to the observation period.
 > - **References:** internal audit → CC4.1, corrective actions → CC4.2, management and board review → CC1.2.
-> - **Independence:** we prepare the client; the examination must be done by a separate CPA firm.
+> - **Independence:** we prepare the client; the examination is done by a CPA firm independent of the client, which must not have taken on management responsibilities for it.
 
 > **Under the hood:**
 > - Start a record with `new-engagement --framework soc2 --categories availability,confidentiality` (or the *categories* input of the New engagement workflow).
@@ -422,7 +422,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 | Impact assessments | Yes (AI systems) | No | No |
 | Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) |
 | Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 6 equivalent, 1 subset, 41 related | to ISO 27001 (left) |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) |
 
 ## 19. Boundaries: what the tool will and won't do
 
@@ -432,7 +432,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 - **It doesn't judge sufficiency.** It checks that evidence exists, is current, is the right type and is traceable. Whether it is *enough* is the analyst's and auditor's call.
 - **It doesn't hold confidential artifacts.** The evidence index stores pointers, dates and approvers. Artifacts stay in the client's systems, and every client repository stays private.
 - **It doesn't reproduce ISO text or the AICPA criteria.** The catalogs paraphrase them. Work from a licensed copy of the standard and the AICPA's published criteria.
-- **It doesn't perform the SOC 2 examination.** Only an independent CPA firm can; preparing the client and examining it can't be done by the same firm.
+- **It doesn't perform the SOC 2 examination.** Only a CPA firm independent of the client can. A firm that both advises and examines a client must not take on management responsibilities, or its independence is impaired.
 - **GitHub plan limits.** On GitHub Free, private repositories can't use branch protection or rulesets. That means the requirement that `validate` passes and that CODEOWNERS approve is **not enforced** by GitHub, only by your own practice. (The pilot's own check, EV-101, reports exactly this.) For real client engagements, use a plan that supports protected branches on private repositories (GitHub Team or Pro).
 - **Client site in proof-of-concept mode.** The free Cloudflare setup is for test data. Before real client data goes through it, move to single sign-on, a custom domain, a GitHub App and rate limiting (`docs/CLIENT-SITE.md`).
 
@@ -522,6 +522,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W107 | warning | A phase overlaps the previous one |
 | W108 / W109 | warning | A collector check is failing / ran but errored |
 | W110 / W111 | warning | Client claim with no owner / owner not in owners.yaml |
+| W112 | warning | SOC 2: an open gap whose requirements are all in categories taken out of scope; it is no longer chased (no request, issue closed) |
 | W120–W123 | warning | Finding past due; 9.2 verified while no audit has reached reporting or closed; audit overrunning; in-scope requirement without a workpaper |
 | W124 / W125 | warning | Audit scope or exclude entry matches no requirement / a workpaper cited on a different requirement from the one it tested |
 | W130–W133 | warning | AI system without an assessment; not yet approved; past review; residual above inherent |

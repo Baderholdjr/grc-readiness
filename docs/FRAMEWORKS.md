@@ -22,7 +22,7 @@ scope:
   categories: [availability, confidentiality]
 ```
 
-Criteria in categories you didn't choose are left out everywhere: no assessment files, no requests, no documents (the Privacy Program isn't drafted unless Privacy is chosen). If you add a category later, validation reports the missing assessment files (E002) until you run `python -m grc init` (or *Validate* on a branch, then commit the new files). A category name the framework doesn't have is an error (E016).
+Criteria in categories you didn't choose are left out everywhere: no assessment files, no requests, no documents (the Privacy Program isn't drafted unless Privacy is chosen). If you add a category later, validation reports the missing assessment files (E002) until you run `python -m grc init` (or *Validate* on a branch, then commit the new files). A category name the framework doesn't have is an error (E016). If you take a category out again, open gaps that only concern it are flagged (W112) and no longer chased.
 
 **Applicability.** Every criterion in a chosen category applies. A criterion can be marked `applicable: false` only with a `justification`, which the system description will need to explain (E004 otherwise). The *Criteria Applicability* report (`soa.md`) takes the place of the ISO Statement of Applicability and lists the left-out categories with their reason.
 
@@ -30,7 +30,7 @@ Criteria in categories you didn't choose are left out everywhere: no assessment 
 
 **References.** The internal audit evidences CC4.1, the corrective action register CC4.2, and the management (and board) review CC1.2.
 
-**Mapping.** `mappings/iso27001__soc2.yaml` proposes 6 equivalent, 1 subset and 41 related pairs between ISO 27001 and SOC 2, for clients pursuing both. As with every engine mapping, nothing counts until it is reviewed in the client repository.
+**Mapping.** `mappings/iso27001__soc2.yaml` proposes 4 equivalent, 2 subset, 1 superset and 42 related pairs between ISO 27001 and SOC 2, for clients pursuing both. As with every engine mapping, nothing counts until it is reviewed in the client repository.
 
 **Wording for other frameworks.** All of this comes from the SOC 2 catalog (`kinds:`, `categories:`) and playbook (`terms:`, `glossary:`). A new framework sets the same keys to use its own words; ISO wording is the default.
 

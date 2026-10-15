@@ -44,7 +44,12 @@ TERM_DEFAULTS = {
     "internal_audit_ref": "9.2",                   # requirement the internal audit evidences
     "corrective_ref": "10.2",                      # requirement the corrective action register evidences
     "review_ref": "9.3",                           # requirement the management review evidences
-    "record_control_ref": "7.5",                   # requirement the engagement repo's own branch protection evidences
+    "record_control_ref": "7.5",
+    "review_required": "yes",                      # "no": a missing management review isn't warned about (SOC 2)
+    "applicability_id_header": "Control",          # first column of the applicability report
+    "scope_ref": "4.3",                            # requirements whose library documents the review pack reports on
+    "objectives_ref": "6.2",
+    "risk_ref": "6.1.2",                   # requirement the engagement repo's own branch protection evidences
 }
 
 
@@ -305,6 +310,11 @@ class Engagement:
         """False only for a requirement in an optional category the client hasn't chosen."""
         cat = str(self.requirement_index.get(req_id, {}).get("category") or "")
         return not cat or cat not in self.category_index or cat in self.categories_in_scope
+
+    def gap_in_scope(self, gap: dict) -> bool:
+        """False for a gap whose requirements all sit in SOC 2 categories the client didn't choose."""
+        reqs = [str(r) for r in gap.get("requirements") or [] if str(r) in self.requirement_index]
+        return not reqs or any(self.in_category_scope(r) for r in reqs)
 
     def term(self, key: str) -> str:
         """Framework wording (playbook `terms:`), e.g. what the two audit milestones are called."""

@@ -391,6 +391,9 @@ function progress() {
 
 // ------------------------------------------------------------------ help
 function help() {
+  // "ISO 27001 9.3; SOC 2 CC1.2": the requirement each framework on this site ties a term to
+  const refs = (key) => { const r = S.data.frameworks.filter((f) => f.terms && f.terms[key]).map((f) => `${f.name} ${f.terms[key]}`);
+    return r.length ? ` (${r.join("; ")})` : ""; };
   const terms = [
     ["Readiness", "How close your organization is to passing its audit.", "Measured per requirement of the standard: a requirement is ready when all four evidence checks pass."],
     ["The four checks", "For each requirement we confirm that it's written down, that it happens, that there are records, and that someone has checked it works.", "Documented, Implemented (In use), Evidenced (Records), Tested. Only the engagement team's review marks a check as passed."],
@@ -399,14 +402,18 @@ function help() {
     ["Gap", "Something missing that needs to be put in place before the audit.", "An item in the gap register, with an owner, due date and closing evidence."],
     ["Policy or procedure", "A document that says how your organization does something, approved by the right person.", "Documented information required by the standard; tracked with owner, approver, version and review date."],
     ...(S.data.frameworks.some((f) => f.impact_assessments) ? [["Impact assessment", "A written look at how one of your AI systems could affect people, and what you do about it.", "AI system impact assessment (ISO/IEC 42001 clause 6.1.4 and Annex A.5)."]] : []),
-    ["Internal audit finding", "Something your internal audit found that needs correcting, or an optional suggestion.", "Nonconformity (major or minor) or opportunity for improvement, with root cause and corrective action."],
-    ["Management review", "A regular meeting where your leadership looks at how the program is doing and agrees actions.", "Management review with required inputs, decisions and actions (ISO clause 9.3; SOC 2 board and management oversight)."],
+    ["Internal audit finding", "Something your internal audit found that needs correcting, or an optional suggestion.", `Nonconformity (major or minor) or opportunity for improvement, with root cause and corrective action${refs("corrective_ref")}.`],
+    ["Management review", "A regular meeting where your leadership looks at how the program is doing and agrees actions.", `Management review with required inputs, decisions and actions${refs("review_ref")}.`],
   ];
   // terms that belong to one framework (ISO audit stages, SOC 2 observation period ...) come from its playbook
   const seen = new Set(terms.map((t) => t[0]));
-  S.data.frameworks.forEach((f) => (f.glossary || []).forEach((g) => {
-    if (!seen.has(g.term)) { seen.add(g.term); terms.push([g.term, g.plain, g.tech]); }
-  }));
+  S.data.frameworks.forEach((f) => {
+    let glossary = f.glossary || [];
+    // a client repo may keep an older copy of an ISO playbook with no glossary: keep the audit-stage entry
+    if (!glossary.length && (!f.terms || f.terms.stage1 === "Stage 1 audit"))
+      glossary = [{ term: "Stage 1 and Stage 2 audits", plain: "The two visits by the certification body. Stage 1 checks you're prepared; Stage 2 checks everything works in practice.", tech: "Certification audit stages under ISO/IEC 17021-1." }];
+    glossary.forEach((g) => { if (!seen.has(g.term)) { seen.add(g.term); terms.push([g.term, g.plain, g.tech]); } });
+  });
   const out = [h("h1", {}, "Help"),
     h("p", { class: "lede" }, "What the words on this site mean. The first line is the plain version; the smaller line is the technical one your specialists may use."),
     h("dl", { class: "terms" }, terms.map(([t, plain, techTxt]) => h("div", {}, h("dt", {}, t), h("dd", {}, plain), h("dd", { class: "techterm" }, techTxt)))),

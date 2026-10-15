@@ -82,14 +82,15 @@ def control_matrix(model: Engagement, out: Path):
 # -------------------------------------------------- statement of applicability
 def soa(model: Engagement, out: Path):
     rows = applicability_rows(model)
-    title, short = model.term("applicability_title"), model.term("applicability_short")
+    title = model.term("applicability_title")
     md = [f"# {model.client} — {title} (draft)\n", GEN, model.term("applicability_intro"),
-          f" Approval of the {title} is recorded by merging the PR that changes it.\n\n", _table(APPLICABILITY_HEADERS, rows)]
+          f" Approval of the {title} is recorded by merging the PR that changes it.\n\n", _table(applicability_headers(model), rows)]
     (out / "soa.md").write_text("".join(md), encoding="utf-8")
-    _write_csv(out / "soa.csv", APPLICABILITY_HEADERS, rows)
+    _write_csv(out / "soa.csv", applicability_headers(model), rows)
 
 
-APPLICABILITY_HEADERS = ["ID", "Title", "Applicable", "Justification", "Implementation", "State", "Owner"]
+def applicability_headers(model: Engagement) -> list[str]:
+    return [model.term("applicability_id_header"), "Title", "Applicable", "Justification", "Implementation", "State", "Owner"]
 
 
 def applicability_rows(model: Engagement) -> list[list]:
@@ -594,7 +595,7 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     from . import mappings
     extra = client_view.render(model, out) + portal.report(model, out) + extra + mappings.report(model, out)
     if workbook:
-        extra = [("Excel workbook", f"{workbook}?raw=1", "Control matrix, SoA, gaps, evidence, findings, impact assessments, "
+        extra = [("Excel workbook", f"{workbook}?raw=1", f"Control matrix, {model.term('applicability_short')}, gaps, evidence, findings, impact assessments, "
                   "documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet")] + extra
     index(model, findings, out, brief_docx, extra)
     return status(model, findings, out)

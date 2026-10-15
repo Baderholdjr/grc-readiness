@@ -190,7 +190,8 @@ def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> di
         "key": model.engagement.get("framework", ""), "name": fw.get("short_name", ""), "full_name": fw.get("name", ""),
         "system": fw.get("management_system", ""),
         "terms": {"goal": model.term("goal"), "stage1": model.term("stage1"), "stage2": model.term("stage2"),
-                  "countdown": model.term("countdown")},
+                  "countdown": model.term("countdown"), "review_ref": model.term("review_ref"),
+                  "corrective_ref": model.term("corrective_ref")},
         "glossary": [{"term": str(g.get("term")), "plain": str(g.get("plain")), "tech": str(g.get("tech") or "")}
                      for g in model.playbook.get("glossary") or [] if isinstance(g, dict) and g.get("term")],
         "ready": m["requirements_ready"], "applicable": m["requirements_applicable"], "checks_pct": m["legs_verified_pct"],
