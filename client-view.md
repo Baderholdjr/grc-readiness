@@ -19,9 +19,9 @@ As of 2026-10-15. What has been done, what is coming up, and what we need from y
 - **2027-01-01** — Phase starts: Test the AIMS
 - **2027-01-11** — Internal audit AUD-2027-01 begins
 - **2027-02-01** — Phase starts: Stage 1
-- **2027-02-22** — Stage 1 certification audit
+- **2027-02-22** — Stage 1 audit
 - **2027-03-01** — Phase starts: Stage 2 &amp; closure
-- **2027-04-05** — Stage 2 certification audit
+- **2027-04-05** — Stage 2 audit
 
 ## What we need from you
 

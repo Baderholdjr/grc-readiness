@@ -9,7 +9,7 @@
 |---|---|
 | [Analyst brief](brief.md) | The 9-section orientation brief · [download Word](example-client-iso42001-brief.docx?raw=1) |
 | [Control matrix](control-matrix.md) | Every requirement with the four-part evidence test ([CSV](control-matrix.csv)) |
-| [Statement of Applicability](soa.md) | Annex A applicability, justification and status ([CSV](soa.csv)) |
+| [Statement of Applicability](soa.md) | Which requirements apply, with justification and status ([CSV](soa.csv)) |
 | [Gap register](gap-register.md) | Open and closed gaps with owners and due dates ([CSV](gap-register.csv)) |
 | [Evidence index](evidence-index.md) | Requirement → evidence traceability ([CSV](evidence-index.csv)) |
 | [Excel workbook](example-client-iso42001-workbook.xlsx?raw=1) | Control matrix, SoA, gaps, evidence, findings, impact assessments, documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet |
