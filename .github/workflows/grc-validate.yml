@@ -57,4 +57,4 @@ jobs:
         with:
           name: readiness-reports-${{ github.sha }}
           path: out/
-          retention-days: 90
+          retention-days: 7

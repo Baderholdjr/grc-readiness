@@ -121,7 +121,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 ## GitOps workflow
 
 1. **Change through PRs.** For example: *"A.6.2.4 tested → verified after release-owner interview"*. The PR template walks through the evidence test.
-2. **CI gates the merge** (`validate.yml`). It runs tests, validation and the build, and posts a readiness summary on the PR. The generated reports are attached as a build artifact.
+2. **CI gates the merge** (`validate.yml`). It runs tests, validation and the build, and posts a readiness summary on the PR. The generated reports are attached as a build artifact for 7 days; the `reports` branch keeps the lasting copy.
 3. **Merging is approval.** `CODEOWNERS` decides who must approve which files. For example, client control owners approve their own controls, and the engagement lead approves `engagement.yaml`.
 4. **Gaps become Issues** (`sync-issues.yml`). Each gap becomes an Issue with a hidden ID marker and a milestone per phase. Re-running updates the existing Issues instead of duplicating them. A closed gap closes its Issue.
 5. **Weekly drift check** (`freshness.yml`). This re-evaluates the record against today's date and maintains one `grc-drift` Issue listing expired evidence and overdue gaps.
