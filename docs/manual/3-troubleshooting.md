@@ -48,6 +48,7 @@ Entries marked **(seen in the pilot)** happened during the Larkspur pilot, so th
 | E080 when citing evidence from the other framework's record | [T-29](#t-29-e080-evidence-from-the-other-frameworks-record) |
 | A second framework's workflow changed the wrong record | [T-30](#t-30-a-workflow-acted-on-the-wrong-record) |
 | SOC 2: E002 after adding a category, or E016 | [T-31](#t-31-soc-2-e002-after-adding-a-category-or-e016) |
+| Actions storage is full | [T-32](#t-32-actions-storage-is-full) |
 
 ---
 
@@ -395,6 +396,14 @@ If the message says "this repository has no … record", the prefix is wrong, or
 **Why:** each criterion in a chosen category needs its assessment file, and the files are only created by `grc init`. E016 is a misspelt category; the valid ones are `availability`, `confidentiality`, `processing_integrity` and `privacy` (Security is always included).
 
 **Fix:** correct the spelling, then run `python -m grc --engagement engagement-soc2 init` and commit the new files in the same pull request. Then run *Policies and procedures* to draft the new category's document.
+
+### T-32: Actions storage is full
+
+**What you see:** GitHub emails that you have used most of your Actions storage, or a run fails at *Upload artifact* with a storage quota message.
+
+**Why:** every *validate* and *Client site* run saves a copy of its output as a run artifact. GitHub Free includes 500 MB for all your private repositories. Engines before 0.14.2 kept each copy for 90 days and each copy was about 45 MB, so a busy repository filled the quota in days.
+
+**Fix:** upgrade the client repository to engine 0.14.2 or later (copies are about a quarter of the size and kept 7 days). Then delete the old copies: in the repository, open **Actions**, open a run, and click the bin icon next to each artifact, or delete whole runs from the **⋯** menu. With the GitHub CLI: `gh api repos/<owner>/<repo>/actions/artifacts --paginate -q '.artifacts[].id' | xargs -I{} gh api -X DELETE repos/<owner>/<repo>/actions/artifacts/{}`. Nothing is lost: the `reports` branch keeps the published reports, and any run can be repeated. GitHub updates the usage figure within 6–12 hours.
 
 ## When you need help
 

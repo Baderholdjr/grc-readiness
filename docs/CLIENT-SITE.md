@@ -172,7 +172,7 @@ For more detail, open the Worker in Cloudflare and go to **Observability → Log
 
 ### Previewing without Cloudflare
 
-Every run uploads the built site as an artifact (`client-site-<sha>`). Locally, `grc portal --out _portal` builds the same thing.
+Every run uploads the built site as an artifact (`client-site-<sha>`), kept for 7 days. Locally, `grc portal --out _portal` builds the same thing.
 
 The pages need the Worker to load, because it's what lets the browser in. To look at the site without Cloudflare, run the test harness. It plays the part of Access and GitHub:
 

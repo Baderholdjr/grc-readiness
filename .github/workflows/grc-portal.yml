@@ -49,7 +49,7 @@ jobs:
         with:
           name: client-site-${{ github.sha }}
           path: _portal/
-          retention-days: 30
+          retention-days: 7
       - name: Decide whether to deploy
         id: cfg
         env:
