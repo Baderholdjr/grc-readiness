@@ -171,3 +171,7 @@ Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id
 - **ISO text is copyrighted.** The catalog contains identifiers, short titles and *our own paraphrased* intent. It doesn't reproduce the standard's text. Work from a licensed copy.
 - **Evidence stays in the client's systems.** The index stores pointers, dates, approvers and optional hashes. Don't commit confidential artifacts. Keep each client's repo private.
 - **The tool doesn't decide conformity.** It enforces bookkeeping discipline (traceability, freshness, evidence types). Whether evidence is *sufficient* is still the analyst's and auditor's judgment.
+
+## License
+
+[PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) — free for noncommercial use; commercial use by arrangement. © 2025–2026 Bernard A. Aderhold Jr.
