@@ -6,7 +6,7 @@ evidence:
   type: config
   location: engagement/evidence/collected/EV-101.json
   owner: collector
-  collected: 2026-10-08
+  collected: 2026-10-24
   valid_for_days: 30
   sha256: c52411c31afdab3a5896a3537468518a21629db2e74549daf478559e0742d777
   collector: github.branch_protection
@@ -17,21 +17,21 @@ evidence:
   type: record
   location: engagement/evidence/collected/EV-102.json
   owner: collector
-  collected: 2026-10-08
+  collected: 2026-10-24
   valid_for_days: 30
-  sha256: 9af490d20b9c3a1437dcb236ac972912ad83386ff622ec64927d3bbf3c113834
+  sha256: 73396f506a5fcb08ba70ae7ef0bedfe8e23a4b04562656817f9f7c25dfac0a80
   collector: github.pr_reviews
   result: fail
-  notes: 'Baderholdjr/grc-readiness: 0/6 merged PRs independently approved (90d) | 6 of 6 merged PRs had no independent approval: #20, #19, #17,
-    #16, #15, #14'
+  notes: 'Baderholdjr/grc-readiness: 0/35 merged PRs independently approved (90d) | 35 of 35 merged PRs had no independent approval: #51, #50,
+    #49, #48, #47, #46, #45, #44, #43, #41, #42, #40, #39, #38, #37, #36, #34, #33, #32, #31'
 - id: EV-103
   title: 'Engagement repo: validation gate runs'
   type: record
   location: engagement/evidence/collected/EV-103.json
   owner: collector
-  collected: 2026-10-08
+  collected: 2026-10-24
   valid_for_days: 30
-  sha256: 71d3afe934b05ff336b0e2c15cdc774f224ce35501d5787fe32747d46c1b48f2
+  sha256: 3ffb5e2794e397e74ba93fb95046d512697f25c96321226fb0d7bb169c454663
   collector: github.workflow_runs
   result: pass
-  notes: 'Baderholdjr/grc-readiness validate.yml: 8 runs, 0 failed (30d)'
+  notes: 'Baderholdjr/grc-readiness validate.yml: 35 runs, 0 failed (30d)'

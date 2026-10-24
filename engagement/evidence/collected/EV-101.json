@@ -1,5 +1,6 @@
 {
   "evidence": "EV-101",
+  "sandbox": false,
   "title": "Engagement repo: main branch protection",
   "collector": "github.branch_protection",
   "params": {
@@ -11,7 +12,7 @@
       "validate"
     ]
   },
-  "collected_at": "2026-10-08T23:45:59+00:00",
+  "collected_at": "2026-10-24T16:56:25+00:00",
   "result": "pass",
   "summary": "Baderholdjr/grc-readiness@main: 1 approval(s), checks=['validate']",
   "findings": [],
