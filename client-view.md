@@ -1,6 +1,6 @@
 # (Example Client) — readiness for ISO 42001
 
-As of 2026-11-01. What has been done, what is coming up, and what we need from you.
+As of 2026-11-02. What has been done, what is coming up, and what we need from you.
 
 ## Where things stand
 
@@ -14,7 +14,6 @@ As of 2026-11-01. What has been done, what is coming up, and what we need from y
 
 ## Coming up
 
-- **2026-11-01** — Phase starts: Build governance
 - **2026-12-01** — Phase starts: Implement &amp; evidence
 - **2027-01-01** — Phase starts: Test the AIMS
 - **2027-01-11** — Internal audit AUD-2027-01 begins

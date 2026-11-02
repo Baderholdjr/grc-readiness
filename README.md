@@ -3,7 +3,7 @@
 
 <!-- Published automatically from the main branch. Do not edit this branch. -->
 
-**As of 2026-11-01.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
+**As of 2026-11-02.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
 
 | Report | What it shows |
 |---|---|
@@ -37,12 +37,13 @@
 | Evidence exists | 5 | 3 | 0 | 57 |
 | Tested | 0 | 1 | 0 | 64 |
 
-**Validation:** 0 errors · 7 warnings · 17 unverified claims
+**Validation:** 0 errors · 8 warnings · 17 unverified claims
 
-<details><summary>Warnings (7)</summary>
+<details><summary>Warnings (8)</summary>
 
 - `W102` A.6.2.4 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.4.yaml`
 - `W102` A.6.2.5 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.5.yaml`
+- `W101` A.6.2.6.implemented: EV-012 expires 2026-12-02. — `engagement/controls/A.6.2.6.yaml`
 - `W102` A.6.2.6 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.6.yaml`
 - `W102` A.6.2.8 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.8.yaml`
 - `W102` A.7.5 operates in practice but is not codified in an approved document. — `engagement/controls/A.7.5.yaml`
