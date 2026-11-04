@@ -11,9 +11,9 @@ Each test writes program/itgc/<ID>/:
 
 Change management (population: every change that reached the production branch in the period)
   CHG-1  The change went through a pull request (no direct push to the branch).
-  CHG-2  Someone other than the author approved it before it was merged.
+  CHG-2  A person other than the author approved it before it was merged (bots don't count).
   CHG-3  The approval was given on the code that was merged (no unreviewed commits after it).
-  CHG-4  Automated checks ran on the merged code and none failed.
+  CHG-4  Automated checks had run on the merged code at merge time, and none had failed.
   CHG-5  The change links to a ticket or issue (configurable pattern; --no-ticket to drop the attribute).
 
 Sample: every high-risk item is tested (direct pushes, changes to sensitive paths such as CI workflows or
@@ -52,9 +52,9 @@ PERMISSION_RANK = {"read": 1, "pull": 1, "triage": 2, "write": 3, "push": 3, "ma
 
 CHANGE_ATTRIBUTES = [
     {"id": "CHG-1", "text": "The change reached the branch through a pull request (not a direct push)."},
-    {"id": "CHG-2", "text": "Someone other than the author approved the pull request before it was merged."},
+    {"id": "CHG-2", "text": "A person other than the author approved the pull request before it was merged."},
     {"id": "CHG-3", "text": "The approval was given on the final code: no commits were added after it."},
-    {"id": "CHG-4", "text": "Automated checks ran on the merged code and none failed."},
+    {"id": "CHG-4", "text": "Automated checks had run on the merged code when it was merged, and none had failed."},
     {"id": "CHG-5", "text": "The change links to a ticket or issue."},
 ]
 ACCESS_ATTRIBUTES = [
@@ -124,6 +124,8 @@ def change_population(src: Source, start: dt.date, end: dt.date, base: str = "ma
         if not merged or not (lo <= merged <= hi):
             continue
         merge_shas.add(pr.get("merge_commit_sha"))
+        # commits a PR brought in (merge-commit and rebase merges), also on branches other than the default
+        merge_shas.update(c.get("sha") for c in src.paged(f"/pulls/{pr['number']}/commits", limit=250))
         items.append({"id": f"#{pr['number']}", "kind": "pull_request", "number": pr["number"],
                       "title": (pr.get("title") or "")[:200], "body": (pr.get("body") or "")[:2000],
                       "branch": (pr.get("head") or {}).get("ref"), "head_sha": (pr.get("head") or {}).get("sha"),
@@ -155,7 +157,11 @@ def _files(src: Source, item: dict) -> list[str]:
 
 
 def _sensitive(files: list[str], patterns: list[str]) -> list[str]:
-    return sorted({f for f in files for p in patterns if fnmatch.fnmatch(f, p) or fnmatch.fnmatch("/" + f, "*/" + p)})
+    """Paths matching any pattern; `**/x` also matches x at the repository root."""
+    def hit(f: str, p: str) -> bool:
+        return (fnmatch.fnmatch(f, p) or fnmatch.fnmatch("/" + f, "*/" + p)
+                or (p.startswith("**/") and fnmatch.fnmatch(f, p[3:])))
+    return sorted({f for f in files for p in patterns if hit(f, p)})
 
 
 def risk(item: dict, sensitive_patterns: list[str]) -> list[str]:
@@ -186,8 +192,16 @@ def test_change(src: Source, item: dict, ticket: re.Pattern | None) -> dict:
     out["CHG-1"] = {"result": "pass", "note": f"pull request {item['id']}"}
     merged = _ts(item.get("merged_at"))
     reviews = list(src.paged(f"/pulls/{item['number']}/reviews"))
-    indep = [r for r in reviews if r.get("state") == "APPROVED" and (r.get("user") or {}).get("login") != item.get("author")
-             and (_ts(r.get("submitted_at")) or merged) <= merged]
+    latest: dict[str, dict] = {}            # each reviewer's last decisive review before the merge
+    for r in sorted(reviews, key=lambda r: r.get("submitted_at") or ""):
+        u = r.get("user") or {}
+        if r.get("state") not in ("APPROVED", "CHANGES_REQUESTED", "DISMISSED"):
+            continue
+        if (_ts(r.get("submitted_at")) or merged) > merged:
+            continue
+        latest[u.get("login")] = r
+    bots = {l for l, r in latest.items() if ((r.get("user") or {}).get("type") == "Bot" or str(l).endswith("[bot]"))}
+    indep = [r for l, r in latest.items() if r.get("state") == "APPROVED" and l != item.get("author") and l not in bots]
     if indep:
         who = sorted({(r.get("user") or {}).get("login") for r in indep})
         out["CHG-2"] = {"result": "pass", "note": f"approved by {', '.join(who)}"}
@@ -195,27 +209,58 @@ def test_change(src: Source, item: dict, ticket: re.Pattern | None) -> dict:
         out["CHG-3"] = ({"result": "pass", "note": "approval is on the merged head commit"} if on_head else
                         {"result": "exception", "note": "commits were added after the last approval"})
     else:
-        self_ok = [r for r in reviews if r.get("state") == "APPROVED"]
-        out["CHG-2"] = {"result": "exception", "note": "no approval by anyone other than the author"
-                        + (" (the only approval is the author's own)" if self_ok else f" ({len(reviews)} review(s), none approving)")}
+        self_ok = [r for r in reviews if r.get("state") == "APPROVED" and (r.get("user") or {}).get("login") == item.get("author")]
+        bot_ok = [l for l in bots if latest[l].get("state") == "APPROVED"]
+        why = (" (approved only by a bot: " + ", ".join(sorted(bot_ok)) + ")" if bot_ok else
+               " (the only approval is the author's own)" if self_ok else
+               f" ({len(reviews)} review(s), none approving at merge)")
+        out["CHG-2"] = {"result": "exception", "note": "no approval by a person other than the author" + why}
         out["CHG-3"] = {"result": "not_applicable", "note": "no independent approval to compare with the merged code"}
-    runs = (src.get(f"/commits/{item['head_sha']}/check-runs?per_page=100") or {}).get("check_runs", [])
-    concl = [r.get("conclusion") for r in runs]
-    failed = [r.get("name") for r in runs if r.get("conclusion") in ("failure", "timed_out", "cancelled", "action_required")]
-    if not runs:
-        out["CHG-4"] = {"result": "exception", "note": "no automated checks ran on the merged code"}
-    elif failed:
-        out["CHG-4"] = {"result": "exception", "note": f"{len(failed)} check(s) did not pass: {', '.join(sorted(set(failed))[:5])}"}
-    elif any(c is None for c in concl):
-        out["CHG-4"] = {"result": "exception", "note": "checks were still running when it was merged"}
-    else:
-        out["CHG-4"] = {"result": "pass", "note": f"{len(runs)} check(s) passed"}
+    out["CHG-4"] = _checks_at_merge(src, item["head_sha"], merged)
     if ticket:
         text = " ".join(str(item.get(k) or "") for k in ("title", "body", "branch"))
         m = ticket.search(text)
         out["CHG-5"] = ({"result": "pass", "note": f"references {m.group(0)[:60]}"} if m else
                         {"result": "exception", "note": "no ticket or issue reference in the title, description or branch"})
     return out
+
+
+def _checks_at_merge(src: Source, sha: str, merged: dt.datetime) -> dict:
+    """CHG-4 from the state of the checks when the change was merged, not today's (re-runs after the merge
+    don't count). Check runs (GitHub Actions and apps) and commit statuses (Jenkins, CircleCI, Vercel...)."""
+    runs, page = [], 1
+    while page <= 10:
+        batch = (src.get(f"/commits/{sha}/check-runs?per_page=100&page={page}") or {}).get("check_runs", [])
+        runs += batch
+        if len(batch) < 100:
+            break
+        page += 1
+    state: dict[str, tuple[dt.datetime, str]] = {}      # check name -> (time, outcome) as of the merge
+    pending_at_merge = set()
+    for r in runs:
+        done = _ts(r.get("completed_at"))
+        started = _ts(r.get("started_at")) or done
+        name = f"check:{r.get('name')}"
+        if done and done <= merged:
+            if name not in state or done > state[name][0]:
+                state[name] = (done, r.get("conclusion") or "")
+        elif started and started <= merged:
+            pending_at_merge.add(name)
+    combined = src.get(f"/commits/{sha}/status") or {}
+    for s in combined.get("statuses") or []:
+        when = _ts(s.get("updated_at") or s.get("created_at"))
+        name = f"status:{s.get('context')}"
+        if when and when <= merged and (name not in state or when > state[name][0]):
+            state[name] = (when, {"success": "success", "pending": "pending"}.get(s.get("state"), "failure"))
+    pending_at_merge -= set(state)
+    bad = sorted(n.split(":", 1)[1] for n, (_, c) in state.items() if c not in ("success", "neutral", "skipped"))
+    if not state and not pending_at_merge:
+        return {"result": "exception", "note": "no automated checks had run on the merged code when it was merged"}
+    if bad:
+        return {"result": "exception", "note": f"{len(bad)} check(s) had not passed at merge: {', '.join(bad[:5])}"}
+    if pending_at_merge:
+        return {"result": "exception", "note": f"merged while {len(pending_at_merge)} check(s) were still running"}
+    return {"result": "pass", "note": f"{len(state)} check(s) passed before the merge"}
 
 
 # ------------------------------------------------------------------ access
@@ -428,21 +473,27 @@ def check(root: Path, today: dt.date, independent=None):
     same = independent or (lambda a, b: a.strip().lower().lstrip("@") == b.strip().lower().lstrip("@"))
     for tid, (path, wp) in load_workpapers(root).items():
         f = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
+        if not isinstance(wp, dict):
+            out.append(Finding("error", "P401", f"{tid}: workpaper.yaml is not a YAML mapping", f))
+            continue
         if "_error" in wp:
             out.append(Finding("error", "P401", wp["_error"], f))
             continue
+        out += _integrity(root, tid, wp, f)
         if wp.get("id") != tid:
             out.append(Finding("error", "P401", f"workpaper id '{wp.get('id')}' doesn't match its folder {tid}/", f))
         concl = wp.get("conclusion", "not_concluded")
         if concl not in ("not_concluded", "effective", "not_effective"):
             out.append(Finding("error", "P401", f"{tid}: conclusion must be not_concluded, effective or not_effective", f))
-        exc = [s for s in wp.get("sample") or [] if isinstance(s, dict) and s.get("result") == "exception"]
+        # exceptions come from the attribute results, not the editable per-item summary
+        exc = [s for s in wp.get("sample") or [] if isinstance(s, dict) and isinstance(s.get("attributes"), dict)
+               and any(isinstance(v, dict) and v.get("result") == "exception" for v in s["attributes"].values())]
         if concl == "effective" and exc and not str(wp.get("exception_rationale") or "").strip():
             out.append(Finding("error", "P402", f"{tid}: concluded effective with {len(exc)} exception(s) and no "
                                                 "exception_rationale", f))
         if concl == "not_effective" and not wp.get("findings"):
             out.append(Finding("error", "P402", f"{tid}: concluded not effective but cites no finding", f))
-        if concl != "not_concluded" and not (wp.get("performed_by") and to_date(wp.get("performed_on"))):
+        if concl != "not_concluded" and not (wp.get("performed_by") and _d(wp.get("performed_on"))):
             out.append(Finding("error", "P403", f"{tid}: a conclusion needs performed_by and performed_on", f))
         rb = str(wp.get("reviewed_by") or "")
         if rb:
@@ -450,13 +501,58 @@ def check(root: Path, today: dt.date, independent=None):
                 out.append(Finding("error", "P404", f"{tid}: reviewed before it was concluded", f))
             if same(rb, str(wp.get("performed_by") or "")):
                 out.append(Finding("error", "P404", f"{tid}: reviewed by the person who performed it", f))
-            if not to_date(wp.get("reviewed_on")):
+            if not _d(wp.get("reviewed_on")):
                 out.append(Finding("error", "P404", f"{tid}: reviewed_by needs reviewed_on", f))
         if concl == "not_concluded":
-            fetched = to_date((wp.get("population") or {}).get("fetched_on"))
+            pop = wp.get("population") if isinstance(wp.get("population"), dict) else {}
+            try:
+                fetched = to_date(pop.get("fetched_on"))
+            except (TypeError, ValueError):
+                fetched = None
             if fetched and (today - fetched).days > 30:
                 out.append(Finding("warning", "P405", f"{tid}: generated {fetched} and still not concluded", f))
         for s in exc:
             if concl != "not_concluded" and not str(s.get("auditor_note") or "").strip():
                 out.append(Finding("warning", "P406", f"{tid}: exception on {s.get('item')} has no auditor_note", f))
     return out
+
+
+def _d(v):
+    from .model import to_date
+    try:
+        return to_date(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _integrity(root: Path, tid: str, wp: dict, f: str) -> list:
+    """P407: the population file still matches its recorded hash, and the sample is the one the seed draws."""
+    from .rules import Finding
+    out = []
+    pf = root / ITGC_DIR / tid / "population.json"
+    pop = wp.get("population") if isinstance(wp.get("population"), dict) else {}
+    if not pf.exists():
+        return [Finding("error", "P407", f"{tid}: population.json is missing, so the test can't be re-performed", f)]
+    try:
+        data = json.loads(pf.read_text(encoding="utf-8"))
+        items = data.get("items") if isinstance(data, dict) else None
+        assert isinstance(items, list)
+    except (ValueError, AssertionError):
+        return [Finding("error", "P407", f"{tid}: population.json can't be read", f)]
+    if _sha256(items) != pop.get("sha256"):
+        out.append(Finding("error", "P407", f"{tid}: population.json no longer matches the population hash in the "
+                                            "workpaper (the population or the hash was edited)", f))
+    smp = wp.get("sampling") if isinstance(wp.get("sampling"), dict) else {}
+    if wp.get("kind") == "change_management" and "random" in smp:
+        high = [i["id"] for i in items if isinstance(i, dict) and i.get("risk")]
+        rest = [i["id"] for i in items if isinstance(i, dict) and not i.get("risk")]
+        want = set(high) | set(draw(rest, _int0(smp.get("random")), str(smp.get("seed") or tid)))
+        got = {str(s.get("item")) for s in wp.get("sample") or [] if isinstance(s, dict)}
+        if got != want:
+            out.append(Finding("error", "P407", f"{tid}: the sample isn't the one the recorded seed draws from the "
+                                                f"population ({len(got ^ want)} item(s) differ)", f))
+    return out
+
+
+def _int0(v) -> int:
+    return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else 0

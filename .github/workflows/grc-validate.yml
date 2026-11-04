@@ -51,6 +51,12 @@ jobs:
             python -m grc program validate --format github --summary "$GITHUB_STEP_SUMMARY" || rc=1
           fi
           exit $rc
+      - name: Check who signed owner certifications
+        if: github.event_name == 'pull_request' && hashFiles('program/certifications/**') != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: python -m grc program signatures --pr "$PR" --format github
       - name: Build reports and brief
         run: |
           engs=$(python -m grc engagements) || exit 1
@@ -58,7 +64,7 @@ jobs:
             if [ "$e" = engagement ]; then o=out; else o="out/$e"; fi
             python -m grc --engagement "$e" build --out "$o"
           done
-          if [ -d program ]; then python -m grc program report --out out/program; fi
+          if [ -d program ]; then python -m grc program report --out out/program || echo "::warning::program reports not built"; fi
       - uses: actions/upload-artifact@v6
         with:
           name: readiness-reports-${{ github.sha }}

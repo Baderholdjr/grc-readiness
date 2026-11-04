@@ -30,9 +30,9 @@ branch that no merged pull request accounts for (direct pushes).
 | Attribute | Test |
 |---|---|
 | CHG-1 | The change reached the branch through a pull request (not a direct push) |
-| CHG-2 | Someone other than the author approved it before it was merged |
+| CHG-2 | A person other than the author approved it before it was merged (each reviewer's last review before the merge counts; bot approvals don't) |
 | CHG-3 | The approval was given on the final code (no unreviewed commits after it) |
-| CHG-4 | Automated checks ran on the merged code and none failed |
+| CHG-4 | Automated checks had run on the merged code when it was merged, and none had failed (check runs and commit statuses; a re-run after the merge doesn't count) |
 | CHG-5 | The change links to a ticket or issue (`--ticket-pattern`, or `--no-ticket` to drop it) |
 
 An attribute that can't apply because an earlier one failed (no approval to compare in CHG-3) is marked not
@@ -84,6 +84,11 @@ A different person sets `reviewed_by` and `reviewed_on`. `python -m grc program 
 | P404 | error | Reviewed before it was concluded, reviewed by the performer, or `reviewed_by` without `reviewed_on` |
 | P405 | warning | Generated more than 30 days ago and still not concluded |
 | P406 | warning | Concluded with an exception that has no `auditor_note` |
+| P407 | error | `population.json` is missing or no longer matches its hash, or the sample isn't the one the recorded seed draws |
+
+Exceptions are counted from the attribute results, not from each item's `result`, so editing an item's
+`result` to `pass` doesn't remove an exception. Re-running a test needs a new id (or `--force` locally,
+which discards the workpaper).
 
 ## Limits
 
@@ -91,5 +96,5 @@ A different person sets `reviewed_by` and `reviewed_on`. `python -m grc program 
   pair the test with the platform's own change log.
 - On GitHub Free, private repositories can't enforce reviews or checks, so exceptions are expected there; the
   test shows what actually happened, which is what an auditor needs.
-- Approvals by a GitHub team count as the reviewing person; bots (Dependabot, Renovate) are authors like
-  anyone else and need a human approval.
+- Bots (Dependabot, Renovate) are authors like anyone else and need a human approval; a bot's approval
+  (an auto-approve action) doesn't count.

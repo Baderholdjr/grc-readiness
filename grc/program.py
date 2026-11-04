@@ -25,6 +25,7 @@ reviewed like any other change, in a pull request.
 """
 from __future__ import annotations
 
+import copy
 import datetime as dt
 import re
 from dataclasses import dataclass, field
@@ -47,6 +48,18 @@ PERIOD = re.compile(r"^(\d{4})-Q([1-4])$")
 
 
 # ------------------------------------------------------------------ loading
+def _date(v) -> dt.date | None:
+    """A date, or None for anything that isn't one (the schema reports it; reports must not crash)."""
+    try:
+        return to_date(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _int(v, default: int) -> int:
+    return v if isinstance(v, int) and not isinstance(v, bool) else default
+
+
 @dataclass
 class Program:
     root: Path
@@ -100,7 +113,8 @@ class Program:
 
     def github_users(self, role: str | None) -> list[str]:
         o = self.role(role)
-        return [u.lstrip("@") for u in (o or {}).get("github", []) or [] if "/" not in u] if o else []
+        users = (o or {}).get("github") if o else None
+        return [str(u).lstrip("@") for u in users if "/" not in str(u)] if isinstance(users, list) else []
 
     def controls_owned_by(self, role: str) -> list[dict]:
         r = role.strip().lower()
@@ -120,7 +134,10 @@ class Program:
 def _read(path: Path, key: str) -> tuple[object, list]:
     if not path.exists():
         return None, []
-    data = load_yaml(path)
+    try:
+        data = load_yaml(path)
+    except ValueError as exc:          # e.g. a date that doesn't exist (2026-02-30) fails while YAML is read
+        return {"_error": f"{path.name} can't be read: {exc}. Check the dates in it"}, []
     items = data.get(key) if isinstance(data, dict) else None
     return data, items if isinstance(items, list) else []
 
@@ -135,22 +152,28 @@ def load_program(root: str | Path = ".", today: dt.date | None = None) -> Progra
     root = Path(root).resolve()
     prog = Program(root=root, today=today or dt.date.today())
     d = root / PROGRAM
-    prog.raw["controls.yaml"], prog.controls = _read(d / "controls.yaml", "controls")
-    prog.raw["calendar.yaml"], prog.obligations = _read(d / "calendar.yaml", "obligations")
+    # The schema checks the files as written (prog.raw); the rules and reports work on a normalized copy that
+    # keeps only well-formed entries, so a malformed file is reported (P101) rather than crashing a report.
+    for name, key, attr in (("controls.yaml", "controls", "controls"), ("calendar.yaml", "obligations", "obligations")):
+        raw, items = _read(d / name, key)
+        prog.raw[name] = copy.deepcopy(raw) if raw is not None else None
+        setattr(prog, attr, [copy.deepcopy(x) for x in items if isinstance(x, dict) and x.get("id") not in (None, "")])
     for c in prog.controls:
-        if isinstance(c, dict):
-            c["id"] = str(c.get("id"))
-            maps = c.get("maps")
-            if isinstance(maps, dict):
-                c["maps"] = {str(k): [str(x) for x in (v if isinstance(v, list) else [v])] for k, v in maps.items()}
+        c["id"] = str(c["id"])
+        maps = c.get("maps")
+        c["maps"] = ({str(k): [str(x) for x in (v if isinstance(v, list) else [v])] for k, v in maps.items()}
+                     if isinstance(maps, dict) else {})
+        c["evidence"] = [str(x) for x in c.get("evidence") or []] if isinstance(c.get("evidence"), list) else []
     for o in prog.obligations:
-        if isinstance(o, dict):
-            o["id"] = str(o.get("id"))
+        o["id"] = str(o["id"])
+        o["done"] = [e for e in o.get("done") or [] if isinstance(e, dict)] if isinstance(o.get("done"), list) else []
+        o["controls"] = [str(x) for x in o.get("controls") or []] if isinstance(o.get("controls"), list) else []
     for rdir in discover(root):
         rec = load(rdir, today=prog.today)
         prog.records.setdefault(str(rec.engagement.get("framework") or "iso42001"), rec)
     if (d / "owners.yaml").exists():
-        prog.raw["owners.yaml"], prog.owners = _read(d / "owners.yaml", "owners")
+        prog.raw["owners.yaml"], owners = _read(d / "owners.yaml", "owners")
+        prog.owners = [o for o in owners if isinstance(o, dict)]
         prog.owners_from = "program/owners.yaml"
     else:  # every record's owners, first record wins on a repeated role
         seen = set()
@@ -164,7 +187,7 @@ def load_program(root: str | Path = ".", today: dt.date | None = None) -> Progra
     for path in sorted(cdir.glob("*/*.yaml")) if cdir.is_dir() else []:
         try:
             data = load_yaml(path)
-        except SystemExit as exc:
+        except (SystemExit, ValueError) as exc:
             data = {"_error": str(exc)}
         prog.certifications.setdefault(path.parent.name, {})[path.stem] = data if isinstance(data, dict) else {}
         prog.cert_files[f"{path.parent.name}/{path.stem}"] = path
@@ -182,7 +205,7 @@ def add_months(d: dt.date, months: int) -> dt.date:
 
 def due_dates(ob: dict, until: dt.date) -> list[dt.date]:
     """Every due date of an obligation from its first_due up to `until` (inclusive)."""
-    first = to_date(ob.get("first_due"))
+    first = _date(ob.get("first_due"))
     months = EVERY_MONTHS.get(ob.get("every"))
     if not first or not months:
         return []
@@ -199,7 +222,7 @@ def _done_index(ob: dict) -> dict[dt.date, dict]:
     out = {}
     for e in ob.get("done") or []:
         if isinstance(e, dict):
-            p = to_date(e.get("period"))
+            p = _date(e.get("period"))
             if p:
                 out[p] = e
     return out
@@ -207,13 +230,13 @@ def _done_index(ob: dict) -> dict[dt.date, dict]:
 
 def occurrences(prog: Program, ob: dict, horizon_days: int = 0) -> list[dict]:
     """[{due, status, done}] status: done_on_time | done_late | overdue | due_soon | upcoming."""
-    lead = int(ob.get("lead_days", LEAD_DAYS))
+    lead = _int(ob.get("lead_days"), LEAD_DAYS)
     done = _done_index(ob)
     out = []
     for d in due_dates(ob, prog.today + dt.timedelta(days=max(lead, horizon_days))):
         e = done.get(d)
         if e:
-            on = to_date(e.get("completed"))
+            on = _date(e.get("completed"))
             status = "done_on_time" if on and on <= d else "done_late"
         elif d < prog.today:
             status = "overdue"
@@ -280,10 +303,20 @@ def certify_open(prog: Program, period: str | None = None, due_days: int = CERT_
     return created
 
 
+def _validly_signed(prog: Program, d: dict) -> bool:
+    rows = [x for x in d.get("controls") or [] if isinstance(x, dict)]
+    users = {u.lower() for u in prog.github_users(str(d.get("owner") or ""))}
+    return (bool(d.get("certified_by")) and _date(d.get("certified_on")) is not None
+            and str(d.get("certified_by")).lstrip("@").lower() in users
+            and not any(x.get("response") == "pending" for x in rows))
+
+
 def certification_status(prog: Program, period: str) -> dict:
     files = prog.certifications.get(period, {})
     owners = {str(c.get("owner")).strip() for c in prog.controls if isinstance(c, dict) and c.get("owner")}
-    signed = [d for d in files.values() if d.get("certified_by") and d.get("certified_on")]
+    lower = {o.lower() for o in owners}
+    signed = {str(d.get("owner")).strip().lower() for d in files.values()
+              if isinstance(d, dict) and str(d.get("owner") or "").strip().lower() in lower and _validly_signed(prog, d)}
     responses = [x for d in files.values() for x in (d.get("controls") or []) if isinstance(x, dict)]
     return {"period": period, "owners": len(owners), "opened": len(files), "certified": len(signed),
             "exceptions": sum(1 for x in responses if x.get("response") in ("exception", "not_operating")),
@@ -337,6 +370,8 @@ def check_controls(prog: Program) -> list[Finding]:
     if prog.raw.get("controls.yaml") is None:
         return out
     f = prog.rel(path)
+    if isinstance(prog.raw["controls.yaml"], dict) and "_error" in prog.raw["controls.yaml"]:
+        return [Finding("error", "P101", prog.raw["controls.yaml"]["_error"], f)]
     if not _schema(prog, "program-controls", prog.raw["controls.yaml"], path, out):
         return out
     seen = set()
@@ -391,6 +426,8 @@ def check_calendar(prog: Program) -> list[Finding]:
     if prog.raw.get("calendar.yaml") is None:
         return out
     f = prog.rel(path)
+    if isinstance(prog.raw["calendar.yaml"], dict) and "_error" in prog.raw["calendar.yaml"]:
+        return [Finding("error", "P101", prog.raw["calendar.yaml"]["_error"], f)]
     if not _schema(prog, "program-calendar", prog.raw["calendar.yaml"], path, out):
         return out
     seen, ctl = set(), prog.control_index
@@ -407,13 +444,17 @@ def check_calendar(prog: Program) -> list[Finding]:
                 out.append(Finding("error", "P208", f"{oid}: control '{c}' is not in program/controls.yaml", f, oid))
         dues = set(due_dates(ob, prog.today + dt.timedelta(days=3660)))
         for e in ob.get("done") or []:
-            p, on = to_date(e.get("period")), to_date(e.get("completed"))
+            p, on = _date(e.get("period")), _date(e.get("completed"))
             where = f"{oid} {e.get('period')}"
             if p not in dues:
                 out.append(Finding("error", "P203", f"{where}: not a due date of this obligation (due dates run "
                                                     f"{ob.get('every')} from {ob.get('first_due')})", f, oid))
             if on and on > prog.today:
                 out.append(Finding("error", "P209", f"{where}: completed {on} is in the future", f, oid))
+            months = EVERY_MONTHS.get(ob.get("every"))
+            if on and p and months and on < add_months(p, -months):
+                out.append(Finding("warning", "P210", f"{where}: completed {on}, more than one {ob.get('every')} "
+                                                      "interval before it was due: is this the right period?", f, oid))
             if not e.get("evidence"):
                 out.append(Finding("error", "P204", f"{where}: marked done with no evidence of completion", f, oid))
             for ref in e.get("evidence") or []:
@@ -458,7 +499,7 @@ def check_certifications(prog: Program) -> list[Finding]:
                 out.append(Finding("warning", "P307", f"{key}: {cid} is '{r}' with no follow_up (a gap, finding or "
                                                       "issue that tracks the fix)", f, cid))
         signed_by = str(d.get("certified_by") or "").strip().lstrip("@")
-        on = to_date(d.get("certified_on"))
+        on = _date(d.get("certified_on"))
         if signed_by or on:
             if not (signed_by and on):
                 out.append(Finding("error", "P303", f"{key}: set both certified_by and certified_on", f))
@@ -477,16 +518,19 @@ def check_certifications(prog: Program) -> list[Finding]:
                                                     f"{owner} ({', '.join(users)}): owners certify their own "
                                                     "controls", f))
             elif signed_by and not users:
-                out.append(Finding("warning", "P305", f"{key}: {owner} has no GitHub users in {prog.owners_from}, so "
-                                                      f"the signature '{signed_by}' can't be checked", f))
+                out.append(Finding("error", "P305", f"{key}: {owner} has no GitHub users in {prog.owners_from}, so "
+                                                    f"the signature '{signed_by}' can't be checked. Add the owner's "
+                                                    "GitHub user to the role first", f))
         else:
-            due = to_date(d.get("due"))
+            due = _date(d.get("due"))
             if due and due < prog.today:
                 out.append(Finding("warning", "P306", f"{key}: certification was due {due} and isn't signed", f))
         missing = [c["id"] for c in prog.controls_owned_by(owner) if c["id"] not in listed] if owner else []
-        if missing and not (signed_by and on):
-            out.append(Finding("warning", "P310", f"{key}: {owner} also owns {', '.join(missing)}, which this "
-                                                  "certification doesn't list", f))
+        if missing:
+            signed = bool(signed_by and on)
+            out.append(Finding("error" if signed else "warning", "P310",
+                               f"{key}: {owner} also owns {', '.join(missing)}, which this certification doesn't list"
+                               + (": add them and answer them before signing" if signed else ""), f))
     return out
 
 
@@ -495,8 +539,13 @@ def validate(prog: Program) -> list[Finding]:
     if prog.raw.get("owners.yaml") is not None:
         _schema(prog, "owners", prog.raw["owners.yaml"], prog.dir / "owners.yaml", out)
     from .itgc import check as check_itgc
-    same = lambda a, b: bool({a.strip().lower().lstrip("@"), *(prog.github_users(a) or [])} &
-                             {b.strip().lower().lstrip("@"), *(prog.github_users(b) or [])})
+    def ids(x: str) -> set[str]:
+        x = x.strip().lstrip("@")
+        out = {x.lower(), *(u.lower() for u in prog.github_users(x))}
+        out |= {(o.get("role") or "").strip().lower() for o in prog.owners
+                if x.lower() in {str(u).lstrip("@").lower() for u in o.get("github") or [] if isinstance(o.get("github"), list)}}
+        return out - {""}
+    same = lambda a, b: bool(ids(a) & ids(b))
     return (out + check_controls(prog) + check_calendar(prog) + check_certifications(prog)
             + check_itgc(prog.root, prog.today, independent=same))
 
@@ -576,11 +625,11 @@ def scorecard(prog: Program) -> dict:
         current += bool(ev is not None and rec.evidence_is_current(ev))
     # calendar: occurrences due in the last 90 days
     window = [(ob, o) for ob in prog.obligations for o in occurrences(prog, ob)
-              if t - dt.timedelta(days=90) <= o["due"] <= t]
+              if t - dt.timedelta(days=90) <= o["due"] <= t and (o["due"] < t or o["done"])]
     on_time = sum(1 for _, o in window if o["status"] == "done_on_time")
     overdue_now = [(ob, o) for ob in prog.obligations for o in occurrences(prog, ob) if o["status"] == "overdue"]
     # certification: the latest period with files, else the quarter that just ended
-    periods = sorted(prog.certifications)
+    periods = sorted(p for p in prog.certifications if PERIOD.match(p))
     period = periods[-1] if periods else previous_quarter(t)
     cert = certification_status(prog, period)
     # findings and gaps across records
@@ -589,8 +638,8 @@ def scorecard(prog: Program) -> dict:
         for fnd in rec.findings:
             if not isinstance(fnd, dict):
                 continue
-            raised = to_date(fnd.get("raised_on"))
-            closed = to_date((fnd.get("effectiveness") or {}).get("reviewed_on")) \
+            raised = _date(fnd.get("raised_on"))
+            closed = _date((fnd.get("effectiveness") or {}).get("reviewed_on")) \
                 if isinstance(fnd.get("effectiveness"), dict) else None
             if fnd.get("status") not in ("closed", "accepted"):
                 open_findings += 1
@@ -685,3 +734,49 @@ def sync_obligation_issues(prog: Program, repo: str | None, token: str | None, a
             iss = _with_assignees(gh, "POST", "/issues", payload, log, it["key"])
             log.append(f"created #{iss['number']} {it['key']}")
     return log or ["Nothing due."]
+
+
+# ------------------------------------------------------------------ who actually signed (CI, on a pull request)
+def check_signers(prog: Program, repo: str, token: str | None, pr: int, transport=None) -> list[Finding]:
+    """P311/P312: a signed certification changed in pull request `pr` must have been committed by its signer.
+
+    certified_by is text anyone with write access could type; the commit that last changed the file, as GitHub
+    attributes it, is not. Web edits are signed by GitHub (verified); a local commit's author can be set to any
+    email, so an unverified one is reported too.
+    """
+    from .issues import GitHub
+    gh = GitHub(repo, token or "")
+    get = transport or (lambda path: gh.call("GET", path))
+    out: list[Finding] = []
+    info = get(f"/pulls/{pr}") or {}
+    head = (info.get("head") or {}).get("sha")
+    files, page = [], 1
+    while True:
+        batch = get(f"/pulls/{pr}/files?per_page=100&page={page}") or []
+        files += [x.get("filename") for x in batch if x.get("status") != "removed"]
+        if len(batch) < 100:
+            break
+        page += 1
+    for path in files:
+        m = re.fullmatch(r"program/certifications/([^/]+)/([^/]+)\.yaml", path or "")
+        if not m:
+            continue
+        d = prog.certifications.get(m.group(1), {}).get(m.group(2)) or {}
+        signer = str(d.get("certified_by") or "").strip().lstrip("@")
+        if not signer:
+            continue
+        commits = get(f"/commits?sha={head}&path={path}&per_page=1") or []
+        if not commits:
+            continue
+        c = commits[0]
+        who = ((c.get("author") or {}).get("login") or "").strip()
+        verified = bool(((c.get("commit") or {}).get("verification") or {}).get("verified"))
+        if who.lower() != signer.lower():
+            out.append(Finding("error", "P311", f"{path}: signed as '{signer}', but the change was committed by "
+                                                f"'{who or 'an unknown GitHub user'}'. The owner must make the signing "
+                                                "commit themselves (for example by editing the file on GitHub)", path))
+        elif not verified:
+            out.append(Finding("warning", "P312", f"{path}: the signing commit by '{who}' isn't verified by GitHub, so "
+                                                  "its author could have been set by someone else. Sign on GitHub, or "
+                                                  "use a signed commit", path))
+    return out

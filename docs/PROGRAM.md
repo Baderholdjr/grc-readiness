@@ -64,7 +64,8 @@ obligations:
 - **Evidence of completion is required.** CI refuses a completion with no evidence (P204).
 - **Issues.** The *Compliance program* workflow runs every Monday and opens an Issue (label
   `grc-obligation`) for each occurrence due within `lead_days` or overdue, assigned to the owner's GitHub
-  users. The Issue closes when the completion is merged.
+  users. Once the completion is merged, the next run closes the Issue (run the workflow by hand to close it
+  sooner).
 - **Calendar file.** The reports include `governance-calendar.ics`: the next 12 months of due dates, which
   owners can subscribe to in Outlook or Google Calendar.
 
@@ -96,11 +97,17 @@ anything other than `operating`, names a follow-up for exceptions, signs, and ap
 CI enforces:
 
 - nothing left `pending` once signed (P303); a note for every non-`operating` answer (P304)
-- the signature is one of the owner's GitHub users (P305), on or after the quarter's last day (P309)
-- an owner certifies only their own controls (P308)
+- `certified_by` is one of the owner's GitHub users (P305; a role with no GitHub users can't sign), on or
+  after the quarter's last day (P309)
+- an owner certifies only their own controls (P308), and all of them (P310)
+- **the owner made the signing change themselves** (P311): on the pull request, CI looks up the commit that
+  last changed the file and checks GitHub attributes it to the user named in `certified_by`. Typing someone
+  else's user into the file doesn't pass. A local commit's author can be set to any email, so a signing commit
+  GitHub hasn't verified is reported too (P312); editing the file on GitHub produces a verified commit.
 
-On GitHub Pro, Team or Enterprise, add the certification files to `.github/CODEOWNERS` so the owner's
-approval is required to merge. On GitHub Free, the signature check and the pull request history are the record.
+On GitHub Pro, Team or Enterprise, also add the certification files to `.github/CODEOWNERS` so the owner's
+approval is required to merge. On GitHub Free, merging isn't blocked by CI, so the checks and the pull request
+history are the record.
 
 Run it by hand with **Actions → Compliance program → certify** (optionally for a given quarter), or locally:
 `python -m grc program certify --period 2026-Q3`.
@@ -142,14 +149,17 @@ Run it by hand with **Actions → Compliance program → certify** (optionally f
 | P207 | warning | Obligation owner isn't a known role |
 | P208 | error | An obligation names a control that isn't in the catalog |
 | P209 | error | A completion date is in the future |
+| P210 | warning | A completion dated more than one interval before its due date (probably the wrong period) |
 | P301 | error | A certification doesn't match its schema or its folder |
 | P302 | warning | Certification owner isn't a known role |
 | P303 | error | Signed with controls still pending, or only half signed |
 | P304 | error | A non-`operating` answer with no note |
-| P305 | error / warning | Signed by someone who isn't one of the owner's GitHub users (warning when the owner has none to check against) |
+| P305 | error | `certified_by` isn't one of the owner's GitHub users, or the owner has none listed |
 | P306 | warning | A certification is past due and unsigned |
 | P307 | warning | An exception with no follow-up |
 | P308 | error | A control isn't in the catalog, or belongs to another owner |
 | P309 | error | Signed in the future, or before the quarter ended |
-| P310 | warning | The owner owns controls the certification doesn't list (added after it was opened) |
-| P401–P406 | | ITGC workpapers: see [ITGC.md](ITGC.md) |
+| P310 | warning / error | The owner owns controls the certification doesn't list (an error once it is signed) |
+| P311 | error | On a pull request: the commit that signed the certification wasn't made by `certified_by` |
+| P312 | warning | On a pull request: the signing commit isn't verified by GitHub |
+| P401–P407 | | ITGC workpapers: see [ITGC.md](ITGC.md) |

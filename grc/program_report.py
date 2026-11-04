@@ -185,7 +185,7 @@ def certifications_md(prog: P.Program) -> str:
         if exc:
             out += ["Reported by owners:", "", _md_table(["Owner", "Control", "Response", "Note", "Follow-up"], exc)]
     if not prog.certifications:
-        out.append("No certifications yet. Run **Actions → Owner certification** (or `grc program certify open`).")
+        out.append("No certifications yet. Run **Actions → Compliance program** with `certify` (or `grc program certify`).")
     return "\n".join(out)
 
 

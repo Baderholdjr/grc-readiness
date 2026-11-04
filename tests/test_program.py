@@ -221,3 +221,80 @@ def test_cli_certify(tmp_path):
     assert (root / "program" / "certifications" / "2026-Q3" / "it-manager.yaml").exists()
     assert main(["--today", "2026-10-01", "program", "certify", "--root", str(root), "--period", "2026-Q2"]) == 0
     assert (root / "program" / "certifications" / "2026-Q2" / "ciso.yaml").exists()
+
+
+def test_signed_certification_must_list_every_owned_control(tmp_path):
+    root = _repo(tmp_path)
+    _controls(root, [{"id": "C1", "title": "a", "owner": "CISO", "maps": {"iso27001": ["A.5.18"]}},
+                     {"id": "C2", "title": "b", "owner": "CISO", "maps": {"iso27001": ["A.8.2"]}}])
+    P.certify_open(P.load_program(root, today=dt.date(2026, 10, 1)))
+    p = root / "program" / "certifications" / "2026-Q3" / "ciso.yaml"
+    d = yaml.safe_load(p.read_text())
+    d["controls"] = [dict(d["controls"][0], response="operating")]      # drop the control that failed
+    d.update(certified_by="alice", certified_on="2026-10-05")
+    p.write_text(yaml.safe_dump(d))
+    fs = [f for f in P.validate(P.load_program(root, today=TODAY)) if f.code == "P310"]
+    assert fs and fs[0].severity == "error"
+
+
+def test_signature_must_come_from_the_signer(tmp_path):
+    root = _repo(tmp_path)
+    P.certify_open(P.load_program(root, today=dt.date(2026, 10, 1)))
+    _cert(root, "ciso", responses={}, certified_by="alice", certified_on="2026-10-05")
+    path = "program/certifications/2026-Q3/ciso.yaml"
+
+    def fake(committer, verified=True):
+        def get(p):
+            if p == "/pulls/7":
+                return {"head": {"sha": "abc"}}
+            if p.startswith("/pulls/7/files"):
+                return [{"filename": path, "status": "modified"}, {"filename": "README.md", "status": "modified"}]
+            if p.startswith("/commits?sha=abc&path="):
+                return [{"author": {"login": committer}, "commit": {"verification": {"verified": verified}}}]
+            raise AssertionError(p)
+        return get
+    prog = P.load_program(root, today=TODAY)
+    assert [f.code for f in P.check_signers(prog, "acme/x", None, 7, transport=fake("mallory"))] == ["P311"]
+    assert [f.code for f in P.check_signers(prog, "acme/x", None, 7, transport=fake("Alice", verified=False))] == ["P312"]
+    assert P.check_signers(prog, "acme/x", None, 7, transport=fake("alice")) == []
+
+
+def test_owner_without_github_users_cannot_sign(tmp_path):
+    root = _repo(tmp_path)
+    (root / "program" / "owners.yaml").write_text(yaml.safe_dump({"owners": [{"role": "CISO"}, {"role": "IT Manager"}]}))
+    P.certify_open(P.load_program(root, today=dt.date(2026, 10, 1)))
+    _cert(root, "ciso", responses={}, certified_by="alice", certified_on="2026-10-05")
+    fs = [f for f in P.validate(P.load_program(root, today=TODAY)) if f.code == "P305"]
+    assert fs and fs[0].severity == "error"
+    assert P.certification_status(P.load_program(root, today=TODAY), "2026-Q3")["certified"] == 0
+
+
+def test_early_completion_warns(tmp_path):
+    root = _repo(tmp_path)
+    _calendar(root, [{"id": "OBL-1", "title": "x", "owner": "CISO", "every": "quarterly", "first_due": "2026-01-15",
+                      "done": [{"period": "2027-01-15", "completed": "2026-09-01", "evidence": ["iso27001:EV-001"]}]}])
+    assert "P210" in codes(root)
+
+
+def test_malformed_program_files_dont_crash_reports(tmp_path):
+    root = _repo(tmp_path)
+    (root / "program" / "controls.yaml").write_text(
+        "controls:\n  - just a string\n  - {id: C1, title: x, owner: CISO, maps: [A.5.18]}\n  - {title: no id, owner: CISO, maps: {iso27001: [A.5.18]}}\n")
+    (root / "program" / "calendar.yaml").write_text(
+        "obligations:\n  - oops\n  - {id: O1, title: t, owner: CISO, every: monthly, first_due: soon, lead_days: two weeks,"
+        " done: [{period: 2026-02-30, completed: 2026-02-30}]}\n")
+    c = codes(root)
+    assert "P101" in c
+    out = tmp_path / "out"
+    assert main(["--today", "2026-11-04", "program", "report", "--root", str(root), "--out", str(out)]) == 0
+    assert main(["--today", "2026-11-04", "program", "validate", "--root", str(root), "--summary", str(tmp_path / "s.md")]) == 1
+
+
+def test_malformed_calendar_entries_dont_crash(tmp_path):
+    root = _repo(tmp_path)
+    (root / "program" / "calendar.yaml").write_text(
+        "obligations:\n  - oops\n  - {id: O1, title: t, owner: CISO, every: monthly, first_due: soon, lead_days: two weeks,"
+        " done: [7, {period: 2026-02-28, completed: 2026-02-28}]}\n")
+    assert "P101" in codes(root)
+    assert main(["--today", "2026-11-04", "program", "report", "--root", str(root), "--out", str(tmp_path / "o")]) == 0
+    assert P.scorecard(P.load_program(root, today=TODAY))["obligations"] == 1

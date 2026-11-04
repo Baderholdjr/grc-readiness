@@ -47,7 +47,8 @@ def _emit(findings, fmt: str):
         if fmt == "github" and f.severity in ("error", "warning"):
             kind = "error" if f.severity == "error" else "warning"
             loc = f" file={f.file}" if f.file else ""
-            print(f"::{kind}{loc},title={f.code}::{f.message}")
+            msg = f.message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            print(f"::{kind}{loc},title={f.code}::{msg}")
         elif f.severity != "info" or fmt == "text-verbose":
             print(f"{f.severity.upper():8} {f.code}  {f.message}" + (f"  [{f.file}]" if f.file else ""))
 
@@ -347,7 +348,7 @@ def cmd_program(args) -> int:
     today = dt.date.fromisoformat(args.today) if args.today else None
     if not P.exists(root):
         print(f"No program in {root.resolve() / 'program'} (needs controls.yaml or calendar.yaml).", file=sys.stderr)
-        return 0 if args.action in ("validate", "report", "issues") else 2
+        return 0 if args.action in ("validate", "report", "issues", "signatures") else 2
     prog = P.load_program(root, today=today)
     if args.action == "validate":
         findings = P.validate(prog)
@@ -375,6 +376,16 @@ def cmd_program(args) -> int:
             print(f"No new certifications for {args.period or P.previous_quarter(prog.today)} "
                   "(every owner already has one).", file=sys.stderr)
         return 0
+    if args.action == "signatures":
+        repo = args.repo or os.environ.get("GITHUB_REPOSITORY")
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if not (repo and args.pr):
+            print("signatures needs --pr N and GITHUB_REPOSITORY (or --repo).", file=sys.stderr)
+            return 2
+        findings = P.check_signers(prog, repo, token, args.pr)
+        _emit(findings, args.format)
+        print(f"\nsignatures: {sum(f.severity == 'error' for f in findings)} error(s).", file=sys.stderr)
+        return 1 if any(f.severity == "error" for f in findings) else 0
     if args.action == "issues":
         repo = args.repo or os.environ.get("GITHUB_REPOSITORY")
         token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
@@ -390,8 +401,15 @@ def cmd_program(args) -> int:
 def cmd_itgc(args) -> int:
     from . import itgc
     today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
-    src = itgc.Source(args.repo)
     root = Path(args.root)
+    if (root / itgc.ITGC_DIR / args.id).exists() and not args.force:
+        print(f"itgc: {itgc.ITGC_DIR / args.id}/ already exists. Use a new id, or --force to overwrite it "
+              "(this discards the auditor's work in it).", file=sys.stderr)
+        return 2
+    if args.sample is not None and args.sample < 0:
+        print("itgc: --sample must be 0 or more", file=sys.stderr)
+        return 2
+    src = itgc.Source(args.repo)
     if args.action == "change":
         if not (args.start and args.end):
             print("itgc change needs --from and --to (YYYY-MM-DD)", file=sys.stderr)
@@ -542,7 +560,8 @@ def main(argv=None) -> int:
     en.set_defaults(fn=cmd_engagements)
 
     pg = sub.add_parser("program", help="compliance program: common controls, governance calendar, owner certification")
-    pg.add_argument("action", choices=["validate", "report", "certify", "issues"])
+    pg.add_argument("action", choices=["validate", "report", "certify", "issues", "signatures"])
+    pg.add_argument("--pr", type=int, help="signatures: pull request number whose signed certifications to check")
     pg.add_argument("--root", default=".", help="repository root holding program/ (default: .)")
     pg.add_argument("--out", default="out/program", help="report: output folder")
     pg.add_argument("--period", help="certify: quarter to certify, e.g. 2026-Q3 (default: the quarter that just ended)")
@@ -565,6 +584,7 @@ def main(argv=None) -> int:
     ig.add_argument("--ticket-pattern", help="change: regex a change must contain to link a ticket")
     ig.add_argument("--no-ticket", action="store_true", help="change: don't test for a linked ticket (CHG-5)")
     ig.add_argument("--sample", type=int, help="change: size of the random part of the sample (default: by population)")
+    ig.add_argument("--force", action="store_true", help="overwrite an existing workpaper with this id")
     ig.add_argument("--approved", help="access: approved access list (default program/itgc/access/<owner>__<repo>.yaml)")
     ig.add_argument("--root", default=".", help="repository root to write program/itgc/ into")
     ig.add_argument("--report", help="also write the Markdown workpaper here")
