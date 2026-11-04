@@ -298,3 +298,11 @@ def test_malformed_calendar_entries_dont_crash(tmp_path):
     assert "P101" in codes(root)
     assert main(["--today", "2026-11-04", "program", "report", "--root", str(root), "--out", str(tmp_path / "o")]) == 0
     assert P.scorecard(P.load_program(root, today=TODAY))["obligations"] == 1
+
+
+def test_date_format_hint(tmp_path):
+    root = _repo(tmp_path)
+    P.certify_open(P.load_program(root, today=dt.date(2026, 10, 1)))
+    _cert(root, "ciso", responses={}, certified_by="alice", certified_on="11/04/2026")
+    msgs = [f.message for f in P.validate(P.load_program(root, today=TODAY)) if f.code == "P101"]
+    assert msgs and "YYYY-MM-DD" in msgs[0]

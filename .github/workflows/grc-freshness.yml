@@ -13,7 +13,25 @@ on:
         default: pinned
 
 jobs:
+  # A repository made from the template has no record until *New engagement* runs:
+  # skip quietly instead of failing every scheduled run.
+  record:
+    runs-on: ubuntu-latest
+    outputs:
+      found: ${{ steps.check.outputs.found }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: check
+        run: |
+          if compgen -G "engagement/engagement.yaml" >/dev/null || compgen -G "engagement-*/engagement.yaml" >/dev/null; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No engagement record in this repository yet, so there is nothing to do. Start one with **Actions → New engagement**." >> "$GITHUB_STEP_SUMMARY"
+          fi
   freshness:
+    needs: record
+    if: needs.record.outputs.found == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

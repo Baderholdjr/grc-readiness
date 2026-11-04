@@ -329,7 +329,8 @@ def _schema(prog: Program, name: str, data, path: Path, out: list[Finding]) -> b
     errs = sorted(v.iter_errors(jsonable(data)), key=lambda e: list(e.path))
     for e in errs:
         loc = "/".join(str(p) for p in e.path) or "(root)"
-        out.append(Finding("error", "P101", f"Schema: {loc}: {e.message}", prog.rel(path)))
+        from .rules import _hint
+        out.append(Finding("error", "P101", f"Schema: {loc}: {_hint(e.message)}", prog.rel(path)))
     return not errs
 
 
