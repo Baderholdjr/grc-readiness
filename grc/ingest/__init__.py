@@ -88,7 +88,9 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
                              else f"drafted by Claude ({settings.get('model') or ai.DEFAULT_MODEL})"))
                 ledger_updates[n] = {"sha256": _sha(p), "mode": "ai"}
         except ai.AIUnavailable as exc:
-            notes += [f"`{n}`: not processed — {exc}" for n, _, _ in for_ai]
+            notes.insert(0, f"**{len(for_ai)} document(s) not read: {exc}.** Spreadsheets in the intake template "
+                            "format are imported regardless.")
+            notes += [f"`{n}`: not processed (see above)" for n, _, _ in for_ai]
 
     label = ", ".join(sorted(ledger_updates)) or "intake"
     report = apply.apply(model, combined, label, files=sorted(ledger_updates))

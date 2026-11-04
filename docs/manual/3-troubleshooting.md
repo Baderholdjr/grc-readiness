@@ -49,6 +49,8 @@ Entries marked **(seen in the pilot)** happened during the Larkspur pilot, so th
 | A second framework's workflow changed the wrong record | [T-30](#t-30-a-workflow-acted-on-the-wrong-record) |
 | SOC 2: E002 after adding a category, or E016 | [T-31](#t-31-soc-2-e002-after-adding-a-category-or-e016) |
 | Actions storage is full | [T-32](#t-32-actions-storage-is-full) |
+| P305 on a certification, or the certification PR isn't assigned to anyone | [T-33](#t-33-p305-or-an-unassigned-certification) |
+| ITGC test fails with 403 or "not found" | [T-34](#t-34-itgc-test-fails-with-403-or-not-found) |
 
 ---
 
@@ -404,6 +406,22 @@ If the message says "this repository has no … record", the prefix is wrong, or
 **Why:** every *validate* and *Client site* run saves a copy of its output as a run artifact. GitHub Free includes 500 MB for all your private repositories. Engines before 0.14.2 kept each copy for 90 days and each copy was about 45 MB, so a busy repository filled the quota in days.
 
 **Fix:** upgrade the client repository to engine 0.14.2 or later (copies are about a quarter of the size and kept 7 days). Then delete the old copies: in the repository, open **Actions**, open a run, and click the bin icon next to each artifact, or delete whole runs from the **⋯** menu. With the GitHub CLI: `gh api repos/<owner>/<repo>/actions/artifacts --paginate -q '.artifacts[].id' | xargs -I{} gh api -X DELETE repos/<owner>/<repo>/actions/artifacts/{}`. Nothing is lost: the `reports` branch keeps the published reports, and any run can be repeated. GitHub updates the usage figure within 6–12 hours.
+
+### T-33: P305, or an unassigned certification
+
+**What you see:** *validate* fails on a certification pull request with `P305 certified_by 'jsmith' is not a GitHub user of IT Manager`; or the warning `P305 ... has no GitHub users ..., so the signature can't be checked`; or the certification pull request has no assignee.
+
+**Why:** owners sign with their GitHub user, and the engine checks it against the role's `github:` list in `program/owners.yaml` (or the records' `owners.yaml`). An empty list means nobody can be assigned and the signature can't be checked.
+
+**Fix:** add the owner's GitHub user to their role, give them access to the repository (*Settings → Collaborators*), and merge that first. If someone else signed, the owner signs again with their own user.
+
+### T-34: ITGC test fails with 403 or "not found"
+
+**What you see:** *ITGC test* fails with `HTTP Error 403` or `404` while reading pull requests, check runs or collaborators.
+
+**Why:** testing another repository needs the `GH_COLLECTOR_TOKEN` secret, with read access to that repository. The access test also needs **Administration: read** to list collaborators and invitations. A token that can't see the repository gets 404, not 403.
+
+**Fix:** edit the fine-grained token: add the repository under *Repository access*, and give it **Metadata, Contents, Pull requests, Checks: Read** (plus **Administration: Read** for the access test). Testing the repository the workflow runs in needs no extra secret.
 
 ## When you need help
 

@@ -47,6 +47,8 @@ jobs:
             if [ "$e" = engagement ]; then o=out; else o="out/$e"; fi
             python -m grc --engagement "$e" build --out "$o" --force
           done
+          # a malformed program file must not stop the records' reports from publishing
+          if [ -d program ]; then python -m grc program report --out out/program || echo "::warning::program reports not built (see Validate)"; fi
       - name: Commit to the reports branch
         env:
           SHA: ${{ github.sha }}

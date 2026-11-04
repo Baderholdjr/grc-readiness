@@ -199,3 +199,10 @@ def test_ids_are_never_reused(tmp_path):
     from grc.ingest.apply import _next_id
     assert _next_id("GAP", {"GAP-01", "GAP-03"}, 2) == "GAP-04"
     assert _next_id("EV", {"EV-098", "EV-099", "EV-101"}, 3, skip=range(100, 200)) == "EV-200"
+
+
+def test_api_failures_are_explained_once():
+    from grc.ingest.ai import explain
+    assert "out of credit" in explain(Exception('HTTP 400: {"message":"Your credit balance is too low to access the Anthropic API."}'))
+    assert "rejected" in explain(Exception('HTTP 401: {"type":"authentication_error"}'))
+    assert explain(Exception("timed out")).startswith("Anthropic API call failed")

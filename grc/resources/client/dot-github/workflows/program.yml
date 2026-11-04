@@ -1,0 +1,39 @@
+name: Compliance program
+
+# Governance calendar and owner certification for program/ (docs/PROGRAM.md).
+# Weekly: an Issue per obligation that is due soon or overdue, assigned to its owner.
+# Quarterly (1st of January, April, July, October): a pull request per control owner to certify the
+# quarter that just ended.
+on:
+  schedule:
+    - cron: "17 14 * * 1"          # Mondays: obligation issues
+    - cron: "23 15 1 1,4,7,10 *"   # first day of each quarter: owner certifications
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "issues: refresh obligation issues; certify: open owner certifications"
+        type: choice
+        options: [issues, certify]
+        default: issues
+      period:
+        description: "certify only: quarter such as 2026-Q3 (empty = the quarter that just ended)"
+        required: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: program
+  cancel-in-progress: false
+
+jobs:
+  program:
+    uses: __ENGINE_REPO__/.github/workflows/grc-program.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+      action: ${{ github.event_name == 'schedule' && (github.event.schedule == '23 15 1 1,4,7,10 *' && 'certify' || 'issues') || inputs.action }}
+      period: ${{ inputs.period || '' }}
+    secrets: inherit

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "program-certification.schema.json",
+  "title": "Control owner certification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "period",
+    "owner",
+    "controls"
+  ],
+  "properties": {
+    "period": {
+      "type": "string",
+      "pattern": "^\\d{4}-Q[1-4]$"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "due": {
+      "type": "string",
+      "format": "date"
+    },
+    "statement": {
+      "type": "string"
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "response"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "response": {
+            "enum": [
+              "pending",
+              "operating",
+              "exception",
+              "not_operating",
+              "not_applicable"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "follow_up": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "certified_by": {
+      "type": "string"
+    },
+    "certified_on": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    }
+  }
+}

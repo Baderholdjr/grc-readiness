@@ -59,5 +59,6 @@ A client repo can override any engine resource by placing a file at the same pat
 | `frameworks/iso42001/playbook.yaml` | Phases, needs, guardrails, readiness criteria |
 | `frameworks/iso42001/catalog.yaml` | The requirement catalog (rarely needed) |
 | `templates/brief-template.docx` | House style for the Word brief |
+| `reference/nist80053.yaml` | NIST SP 800-53 Rev. 5 reference catalog (mapping target for `program/controls.yaml`; no record) |
 
 Files that aren't overridden come from the pinned engine version.

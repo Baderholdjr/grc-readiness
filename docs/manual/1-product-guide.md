@@ -22,7 +22,9 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 16. [Auditor package](#16-auditor-package)
 17. [Engine, client repositories and upgrades](#17-engine-client-repositories-and-upgrades)
 18. [Frameworks](#18-frameworks)
-19. [Boundaries: what the tool will and won't do](#19-boundaries-what-the-tool-will-and-wont-do)
+19. [The compliance program: common controls, calendar and certification](#19-the-compliance-program-common-controls-calendar-and-certification)
+20. [ITGC tests on GitHub](#20-itgc-tests-on-github)
+21. [Boundaries: what the tool will and won't do](#21-boundaries-what-the-tool-will-and-wont-do)
 - [Appendix A: Commands](#appendix-a-commands)
 - [Appendix B: Workflows](#appendix-b-workflows)
 - [Appendix C: Validation codes](#appendix-c-validation-codes)
@@ -424,7 +426,30 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 | Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end |
 | Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) |
 
-## 19. Boundaries: what the tool will and won't do
+## 19. The compliance program: common controls, calendar and certification
+
+> **In plain terms:** An organization runs one access review, not one per framework. The program layer writes each control down once, says which requirements of every framework it satisfies, keeps a calendar of the recurring duties with an owner and a due date for each, and asks every owner, each quarter, to confirm in writing that their controls worked.
+
+The program layer lives in `program/` at the root of the repository, above the framework records. It is optional; a repository without it works as before.
+
+- **Common control catalog** (`program/controls.yaml`). Each control has an owner, a frequency, a type (manual, automated or hybrid), evidence cited from the records (`iso27001:EV-007`), and a `maps` list of the requirements it satisfies in each framework. Maps can also name **NIST SP 800-53 Rev. 5**, which the engine ships as a reference catalog (all controls and enhancements, with the low, moderate, high and privacy baselines), so the catalog can be built to 800-53 depth without an 800-53 record. The coverage report lists in-scope requirements no control covers, and mappings the framework crosswalks suggest.
+- **Governance calendar** (`program/calendar.yaml`). Every recurring obligation: policy reviews, access and change reviews, training, vendor reviews, board meetings, and the assessments customers, banks and partners require. Each has an owner, due dates and the evidence that closes each occurrence. A completion without evidence fails validation. Every Monday the *Compliance program* workflow opens an Issue for anything due within two weeks or overdue, assigned to its owner. The reports include a calendar file owners can subscribe to.
+- **Quarterly owner certification** (`program/certifications/`). On the first day of each quarter the workflow opens one pull request per control owner. The owner answers each control (operating, exception, not operating, not applicable), explains anything that didn't operate and names its follow-up, signs with their GitHub user, and approves. CI refuses a certification that leaves a control pending, skips one of the owner's controls, covers another owner's control, or whose signing commit wasn't made by the owner.
+- **Scorecard** (`program.md` on the `reports` branch, with `scorecard.json`). The program's KPIs for the quarterly report to security leadership: requirements satisfied per control, share automated, evidence currency, coverage per framework, the calendar's on-time rate, certification completion and exceptions, open findings and their age. Each quarter's file on the `reports` branch gives the trend.
+
+> **For GRC practitioners:** This is a common control framework (CCF). A mapping is the program's assertion that a control is designed to satisfy a requirement; it doesn't test it. Each record still tests its requirements against evidence, and evidence cited by a control keeps its record's freshness and approval rules. Owner certification is a management representation, not testing: it complements, and doesn't replace, the internal audit and ITGC testing. Validation codes P101–P310 are listed in `docs/PROGRAM.md`.
+
+## 20. ITGC tests on GitHub
+
+> **In plain terms:** Auditors check two things about every system that matters: that changes were approved and tested before they went live, and that only the right people have access. The tool checks both against GitHub's own records and writes up the results for an auditor to conclude.
+
+- **Change management** (`python -m grc itgc change`, or **Actions → ITGC test**). The population is every change that reached the production branch in the period, including direct pushes. Every high-risk change (direct pushes, changes to CI workflows, access configuration or infrastructure code, emergency changes) is tested, plus a random sample of the rest. Each change is tested for: a pull request, an approval by someone other than the author, approval on the final code, passing checks, and a linked ticket.
+- **Logical access** (`python -m grc itgc access`). Every collaborator and pending invitation is compared with the approved access list: on the list, no more than the approved permission, admin only where approved.
+- **The workpaper** (`program/itgc/<id>/`) records the population with its hash, the sample and its seed, and the result of every attribute for every item. Automation never concludes: the auditor notes each exception, concludes, raises findings, and a different person reviews (P401–P407).
+
+> **For GRC practitioners:** These are tests of operating effectiveness of change management and logical access ITGCs, re-performable from `population.json` and the recorded seed. The sample sizes follow the internal audit table (`docs/AUDIT.md`). GitHub is the population source, so changes made outside it (console changes, other pipelines) need their own population. See `docs/ITGC.md`.
+
+## 21. Boundaries: what the tool will and won't do
 
 > **In plain terms:** The tool keeps the books straight. It doesn't decide whether the client is compliant; people do that.
 
@@ -461,6 +486,8 @@ Run from a client repository (or the engine repo) with the engine installed. Two
 | `python -m grc hours import FILES… [--match …]` / `hours log …` | Timesheet |
 | `python -m grc portal --out _portal [--repo OWNER/REPO] [--also DIR]` | Client site bundle (other records become tabs automatically) |
 | `python -m grc engagements` | List the records in this repository (`engagement/`, `engagement-*/`) |
+| `python -m grc program validate\|report\|certify\|issues` | The program layer: check it, build its reports, open owner certifications, sync obligation Issues (`--root`, `--period`, `--apply`) |
+| `python -m grc itgc change --repo OWNER/NAME --id ID --from … --to …` / `itgc access --repo … --id …` | ITGC tests on GitHub; writes `program/itgc/<id>/` |
 
 ## Appendix B: Workflows
 
@@ -483,6 +510,8 @@ In each client repository, under **Actions**:
 | New engagement | Run workflow | Reset the record for a new client |
 | Upgrade GRC engine | Tuesdays, or Run workflow | Opens the engine upgrade PR |
 | Publish evidence package | When you publish a Release | Attaches the auditor package zip and index PDF |
+| Compliance program | Mondays (obligation Issues); first day of each quarter (owner certifications); or Run workflow | Governance calendar Issues and certification pull requests, for `program/` |
+| ITGC test | Run workflow | Change management or logical access test; opens a PR with the workpaper |
 
 In the engine repository, **Release GRC engine** publishes a new engine version.
 
@@ -534,6 +563,10 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W172 | warning | Submission lists evidence that isn't in the index |
 | I180 | info | Reuse opportunity: the other framework's record has verified a mapped leg; its evidence could be cited here |
 | I201 | info | Client claim not yet backed by evidence (the follow-up list) |
+| P101–P110 | | Program: common control catalog (schema, duplicates, unknown frameworks or requirements, evidence, owners, coverage, expired evidence) |
+| P202–P209 | | Program: governance calendar (completions without evidence, wrong periods, overdue occurrences, future dates) |
+| P301–P312 | | Program: owner certification (pending answers, missing notes, wrong signer or signing commit, another owner's control, overdue) |
+| P401–P407 | | ITGC workpapers (conclusion without performer, effective with unexplained exceptions, self-review, population or sample altered) |
 
 ## Appendix D: Glossary
 
