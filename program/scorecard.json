@@ -1,0 +1,37 @@
+{
+  "as_of": "2026-11-04",
+  "controls": 0,
+  "requirements_mapped": 0,
+  "avg_requirements_per_control": 0,
+  "multi_framework_controls": 0,
+  "automated_controls_pct": 0,
+  "evidence_current_pct": 0,
+  "controls_without_evidence": 0,
+  "coverage": [
+    {
+      "framework": "iso42001",
+      "name": "ISO 42001",
+      "record": "engagement",
+      "in_scope": 65,
+      "covered": 0,
+      "pct": 0
+    }
+  ],
+  "obligations": 0,
+  "obligations_due_90d": 0,
+  "obligations_on_time_pct": null,
+  "obligations_overdue": 0,
+  "certification": {
+    "period": "2026-Q3",
+    "owners": 0,
+    "opened": 0,
+    "certified": 0,
+    "exceptions": 0,
+    "responses": 0
+  },
+  "certification_pct": null,
+  "open_findings": 0,
+  "findings_over_90d": 0,
+  "avg_days_to_close_finding": null,
+  "open_gaps": 12
+}
