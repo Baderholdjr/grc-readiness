@@ -42,6 +42,12 @@ def _rel(model: Engagement, path: Path | None) -> str | None:
     except ValueError:
         return str(path)
 
+def _hint(msg: str) -> str:
+    """Make the common schema messages actionable."""
+    if "is not a 'date'" in msg:
+        return msg + " (write dates as YYYY-MM-DD, for example 2026-11-04)"
+    return msg
+
 
 # --------------------------------------------------------------------- schema
 def check_schemas(model: Engagement) -> list[Finding]:
@@ -51,7 +57,7 @@ def check_schemas(model: Engagement) -> list[Finding]:
         v = Draft202012Validator(load_schema(schema_name), format_checker=FormatChecker())
         for err in sorted(v.iter_errors(jsonable(data)), key=lambda e: list(e.path)):
             loc = "/".join(str(p) for p in err.path) or "(root)"
-            out.append(Finding("error", "E001", f"Schema: {loc}: {err.message}", _rel(model, path), ref))
+            out.append(Finding("error", "E001", f"Schema: {loc}: {_hint(err.message)}", _rel(model, path), ref))
 
     edir = model.engagement_dir
     run("engagement", model.engagement, edir / "engagement.yaml")
