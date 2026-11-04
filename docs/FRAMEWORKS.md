@@ -161,3 +161,12 @@ A requirement request that a reviewed equivalent mapping ties to an open request
    - `terms:` and `glossary:` if the framework's words differ from ISO's (see `frameworks/soc2/playbook.yaml`)
 2. Make sure the document library covers every requirement exactly once. The tests check this for the built-in frameworks.
 3. Optionally, add proposed mappings in `mappings/<a>__<b>.yaml`.
+
+## Reference catalogs
+
+Some frameworks are reported against through the common control catalog (`program/controls.yaml`,
+[PROGRAM.md](PROGRAM.md)) without an engagement record of their own. The engine ships **NIST SP 800-53
+Rev. 5** as `reference/nist80053.yaml`: all 1,014 controls and enhancements with their families and the
+SP 800-53B low, moderate, high and privacy baselines, generated from NIST's OSCAL content (a US Government
+work, not subject to copyright in the US). A client repository can add its own reference catalog at
+`reference/<id>.yaml` with the same layout (`framework`, `groups`, `requirements` with `id` and `title`).

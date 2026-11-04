@@ -1,0 +1,48 @@
+name: ITGC test
+
+# IT general control tests on a GitHub repository (docs/ITGC.md). Opens a pull request with the workpaper.
+on:
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "change: change management for a period; access: collaborators against the approved list"
+        type: choice
+        options: [change, access]
+        default: change
+      repo:
+        description: "owner/name to test (empty = this repository; others need the GH_COLLECTOR_TOKEN secret)"
+        required: false
+      id:
+        description: "test id, e.g. ITGC-CHG-2026Q3"
+        required: true
+      from:
+        description: "change: first day of the period (YYYY-MM-DD)"
+        required: false
+      to:
+        description: "change: last day of the period (YYYY-MM-DD)"
+        required: false
+      base:
+        description: "change: production branch"
+        default: main
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: itgc-${{ inputs.id }}
+  cancel-in-progress: false
+
+jobs:
+  itgc:
+    uses: __ENGINE_REPO__/.github/workflows/grc-itgc.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+      test: ${{ inputs.test }}
+      repo: ${{ inputs.repo }}
+      id: ${{ inputs.id }}
+      from: ${{ inputs.from }}
+      to: ${{ inputs.to }}
+      base: ${{ inputs.base }}
+    secrets: inherit

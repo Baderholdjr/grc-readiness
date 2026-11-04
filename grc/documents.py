@@ -414,7 +414,7 @@ def _clean(text: str, in_table: bool, line_start: bool) -> str:
 def _call(model: Engagement, did: str, prompt: str, transport=None) -> dict:
     from . import sandbox
     from .collectors import http
-    from .ingest.ai import API_URL, DEFAULT_MODEL, AIUnavailable
+    from .ingest.ai import API_URL, DEFAULT_MODEL, AIUnavailable, explain
     key = "sandbox" if sandbox.active() else os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not key and transport is None:
         raise AIUnavailable("ANTHROPIC_API_KEY is not set")
@@ -425,7 +425,7 @@ def _call(model: Engagement, did: str, prompt: str, transport=None) -> dict:
         resp = transport(body) if transport else http.request(
             "POST", API_URL, headers={"x-api-key": key, "anthropic-version": "2023-06-01"}, body=body, retries=4, timeout=600)
     except Exception as exc:
-        raise AIUnavailable(f"Anthropic API call failed: {exc}"[:300]) from exc
+        raise AIUnavailable(explain(exc)) from exc
     if resp.get("stop_reason") in ("max_tokens", "refusal"):
         raise AIUnavailable(f"model stopped: {resp.get('stop_reason')}")
     text = next((b["text"] for b in resp.get("content", []) if b.get("type") == "text"), "")

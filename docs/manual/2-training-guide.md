@@ -29,6 +29,7 @@ You don't need a terminal. Every step can be done from the GitHub website. Where
 13. [Prepare for Stage 1](#module-13-prepare-for-stage-1)
 14. [Your weekly routine](#module-14-your-weekly-routine)
 15. [Add a second framework (ISO 27001)](#module-15-add-a-second-framework-iso-27001)
+16. [Run the compliance program](#module-16-run-the-compliance-program)
 - [Appendix: screenshots to add](#appendix-screenshots-to-add)
 
 ---
@@ -409,6 +410,17 @@ Then open the **`reports` branch**. Its landing page lists every report. Start w
    - **Reports branch:** the ISO 27001 reports are in the `engagement-27001/` folder, linked from the landing page.
    - **Cross-framework mappings:** `cross-framework.md` shows each mapping and whether it has been reviewed.
    - **Client site:** it shows an ISO 27001 tab. A shared request appears once, marked "Also counts toward ISO 27001".
+
+## Module 16: Run the compliance program
+
+**Goal:** a client with several frameworks runs each control once, keeps its recurring duties on a calendar, and has owners certify their controls every quarter. Background: product guide sections 19–20 and `docs/PROGRAM.md`.
+
+1. **Write the catalog.** Create `program/controls.yaml`. Start from the controls the client actually runs (the access review, change approval, vulnerability scanning, backups, training, vendor reviews) rather than from the requirements. For each: owner, frequency, type, the evidence in the records that shows it ran, and `maps` for every framework. Add `nist80053` IDs where the client reports against NIST SP 800-53.
+2. **Check coverage.** Run *Validate* on the pull request and open `program/coverage.md` in the reports. P107 tells you how many in-scope requirements no control covers yet. Work through the list with the client: each is either a control nobody wrote down, or a gap. Look at the crosswalk suggestions, but add one only after checking it.
+3. **Build the calendar.** Create `program/calendar.yaml` with every recurring duty: framework ones, contractual ones (a customer's annual questionnaire), board meetings. Give each an owner, `every`, `first_due`, `source` and `evidence_expected`. Send owners `governance-calendar.ics` from the reports so the dates are in their calendars.
+4. **Record completions** in the same file, in a pull request, with the evidence. The Monday Issues close themselves.
+5. **Certification.** On the first day of the quarter, review the pull requests the workflow opened, one per owner. Chase the unsigned ones before the due date (P306). Every exception an owner reports needs a follow-up: raise the gap or finding and put its id in `follow_up`.
+6. **Report.** Each quarter, take `program.md` to security leadership. Compare it with last quarter's on the `reports` branch.
 
 ---
 

@@ -36,6 +36,22 @@ Rules:
 8. Do not repeat gaps that already exist in the engagement (listed below)."""
 
 
+def explain(exc: Exception) -> str:
+    """A one-line, actionable reason for an Anthropic API failure."""
+    s = str(exc)
+    low = s.lower()
+    if "credit balance is too low" in low:
+        return ("the Anthropic account behind ANTHROPIC_API_KEY is out of credit. Add credit at console.anthropic.com "
+                "(Settings, Billing), then push any change to this pull request to retry")
+    if "invalid x-api-key" in low or "authentication_error" in low or "401" in s[:40]:
+        return "ANTHROPIC_API_KEY was rejected (wrong, revoked or from another workspace). Replace the repository secret"
+    if "rate_limit" in low or "429" in s[:40]:
+        return "the Anthropic API rate limit was reached. Retry later, or load fewer documents per pull request"
+    if "overloaded" in low or "529" in s[:40]:
+        return "the Anthropic API is overloaded. Push any change to this pull request to retry"
+    return f"Anthropic API call failed: {s}"[:300]
+
+
 class AIUnavailable(Exception):
     pass
 
@@ -73,7 +89,7 @@ def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[
             resp = http.request("POST", API_URL, headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
                                 body=body, retries=4, timeout=600)
     except Exception as exc:  # HTTP 4xx/5xx, timeouts, DNS
-        raise AIUnavailable(f"Anthropic API call failed: {exc}"[:300]) from exc
+        raise AIUnavailable(explain(exc)) from exc
     stop = resp.get("stop_reason")
     if stop == "max_tokens":
         raise AIUnavailable("model output was truncated (max_tokens); ingest fewer documents at once")

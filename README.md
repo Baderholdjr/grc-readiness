@@ -166,6 +166,18 @@ Three are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 6
 
 Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id>` in `engagement.yaml`. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
 
+## The compliance program and ITGC tests
+
+Above the framework records, an optional `program/` folder runs the organization's compliance program:
+
+- **Common control catalog** (`program/controls.yaml`): each control once, with its owner and evidence, mapped to every framework, including NIST SP 800-53 Rev. 5 (shipped as a reference catalog with its baselines). Reports show coverage per framework, reuse per control and crosswalk suggestions, with an Excel matrix.
+- **Governance calendar** (`program/calendar.yaml`): recurring obligations with an owner, due dates and evidence of completion; weekly Issues for what is due; an `.ics` calendar.
+- **Quarterly owner certification**: one pull request per control owner each quarter; CI enforces complete, explained, self-signed answers.
+- **Scorecard**: the program's KPIs (`program.md`, `scorecard.json`) for the quarterly report to leadership.
+- **ITGC tests on GitHub** (`grc itgc change|access`): change management and logical access tested on the real population, risk-based sample, re-performable workpaper; the auditor concludes.
+
+See [docs/PROGRAM.md](docs/PROGRAM.md) and [docs/ITGC.md](docs/ITGC.md).
+
 ## Important boundaries
 
 - **ISO text is copyrighted.** The catalog contains identifiers, short titles and *our own paraphrased* intent. It doesn't reproduce the standard's text. Work from a licensed copy.

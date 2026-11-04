@@ -341,6 +341,76 @@ def cmd_portal(args) -> int:
     return 0
 
 
+def cmd_program(args) -> int:
+    from . import program as P
+    root = Path(args.root)
+    today = dt.date.fromisoformat(args.today) if args.today else None
+    if not P.exists(root):
+        print(f"No program in {root.resolve() / 'program'} (needs controls.yaml or calendar.yaml).", file=sys.stderr)
+        return 0 if args.action in ("validate", "report", "issues") else 2
+    prog = P.load_program(root, today=today)
+    if args.action == "validate":
+        findings = P.validate(prog)
+        _emit(findings, args.format)
+        errors = sum(f.severity == "error" for f in findings)
+        warnings = sum(f.severity == "warning" for f in findings)
+        if args.summary:
+            from .program_report import scorecard_md
+            with open(args.summary, "a", encoding="utf-8") as fh:
+                fh.write("\n" + scorecard_md(prog, P.scorecard(prog), findings) + "\n")
+        print(f"\nprogram: {errors} error(s), {warnings} warning(s).", file=sys.stderr)
+        return 1 if errors or (args.strict and warnings) else 0
+    if args.action == "report":
+        from .program_report import write_all
+        findings = P.validate(prog)
+        out = Path(args.out)
+        names = write_all(prog, findings, out)
+        print(f"program reports written to {out}/: {', '.join(names)}")
+        return 0
+    if args.action == "certify":
+        created = P.certify_open(prog, args.period, due_days=args.due_days)
+        for path in created:
+            print(prog.rel(path))
+        if not created:
+            print(f"No new certifications for {args.period or P.previous_quarter(prog.today)} "
+                  "(every owner already has one).", file=sys.stderr)
+        return 0
+    if args.action == "issues":
+        repo = args.repo or os.environ.get("GITHUB_REPOSITORY")
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if args.apply and not (repo and token):
+            print("--apply needs GITHUB_REPOSITORY (or --repo) and GITHUB_TOKEN.", file=sys.stderr)
+            return 2
+        for line in P.sync_obligation_issues(prog, repo, token, apply=args.apply):
+            print(line)
+        return 0
+    return 2
+
+
+def cmd_itgc(args) -> int:
+    from . import itgc
+    today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
+    src = itgc.Source(args.repo)
+    root = Path(args.root)
+    if args.action == "change":
+        if not (args.start and args.end):
+            print("itgc change needs --from and --to (YYYY-MM-DD)", file=sys.stderr)
+            return 2
+        sens = [s.strip() for s in args.sensitive.split(",")] if args.sensitive else None
+        wp = itgc.run_change(src, args.id, dt.date.fromisoformat(args.start), dt.date.fromisoformat(args.end),
+                             base=args.base, sensitive=sens,
+                             ticket_pattern=None if args.no_ticket else (args.ticket_pattern or itgc.DEFAULT_TICKET),
+                             sample_size=args.sample, root=root, today=today)
+    else:
+        wp = itgc.run_access(src, args.id, Path(args.approved) if args.approved else None, root=root, today=today)
+    r = wp["results"]
+    print(f"{args.id}: population {wp['population']['size']}, tested {r['tested']}, exceptions {r['exceptions']} "
+          f"-> {itgc.ITGC_DIR / args.id}/ (workpaper.yaml, workpaper.md, population.json)")
+    if args.report:
+        Path(args.report).write_text(itgc.render_md(wp), encoding="utf-8")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default=os.environ.get("GRC_ENGAGEMENT") or "engagement",
@@ -470,6 +540,35 @@ def main(argv=None) -> int:
     en = sub.add_parser("engagements", help="list the engagement records in this repository (engagement/, engagement-*/)")
     en.add_argument("--root", default=".")
     en.set_defaults(fn=cmd_engagements)
+
+    pg = sub.add_parser("program", help="compliance program: common controls, governance calendar, owner certification")
+    pg.add_argument("action", choices=["validate", "report", "certify", "issues"])
+    pg.add_argument("--root", default=".", help="repository root holding program/ (default: .)")
+    pg.add_argument("--out", default="out/program", help="report: output folder")
+    pg.add_argument("--period", help="certify: quarter to certify, e.g. 2026-Q3 (default: the quarter that just ended)")
+    pg.add_argument("--due-days", type=int, default=30, help="certify: days after the quarter ends that it is due")
+    pg.add_argument("--apply", action="store_true", help="issues: actually call GitHub (default is a dry run)")
+    pg.add_argument("--repo", help="issues: owner/name (default: $GITHUB_REPOSITORY)")
+    pg.add_argument("--strict", action="store_true", help="validate: fail on warnings too")
+    pg.add_argument("--format", choices=["text", "text-verbose", "github", "json"], default="text")
+    pg.add_argument("--summary", help="validate: append the scorecard to this file (e.g. $GITHUB_STEP_SUMMARY)")
+    pg.set_defaults(fn=cmd_program)
+
+    ig = sub.add_parser("itgc", help="IT general control tests on GitHub: change management, logical access")
+    ig.add_argument("action", choices=["change", "access"])
+    ig.add_argument("--repo", required=True, help="owner/name of the repository under test")
+    ig.add_argument("--id", required=True, help="test id, e.g. ITGC-CHG-2026Q3 (folder under program/itgc/)")
+    ig.add_argument("--from", dest="start", help="change: first day of the period (YYYY-MM-DD)")
+    ig.add_argument("--to", dest="end", help="change: last day of the period (YYYY-MM-DD)")
+    ig.add_argument("--base", default="main", help="change: production branch (default main)")
+    ig.add_argument("--sensitive", help="change: comma-separated path patterns that make a change high-risk")
+    ig.add_argument("--ticket-pattern", help="change: regex a change must contain to link a ticket")
+    ig.add_argument("--no-ticket", action="store_true", help="change: don't test for a linked ticket (CHG-5)")
+    ig.add_argument("--sample", type=int, help="change: size of the random part of the sample (default: by population)")
+    ig.add_argument("--approved", help="access: approved access list (default program/itgc/access/<owner>__<repo>.yaml)")
+    ig.add_argument("--root", default=".", help="repository root to write program/itgc/ into")
+    ig.add_argument("--report", help="also write the Markdown workpaper here")
+    ig.set_defaults(fn=cmd_itgc)
 
     args = p.parse_args(argv)
     return args.fn(args)

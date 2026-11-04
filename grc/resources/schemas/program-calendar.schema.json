@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "program-calendar.schema.json",
+  "title": "Governance calendar",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "obligations"
+  ],
+  "properties": {
+    "obligations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "owner",
+          "every",
+          "first_due"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "every": {
+            "enum": [
+              "monthly",
+              "quarterly",
+              "semiannual",
+              "annual"
+            ]
+          },
+          "first_due": {
+            "type": "string",
+            "format": "date"
+          },
+          "lead_days": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 180
+          },
+          "source": {
+            "type": "string",
+            "description": "where the obligation comes from: a framework, a customer contract, a bank or regulator"
+          },
+          "controls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence_expected": {
+            "type": "string"
+          },
+          "done": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "period",
+                "completed"
+              ],
+              "properties": {
+                "period": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "by": {
+                  "type": "string"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+:[A-Za-z0-9._-]+$"
+                  }
+                },
+                "note": {
+                  "type": "string"
+                },
+                "completed": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

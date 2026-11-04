@@ -45,6 +45,11 @@ jobs:
             [ "$e" = engagement ] || echo "### Record: $e" >> "$GITHUB_STEP_SUMMARY"
             python -m grc --engagement "$e" validate --format github --summary "$GITHUB_STEP_SUMMARY" || rc=1
           done
+          # The program layer (program/: common controls, calendar, owner certifications), if there is one.
+          if [ -d program ]; then
+            echo "### Compliance program" >> "$GITHUB_STEP_SUMMARY"
+            python -m grc program validate --format github --summary "$GITHUB_STEP_SUMMARY" || rc=1
+          fi
           exit $rc
       - name: Build reports and brief
         run: |
@@ -53,6 +58,7 @@ jobs:
             if [ "$e" = engagement ]; then o=out; else o="out/$e"; fi
             python -m grc --engagement "$e" build --out "$o"
           done
+          if [ -d program ]; then python -m grc program report --out out/program; fi
       - uses: actions/upload-artifact@v6
         with:
           name: readiness-reports-${{ github.sha }}

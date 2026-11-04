@@ -1,0 +1,1051 @@
+# NIST SP 800-53 Rev. 5 control catalog (reference only), generated from NIST's OSCAL content
+# (github.com/usnistgov/oscal-content, nist.gov/SP800-53/rev5). NIST publications are works of the
+# US Government and not subject to copyright in the United States.
+#
+# Used as a mapping target by the common control catalog (program/controls.yaml). There is no
+# engagement record for this catalog: map controls to it, don't start a record with it.
+# baselines: L/M/H = SP 800-53B low/moderate/high security baselines, P = privacy baseline.
+
+framework:
+  id: nist80053
+  name: NIST SP 800-53 Rev. 5
+  short_name: NIST 800-53
+  source: https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final
+
+groups:
+  - {id: AC, title: "Access Control"}
+  - {id: AT, title: "Awareness and Training"}
+  - {id: AU, title: "Audit and Accountability"}
+  - {id: CA, title: "Assessment, Authorization, and Monitoring"}
+  - {id: CM, title: "Configuration Management"}
+  - {id: CP, title: "Contingency Planning"}
+  - {id: IA, title: "Identification and Authentication"}
+  - {id: IR, title: "Incident Response"}
+  - {id: MA, title: "Maintenance"}
+  - {id: MP, title: "Media Protection"}
+  - {id: PE, title: "Physical and Environmental Protection"}
+  - {id: PL, title: "Planning"}
+  - {id: PM, title: "Program Management"}
+  - {id: PS, title: "Personnel Security"}
+  - {id: PT, title: "Personally Identifiable Information Processing and Transparency"}
+  - {id: RA, title: "Risk Assessment"}
+  - {id: SA, title: "System and Services Acquisition"}
+  - {id: SC, title: "System and Communications Protection"}
+  - {id: SI, title: "System and Information Integrity"}
+  - {id: SR, title: "Supply Chain Risk Management"}
+
+requirements:
+  - {id: "AC-1", group: "AC", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "AC-2", group: "AC", title: "Account Management", baselines: ["L", "M", "H"]}
+  - {id: "AC-2(1)", group: "AC", title: "Automated System Account Management", baselines: ["M", "H"], enhances: "AC-2"}
+  - {id: "AC-2(2)", group: "AC", title: "Automated Temporary and Emergency Account Management", baselines: ["M", "H"], enhances: "AC-2"}
+  - {id: "AC-2(3)", group: "AC", title: "Disable Accounts", baselines: ["M", "H"], enhances: "AC-2"}
+  - {id: "AC-2(4)", group: "AC", title: "Automated Audit Actions", baselines: ["M", "H"], enhances: "AC-2"}
+  - {id: "AC-2(5)", group: "AC", title: "Inactivity Logout", baselines: ["M", "H"], enhances: "AC-2"}
+  - {id: "AC-2(6)", group: "AC", title: "Dynamic Privilege Management", enhances: "AC-2"}
+  - {id: "AC-2(7)", group: "AC", title: "Privileged User Accounts", enhances: "AC-2"}
+  - {id: "AC-2(8)", group: "AC", title: "Dynamic Account Management", enhances: "AC-2"}
+  - {id: "AC-2(9)", group: "AC", title: "Restrictions on Use of Shared and Group Accounts", enhances: "AC-2"}
+  - {id: "AC-2(11)", group: "AC", title: "Usage Conditions", baselines: ["H"], enhances: "AC-2"}
+  - {id: "AC-2(12)", group: "AC", title: "Account Monitoring for Atypical Usage", baselines: ["H"], enhances: "AC-2"}
+  - {id: "AC-2(13)", group: "AC", title: "Disable Accounts for High-risk Individuals", baselines: ["M", "H"], enhances: "AC-2"}
+  - {id: "AC-3", group: "AC", title: "Access Enforcement", baselines: ["L", "M", "H"]}
+  - {id: "AC-3(2)", group: "AC", title: "Dual Authorization", enhances: "AC-3"}
+  - {id: "AC-3(3)", group: "AC", title: "Mandatory Access Control", enhances: "AC-3"}
+  - {id: "AC-3(4)", group: "AC", title: "Discretionary Access Control", enhances: "AC-3"}
+  - {id: "AC-3(5)", group: "AC", title: "Security-relevant Information", enhances: "AC-3"}
+  - {id: "AC-3(7)", group: "AC", title: "Role-based Access Control", enhances: "AC-3"}
+  - {id: "AC-3(8)", group: "AC", title: "Revocation of Access Authorizations", enhances: "AC-3"}
+  - {id: "AC-3(9)", group: "AC", title: "Controlled Release", enhances: "AC-3"}
+  - {id: "AC-3(10)", group: "AC", title: "Audited Override of Access Control Mechanisms", enhances: "AC-3"}
+  - {id: "AC-3(11)", group: "AC", title: "Restrict Access to Specific Information Types", enhances: "AC-3"}
+  - {id: "AC-3(12)", group: "AC", title: "Assert and Enforce Application Access", enhances: "AC-3"}
+  - {id: "AC-3(13)", group: "AC", title: "Attribute-based Access Control", enhances: "AC-3"}
+  - {id: "AC-3(14)", group: "AC", title: "Individual Access", baselines: ["P"], enhances: "AC-3"}
+  - {id: "AC-3(15)", group: "AC", title: "Discretionary and Mandatory Access Control", enhances: "AC-3"}
+  - {id: "AC-4", group: "AC", title: "Information Flow Enforcement", baselines: ["M", "H"]}
+  - {id: "AC-4(1)", group: "AC", title: "Object Security and Privacy Attributes", enhances: "AC-4"}
+  - {id: "AC-4(2)", group: "AC", title: "Processing Domains", enhances: "AC-4"}
+  - {id: "AC-4(3)", group: "AC", title: "Dynamic Information Flow Control", enhances: "AC-4"}
+  - {id: "AC-4(4)", group: "AC", title: "Flow Control of Encrypted Information", baselines: ["H"], enhances: "AC-4"}
+  - {id: "AC-4(5)", group: "AC", title: "Embedded Data Types", enhances: "AC-4"}
+  - {id: "AC-4(6)", group: "AC", title: "Metadata", enhances: "AC-4"}
+  - {id: "AC-4(7)", group: "AC", title: "One-way Flow Mechanisms", enhances: "AC-4"}
+  - {id: "AC-4(8)", group: "AC", title: "Security and Privacy Policy Filters", enhances: "AC-4"}
+  - {id: "AC-4(9)", group: "AC", title: "Human Reviews", enhances: "AC-4"}
+  - {id: "AC-4(10)", group: "AC", title: "Enable and Disable Security or Privacy Policy Filters", enhances: "AC-4"}
+  - {id: "AC-4(11)", group: "AC", title: "Configuration of Security or Privacy Policy Filters", enhances: "AC-4"}
+  - {id: "AC-4(12)", group: "AC", title: "Data Type Identifiers", enhances: "AC-4"}
+  - {id: "AC-4(13)", group: "AC", title: "Decomposition into Policy-relevant Subcomponents", enhances: "AC-4"}
+  - {id: "AC-4(14)", group: "AC", title: "Security or Privacy Policy Filter Constraints", enhances: "AC-4"}
+  - {id: "AC-4(15)", group: "AC", title: "Detection of Unsanctioned Information", enhances: "AC-4"}
+  - {id: "AC-4(17)", group: "AC", title: "Domain Authentication", enhances: "AC-4"}
+  - {id: "AC-4(19)", group: "AC", title: "Validation of Metadata", enhances: "AC-4"}
+  - {id: "AC-4(20)", group: "AC", title: "Approved Solutions", enhances: "AC-4"}
+  - {id: "AC-4(21)", group: "AC", title: "Physical or Logical Separation of Information Flows", enhances: "AC-4"}
+  - {id: "AC-4(22)", group: "AC", title: "Access Only", enhances: "AC-4"}
+  - {id: "AC-4(23)", group: "AC", title: "Modify Non-releasable Information", enhances: "AC-4"}
+  - {id: "AC-4(24)", group: "AC", title: "Internal Normalized Format", enhances: "AC-4"}
+  - {id: "AC-4(25)", group: "AC", title: "Data Sanitization", enhances: "AC-4"}
+  - {id: "AC-4(26)", group: "AC", title: "Audit Filtering Actions", enhances: "AC-4"}
+  - {id: "AC-4(27)", group: "AC", title: "Redundant/Independent Filtering Mechanisms", enhances: "AC-4"}
+  - {id: "AC-4(28)", group: "AC", title: "Linear Filter Pipelines", enhances: "AC-4"}
+  - {id: "AC-4(29)", group: "AC", title: "Filter Orchestration Engines", enhances: "AC-4"}
+  - {id: "AC-4(30)", group: "AC", title: "Filter Mechanisms Using Multiple Processes", enhances: "AC-4"}
+  - {id: "AC-4(31)", group: "AC", title: "Failed Content Transfer Prevention", enhances: "AC-4"}
+  - {id: "AC-4(32)", group: "AC", title: "Process Requirements for Information Transfer", enhances: "AC-4"}
+  - {id: "AC-5", group: "AC", title: "Separation of Duties", baselines: ["M", "H"]}
+  - {id: "AC-6", group: "AC", title: "Least Privilege", baselines: ["M", "H"]}
+  - {id: "AC-6(1)", group: "AC", title: "Authorize Access to Security Functions", baselines: ["M", "H"], enhances: "AC-6"}
+  - {id: "AC-6(2)", group: "AC", title: "Non-privileged Access for Nonsecurity Functions", baselines: ["M", "H"], enhances: "AC-6"}
+  - {id: "AC-6(3)", group: "AC", title: "Network Access to Privileged Commands", baselines: ["H"], enhances: "AC-6"}
+  - {id: "AC-6(4)", group: "AC", title: "Separate Processing Domains", enhances: "AC-6"}
+  - {id: "AC-6(5)", group: "AC", title: "Privileged Accounts", baselines: ["M", "H"], enhances: "AC-6"}
+  - {id: "AC-6(6)", group: "AC", title: "Privileged Access by Non-organizational Users", enhances: "AC-6"}
+  - {id: "AC-6(7)", group: "AC", title: "Review of User Privileges", baselines: ["M", "H"], enhances: "AC-6"}
+  - {id: "AC-6(8)", group: "AC", title: "Privilege Levels for Code Execution", enhances: "AC-6"}
+  - {id: "AC-6(9)", group: "AC", title: "Log Use of Privileged Functions", baselines: ["M", "H"], enhances: "AC-6"}
+  - {id: "AC-6(10)", group: "AC", title: "Prohibit Non-privileged Users from Executing Privileged Functions", baselines: ["M", "H"], enhances: "AC-6"}
+  - {id: "AC-7", group: "AC", title: "Unsuccessful Logon Attempts", baselines: ["L", "M", "H"]}
+  - {id: "AC-7(2)", group: "AC", title: "Purge or Wipe Mobile Device", enhances: "AC-7"}
+  - {id: "AC-7(3)", group: "AC", title: "Biometric Attempt Limiting", enhances: "AC-7"}
+  - {id: "AC-7(4)", group: "AC", title: "Use of Alternate Authentication Factor", enhances: "AC-7"}
+  - {id: "AC-8", group: "AC", title: "System Use Notification", baselines: ["L", "M", "H"]}
+  - {id: "AC-9", group: "AC", title: "Previous Logon Notification"}
+  - {id: "AC-9(1)", group: "AC", title: "Unsuccessful Logons", enhances: "AC-9"}
+  - {id: "AC-9(2)", group: "AC", title: "Successful and Unsuccessful Logons", enhances: "AC-9"}
+  - {id: "AC-9(3)", group: "AC", title: "Notification of Account Changes", enhances: "AC-9"}
+  - {id: "AC-9(4)", group: "AC", title: "Additional Logon Information", enhances: "AC-9"}
+  - {id: "AC-10", group: "AC", title: "Concurrent Session Control", baselines: ["H"]}
+  - {id: "AC-11", group: "AC", title: "Device Lock", baselines: ["M", "H"]}
+  - {id: "AC-11(1)", group: "AC", title: "Pattern-hiding Displays", baselines: ["M", "H"], enhances: "AC-11"}
+  - {id: "AC-12", group: "AC", title: "Session Termination", baselines: ["M", "H"]}
+  - {id: "AC-12(1)", group: "AC", title: "User-initiated Logouts", enhances: "AC-12"}
+  - {id: "AC-12(2)", group: "AC", title: "Termination Message", enhances: "AC-12"}
+  - {id: "AC-12(3)", group: "AC", title: "Timeout Warning Message", enhances: "AC-12"}
+  - {id: "AC-14", group: "AC", title: "Permitted Actions Without Identification or Authentication", baselines: ["L", "M", "H"]}
+  - {id: "AC-16", group: "AC", title: "Security and Privacy Attributes"}
+  - {id: "AC-16(1)", group: "AC", title: "Dynamic Attribute Association", enhances: "AC-16"}
+  - {id: "AC-16(2)", group: "AC", title: "Attribute Value Changes by Authorized Individuals", enhances: "AC-16"}
+  - {id: "AC-16(3)", group: "AC", title: "Maintenance of Attribute Associations by System", enhances: "AC-16"}
+  - {id: "AC-16(4)", group: "AC", title: "Association of Attributes by Authorized Individuals", enhances: "AC-16"}
+  - {id: "AC-16(5)", group: "AC", title: "Attribute Displays on Objects to Be Output", enhances: "AC-16"}
+  - {id: "AC-16(6)", group: "AC", title: "Maintenance of Attribute Association", enhances: "AC-16"}
+  - {id: "AC-16(7)", group: "AC", title: "Consistent Attribute Interpretation", enhances: "AC-16"}
+  - {id: "AC-16(8)", group: "AC", title: "Association Techniques and Technologies", enhances: "AC-16"}
+  - {id: "AC-16(9)", group: "AC", title: "Attribute Reassignment — Regrading Mechanisms", enhances: "AC-16"}
+  - {id: "AC-16(10)", group: "AC", title: "Attribute Configuration by Authorized Individuals", enhances: "AC-16"}
+  - {id: "AC-17", group: "AC", title: "Remote Access", baselines: ["L", "M", "H"]}
+  - {id: "AC-17(1)", group: "AC", title: "Monitoring and Control", baselines: ["M", "H"], enhances: "AC-17"}
+  - {id: "AC-17(2)", group: "AC", title: "Protection of Confidentiality and Integrity Using Encryption", baselines: ["M", "H"], enhances: "AC-17"}
+  - {id: "AC-17(3)", group: "AC", title: "Managed Access Control Points", baselines: ["M", "H"], enhances: "AC-17"}
+  - {id: "AC-17(4)", group: "AC", title: "Privileged Commands and Access", baselines: ["M", "H"], enhances: "AC-17"}
+  - {id: "AC-17(6)", group: "AC", title: "Protection of Mechanism Information", enhances: "AC-17"}
+  - {id: "AC-17(9)", group: "AC", title: "Disconnect or Disable Access", enhances: "AC-17"}
+  - {id: "AC-17(10)", group: "AC", title: "Authenticate Remote Commands", enhances: "AC-17"}
+  - {id: "AC-18", group: "AC", title: "Wireless Access", baselines: ["L", "M", "H"]}
+  - {id: "AC-18(1)", group: "AC", title: "Authentication and Encryption", baselines: ["M", "H"], enhances: "AC-18"}
+  - {id: "AC-18(3)", group: "AC", title: "Disable Wireless Networking", baselines: ["M", "H"], enhances: "AC-18"}
+  - {id: "AC-18(4)", group: "AC", title: "Restrict Configurations by Users", baselines: ["H"], enhances: "AC-18"}
+  - {id: "AC-18(5)", group: "AC", title: "Antennas and Transmission Power Levels", baselines: ["H"], enhances: "AC-18"}
+  - {id: "AC-19", group: "AC", title: "Access Control for Mobile Devices", baselines: ["L", "M", "H"]}
+  - {id: "AC-19(4)", group: "AC", title: "Restrictions for Classified Information", enhances: "AC-19"}
+  - {id: "AC-19(5)", group: "AC", title: "Full Device or Container-based Encryption", baselines: ["M", "H"], enhances: "AC-19"}
+  - {id: "AC-20", group: "AC", title: "Use of External Systems", baselines: ["L", "M", "H"]}
+  - {id: "AC-20(1)", group: "AC", title: "Limits on Authorized Use", baselines: ["M", "H"], enhances: "AC-20"}
+  - {id: "AC-20(2)", group: "AC", title: "Portable Storage Devices — Restricted Use", baselines: ["M", "H"], enhances: "AC-20"}
+  - {id: "AC-20(3)", group: "AC", title: "Non-organizationally Owned Systems — Restricted Use", enhances: "AC-20"}
+  - {id: "AC-20(4)", group: "AC", title: "Network Accessible Storage Devices — Prohibited Use", enhances: "AC-20"}
+  - {id: "AC-20(5)", group: "AC", title: "Portable Storage Devices — Prohibited Use", enhances: "AC-20"}
+  - {id: "AC-21", group: "AC", title: "Information Sharing", baselines: ["M", "H"]}
+  - {id: "AC-21(1)", group: "AC", title: "Automated Decision Support", enhances: "AC-21"}
+  - {id: "AC-21(2)", group: "AC", title: "Information Search and Retrieval", enhances: "AC-21"}
+  - {id: "AC-22", group: "AC", title: "Publicly Accessible Content", baselines: ["L", "M", "H"]}
+  - {id: "AC-23", group: "AC", title: "Data Mining Protection"}
+  - {id: "AC-24", group: "AC", title: "Access Control Decisions"}
+  - {id: "AC-24(1)", group: "AC", title: "Transmit Access Authorization Information", enhances: "AC-24"}
+  - {id: "AC-24(2)", group: "AC", title: "No User or Process Identity", enhances: "AC-24"}
+  - {id: "AC-25", group: "AC", title: "Reference Monitor"}
+  - {id: "AT-1", group: "AT", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "AT-2", group: "AT", title: "Literacy Training and Awareness", baselines: ["L", "M", "H", "P"]}
+  - {id: "AT-2(1)", group: "AT", title: "Practical Exercises", enhances: "AT-2"}
+  - {id: "AT-2(2)", group: "AT", title: "Insider Threat", baselines: ["L", "M", "H"], enhances: "AT-2"}
+  - {id: "AT-2(3)", group: "AT", title: "Social Engineering and Mining", baselines: ["M", "H"], enhances: "AT-2"}
+  - {id: "AT-2(4)", group: "AT", title: "Suspicious Communications and Anomalous System Behavior", enhances: "AT-2"}
+  - {id: "AT-2(5)", group: "AT", title: "Advanced Persistent Threat", enhances: "AT-2"}
+  - {id: "AT-2(6)", group: "AT", title: "Cyber Threat Environment", enhances: "AT-2"}
+  - {id: "AT-3", group: "AT", title: "Role-based Training", baselines: ["L", "M", "H", "P"]}
+  - {id: "AT-3(1)", group: "AT", title: "Environmental Controls", enhances: "AT-3"}
+  - {id: "AT-3(2)", group: "AT", title: "Physical Security Controls", enhances: "AT-3"}
+  - {id: "AT-3(3)", group: "AT", title: "Practical Exercises", enhances: "AT-3"}
+  - {id: "AT-3(5)", group: "AT", title: "Processing Personally Identifiable Information", baselines: ["P"], enhances: "AT-3"}
+  - {id: "AT-4", group: "AT", title: "Training Records", baselines: ["L", "M", "H", "P"]}
+  - {id: "AT-6", group: "AT", title: "Training Feedback"}
+  - {id: "AU-1", group: "AU", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "AU-2", group: "AU", title: "Event Logging", baselines: ["L", "M", "H", "P"]}
+  - {id: "AU-3", group: "AU", title: "Content of Audit Records", baselines: ["L", "M", "H"]}
+  - {id: "AU-3(1)", group: "AU", title: "Additional Audit Information", baselines: ["M", "H"], enhances: "AU-3"}
+  - {id: "AU-3(3)", group: "AU", title: "Limit Personally Identifiable Information Elements", baselines: ["P"], enhances: "AU-3"}
+  - {id: "AU-4", group: "AU", title: "Audit Log Storage Capacity", baselines: ["L", "M", "H"]}
+  - {id: "AU-4(1)", group: "AU", title: "Transfer to Alternate Storage", enhances: "AU-4"}
+  - {id: "AU-5", group: "AU", title: "Response to Audit Logging Process Failures", baselines: ["L", "M", "H"]}
+  - {id: "AU-5(1)", group: "AU", title: "Storage Capacity Warning", baselines: ["H"], enhances: "AU-5"}
+  - {id: "AU-5(2)", group: "AU", title: "Real-time Alerts", baselines: ["H"], enhances: "AU-5"}
+  - {id: "AU-5(3)", group: "AU", title: "Configurable Traffic Volume Thresholds", enhances: "AU-5"}
+  - {id: "AU-5(4)", group: "AU", title: "Shutdown on Failure", enhances: "AU-5"}
+  - {id: "AU-5(5)", group: "AU", title: "Alternate Audit Logging Capability", enhances: "AU-5"}
+  - {id: "AU-6", group: "AU", title: "Audit Record Review, Analysis, and Reporting", baselines: ["L", "M", "H"]}
+  - {id: "AU-6(1)", group: "AU", title: "Automated Process Integration", baselines: ["M", "H"], enhances: "AU-6"}
+  - {id: "AU-6(3)", group: "AU", title: "Correlate Audit Record Repositories", baselines: ["M", "H"], enhances: "AU-6"}
+  - {id: "AU-6(4)", group: "AU", title: "Central Review and Analysis", enhances: "AU-6"}
+  - {id: "AU-6(5)", group: "AU", title: "Integrated Analysis of Audit Records", baselines: ["H"], enhances: "AU-6"}
+  - {id: "AU-6(6)", group: "AU", title: "Correlation with Physical Monitoring", baselines: ["H"], enhances: "AU-6"}
+  - {id: "AU-6(7)", group: "AU", title: "Permitted Actions", enhances: "AU-6"}
+  - {id: "AU-6(8)", group: "AU", title: "Full Text Analysis of Privileged Commands", enhances: "AU-6"}
+  - {id: "AU-6(9)", group: "AU", title: "Correlation with Information from Nontechnical Sources", enhances: "AU-6"}
+  - {id: "AU-7", group: "AU", title: "Audit Record Reduction and Report Generation", baselines: ["M", "H"]}
+  - {id: "AU-7(1)", group: "AU", title: "Automatic Processing", baselines: ["M", "H"], enhances: "AU-7"}
+  - {id: "AU-8", group: "AU", title: "Time Stamps", baselines: ["L", "M", "H"]}
+  - {id: "AU-9", group: "AU", title: "Protection of Audit Information", baselines: ["L", "M", "H"]}
+  - {id: "AU-9(1)", group: "AU", title: "Hardware Write-once Media", enhances: "AU-9"}
+  - {id: "AU-9(2)", group: "AU", title: "Store on Separate Physical Systems or Components", baselines: ["H"], enhances: "AU-9"}
+  - {id: "AU-9(3)", group: "AU", title: "Cryptographic Protection", baselines: ["H"], enhances: "AU-9"}
+  - {id: "AU-9(4)", group: "AU", title: "Access by Subset of Privileged Users", baselines: ["M", "H"], enhances: "AU-9"}
+  - {id: "AU-9(5)", group: "AU", title: "Dual Authorization", enhances: "AU-9"}
+  - {id: "AU-9(6)", group: "AU", title: "Read-only Access", enhances: "AU-9"}
+  - {id: "AU-9(7)", group: "AU", title: "Store on Component with Different Operating System", enhances: "AU-9"}
+  - {id: "AU-10", group: "AU", title: "Non-repudiation", baselines: ["H"]}
+  - {id: "AU-10(1)", group: "AU", title: "Association of Identities", enhances: "AU-10"}
+  - {id: "AU-10(2)", group: "AU", title: "Validate Binding of Information Producer Identity", enhances: "AU-10"}
+  - {id: "AU-10(3)", group: "AU", title: "Chain of Custody", enhances: "AU-10"}
+  - {id: "AU-10(4)", group: "AU", title: "Validate Binding of Information Reviewer Identity", enhances: "AU-10"}
+  - {id: "AU-11", group: "AU", title: "Audit Record Retention", baselines: ["L", "M", "H", "P"]}
+  - {id: "AU-11(1)", group: "AU", title: "Long-term Retrieval Capability", enhances: "AU-11"}
+  - {id: "AU-12", group: "AU", title: "Audit Record Generation", baselines: ["L", "M", "H"]}
+  - {id: "AU-12(1)", group: "AU", title: "System-wide and Time-correlated Audit Trail", baselines: ["H"], enhances: "AU-12"}
+  - {id: "AU-12(2)", group: "AU", title: "Standardized Formats", enhances: "AU-12"}
+  - {id: "AU-12(3)", group: "AU", title: "Changes by Authorized Individuals", baselines: ["H"], enhances: "AU-12"}
+  - {id: "AU-12(4)", group: "AU", title: "Query Parameter Audits of Personally Identifiable Information", enhances: "AU-12"}
+  - {id: "AU-13", group: "AU", title: "Monitoring for Information Disclosure"}
+  - {id: "AU-13(1)", group: "AU", title: "Use of Automated Tools", enhances: "AU-13"}
+  - {id: "AU-13(2)", group: "AU", title: "Review of Monitored Sites", enhances: "AU-13"}
+  - {id: "AU-13(3)", group: "AU", title: "Unauthorized Replication of Information", enhances: "AU-13"}
+  - {id: "AU-14", group: "AU", title: "Session Audit"}
+  - {id: "AU-14(1)", group: "AU", title: "System Start-up", enhances: "AU-14"}
+  - {id: "AU-14(3)", group: "AU", title: "Remote Viewing and Listening", enhances: "AU-14"}
+  - {id: "AU-16", group: "AU", title: "Cross-organizational Audit Logging"}
+  - {id: "AU-16(1)", group: "AU", title: "Identity Preservation", enhances: "AU-16"}
+  - {id: "AU-16(2)", group: "AU", title: "Sharing of Audit Information", enhances: "AU-16"}
+  - {id: "AU-16(3)", group: "AU", title: "Disassociability", enhances: "AU-16"}
+  - {id: "CA-1", group: "CA", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "CA-2", group: "CA", title: "Control Assessments", baselines: ["L", "M", "H", "P"]}
+  - {id: "CA-2(1)", group: "CA", title: "Independent Assessors", baselines: ["M", "H"], enhances: "CA-2"}
+  - {id: "CA-2(2)", group: "CA", title: "Specialized Assessments", baselines: ["H"], enhances: "CA-2"}
+  - {id: "CA-2(3)", group: "CA", title: "Leveraging Results from External Organizations", enhances: "CA-2"}
+  - {id: "CA-3", group: "CA", title: "Information Exchange", baselines: ["L", "M", "H"]}
+  - {id: "CA-3(6)", group: "CA", title: "Transfer Authorizations", baselines: ["H"], enhances: "CA-3"}
+  - {id: "CA-3(7)", group: "CA", title: "Transitive Information Exchanges", enhances: "CA-3"}
+  - {id: "CA-5", group: "CA", title: "Plan of Action and Milestones", baselines: ["L", "M", "H", "P"]}
+  - {id: "CA-5(1)", group: "CA", title: "Automation Support for Accuracy and Currency", enhances: "CA-5"}
+  - {id: "CA-6", group: "CA", title: "Authorization", baselines: ["L", "M", "H", "P"]}
+  - {id: "CA-6(1)", group: "CA", title: "Joint Authorization — Intra-organization", enhances: "CA-6"}
+  - {id: "CA-6(2)", group: "CA", title: "Joint Authorization — Inter-organization", enhances: "CA-6"}
+  - {id: "CA-7", group: "CA", title: "Continuous Monitoring", baselines: ["L", "M", "H", "P"]}
+  - {id: "CA-7(1)", group: "CA", title: "Independent Assessment", baselines: ["M", "H"], enhances: "CA-7"}
+  - {id: "CA-7(3)", group: "CA", title: "Trend Analyses", enhances: "CA-7"}
+  - {id: "CA-7(4)", group: "CA", title: "Risk Monitoring", baselines: ["L", "M", "H", "P"], enhances: "CA-7"}
+  - {id: "CA-7(5)", group: "CA", title: "Consistency Analysis", enhances: "CA-7"}
+  - {id: "CA-7(6)", group: "CA", title: "Automation Support for Monitoring", enhances: "CA-7"}
+  - {id: "CA-8", group: "CA", title: "Penetration Testing", baselines: ["H"]}
+  - {id: "CA-8(1)", group: "CA", title: "Independent Penetration Testing Agent or Team", baselines: ["H"], enhances: "CA-8"}
+  - {id: "CA-8(2)", group: "CA", title: "Red Team Exercises", enhances: "CA-8"}
+  - {id: "CA-8(3)", group: "CA", title: "Facility Penetration Testing", enhances: "CA-8"}
+  - {id: "CA-9", group: "CA", title: "Internal System Connections", baselines: ["L", "M", "H"]}
+  - {id: "CA-9(1)", group: "CA", title: "Compliance Checks", enhances: "CA-9"}
+  - {id: "CM-1", group: "CM", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "CM-2", group: "CM", title: "Baseline Configuration", baselines: ["L", "M", "H"]}
+  - {id: "CM-2(2)", group: "CM", title: "Automation Support for Accuracy and Currency", baselines: ["M", "H"], enhances: "CM-2"}
+  - {id: "CM-2(3)", group: "CM", title: "Retention of Previous Configurations", baselines: ["M", "H"], enhances: "CM-2"}
+  - {id: "CM-2(6)", group: "CM", title: "Development and Test Environments", enhances: "CM-2"}
+  - {id: "CM-2(7)", group: "CM", title: "Configure Systems and Components for High-risk Areas", baselines: ["M", "H"], enhances: "CM-2"}
+  - {id: "CM-3", group: "CM", title: "Configuration Change Control", baselines: ["M", "H"]}
+  - {id: "CM-3(1)", group: "CM", title: "Automated Documentation, Notification, and Prohibition of Changes", baselines: ["H"], enhances: "CM-3"}
+  - {id: "CM-3(2)", group: "CM", title: "Testing, Validation, and Documentation of Changes", baselines: ["M", "H"], enhances: "CM-3"}
+  - {id: "CM-3(3)", group: "CM", title: "Automated Change Implementation", enhances: "CM-3"}
+  - {id: "CM-3(4)", group: "CM", title: "Security and Privacy Representatives", baselines: ["M", "H"], enhances: "CM-3"}
+  - {id: "CM-3(5)", group: "CM", title: "Automated Security Response", enhances: "CM-3"}
+  - {id: "CM-3(6)", group: "CM", title: "Cryptography Management", baselines: ["H"], enhances: "CM-3"}
+  - {id: "CM-3(7)", group: "CM", title: "Review System Changes", enhances: "CM-3"}
+  - {id: "CM-3(8)", group: "CM", title: "Prevent or Restrict Configuration Changes", enhances: "CM-3"}
+  - {id: "CM-4", group: "CM", title: "Impact Analyses", baselines: ["L", "M", "H", "P"]}
+  - {id: "CM-4(1)", group: "CM", title: "Separate Test Environments", baselines: ["H"], enhances: "CM-4"}
+  - {id: "CM-4(2)", group: "CM", title: "Verification of Controls", baselines: ["M", "H"], enhances: "CM-4"}
+  - {id: "CM-5", group: "CM", title: "Access Restrictions for Change", baselines: ["L", "M", "H"]}
+  - {id: "CM-5(1)", group: "CM", title: "Automated Access Enforcement and Audit Records", baselines: ["H"], enhances: "CM-5"}
+  - {id: "CM-5(4)", group: "CM", title: "Dual Authorization", enhances: "CM-5"}
+  - {id: "CM-5(5)", group: "CM", title: "Privilege Limitation for Production and Operation", enhances: "CM-5"}
+  - {id: "CM-5(6)", group: "CM", title: "Limit Library Privileges", enhances: "CM-5"}
+  - {id: "CM-6", group: "CM", title: "Configuration Settings", baselines: ["L", "M", "H"]}
+  - {id: "CM-6(1)", group: "CM", title: "Automated Management, Application, and Verification", baselines: ["H"], enhances: "CM-6"}
+  - {id: "CM-6(2)", group: "CM", title: "Respond to Unauthorized Changes", baselines: ["H"], enhances: "CM-6"}
+  - {id: "CM-7", group: "CM", title: "Least Functionality", baselines: ["L", "M", "H"]}
+  - {id: "CM-7(1)", group: "CM", title: "Periodic Review", baselines: ["M", "H"], enhances: "CM-7"}
+  - {id: "CM-7(2)", group: "CM", title: "Prevent Program Execution", baselines: ["M", "H"], enhances: "CM-7"}
+  - {id: "CM-7(3)", group: "CM", title: "Registration Compliance", enhances: "CM-7"}
+  - {id: "CM-7(4)", group: "CM", title: "Unauthorized Software — Deny-by-exception", enhances: "CM-7"}
+  - {id: "CM-7(5)", group: "CM", title: "Authorized Software — Allow-by-exception", baselines: ["M", "H"], enhances: "CM-7"}
+  - {id: "CM-7(6)", group: "CM", title: "Confined Environments with Limited Privileges", enhances: "CM-7"}
+  - {id: "CM-7(7)", group: "CM", title: "Code Execution in Protected Environments", enhances: "CM-7"}
+  - {id: "CM-7(8)", group: "CM", title: "Binary or Machine Executable Code", enhances: "CM-7"}
+  - {id: "CM-7(9)", group: "CM", title: "Prohibiting The Use of Unauthorized Hardware", enhances: "CM-7"}
+  - {id: "CM-8", group: "CM", title: "System Component Inventory", baselines: ["L", "M", "H"]}
+  - {id: "CM-8(1)", group: "CM", title: "Updates During Installation and Removal", baselines: ["M", "H"], enhances: "CM-8"}
+  - {id: "CM-8(2)", group: "CM", title: "Automated Maintenance", baselines: ["H"], enhances: "CM-8"}
+  - {id: "CM-8(3)", group: "CM", title: "Automated Unauthorized Component Detection", baselines: ["M", "H"], enhances: "CM-8"}
+  - {id: "CM-8(4)", group: "CM", title: "Accountability Information", baselines: ["H"], enhances: "CM-8"}
+  - {id: "CM-8(6)", group: "CM", title: "Assessed Configurations and Approved Deviations", enhances: "CM-8"}
+  - {id: "CM-8(7)", group: "CM", title: "Centralized Repository", enhances: "CM-8"}
+  - {id: "CM-8(8)", group: "CM", title: "Automated Location Tracking", enhances: "CM-8"}
+  - {id: "CM-8(9)", group: "CM", title: "Assignment of Components to Systems", enhances: "CM-8"}
+  - {id: "CM-9", group: "CM", title: "Configuration Management Plan", baselines: ["M", "H"]}
+  - {id: "CM-9(1)", group: "CM", title: "Assignment of Responsibility", enhances: "CM-9"}
+  - {id: "CM-10", group: "CM", title: "Software Usage Restrictions", baselines: ["L", "M", "H"]}
+  - {id: "CM-10(1)", group: "CM", title: "Open-source Software", enhances: "CM-10"}
+  - {id: "CM-11", group: "CM", title: "User-installed Software", baselines: ["L", "M", "H"]}
+  - {id: "CM-11(2)", group: "CM", title: "Software Installation with Privileged Status", enhances: "CM-11"}
+  - {id: "CM-11(3)", group: "CM", title: "Automated Enforcement and Monitoring", enhances: "CM-11"}
+  - {id: "CM-12", group: "CM", title: "Information Location", baselines: ["M", "H"]}
+  - {id: "CM-12(1)", group: "CM", title: "Automated Tools to Support Information Location", baselines: ["M", "H"], enhances: "CM-12"}
+  - {id: "CM-13", group: "CM", title: "Data Action Mapping"}
+  - {id: "CM-14", group: "CM", title: "Signed Components"}
+  - {id: "CP-1", group: "CP", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "CP-2", group: "CP", title: "Contingency Plan", baselines: ["L", "M", "H"]}
+  - {id: "CP-2(1)", group: "CP", title: "Coordinate with Related Plans", baselines: ["M", "H"], enhances: "CP-2"}
+  - {id: "CP-2(2)", group: "CP", title: "Capacity Planning", baselines: ["H"], enhances: "CP-2"}
+  - {id: "CP-2(3)", group: "CP", title: "Resume Mission and Business Functions", baselines: ["M", "H"], enhances: "CP-2"}
+  - {id: "CP-2(5)", group: "CP", title: "Continue Mission and Business Functions", baselines: ["H"], enhances: "CP-2"}
+  - {id: "CP-2(6)", group: "CP", title: "Alternate Processing and Storage Sites", enhances: "CP-2"}
+  - {id: "CP-2(7)", group: "CP", title: "Coordinate with External Service Providers", enhances: "CP-2"}
+  - {id: "CP-2(8)", group: "CP", title: "Identify Critical Assets", baselines: ["M", "H"], enhances: "CP-2"}
+  - {id: "CP-3", group: "CP", title: "Contingency Training", baselines: ["L", "M", "H"]}
+  - {id: "CP-3(1)", group: "CP", title: "Simulated Events", baselines: ["H"], enhances: "CP-3"}
+  - {id: "CP-3(2)", group: "CP", title: "Mechanisms Used in Training Environments", enhances: "CP-3"}
+  - {id: "CP-4", group: "CP", title: "Contingency Plan Testing", baselines: ["L", "M", "H"]}
+  - {id: "CP-4(1)", group: "CP", title: "Coordinate with Related Plans", baselines: ["M", "H"], enhances: "CP-4"}
+  - {id: "CP-4(2)", group: "CP", title: "Alternate Processing Site", baselines: ["H"], enhances: "CP-4"}
+  - {id: "CP-4(3)", group: "CP", title: "Automated Testing", enhances: "CP-4"}
+  - {id: "CP-4(4)", group: "CP", title: "Full Recovery and Reconstitution", enhances: "CP-4"}
+  - {id: "CP-4(5)", group: "CP", title: "Self-challenge", enhances: "CP-4"}
+  - {id: "CP-6", group: "CP", title: "Alternate Storage Site", baselines: ["M", "H"]}
+  - {id: "CP-6(1)", group: "CP", title: "Separation from Primary Site", baselines: ["M", "H"], enhances: "CP-6"}
+  - {id: "CP-6(2)", group: "CP", title: "Recovery Time and Recovery Point Objectives", baselines: ["H"], enhances: "CP-6"}
+  - {id: "CP-6(3)", group: "CP", title: "Accessibility", baselines: ["M", "H"], enhances: "CP-6"}
+  - {id: "CP-7", group: "CP", title: "Alternate Processing Site", baselines: ["M", "H"]}
+  - {id: "CP-7(1)", group: "CP", title: "Separation from Primary Site", baselines: ["M", "H"], enhances: "CP-7"}
+  - {id: "CP-7(2)", group: "CP", title: "Accessibility", baselines: ["M", "H"], enhances: "CP-7"}
+  - {id: "CP-7(3)", group: "CP", title: "Priority of Service", baselines: ["M", "H"], enhances: "CP-7"}
+  - {id: "CP-7(4)", group: "CP", title: "Preparation for Use", baselines: ["H"], enhances: "CP-7"}
+  - {id: "CP-7(6)", group: "CP", title: "Inability to Return to Primary Site", enhances: "CP-7"}
+  - {id: "CP-8", group: "CP", title: "Telecommunications Services", baselines: ["M", "H"]}
+  - {id: "CP-8(1)", group: "CP", title: "Priority of Service Provisions", baselines: ["M", "H"], enhances: "CP-8"}
+  - {id: "CP-8(2)", group: "CP", title: "Single Points of Failure", baselines: ["M", "H"], enhances: "CP-8"}
+  - {id: "CP-8(3)", group: "CP", title: "Separation of Primary and Alternate Providers", baselines: ["H"], enhances: "CP-8"}
+  - {id: "CP-8(4)", group: "CP", title: "Provider Contingency Plan", baselines: ["H"], enhances: "CP-8"}
+  - {id: "CP-8(5)", group: "CP", title: "Alternate Telecommunication Service Testing", enhances: "CP-8"}
+  - {id: "CP-9", group: "CP", title: "System Backup", baselines: ["L", "M", "H"]}
+  - {id: "CP-9(1)", group: "CP", title: "Testing for Reliability and Integrity", baselines: ["M", "H"], enhances: "CP-9"}
+  - {id: "CP-9(2)", group: "CP", title: "Test Restoration Using Sampling", baselines: ["H"], enhances: "CP-9"}
+  - {id: "CP-9(3)", group: "CP", title: "Separate Storage for Critical Information", baselines: ["H"], enhances: "CP-9"}
+  - {id: "CP-9(5)", group: "CP", title: "Transfer to Alternate Storage Site", baselines: ["H"], enhances: "CP-9"}
+  - {id: "CP-9(6)", group: "CP", title: "Redundant Secondary System", enhances: "CP-9"}
+  - {id: "CP-9(7)", group: "CP", title: "Dual Authorization for Deletion or Destruction", enhances: "CP-9"}
+  - {id: "CP-9(8)", group: "CP", title: "Cryptographic Protection", baselines: ["M", "H"], enhances: "CP-9"}
+  - {id: "CP-10", group: "CP", title: "System Recovery and Reconstitution", baselines: ["L", "M", "H"]}
+  - {id: "CP-10(2)", group: "CP", title: "Transaction Recovery", baselines: ["M", "H"], enhances: "CP-10"}
+  - {id: "CP-10(4)", group: "CP", title: "Restore Within Time Period", baselines: ["H"], enhances: "CP-10"}
+  - {id: "CP-10(6)", group: "CP", title: "Component Protection", enhances: "CP-10"}
+  - {id: "CP-11", group: "CP", title: "Alternate Communications Protocols"}
+  - {id: "CP-12", group: "CP", title: "Safe Mode"}
+  - {id: "CP-13", group: "CP", title: "Alternative Security Mechanisms"}
+  - {id: "IA-1", group: "IA", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "IA-2", group: "IA", title: "Identification and Authentication (Organizational Users)", baselines: ["L", "M", "H"]}
+  - {id: "IA-2(1)", group: "IA", title: "Multi-factor Authentication to Privileged Accounts", baselines: ["L", "M", "H"], enhances: "IA-2"}
+  - {id: "IA-2(2)", group: "IA", title: "Multi-factor Authentication to Non-privileged Accounts", baselines: ["L", "M", "H"], enhances: "IA-2"}
+  - {id: "IA-2(5)", group: "IA", title: "Individual Authentication with Group Authentication", baselines: ["H"], enhances: "IA-2"}
+  - {id: "IA-2(6)", group: "IA", title: "Access to Accounts —separate Device", enhances: "IA-2"}
+  - {id: "IA-2(8)", group: "IA", title: "Access to Accounts — Replay Resistant", baselines: ["L", "M", "H"], enhances: "IA-2"}
+  - {id: "IA-2(10)", group: "IA", title: "Single Sign-on", enhances: "IA-2"}
+  - {id: "IA-2(12)", group: "IA", title: "Acceptance of PIV Credentials", baselines: ["L", "M", "H"], enhances: "IA-2"}
+  - {id: "IA-2(13)", group: "IA", title: "Out-of-band Authentication", enhances: "IA-2"}
+  - {id: "IA-3", group: "IA", title: "Device Identification and Authentication", baselines: ["M", "H"]}
+  - {id: "IA-3(1)", group: "IA", title: "Cryptographic Bidirectional Authentication", enhances: "IA-3"}
+  - {id: "IA-3(3)", group: "IA", title: "Dynamic Address Allocation", enhances: "IA-3"}
+  - {id: "IA-3(4)", group: "IA", title: "Device Attestation", enhances: "IA-3"}
+  - {id: "IA-4", group: "IA", title: "Identifier Management", baselines: ["L", "M", "H"]}
+  - {id: "IA-4(1)", group: "IA", title: "Prohibit Account Identifiers as Public Identifiers", enhances: "IA-4"}
+  - {id: "IA-4(4)", group: "IA", title: "Identify User Status", baselines: ["M", "H"], enhances: "IA-4"}
+  - {id: "IA-4(5)", group: "IA", title: "Dynamic Management", enhances: "IA-4"}
+  - {id: "IA-4(6)", group: "IA", title: "Cross-organization Management", enhances: "IA-4"}
+  - {id: "IA-4(8)", group: "IA", title: "Pairwise Pseudonymous Identifiers", enhances: "IA-4"}
+  - {id: "IA-4(9)", group: "IA", title: "Attribute Maintenance and Protection", enhances: "IA-4"}
+  - {id: "IA-5", group: "IA", title: "Authenticator Management", baselines: ["L", "M", "H"]}
+  - {id: "IA-5(1)", group: "IA", title: "Password-based Authentication", baselines: ["L", "M", "H"], enhances: "IA-5"}
+  - {id: "IA-5(2)", group: "IA", title: "Public Key-based Authentication", baselines: ["M", "H"], enhances: "IA-5"}
+  - {id: "IA-5(5)", group: "IA", title: "Change Authenticators Prior to Delivery", enhances: "IA-5"}
+  - {id: "IA-5(6)", group: "IA", title: "Protection of Authenticators", baselines: ["M", "H"], enhances: "IA-5"}
+  - {id: "IA-5(7)", group: "IA", title: "No Embedded Unencrypted Static Authenticators", enhances: "IA-5"}
+  - {id: "IA-5(8)", group: "IA", title: "Multiple System Accounts", enhances: "IA-5"}
+  - {id: "IA-5(9)", group: "IA", title: "Federated Credential Management", enhances: "IA-5"}
+  - {id: "IA-5(10)", group: "IA", title: "Dynamic Credential Binding", enhances: "IA-5"}
+  - {id: "IA-5(12)", group: "IA", title: "Biometric Authentication Performance", enhances: "IA-5"}
+  - {id: "IA-5(13)", group: "IA", title: "Expiration of Cached Authenticators", enhances: "IA-5"}
+  - {id: "IA-5(14)", group: "IA", title: "Managing Content of PKI Trust Stores", enhances: "IA-5"}
+  - {id: "IA-5(15)", group: "IA", title: "GSA-approved Products and Services", enhances: "IA-5"}
+  - {id: "IA-5(16)", group: "IA", title: "In-person or Trusted External Party Authenticator Issuance", enhances: "IA-5"}
+  - {id: "IA-5(17)", group: "IA", title: "Presentation Attack Detection for Biometric Authenticators", enhances: "IA-5"}
+  - {id: "IA-5(18)", group: "IA", title: "Password Managers", enhances: "IA-5"}
+  - {id: "IA-6", group: "IA", title: "Authentication Feedback", baselines: ["L", "M", "H"]}
+  - {id: "IA-7", group: "IA", title: "Cryptographic Module Authentication", baselines: ["L", "M", "H"]}
+  - {id: "IA-8", group: "IA", title: "Identification and Authentication (Non-organizational Users)", baselines: ["L", "M", "H"]}
+  - {id: "IA-8(1)", group: "IA", title: "Acceptance of PIV Credentials from Other Agencies", baselines: ["L", "M", "H"], enhances: "IA-8"}
+  - {id: "IA-8(2)", group: "IA", title: "Acceptance of External Authenticators", baselines: ["L", "M", "H"], enhances: "IA-8"}
+  - {id: "IA-8(4)", group: "IA", title: "Use of Defined Profiles", baselines: ["L", "M", "H"], enhances: "IA-8"}
+  - {id: "IA-8(5)", group: "IA", title: "Acceptance of PIV-I Credentials", enhances: "IA-8"}
+  - {id: "IA-8(6)", group: "IA", title: "Disassociability", enhances: "IA-8"}
+  - {id: "IA-9", group: "IA", title: "Service Identification and Authentication"}
+  - {id: "IA-10", group: "IA", title: "Adaptive Authentication"}
+  - {id: "IA-11", group: "IA", title: "Re-authentication", baselines: ["L", "M", "H"]}
+  - {id: "IA-12", group: "IA", title: "Identity Proofing", baselines: ["M", "H"]}
+  - {id: "IA-12(1)", group: "IA", title: "Supervisor Authorization", enhances: "IA-12"}
+  - {id: "IA-12(2)", group: "IA", title: "Identity Evidence", baselines: ["M", "H"], enhances: "IA-12"}
+  - {id: "IA-12(3)", group: "IA", title: "Identity Evidence Validation and Verification", baselines: ["M", "H"], enhances: "IA-12"}
+  - {id: "IA-12(4)", group: "IA", title: "In-person Validation and Verification", baselines: ["H"], enhances: "IA-12"}
+  - {id: "IA-12(5)", group: "IA", title: "Address Confirmation", baselines: ["M", "H"], enhances: "IA-12"}
+  - {id: "IA-12(6)", group: "IA", title: "Accept Externally-proofed Identities", enhances: "IA-12"}
+  - {id: "IA-13", group: "IA", title: "Identity Providers and Authorization Servers"}
+  - {id: "IA-13(1)", group: "IA", title: "Protection of Cryptographic Keys", enhances: "IA-13"}
+  - {id: "IA-13(2)", group: "IA", title: "Verification of Identity Assertions and Access Tokens", enhances: "IA-13"}
+  - {id: "IA-13(3)", group: "IA", title: "Token Management", enhances: "IA-13"}
+  - {id: "IR-1", group: "IR", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-2", group: "IR", title: "Incident Response Training", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-2(1)", group: "IR", title: "Simulated Events", baselines: ["H"], enhances: "IR-2"}
+  - {id: "IR-2(2)", group: "IR", title: "Automated Training Environments", baselines: ["H"], enhances: "IR-2"}
+  - {id: "IR-2(3)", group: "IR", title: "Breach", baselines: ["P"], enhances: "IR-2"}
+  - {id: "IR-3", group: "IR", title: "Incident Response Testing", baselines: ["M", "H", "P"]}
+  - {id: "IR-3(1)", group: "IR", title: "Automated Testing", enhances: "IR-3"}
+  - {id: "IR-3(2)", group: "IR", title: "Coordination with Related Plans", baselines: ["M", "H"], enhances: "IR-3"}
+  - {id: "IR-3(3)", group: "IR", title: "Continuous Improvement", enhances: "IR-3"}
+  - {id: "IR-4", group: "IR", title: "Incident Handling", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-4(1)", group: "IR", title: "Automated Incident Handling Processes", baselines: ["M", "H"], enhances: "IR-4"}
+  - {id: "IR-4(2)", group: "IR", title: "Dynamic Reconfiguration", enhances: "IR-4"}
+  - {id: "IR-4(3)", group: "IR", title: "Continuity of Operations", enhances: "IR-4"}
+  - {id: "IR-4(4)", group: "IR", title: "Information Correlation", baselines: ["H"], enhances: "IR-4"}
+  - {id: "IR-4(5)", group: "IR", title: "Automatic Disabling of System", enhances: "IR-4"}
+  - {id: "IR-4(6)", group: "IR", title: "Insider Threats", enhances: "IR-4"}
+  - {id: "IR-4(7)", group: "IR", title: "Insider Threats — Intra-organization Coordination", enhances: "IR-4"}
+  - {id: "IR-4(8)", group: "IR", title: "Correlation with External Organizations", enhances: "IR-4"}
+  - {id: "IR-4(9)", group: "IR", title: "Dynamic Response Capability", enhances: "IR-4"}
+  - {id: "IR-4(10)", group: "IR", title: "Supply Chain Coordination", enhances: "IR-4"}
+  - {id: "IR-4(11)", group: "IR", title: "Integrated Incident Response Team", baselines: ["H"], enhances: "IR-4"}
+  - {id: "IR-4(12)", group: "IR", title: "Malicious Code and Forensic Analysis", enhances: "IR-4"}
+  - {id: "IR-4(13)", group: "IR", title: "Behavior Analysis", enhances: "IR-4"}
+  - {id: "IR-4(14)", group: "IR", title: "Security Operations Center", enhances: "IR-4"}
+  - {id: "IR-4(15)", group: "IR", title: "Public Relations and Reputation Repair", enhances: "IR-4"}
+  - {id: "IR-5", group: "IR", title: "Incident Monitoring", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-5(1)", group: "IR", title: "Automated Tracking, Data Collection, and Analysis", baselines: ["H"], enhances: "IR-5"}
+  - {id: "IR-6", group: "IR", title: "Incident Reporting", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-6(1)", group: "IR", title: "Automated Reporting", baselines: ["M", "H"], enhances: "IR-6"}
+  - {id: "IR-6(2)", group: "IR", title: "Vulnerabilities Related to Incidents", enhances: "IR-6"}
+  - {id: "IR-6(3)", group: "IR", title: "Supply Chain Coordination", baselines: ["M", "H"], enhances: "IR-6"}
+  - {id: "IR-7", group: "IR", title: "Incident Response Assistance", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-7(1)", group: "IR", title: "Automation Support for Availability of Information and Support", baselines: ["M", "H"], enhances: "IR-7"}
+  - {id: "IR-7(2)", group: "IR", title: "Coordination with External Providers", enhances: "IR-7"}
+  - {id: "IR-8", group: "IR", title: "Incident Response Plan", baselines: ["L", "M", "H", "P"]}
+  - {id: "IR-8(1)", group: "IR", title: "Breaches", baselines: ["P"], enhances: "IR-8"}
+  - {id: "IR-9", group: "IR", title: "Information Spillage Response"}
+  - {id: "IR-9(2)", group: "IR", title: "Training", enhances: "IR-9"}
+  - {id: "IR-9(3)", group: "IR", title: "Post-spill Operations", enhances: "IR-9"}
+  - {id: "IR-9(4)", group: "IR", title: "Exposure to Unauthorized Personnel", enhances: "IR-9"}
+  - {id: "MA-1", group: "MA", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "MA-2", group: "MA", title: "Controlled Maintenance", baselines: ["L", "M", "H"]}
+  - {id: "MA-2(2)", group: "MA", title: "Automated Maintenance Activities", baselines: ["H"], enhances: "MA-2"}
+  - {id: "MA-3", group: "MA", title: "Maintenance Tools", baselines: ["M", "H"]}
+  - {id: "MA-3(1)", group: "MA", title: "Inspect Tools", baselines: ["M", "H"], enhances: "MA-3"}
+  - {id: "MA-3(2)", group: "MA", title: "Inspect Media", baselines: ["M", "H"], enhances: "MA-3"}
+  - {id: "MA-3(3)", group: "MA", title: "Prevent Unauthorized Removal", baselines: ["M", "H"], enhances: "MA-3"}
+  - {id: "MA-3(4)", group: "MA", title: "Restricted Tool Use", enhances: "MA-3"}
+  - {id: "MA-3(5)", group: "MA", title: "Execution with Privilege", enhances: "MA-3"}
+  - {id: "MA-3(6)", group: "MA", title: "Software Updates and Patches", enhances: "MA-3"}
+  - {id: "MA-4", group: "MA", title: "Nonlocal Maintenance", baselines: ["L", "M", "H"]}
+  - {id: "MA-4(1)", group: "MA", title: "Logging and Review", enhances: "MA-4"}
+  - {id: "MA-4(3)", group: "MA", title: "Comparable Security and Sanitization", baselines: ["H"], enhances: "MA-4"}
+  - {id: "MA-4(4)", group: "MA", title: "Authentication and Separation of Maintenance Sessions", enhances: "MA-4"}
+  - {id: "MA-4(5)", group: "MA", title: "Approvals and Notifications", enhances: "MA-4"}
+  - {id: "MA-4(6)", group: "MA", title: "Cryptographic Protection", enhances: "MA-4"}
+  - {id: "MA-4(7)", group: "MA", title: "Disconnect Verification", enhances: "MA-4"}
+  - {id: "MA-5", group: "MA", title: "Maintenance Personnel", baselines: ["L", "M", "H"]}
+  - {id: "MA-5(1)", group: "MA", title: "Individuals Without Appropriate Access", baselines: ["H"], enhances: "MA-5"}
+  - {id: "MA-5(2)", group: "MA", title: "Security Clearances for Classified Systems", enhances: "MA-5"}
+  - {id: "MA-5(3)", group: "MA", title: "Citizenship Requirements for Classified Systems", enhances: "MA-5"}
+  - {id: "MA-5(4)", group: "MA", title: "Foreign Nationals", enhances: "MA-5"}
+  - {id: "MA-5(5)", group: "MA", title: "Non-system Maintenance", enhances: "MA-5"}
+  - {id: "MA-6", group: "MA", title: "Timely Maintenance", baselines: ["M", "H"]}
+  - {id: "MA-6(1)", group: "MA", title: "Preventive Maintenance", enhances: "MA-6"}
+  - {id: "MA-6(2)", group: "MA", title: "Predictive Maintenance", enhances: "MA-6"}
+  - {id: "MA-6(3)", group: "MA", title: "Automated Support for Predictive Maintenance", enhances: "MA-6"}
+  - {id: "MA-7", group: "MA", title: "Field Maintenance"}
+  - {id: "MP-1", group: "MP", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "MP-2", group: "MP", title: "Media Access", baselines: ["L", "M", "H"]}
+  - {id: "MP-3", group: "MP", title: "Media Marking", baselines: ["M", "H"]}
+  - {id: "MP-4", group: "MP", title: "Media Storage", baselines: ["M", "H"]}
+  - {id: "MP-4(2)", group: "MP", title: "Automated Restricted Access", enhances: "MP-4"}
+  - {id: "MP-5", group: "MP", title: "Media Transport", baselines: ["M", "H"]}
+  - {id: "MP-5(3)", group: "MP", title: "Custodians", enhances: "MP-5"}
+  - {id: "MP-6", group: "MP", title: "Media Sanitization", baselines: ["L", "M", "H", "P"]}
+  - {id: "MP-6(1)", group: "MP", title: "Review, Approve, Track, Document, and Verify", baselines: ["H"], enhances: "MP-6"}
+  - {id: "MP-6(2)", group: "MP", title: "Equipment Testing", baselines: ["H"], enhances: "MP-6"}
+  - {id: "MP-6(3)", group: "MP", title: "Nondestructive Techniques", baselines: ["H"], enhances: "MP-6"}
+  - {id: "MP-6(7)", group: "MP", title: "Dual Authorization", enhances: "MP-6"}
+  - {id: "MP-6(8)", group: "MP", title: "Remote Purging or Wiping of Information", enhances: "MP-6"}
+  - {id: "MP-7", group: "MP", title: "Media Use", baselines: ["L", "M", "H"]}
+  - {id: "MP-7(2)", group: "MP", title: "Prohibit Use of Sanitization-resistant Media", enhances: "MP-7"}
+  - {id: "MP-8", group: "MP", title: "Media Downgrading"}
+  - {id: "MP-8(1)", group: "MP", title: "Documentation of Process", enhances: "MP-8"}
+  - {id: "MP-8(2)", group: "MP", title: "Equipment Testing", enhances: "MP-8"}
+  - {id: "MP-8(3)", group: "MP", title: "Controlled Unclassified Information", enhances: "MP-8"}
+  - {id: "MP-8(4)", group: "MP", title: "Classified Information", enhances: "MP-8"}
+  - {id: "PE-1", group: "PE", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "PE-2", group: "PE", title: "Physical Access Authorizations", baselines: ["L", "M", "H"]}
+  - {id: "PE-2(1)", group: "PE", title: "Access by Position or Role", enhances: "PE-2"}
+  - {id: "PE-2(2)", group: "PE", title: "Two Forms of Identification", enhances: "PE-2"}
+  - {id: "PE-2(3)", group: "PE", title: "Restrict Unescorted Access", enhances: "PE-2"}
+  - {id: "PE-3", group: "PE", title: "Physical Access Control", baselines: ["L", "M", "H"]}
+  - {id: "PE-3(1)", group: "PE", title: "System Access", baselines: ["H"], enhances: "PE-3"}
+  - {id: "PE-3(2)", group: "PE", title: "Facility and Systems", enhances: "PE-3"}
+  - {id: "PE-3(3)", group: "PE", title: "Continuous Guards", enhances: "PE-3"}
+  - {id: "PE-3(4)", group: "PE", title: "Lockable Casings", enhances: "PE-3"}
+  - {id: "PE-3(5)", group: "PE", title: "Tamper Protection", enhances: "PE-3"}
+  - {id: "PE-3(7)", group: "PE", title: "Physical Barriers", enhances: "PE-3"}
+  - {id: "PE-3(8)", group: "PE", title: "Access Control Vestibules", enhances: "PE-3"}
+  - {id: "PE-4", group: "PE", title: "Access Control for Transmission", baselines: ["M", "H"]}
+  - {id: "PE-5", group: "PE", title: "Access Control for Output Devices", baselines: ["M", "H"]}
+  - {id: "PE-5(2)", group: "PE", title: "Link to Individual Identity", enhances: "PE-5"}
+  - {id: "PE-6", group: "PE", title: "Monitoring Physical Access", baselines: ["L", "M", "H"]}
+  - {id: "PE-6(1)", group: "PE", title: "Intrusion Alarms and Surveillance Equipment", baselines: ["M", "H"], enhances: "PE-6"}
+  - {id: "PE-6(2)", group: "PE", title: "Automated Intrusion Recognition and Responses", enhances: "PE-6"}
+  - {id: "PE-6(3)", group: "PE", title: "Video Surveillance", enhances: "PE-6"}
+  - {id: "PE-6(4)", group: "PE", title: "Monitoring Physical Access to Systems", baselines: ["H"], enhances: "PE-6"}
+  - {id: "PE-8", group: "PE", title: "Visitor Access Records", baselines: ["L", "M", "H"]}
+  - {id: "PE-8(1)", group: "PE", title: "Automated Records Maintenance and Review", baselines: ["H"], enhances: "PE-8"}
+  - {id: "PE-8(3)", group: "PE", title: "Limit Personally Identifiable Information Elements", baselines: ["P"], enhances: "PE-8"}
+  - {id: "PE-9", group: "PE", title: "Power Equipment and Cabling", baselines: ["M", "H"]}
+  - {id: "PE-9(1)", group: "PE", title: "Redundant Cabling", enhances: "PE-9"}
+  - {id: "PE-9(2)", group: "PE", title: "Automatic Voltage Controls", enhances: "PE-9"}
+  - {id: "PE-10", group: "PE", title: "Emergency Shutoff", baselines: ["M", "H"]}
+  - {id: "PE-11", group: "PE", title: "Emergency Power", baselines: ["M", "H"]}
+  - {id: "PE-11(1)", group: "PE", title: "Alternate Power Supply — Minimal Operational Capability", baselines: ["H"], enhances: "PE-11"}
+  - {id: "PE-11(2)", group: "PE", title: "Alternate Power Supply — Self-contained", enhances: "PE-11"}
+  - {id: "PE-12", group: "PE", title: "Emergency Lighting", baselines: ["L", "M", "H"]}
+  - {id: "PE-12(1)", group: "PE", title: "Essential Mission and Business Functions", enhances: "PE-12"}
+  - {id: "PE-13", group: "PE", title: "Fire Protection", baselines: ["L", "M", "H"]}
+  - {id: "PE-13(1)", group: "PE", title: "Detection Systems — Automatic Activation and Notification", baselines: ["M", "H"], enhances: "PE-13"}
+  - {id: "PE-13(2)", group: "PE", title: "Suppression Systems — Automatic Activation and Notification", baselines: ["H"], enhances: "PE-13"}
+  - {id: "PE-13(4)", group: "PE", title: "Inspections", enhances: "PE-13"}
+  - {id: "PE-14", group: "PE", title: "Environmental Controls", baselines: ["L", "M", "H"]}
+  - {id: "PE-14(1)", group: "PE", title: "Automatic Controls", enhances: "PE-14"}
+  - {id: "PE-14(2)", group: "PE", title: "Monitoring with Alarms and Notifications", enhances: "PE-14"}
+  - {id: "PE-15", group: "PE", title: "Water Damage Protection", baselines: ["L", "M", "H"]}
+  - {id: "PE-15(1)", group: "PE", title: "Automation Support", baselines: ["H"], enhances: "PE-15"}
+  - {id: "PE-16", group: "PE", title: "Delivery and Removal", baselines: ["L", "M", "H"]}
+  - {id: "PE-17", group: "PE", title: "Alternate Work Site", baselines: ["M", "H"]}
+  - {id: "PE-18", group: "PE", title: "Location of System Components", baselines: ["H"]}
+  - {id: "PE-19", group: "PE", title: "Information Leakage"}
+  - {id: "PE-19(1)", group: "PE", title: "National Emissions Policies and Procedures", enhances: "PE-19"}
+  - {id: "PE-20", group: "PE", title: "Asset Monitoring and Tracking"}
+  - {id: "PE-21", group: "PE", title: "Electromagnetic Pulse Protection"}
+  - {id: "PE-22", group: "PE", title: "Component Marking"}
+  - {id: "PE-23", group: "PE", title: "Facility Location"}
+  - {id: "PL-1", group: "PL", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "PL-2", group: "PL", title: "System Security and Privacy Plans", baselines: ["L", "M", "H", "P"]}
+  - {id: "PL-4", group: "PL", title: "Rules of Behavior", baselines: ["L", "M", "H", "P"]}
+  - {id: "PL-4(1)", group: "PL", title: "Social Media and External Site/Application Usage Restrictions", baselines: ["L", "M", "H", "P"], enhances: "PL-4"}
+  - {id: "PL-7", group: "PL", title: "Concept of Operations"}
+  - {id: "PL-8", group: "PL", title: "Security and Privacy Architectures", baselines: ["M", "H", "P"]}
+  - {id: "PL-8(1)", group: "PL", title: "Defense in Depth", enhances: "PL-8"}
+  - {id: "PL-8(2)", group: "PL", title: "Supplier Diversity", enhances: "PL-8"}
+  - {id: "PL-9", group: "PL", title: "Central Management", baselines: ["P"]}
+  - {id: "PL-10", group: "PL", title: "Baseline Selection", baselines: ["L", "M", "H"]}
+  - {id: "PL-11", group: "PL", title: "Baseline Tailoring", baselines: ["L", "M", "H"]}
+  - {id: "PM-1", group: "PM", title: "Information Security Program Plan"}
+  - {id: "PM-2", group: "PM", title: "Information Security Program Leadership Role"}
+  - {id: "PM-3", group: "PM", title: "Information Security and Privacy Resources", baselines: ["P"]}
+  - {id: "PM-4", group: "PM", title: "Plan of Action and Milestones Process", baselines: ["P"]}
+  - {id: "PM-5", group: "PM", title: "System Inventory"}
+  - {id: "PM-5(1)", group: "PM", title: "Inventory of Personally Identifiable Information", baselines: ["P"], enhances: "PM-5"}
+  - {id: "PM-6", group: "PM", title: "Measures of Performance", baselines: ["P"]}
+  - {id: "PM-7", group: "PM", title: "Enterprise Architecture", baselines: ["P"]}
+  - {id: "PM-7(1)", group: "PM", title: "Offloading", enhances: "PM-7"}
+  - {id: "PM-8", group: "PM", title: "Critical Infrastructure Plan", baselines: ["P"]}
+  - {id: "PM-9", group: "PM", title: "Risk Management Strategy", baselines: ["P"]}
+  - {id: "PM-10", group: "PM", title: "Authorization Process", baselines: ["P"]}
+  - {id: "PM-11", group: "PM", title: "Mission and Business Process Definition", baselines: ["P"]}
+  - {id: "PM-12", group: "PM", title: "Insider Threat Program"}
+  - {id: "PM-13", group: "PM", title: "Security and Privacy Workforce", baselines: ["P"]}
+  - {id: "PM-14", group: "PM", title: "Testing, Training, and Monitoring", baselines: ["P"]}
+  - {id: "PM-15", group: "PM", title: "Security and Privacy Groups and Associations"}
+  - {id: "PM-16", group: "PM", title: "Threat Awareness Program"}
+  - {id: "PM-16(1)", group: "PM", title: "Automated Means for Sharing Threat Intelligence", enhances: "PM-16"}
+  - {id: "PM-17", group: "PM", title: "Protecting Controlled Unclassified Information on External Systems", baselines: ["P"]}
+  - {id: "PM-18", group: "PM", title: "Privacy Program Plan", baselines: ["P"]}
+  - {id: "PM-19", group: "PM", title: "Privacy Program Leadership Role", baselines: ["P"]}
+  - {id: "PM-20", group: "PM", title: "Dissemination of Privacy Program Information", baselines: ["P"]}
+  - {id: "PM-20(1)", group: "PM", title: "Privacy Policies on Websites, Applications, and Digital Services", baselines: ["P"], enhances: "PM-20"}
+  - {id: "PM-21", group: "PM", title: "Accounting of Disclosures", baselines: ["P"]}
+  - {id: "PM-22", group: "PM", title: "Personally Identifiable Information Quality Management", baselines: ["P"]}
+  - {id: "PM-23", group: "PM", title: "Data Governance Body"}
+  - {id: "PM-24", group: "PM", title: "Data Integrity Board", baselines: ["P"]}
+  - {id: "PM-25", group: "PM", title: "Minimization of Personally Identifiable Information Used in Testing, Training, and Research", baselines: ["P"]}
+  - {id: "PM-26", group: "PM", title: "Complaint Management", baselines: ["P"]}
+  - {id: "PM-27", group: "PM", title: "Privacy Reporting", baselines: ["P"]}
+  - {id: "PM-28", group: "PM", title: "Risk Framing", baselines: ["P"]}
+  - {id: "PM-29", group: "PM", title: "Risk Management Program Leadership Roles"}
+  - {id: "PM-30", group: "PM", title: "Supply Chain Risk Management Strategy"}
+  - {id: "PM-30(1)", group: "PM", title: "Suppliers of Critical or Mission-essential Items", enhances: "PM-30"}
+  - {id: "PM-31", group: "PM", title: "Continuous Monitoring Strategy", baselines: ["P"]}
+  - {id: "PM-32", group: "PM", title: "Purposing"}
+  - {id: "PS-1", group: "PS", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "PS-2", group: "PS", title: "Position Risk Designation", baselines: ["L", "M", "H"]}
+  - {id: "PS-3", group: "PS", title: "Personnel Screening", baselines: ["L", "M", "H"]}
+  - {id: "PS-3(1)", group: "PS", title: "Classified Information", enhances: "PS-3"}
+  - {id: "PS-3(2)", group: "PS", title: "Formal Indoctrination", enhances: "PS-3"}
+  - {id: "PS-3(3)", group: "PS", title: "Information Requiring Special Protective Measures", enhances: "PS-3"}
+  - {id: "PS-3(4)", group: "PS", title: "Citizenship Requirements", enhances: "PS-3"}
+  - {id: "PS-4", group: "PS", title: "Personnel Termination", baselines: ["L", "M", "H"]}
+  - {id: "PS-4(1)", group: "PS", title: "Post-employment Requirements", enhances: "PS-4"}
+  - {id: "PS-4(2)", group: "PS", title: "Automated Actions", baselines: ["H"], enhances: "PS-4"}
+  - {id: "PS-5", group: "PS", title: "Personnel Transfer", baselines: ["L", "M", "H"]}
+  - {id: "PS-6", group: "PS", title: "Access Agreements", baselines: ["L", "M", "H", "P"]}
+  - {id: "PS-6(2)", group: "PS", title: "Classified Information Requiring Special Protection", enhances: "PS-6"}
+  - {id: "PS-6(3)", group: "PS", title: "Post-employment Requirements", enhances: "PS-6"}
+  - {id: "PS-7", group: "PS", title: "External Personnel Security", baselines: ["L", "M", "H"]}
+  - {id: "PS-8", group: "PS", title: "Personnel Sanctions", baselines: ["L", "M", "H"]}
+  - {id: "PS-9", group: "PS", title: "Position Descriptions", baselines: ["L", "M", "H"]}
+  - {id: "PT-1", group: "PT", title: "Policy and Procedures", baselines: ["P"]}
+  - {id: "PT-2", group: "PT", title: "Authority to Process Personally Identifiable Information", baselines: ["P"]}
+  - {id: "PT-2(1)", group: "PT", title: "Data Tagging", enhances: "PT-2"}
+  - {id: "PT-2(2)", group: "PT", title: "Automation", enhances: "PT-2"}
+  - {id: "PT-3", group: "PT", title: "Personally Identifiable Information Processing Purposes", baselines: ["P"]}
+  - {id: "PT-3(1)", group: "PT", title: "Data Tagging", enhances: "PT-3"}
+  - {id: "PT-3(2)", group: "PT", title: "Automation", enhances: "PT-3"}
+  - {id: "PT-4", group: "PT", title: "Consent", baselines: ["P"]}
+  - {id: "PT-4(1)", group: "PT", title: "Tailored Consent", enhances: "PT-4"}
+  - {id: "PT-4(2)", group: "PT", title: "Just-in-time Consent", enhances: "PT-4"}
+  - {id: "PT-4(3)", group: "PT", title: "Revocation", enhances: "PT-4"}
+  - {id: "PT-5", group: "PT", title: "Privacy Notice", baselines: ["P"]}
+  - {id: "PT-5(1)", group: "PT", title: "Just-in-time Notice", enhances: "PT-5"}
+  - {id: "PT-5(2)", group: "PT", title: "Privacy Act Statements", baselines: ["P"], enhances: "PT-5"}
+  - {id: "PT-6", group: "PT", title: "System of Records Notice", baselines: ["P"]}
+  - {id: "PT-6(1)", group: "PT", title: "Routine Uses", baselines: ["P"], enhances: "PT-6"}
+  - {id: "PT-6(2)", group: "PT", title: "Exemption Rules", baselines: ["P"], enhances: "PT-6"}
+  - {id: "PT-7", group: "PT", title: "Specific Categories of Personally Identifiable Information", baselines: ["P"]}
+  - {id: "PT-7(1)", group: "PT", title: "Social Security Numbers", baselines: ["P"], enhances: "PT-7"}
+  - {id: "PT-7(2)", group: "PT", title: "First Amendment Information", baselines: ["P"], enhances: "PT-7"}
+  - {id: "PT-8", group: "PT", title: "Computer Matching Requirements", baselines: ["P"]}
+  - {id: "RA-1", group: "RA", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "RA-2", group: "RA", title: "Security Categorization", baselines: ["L", "M", "H"]}
+  - {id: "RA-2(1)", group: "RA", title: "Impact-level Prioritization", enhances: "RA-2"}
+  - {id: "RA-3", group: "RA", title: "Risk Assessment", baselines: ["L", "M", "H", "P"]}
+  - {id: "RA-3(1)", group: "RA", title: "Supply Chain Risk Assessment", baselines: ["L", "M", "H"], enhances: "RA-3"}
+  - {id: "RA-3(2)", group: "RA", title: "Use of All-source Intelligence", enhances: "RA-3"}
+  - {id: "RA-3(3)", group: "RA", title: "Dynamic Threat Awareness", enhances: "RA-3"}
+  - {id: "RA-3(4)", group: "RA", title: "Predictive Cyber Analytics", enhances: "RA-3"}
+  - {id: "RA-5", group: "RA", title: "Vulnerability Monitoring and Scanning", baselines: ["L", "M", "H"]}
+  - {id: "RA-5(2)", group: "RA", title: "Update Vulnerabilities to Be Scanned", baselines: ["L", "M", "H"], enhances: "RA-5"}
+  - {id: "RA-5(3)", group: "RA", title: "Breadth and Depth of Coverage", enhances: "RA-5"}
+  - {id: "RA-5(4)", group: "RA", title: "Discoverable Information", baselines: ["H"], enhances: "RA-5"}
+  - {id: "RA-5(5)", group: "RA", title: "Privileged Access", baselines: ["M", "H"], enhances: "RA-5"}
+  - {id: "RA-5(6)", group: "RA", title: "Automated Trend Analyses", enhances: "RA-5"}
+  - {id: "RA-5(8)", group: "RA", title: "Review Historic Audit Logs", enhances: "RA-5"}
+  - {id: "RA-5(10)", group: "RA", title: "Correlate Scanning Information", enhances: "RA-5"}
+  - {id: "RA-5(11)", group: "RA", title: "Public Disclosure Program", baselines: ["L", "M", "H"], enhances: "RA-5"}
+  - {id: "RA-6", group: "RA", title: "Technical Surveillance Countermeasures Survey"}
+  - {id: "RA-7", group: "RA", title: "Risk Response", baselines: ["L", "M", "H", "P"]}
+  - {id: "RA-8", group: "RA", title: "Privacy Impact Assessments", baselines: ["P"]}
+  - {id: "RA-9", group: "RA", title: "Criticality Analysis", baselines: ["M", "H"]}
+  - {id: "RA-10", group: "RA", title: "Threat Hunting"}
+  - {id: "SA-1", group: "SA", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "SA-2", group: "SA", title: "Allocation of Resources", baselines: ["L", "M", "H", "P"]}
+  - {id: "SA-3", group: "SA", title: "System Development Life Cycle", baselines: ["L", "M", "H", "P"]}
+  - {id: "SA-3(1)", group: "SA", title: "Manage Preproduction Environment", enhances: "SA-3"}
+  - {id: "SA-3(2)", group: "SA", title: "Use of Live or Operational Data", enhances: "SA-3"}
+  - {id: "SA-3(3)", group: "SA", title: "Technology Refresh", enhances: "SA-3"}
+  - {id: "SA-4", group: "SA", title: "Acquisition Process", baselines: ["L", "M", "H", "P"]}
+  - {id: "SA-4(1)", group: "SA", title: "Functional Properties of Controls", baselines: ["M", "H"], enhances: "SA-4"}
+  - {id: "SA-4(2)", group: "SA", title: "Design and Implementation Information for Controls", baselines: ["M", "H"], enhances: "SA-4"}
+  - {id: "SA-4(3)", group: "SA", title: "Development Methods, Techniques, and Practices", enhances: "SA-4"}
+  - {id: "SA-4(5)", group: "SA", title: "System, Component, and Service Configurations", baselines: ["H"], enhances: "SA-4"}
+  - {id: "SA-4(6)", group: "SA", title: "Use of Information Assurance Products", enhances: "SA-4"}
+  - {id: "SA-4(7)", group: "SA", title: "NIAP-approved Protection Profiles ", enhances: "SA-4"}
+  - {id: "SA-4(8)", group: "SA", title: "Continuous Monitoring Plan for Controls", enhances: "SA-4"}
+  - {id: "SA-4(9)", group: "SA", title: "Functions, Ports, Protocols, and Services in Use", baselines: ["M", "H"], enhances: "SA-4"}
+  - {id: "SA-4(10)", group: "SA", title: "Use of Approved PIV Products", baselines: ["L", "M", "H"], enhances: "SA-4"}
+  - {id: "SA-4(11)", group: "SA", title: "System of Records", enhances: "SA-4"}
+  - {id: "SA-4(12)", group: "SA", title: "Data Ownership", enhances: "SA-4"}
+  - {id: "SA-5", group: "SA", title: "System Documentation", baselines: ["L", "M", "H"]}
+  - {id: "SA-8", group: "SA", title: "Security and Privacy Engineering Principles", baselines: ["L", "M", "H"]}
+  - {id: "SA-8(1)", group: "SA", title: "Clear Abstractions", enhances: "SA-8"}
+  - {id: "SA-8(2)", group: "SA", title: "Least Common Mechanism", enhances: "SA-8"}
+  - {id: "SA-8(3)", group: "SA", title: "Modularity and Layering", enhances: "SA-8"}
+  - {id: "SA-8(4)", group: "SA", title: "Partially Ordered Dependencies", enhances: "SA-8"}
+  - {id: "SA-8(5)", group: "SA", title: "Efficiently Mediated Access", enhances: "SA-8"}
+  - {id: "SA-8(6)", group: "SA", title: "Minimized Sharing", enhances: "SA-8"}
+  - {id: "SA-8(7)", group: "SA", title: "Reduced Complexity", enhances: "SA-8"}
+  - {id: "SA-8(8)", group: "SA", title: "Secure Evolvability", enhances: "SA-8"}
+  - {id: "SA-8(9)", group: "SA", title: "Trusted Components", enhances: "SA-8"}
+  - {id: "SA-8(10)", group: "SA", title: "Hierarchical Trust", enhances: "SA-8"}
+  - {id: "SA-8(11)", group: "SA", title: "Inverse Modification Threshold", enhances: "SA-8"}
+  - {id: "SA-8(12)", group: "SA", title: "Hierarchical Protection", enhances: "SA-8"}
+  - {id: "SA-8(13)", group: "SA", title: "Minimized Security Elements", enhances: "SA-8"}
+  - {id: "SA-8(14)", group: "SA", title: "Least Privilege", enhances: "SA-8"}
+  - {id: "SA-8(15)", group: "SA", title: "Predicate Permission", enhances: "SA-8"}
+  - {id: "SA-8(16)", group: "SA", title: "Self-reliant Trustworthiness", enhances: "SA-8"}
+  - {id: "SA-8(17)", group: "SA", title: "Secure Distributed Composition", enhances: "SA-8"}
+  - {id: "SA-8(18)", group: "SA", title: "Trusted Communications Channels", enhances: "SA-8"}
+  - {id: "SA-8(19)", group: "SA", title: "Continuous Protection", enhances: "SA-8"}
+  - {id: "SA-8(20)", group: "SA", title: "Secure Metadata Management", enhances: "SA-8"}
+  - {id: "SA-8(21)", group: "SA", title: "Self-analysis", enhances: "SA-8"}
+  - {id: "SA-8(22)", group: "SA", title: "Accountability and Traceability", enhances: "SA-8"}
+  - {id: "SA-8(23)", group: "SA", title: "Secure Defaults", enhances: "SA-8"}
+  - {id: "SA-8(24)", group: "SA", title: "Secure Failure and Recovery", enhances: "SA-8"}
+  - {id: "SA-8(25)", group: "SA", title: "Economic Security", enhances: "SA-8"}
+  - {id: "SA-8(26)", group: "SA", title: "Performance Security", enhances: "SA-8"}
+  - {id: "SA-8(27)", group: "SA", title: "Human Factored Security", enhances: "SA-8"}
+  - {id: "SA-8(28)", group: "SA", title: "Acceptable Security", enhances: "SA-8"}
+  - {id: "SA-8(29)", group: "SA", title: "Repeatable and Documented Procedures", enhances: "SA-8"}
+  - {id: "SA-8(30)", group: "SA", title: "Procedural Rigor", enhances: "SA-8"}
+  - {id: "SA-8(31)", group: "SA", title: "Secure System Modification", enhances: "SA-8"}
+  - {id: "SA-8(32)", group: "SA", title: "Sufficient Documentation", enhances: "SA-8"}
+  - {id: "SA-8(33)", group: "SA", title: "Minimization", baselines: ["P"], enhances: "SA-8"}
+  - {id: "SA-9", group: "SA", title: "External System Services", baselines: ["L", "M", "H", "P"]}
+  - {id: "SA-9(1)", group: "SA", title: "Risk Assessments and Organizational Approvals", enhances: "SA-9"}
+  - {id: "SA-9(2)", group: "SA", title: "Identification of Functions, Ports, Protocols, and Services", baselines: ["M", "H"], enhances: "SA-9"}
+  - {id: "SA-9(3)", group: "SA", title: "Establish and Maintain Trust Relationship with Providers", enhances: "SA-9"}
+  - {id: "SA-9(4)", group: "SA", title: "Consistent Interests of Consumers and Providers", enhances: "SA-9"}
+  - {id: "SA-9(5)", group: "SA", title: "Processing, Storage, and Service Location", enhances: "SA-9"}
+  - {id: "SA-9(6)", group: "SA", title: "Organization-controlled Cryptographic Keys", enhances: "SA-9"}
+  - {id: "SA-9(7)", group: "SA", title: "Organization-controlled Integrity Checking", enhances: "SA-9"}
+  - {id: "SA-9(8)", group: "SA", title: "Processing and Storage Location — U.S. Jurisdiction", enhances: "SA-9"}
+  - {id: "SA-10", group: "SA", title: "Developer Configuration Management", baselines: ["M", "H"]}
+  - {id: "SA-10(1)", group: "SA", title: "Software and Firmware Integrity Verification", enhances: "SA-10"}
+  - {id: "SA-10(2)", group: "SA", title: "Alternative Configuration Management Processes", enhances: "SA-10"}
+  - {id: "SA-10(3)", group: "SA", title: "Hardware Integrity Verification", enhances: "SA-10"}
+  - {id: "SA-10(4)", group: "SA", title: "Trusted Generation", enhances: "SA-10"}
+  - {id: "SA-10(5)", group: "SA", title: "Mapping Integrity for Version Control", enhances: "SA-10"}
+  - {id: "SA-10(6)", group: "SA", title: "Trusted Distribution", enhances: "SA-10"}
+  - {id: "SA-10(7)", group: "SA", title: "Security and Privacy Representatives", enhances: "SA-10"}
+  - {id: "SA-11", group: "SA", title: "Developer Testing and Evaluation", baselines: ["M", "H", "P"]}
+  - {id: "SA-11(1)", group: "SA", title: "Static Code Analysis", enhances: "SA-11"}
+  - {id: "SA-11(2)", group: "SA", title: "Threat Modeling and Vulnerability Analyses", enhances: "SA-11"}
+  - {id: "SA-11(3)", group: "SA", title: "Independent Verification of Assessment Plans and Evidence", enhances: "SA-11"}
+  - {id: "SA-11(4)", group: "SA", title: "Manual Code Reviews", enhances: "SA-11"}
+  - {id: "SA-11(5)", group: "SA", title: "Penetration Testing", enhances: "SA-11"}
+  - {id: "SA-11(6)", group: "SA", title: "Attack Surface Reviews", enhances: "SA-11"}
+  - {id: "SA-11(7)", group: "SA", title: "Verify Scope of Testing and Evaluation", enhances: "SA-11"}
+  - {id: "SA-11(8)", group: "SA", title: "Dynamic Code Analysis", enhances: "SA-11"}
+  - {id: "SA-11(9)", group: "SA", title: "Interactive Application Security Testing", enhances: "SA-11"}
+  - {id: "SA-15", group: "SA", title: "Development Process, Standards, and Tools", baselines: ["M", "H"]}
+  - {id: "SA-15(1)", group: "SA", title: "Quality Metrics", enhances: "SA-15"}
+  - {id: "SA-15(2)", group: "SA", title: "Security and Privacy Tracking Tools", enhances: "SA-15"}
+  - {id: "SA-15(3)", group: "SA", title: "Criticality Analysis", baselines: ["M", "H"], enhances: "SA-15"}
+  - {id: "SA-15(5)", group: "SA", title: "Attack Surface Reduction", enhances: "SA-15"}
+  - {id: "SA-15(6)", group: "SA", title: "Continuous Improvement", enhances: "SA-15"}
+  - {id: "SA-15(7)", group: "SA", title: "Automated Vulnerability Analysis", enhances: "SA-15"}
+  - {id: "SA-15(8)", group: "SA", title: "Reuse of Threat and Vulnerability Information", enhances: "SA-15"}
+  - {id: "SA-15(10)", group: "SA", title: "Incident Response Plan", enhances: "SA-15"}
+  - {id: "SA-15(11)", group: "SA", title: "Archive System or Component", enhances: "SA-15"}
+  - {id: "SA-15(12)", group: "SA", title: "Minimize Personally Identifiable Information", enhances: "SA-15"}
+  - {id: "SA-15(13)", group: "SA", title: "Logging Syntax", enhances: "SA-15"}
+  - {id: "SA-16", group: "SA", title: "Developer-provided Training", baselines: ["H"]}
+  - {id: "SA-17", group: "SA", title: "Developer Security and Privacy Architecture and Design", baselines: ["H"]}
+  - {id: "SA-17(1)", group: "SA", title: "Formal Policy Model", enhances: "SA-17"}
+  - {id: "SA-17(2)", group: "SA", title: "Security-relevant Components", enhances: "SA-17"}
+  - {id: "SA-17(3)", group: "SA", title: "Formal Correspondence", enhances: "SA-17"}
+  - {id: "SA-17(4)", group: "SA", title: "Informal Correspondence", enhances: "SA-17"}
+  - {id: "SA-17(5)", group: "SA", title: "Conceptually Simple Design", enhances: "SA-17"}
+  - {id: "SA-17(6)", group: "SA", title: "Structure for Testing", enhances: "SA-17"}
+  - {id: "SA-17(7)", group: "SA", title: "Structure for Least Privilege", enhances: "SA-17"}
+  - {id: "SA-17(8)", group: "SA", title: "Orchestration", enhances: "SA-17"}
+  - {id: "SA-17(9)", group: "SA", title: "Design Diversity", enhances: "SA-17"}
+  - {id: "SA-20", group: "SA", title: "Customized Development of Critical Components"}
+  - {id: "SA-21", group: "SA", title: "Developer Screening", baselines: ["H"]}
+  - {id: "SA-22", group: "SA", title: "Unsupported System Components", baselines: ["L", "M", "H"]}
+  - {id: "SA-23", group: "SA", title: "Specialization"}
+  - {id: "SA-24", group: "SA", title: "Design For Cyber Resiliency"}
+  - {id: "SC-1", group: "SC", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "SC-2", group: "SC", title: "Separation of System and User Functionality", baselines: ["M", "H"]}
+  - {id: "SC-2(1)", group: "SC", title: "Interfaces for Non-privileged Users", enhances: "SC-2"}
+  - {id: "SC-2(2)", group: "SC", title: "Disassociability", enhances: "SC-2"}
+  - {id: "SC-3", group: "SC", title: "Security Function Isolation", baselines: ["H"]}
+  - {id: "SC-3(1)", group: "SC", title: "Hardware Separation", enhances: "SC-3"}
+  - {id: "SC-3(2)", group: "SC", title: "Access and Flow Control Functions", enhances: "SC-3"}
+  - {id: "SC-3(3)", group: "SC", title: "Minimize Nonsecurity Functionality", enhances: "SC-3"}
+  - {id: "SC-3(4)", group: "SC", title: "Module Coupling and Cohesiveness", enhances: "SC-3"}
+  - {id: "SC-3(5)", group: "SC", title: "Layered Structures", enhances: "SC-3"}
+  - {id: "SC-4", group: "SC", title: "Information in Shared System Resources", baselines: ["M", "H"]}
+  - {id: "SC-4(2)", group: "SC", title: "Multilevel or Periods Processing", enhances: "SC-4"}
+  - {id: "SC-5", group: "SC", title: "Denial-of-service Protection", baselines: ["L", "M", "H"]}
+  - {id: "SC-5(1)", group: "SC", title: "Restrict Ability to Attack Other Systems", enhances: "SC-5"}
+  - {id: "SC-5(2)", group: "SC", title: "Capacity, Bandwidth, and Redundancy", enhances: "SC-5"}
+  - {id: "SC-5(3)", group: "SC", title: "Detection and Monitoring", enhances: "SC-5"}
+  - {id: "SC-6", group: "SC", title: "Resource Availability"}
+  - {id: "SC-7", group: "SC", title: "Boundary Protection", baselines: ["L", "M", "H"]}
+  - {id: "SC-7(3)", group: "SC", title: "Access Points", baselines: ["M", "H"], enhances: "SC-7"}
+  - {id: "SC-7(4)", group: "SC", title: "External Telecommunications Services", baselines: ["M", "H"], enhances: "SC-7"}
+  - {id: "SC-7(5)", group: "SC", title: "Deny by Default — Allow by Exception", baselines: ["M", "H"], enhances: "SC-7"}
+  - {id: "SC-7(7)", group: "SC", title: "Split Tunneling for Remote Devices", baselines: ["M", "H"], enhances: "SC-7"}
+  - {id: "SC-7(8)", group: "SC", title: "Route Traffic to Authenticated Proxy Servers", baselines: ["M", "H"], enhances: "SC-7"}
+  - {id: "SC-7(9)", group: "SC", title: "Restrict Threatening Outgoing Communications Traffic", enhances: "SC-7"}
+  - {id: "SC-7(10)", group: "SC", title: "Prevent Exfiltration", enhances: "SC-7"}
+  - {id: "SC-7(11)", group: "SC", title: "Restrict Incoming Communications Traffic", enhances: "SC-7"}
+  - {id: "SC-7(12)", group: "SC", title: "Host-based Protection", enhances: "SC-7"}
+  - {id: "SC-7(13)", group: "SC", title: "Isolation of Security Tools, Mechanisms, and Support Components", enhances: "SC-7"}
+  - {id: "SC-7(14)", group: "SC", title: "Protect Against Unauthorized Physical Connections", enhances: "SC-7"}
+  - {id: "SC-7(15)", group: "SC", title: "Networked Privileged Accesses", enhances: "SC-7"}
+  - {id: "SC-7(16)", group: "SC", title: "Prevent Discovery of System Components", enhances: "SC-7"}
+  - {id: "SC-7(17)", group: "SC", title: "Automated Enforcement of Protocol Formats", enhances: "SC-7"}
+  - {id: "SC-7(18)", group: "SC", title: "Fail Secure", baselines: ["H"], enhances: "SC-7"}
+  - {id: "SC-7(19)", group: "SC", title: "Block Communication from Non-organizationally Configured Hosts", enhances: "SC-7"}
+  - {id: "SC-7(20)", group: "SC", title: "Dynamic Isolation and Segregation", enhances: "SC-7"}
+  - {id: "SC-7(21)", group: "SC", title: "Isolation of System Components", baselines: ["H"], enhances: "SC-7"}
+  - {id: "SC-7(22)", group: "SC", title: "Separate Subnets for Connecting to Different Security Domains", enhances: "SC-7"}
+  - {id: "SC-7(23)", group: "SC", title: "Disable Sender Feedback on Protocol Validation Failure", enhances: "SC-7"}
+  - {id: "SC-7(24)", group: "SC", title: "Personally Identifiable Information", baselines: ["P"], enhances: "SC-7"}
+  - {id: "SC-7(25)", group: "SC", title: "Unclassified National Security System Connections", enhances: "SC-7"}
+  - {id: "SC-7(26)", group: "SC", title: "Classified National Security System Connections", enhances: "SC-7"}
+  - {id: "SC-7(27)", group: "SC", title: "Unclassified Non-national Security System Connections", enhances: "SC-7"}
+  - {id: "SC-7(28)", group: "SC", title: "Connections to Public Networks", enhances: "SC-7"}
+  - {id: "SC-7(29)", group: "SC", title: "Separate Subnets to Isolate Functions", enhances: "SC-7"}
+  - {id: "SC-8", group: "SC", title: "Transmission Confidentiality and Integrity", baselines: ["M", "H"]}
+  - {id: "SC-8(1)", group: "SC", title: "Cryptographic Protection", baselines: ["M", "H"], enhances: "SC-8"}
+  - {id: "SC-8(2)", group: "SC", title: "Pre- and Post-transmission Handling", enhances: "SC-8"}
+  - {id: "SC-8(3)", group: "SC", title: "Cryptographic Protection for Message Externals", enhances: "SC-8"}
+  - {id: "SC-8(4)", group: "SC", title: "Conceal or Randomize Communications", enhances: "SC-8"}
+  - {id: "SC-8(5)", group: "SC", title: "Protected Distribution System", enhances: "SC-8"}
+  - {id: "SC-10", group: "SC", title: "Network Disconnect", baselines: ["M", "H"]}
+  - {id: "SC-11", group: "SC", title: "Trusted Path"}
+  - {id: "SC-11(1)", group: "SC", title: "Irrefutable Communications Path", enhances: "SC-11"}
+  - {id: "SC-12", group: "SC", title: "Cryptographic Key Establishment and Management", baselines: ["L", "M", "H"]}
+  - {id: "SC-12(1)", group: "SC", title: "Availability", baselines: ["H"], enhances: "SC-12"}
+  - {id: "SC-12(2)", group: "SC", title: "Symmetric Keys", enhances: "SC-12"}
+  - {id: "SC-12(3)", group: "SC", title: "Asymmetric Keys", enhances: "SC-12"}
+  - {id: "SC-12(6)", group: "SC", title: "Physical Control of Keys", enhances: "SC-12"}
+  - {id: "SC-13", group: "SC", title: "Cryptographic Protection", baselines: ["L", "M", "H"]}
+  - {id: "SC-15", group: "SC", title: "Collaborative Computing Devices and Applications", baselines: ["L", "M", "H"]}
+  - {id: "SC-15(1)", group: "SC", title: "Physical or Logical Disconnect", enhances: "SC-15"}
+  - {id: "SC-15(3)", group: "SC", title: "Disabling and Removal in Secure Work Areas", enhances: "SC-15"}
+  - {id: "SC-15(4)", group: "SC", title: "Explicitly Indicate Current Participants", enhances: "SC-15"}
+  - {id: "SC-16", group: "SC", title: "Transmission of Security and Privacy Attributes"}
+  - {id: "SC-16(1)", group: "SC", title: "Integrity Verification", enhances: "SC-16"}
+  - {id: "SC-16(2)", group: "SC", title: "Anti-spoofing Mechanisms", enhances: "SC-16"}
+  - {id: "SC-16(3)", group: "SC", title: "Cryptographic Binding", enhances: "SC-16"}
+  - {id: "SC-17", group: "SC", title: "Public Key Infrastructure Certificates", baselines: ["M", "H"]}
+  - {id: "SC-18", group: "SC", title: "Mobile Code", baselines: ["M", "H"]}
+  - {id: "SC-18(1)", group: "SC", title: "Identify Unacceptable Code and Take Corrective Actions", enhances: "SC-18"}
+  - {id: "SC-18(2)", group: "SC", title: "Acquisition, Development, and Use", enhances: "SC-18"}
+  - {id: "SC-18(3)", group: "SC", title: "Prevent Downloading and Execution", enhances: "SC-18"}
+  - {id: "SC-18(4)", group: "SC", title: "Prevent Automatic Execution", enhances: "SC-18"}
+  - {id: "SC-18(5)", group: "SC", title: "Allow Execution Only in Confined Environments", enhances: "SC-18"}
+  - {id: "SC-20", group: "SC", title: "Secure Name/Address Resolution Service (Authoritative Source)", baselines: ["L", "M", "H"]}
+  - {id: "SC-20(2)", group: "SC", title: "Data Origin and Integrity", enhances: "SC-20"}
+  - {id: "SC-21", group: "SC", title: "Secure Name/Address Resolution Service (Recursive or Caching Resolver)", baselines: ["L", "M", "H"]}
+  - {id: "SC-22", group: "SC", title: "Architecture and Provisioning for Name/Address Resolution Service", baselines: ["L", "M", "H"]}
+  - {id: "SC-23", group: "SC", title: "Session Authenticity", baselines: ["M", "H"]}
+  - {id: "SC-23(1)", group: "SC", title: "Invalidate Session Identifiers at Logout", enhances: "SC-23"}
+  - {id: "SC-23(3)", group: "SC", title: "Unique System-generated Session Identifiers", enhances: "SC-23"}
+  - {id: "SC-23(5)", group: "SC", title: "Allowed Certificate Authorities", enhances: "SC-23"}
+  - {id: "SC-24", group: "SC", title: "Fail in Known State", baselines: ["H"]}
+  - {id: "SC-25", group: "SC", title: "Thin Nodes"}
+  - {id: "SC-26", group: "SC", title: "Decoys"}
+  - {id: "SC-27", group: "SC", title: "Platform-independent Applications"}
+  - {id: "SC-28", group: "SC", title: "Protection of Information at Rest", baselines: ["M", "H"]}
+  - {id: "SC-28(1)", group: "SC", title: "Cryptographic Protection", baselines: ["M", "H"], enhances: "SC-28"}
+  - {id: "SC-28(2)", group: "SC", title: "Offline Storage", enhances: "SC-28"}
+  - {id: "SC-28(3)", group: "SC", title: "Cryptographic Keys", enhances: "SC-28"}
+  - {id: "SC-29", group: "SC", title: "Heterogeneity"}
+  - {id: "SC-29(1)", group: "SC", title: "Virtualization Techniques", enhances: "SC-29"}
+  - {id: "SC-30", group: "SC", title: "Concealment and Misdirection"}
+  - {id: "SC-30(2)", group: "SC", title: "Randomness", enhances: "SC-30"}
+  - {id: "SC-30(3)", group: "SC", title: "Change Processing and Storage Locations", enhances: "SC-30"}
+  - {id: "SC-30(4)", group: "SC", title: "Misleading Information", enhances: "SC-30"}
+  - {id: "SC-30(5)", group: "SC", title: "Concealment of System Components", enhances: "SC-30"}
+  - {id: "SC-31", group: "SC", title: "Covert Channel Analysis"}
+  - {id: "SC-31(1)", group: "SC", title: "Test Covert Channels for Exploitability", enhances: "SC-31"}
+  - {id: "SC-31(2)", group: "SC", title: "Maximum Bandwidth", enhances: "SC-31"}
+  - {id: "SC-31(3)", group: "SC", title: "Measure Bandwidth in Operational Environments", enhances: "SC-31"}
+  - {id: "SC-32", group: "SC", title: "System Partitioning"}
+  - {id: "SC-32(1)", group: "SC", title: "Separate Physical Domains for Privileged Functions", enhances: "SC-32"}
+  - {id: "SC-34", group: "SC", title: "Non-modifiable Executable Programs"}
+  - {id: "SC-34(1)", group: "SC", title: "No Writable Storage", enhances: "SC-34"}
+  - {id: "SC-34(2)", group: "SC", title: "Integrity Protection on Read-only Media", enhances: "SC-34"}
+  - {id: "SC-35", group: "SC", title: "External Malicious Code Identification"}
+  - {id: "SC-36", group: "SC", title: "Distributed Processing and Storage"}
+  - {id: "SC-36(1)", group: "SC", title: "Polling Techniques", enhances: "SC-36"}
+  - {id: "SC-36(2)", group: "SC", title: "Synchronization", enhances: "SC-36"}
+  - {id: "SC-37", group: "SC", title: "Out-of-band Channels"}
+  - {id: "SC-37(1)", group: "SC", title: "Ensure Delivery and Transmission", enhances: "SC-37"}
+  - {id: "SC-38", group: "SC", title: "Operations Security"}
+  - {id: "SC-39", group: "SC", title: "Process Isolation", baselines: ["L", "M", "H"]}
+  - {id: "SC-39(1)", group: "SC", title: "Hardware Separation", enhances: "SC-39"}
+  - {id: "SC-39(2)", group: "SC", title: "Separate Execution Domain Per Thread", enhances: "SC-39"}
+  - {id: "SC-40", group: "SC", title: "Wireless Link Protection"}
+  - {id: "SC-40(1)", group: "SC", title: "Electromagnetic Interference", enhances: "SC-40"}
+  - {id: "SC-40(2)", group: "SC", title: "Reduce Detection Potential", enhances: "SC-40"}
+  - {id: "SC-40(3)", group: "SC", title: "Imitative or Manipulative Communications Deception", enhances: "SC-40"}
+  - {id: "SC-40(4)", group: "SC", title: "Signal Parameter Identification", enhances: "SC-40"}
+  - {id: "SC-41", group: "SC", title: "Port and I/O Device Access"}
+  - {id: "SC-42", group: "SC", title: "Sensor Capability and Data"}
+  - {id: "SC-42(1)", group: "SC", title: "Reporting to Authorized Individuals or Roles", enhances: "SC-42"}
+  - {id: "SC-42(2)", group: "SC", title: "Authorized Use", enhances: "SC-42"}
+  - {id: "SC-42(4)", group: "SC", title: "Notice of Collection", enhances: "SC-42"}
+  - {id: "SC-42(5)", group: "SC", title: "Collection Minimization", enhances: "SC-42"}
+  - {id: "SC-43", group: "SC", title: "Usage Restrictions"}
+  - {id: "SC-44", group: "SC", title: "Detonation Chambers"}
+  - {id: "SC-45", group: "SC", title: "System Time Synchronization"}
+  - {id: "SC-45(1)", group: "SC", title: "Synchronization with Authoritative Time Source", enhances: "SC-45"}
+  - {id: "SC-45(2)", group: "SC", title: "Secondary Authoritative Time Source", enhances: "SC-45"}
+  - {id: "SC-46", group: "SC", title: "Cross Domain Policy Enforcement"}
+  - {id: "SC-47", group: "SC", title: "Alternate Communications Paths"}
+  - {id: "SC-48", group: "SC", title: "Sensor Relocation"}
+  - {id: "SC-48(1)", group: "SC", title: "Dynamic Relocation of Sensors or Monitoring Capabilities", enhances: "SC-48"}
+  - {id: "SC-49", group: "SC", title: "Hardware-enforced Separation and Policy Enforcement"}
+  - {id: "SC-50", group: "SC", title: "Software-enforced Separation and Policy Enforcement"}
+  - {id: "SC-51", group: "SC", title: "Hardware-based Protection"}
+  - {id: "SI-1", group: "SI", title: "Policy and Procedures", baselines: ["L", "M", "H", "P"]}
+  - {id: "SI-2", group: "SI", title: "Flaw Remediation", baselines: ["L", "M", "H"]}
+  - {id: "SI-2(2)", group: "SI", title: "Automated Flaw Remediation Status", baselines: ["M", "H"], enhances: "SI-2"}
+  - {id: "SI-2(3)", group: "SI", title: "Time to Remediate Flaws and Benchmarks for Corrective Actions", enhances: "SI-2"}
+  - {id: "SI-2(4)", group: "SI", title: "Automated Patch Management Tools", enhances: "SI-2"}
+  - {id: "SI-2(5)", group: "SI", title: "Automatic Software and Firmware Updates", enhances: "SI-2"}
+  - {id: "SI-2(6)", group: "SI", title: "Removal of Previous Versions of Software and Firmware", enhances: "SI-2"}
+  - {id: "SI-2(7)", group: "SI", title: "Root Cause Analysis", enhances: "SI-2"}
+  - {id: "SI-3", group: "SI", title: "Malicious Code Protection", baselines: ["L", "M", "H"]}
+  - {id: "SI-3(4)", group: "SI", title: "Updates Only by Privileged Users", enhances: "SI-3"}
+  - {id: "SI-3(6)", group: "SI", title: "Testing and Verification", enhances: "SI-3"}
+  - {id: "SI-3(8)", group: "SI", title: "Detect Unauthorized Commands", enhances: "SI-3"}
+  - {id: "SI-3(10)", group: "SI", title: "Malicious Code Analysis", enhances: "SI-3"}
+  - {id: "SI-4", group: "SI", title: "System Monitoring", baselines: ["L", "M", "H"]}
+  - {id: "SI-4(1)", group: "SI", title: "System-wide Intrusion Detection System", enhances: "SI-4"}
+  - {id: "SI-4(2)", group: "SI", title: "Automated Tools and Mechanisms for Real-time Analysis", baselines: ["M", "H"], enhances: "SI-4"}
+  - {id: "SI-4(3)", group: "SI", title: "Automated Tool and Mechanism Integration", enhances: "SI-4"}
+  - {id: "SI-4(4)", group: "SI", title: "Inbound and Outbound Communications Traffic", baselines: ["M", "H"], enhances: "SI-4"}
+  - {id: "SI-4(5)", group: "SI", title: "System-generated Alerts", baselines: ["M", "H"], enhances: "SI-4"}
+  - {id: "SI-4(7)", group: "SI", title: "Automated Response to Suspicious Events", enhances: "SI-4"}
+  - {id: "SI-4(9)", group: "SI", title: "Testing of Monitoring Tools and Mechanisms", enhances: "SI-4"}
+  - {id: "SI-4(10)", group: "SI", title: "Visibility of Encrypted Communications", baselines: ["H"], enhances: "SI-4"}
+  - {id: "SI-4(11)", group: "SI", title: "Analyze Communications Traffic Anomalies", enhances: "SI-4"}
+  - {id: "SI-4(12)", group: "SI", title: "Automated Organization-generated Alerts", baselines: ["H"], enhances: "SI-4"}
+  - {id: "SI-4(13)", group: "SI", title: "Analyze Traffic and Event Patterns", enhances: "SI-4"}
+  - {id: "SI-4(14)", group: "SI", title: "Wireless Intrusion Detection", baselines: ["H"], enhances: "SI-4"}
+  - {id: "SI-4(15)", group: "SI", title: "Wireless to Wireline Communications", enhances: "SI-4"}
+  - {id: "SI-4(16)", group: "SI", title: "Correlate Monitoring Information", enhances: "SI-4"}
+  - {id: "SI-4(17)", group: "SI", title: "Integrated Situational Awareness", enhances: "SI-4"}
+  - {id: "SI-4(18)", group: "SI", title: "Analyze Traffic and Covert Exfiltration", enhances: "SI-4"}
+  - {id: "SI-4(19)", group: "SI", title: "Risk for Individuals", enhances: "SI-4"}
+  - {id: "SI-4(20)", group: "SI", title: "Privileged Users", baselines: ["H"], enhances: "SI-4"}
+  - {id: "SI-4(21)", group: "SI", title: "Probationary Periods", enhances: "SI-4"}
+  - {id: "SI-4(22)", group: "SI", title: "Unauthorized Network Services", baselines: ["H"], enhances: "SI-4"}
+  - {id: "SI-4(23)", group: "SI", title: "Host-based Devices", enhances: "SI-4"}
+  - {id: "SI-4(24)", group: "SI", title: "Indicators of Compromise", enhances: "SI-4"}
+  - {id: "SI-4(25)", group: "SI", title: "Optimize Network Traffic Analysis", enhances: "SI-4"}
+  - {id: "SI-5", group: "SI", title: "Security Alerts, Advisories, and Directives", baselines: ["L", "M", "H"]}
+  - {id: "SI-5(1)", group: "SI", title: "Automated Alerts and Advisories", baselines: ["H"], enhances: "SI-5"}
+  - {id: "SI-6", group: "SI", title: "Security and Privacy Function Verification", baselines: ["H"]}
+  - {id: "SI-6(2)", group: "SI", title: "Automation Support for Distributed Testing", enhances: "SI-6"}
+  - {id: "SI-6(3)", group: "SI", title: "Report Verification Results", enhances: "SI-6"}
+  - {id: "SI-7", group: "SI", title: "Software, Firmware, and Information Integrity", baselines: ["M", "H"]}
+  - {id: "SI-7(1)", group: "SI", title: "Integrity Checks", baselines: ["M", "H"], enhances: "SI-7"}
+  - {id: "SI-7(2)", group: "SI", title: "Automated Notifications of Integrity Violations", baselines: ["H"], enhances: "SI-7"}
+  - {id: "SI-7(3)", group: "SI", title: "Centrally Managed Integrity Tools", enhances: "SI-7"}
+  - {id: "SI-7(5)", group: "SI", title: "Automated Response to Integrity Violations", baselines: ["H"], enhances: "SI-7"}
+  - {id: "SI-7(6)", group: "SI", title: "Cryptographic Protection", enhances: "SI-7"}
+  - {id: "SI-7(7)", group: "SI", title: "Integration of Detection and Response", baselines: ["M", "H"], enhances: "SI-7"}
+  - {id: "SI-7(8)", group: "SI", title: "Auditing Capability for Significant Events", enhances: "SI-7"}
+  - {id: "SI-7(9)", group: "SI", title: "Verify Boot Process", enhances: "SI-7"}
+  - {id: "SI-7(10)", group: "SI", title: "Protection of Boot Firmware", enhances: "SI-7"}
+  - {id: "SI-7(12)", group: "SI", title: "Integrity Verification", enhances: "SI-7"}
+  - {id: "SI-7(15)", group: "SI", title: "Code Authentication", baselines: ["H"], enhances: "SI-7"}
+  - {id: "SI-7(16)", group: "SI", title: "Time Limit on Process Execution Without Supervision", enhances: "SI-7"}
+  - {id: "SI-7(17)", group: "SI", title: "Runtime Application Self-protection", enhances: "SI-7"}
+  - {id: "SI-8", group: "SI", title: "Spam Protection", baselines: ["M", "H"]}
+  - {id: "SI-8(2)", group: "SI", title: "Automatic Updates", baselines: ["M", "H"], enhances: "SI-8"}
+  - {id: "SI-8(3)", group: "SI", title: "Continuous Learning Capability", enhances: "SI-8"}
+  - {id: "SI-10", group: "SI", title: "Information Input Validation", baselines: ["M", "H"]}
+  - {id: "SI-10(1)", group: "SI", title: "Manual Override Capability", enhances: "SI-10"}
+  - {id: "SI-10(2)", group: "SI", title: "Review and Resolve Errors", enhances: "SI-10"}
+  - {id: "SI-10(3)", group: "SI", title: "Predictable Behavior", enhances: "SI-10"}
+  - {id: "SI-10(4)", group: "SI", title: "Timing Interactions", enhances: "SI-10"}
+  - {id: "SI-10(5)", group: "SI", title: "Restrict Inputs to Trusted Sources and Approved Formats", enhances: "SI-10"}
+  - {id: "SI-10(6)", group: "SI", title: "Injection Prevention", enhances: "SI-10"}
+  - {id: "SI-11", group: "SI", title: "Error Handling", baselines: ["M", "H"]}
+  - {id: "SI-12", group: "SI", title: "Information Management and Retention", baselines: ["L", "M", "H", "P"]}
+  - {id: "SI-12(1)", group: "SI", title: "Limit Personally Identifiable Information Elements", baselines: ["P"], enhances: "SI-12"}
+  - {id: "SI-12(2)", group: "SI", title: "Minimize Personally Identifiable Information in Testing, Training, and Research", baselines: ["P"], enhances: "SI-12"}
+  - {id: "SI-12(3)", group: "SI", title: "Information Disposal", baselines: ["P"], enhances: "SI-12"}
+  - {id: "SI-13", group: "SI", title: "Predictable Failure Prevention"}
+  - {id: "SI-13(1)", group: "SI", title: "Transferring Component Responsibilities", enhances: "SI-13"}
+  - {id: "SI-13(3)", group: "SI", title: "Manual Transfer Between Components", enhances: "SI-13"}
+  - {id: "SI-13(4)", group: "SI", title: "Standby Component Installation and Notification", enhances: "SI-13"}
+  - {id: "SI-13(5)", group: "SI", title: "Failover Capability", enhances: "SI-13"}
+  - {id: "SI-14", group: "SI", title: "Non-persistence"}
+  - {id: "SI-14(1)", group: "SI", title: "Refresh from Trusted Sources", enhances: "SI-14"}
+  - {id: "SI-14(2)", group: "SI", title: "Non-persistent Information", enhances: "SI-14"}
+  - {id: "SI-14(3)", group: "SI", title: "Non-persistent Connectivity", enhances: "SI-14"}
+  - {id: "SI-15", group: "SI", title: "Information Output Filtering"}
+  - {id: "SI-16", group: "SI", title: "Memory Protection", baselines: ["M", "H"]}
+  - {id: "SI-17", group: "SI", title: "Fail-safe Procedures"}
+  - {id: "SI-18", group: "SI", title: "Personally Identifiable Information Quality Operations", baselines: ["P"]}
+  - {id: "SI-18(1)", group: "SI", title: "Automation Support", enhances: "SI-18"}
+  - {id: "SI-18(2)", group: "SI", title: "Data Tags", enhances: "SI-18"}
+  - {id: "SI-18(3)", group: "SI", title: "Collection", enhances: "SI-18"}
+  - {id: "SI-18(4)", group: "SI", title: "Individual Requests", baselines: ["P"], enhances: "SI-18"}
+  - {id: "SI-18(5)", group: "SI", title: "Notice of Correction or Deletion", enhances: "SI-18"}
+  - {id: "SI-19", group: "SI", title: "De-identification", baselines: ["P"]}
+  - {id: "SI-19(1)", group: "SI", title: "Collection", enhances: "SI-19"}
+  - {id: "SI-19(2)", group: "SI", title: "Archiving", enhances: "SI-19"}
+  - {id: "SI-19(3)", group: "SI", title: "Release", enhances: "SI-19"}
+  - {id: "SI-19(4)", group: "SI", title: "Removal, Masking, Encryption, Hashing, or Replacement of Direct Identifiers", enhances: "SI-19"}
+  - {id: "SI-19(5)", group: "SI", title: "Statistical Disclosure Control", enhances: "SI-19"}
+  - {id: "SI-19(6)", group: "SI", title: "Differential Privacy", enhances: "SI-19"}
+  - {id: "SI-19(7)", group: "SI", title: "Validated Algorithms and Software", enhances: "SI-19"}
+  - {id: "SI-19(8)", group: "SI", title: "Motivated Intruder", enhances: "SI-19"}
+  - {id: "SI-20", group: "SI", title: "Tainting"}
+  - {id: "SI-21", group: "SI", title: "Information Refresh"}
+  - {id: "SI-22", group: "SI", title: "Information Diversity"}
+  - {id: "SI-23", group: "SI", title: "Information Fragmentation"}
+  - {id: "SR-1", group: "SR", title: "Policy and Procedures", baselines: ["L", "M", "H"]}
+  - {id: "SR-2", group: "SR", title: "Supply Chain Risk Management Plan", baselines: ["L", "M", "H"]}
+  - {id: "SR-2(1)", group: "SR", title: "Establish SCRM Team", baselines: ["L", "M", "H"], enhances: "SR-2"}
+  - {id: "SR-3", group: "SR", title: "Supply Chain Controls and Processes", baselines: ["L", "M", "H"]}
+  - {id: "SR-3(1)", group: "SR", title: "Diverse Supply Base", enhances: "SR-3"}
+  - {id: "SR-3(2)", group: "SR", title: "Limitation of Harm", enhances: "SR-3"}
+  - {id: "SR-3(3)", group: "SR", title: "Sub-tier Flow Down", enhances: "SR-3"}
+  - {id: "SR-4", group: "SR", title: "Provenance"}
+  - {id: "SR-4(1)", group: "SR", title: "Identity", enhances: "SR-4"}
+  - {id: "SR-4(2)", group: "SR", title: "Track and Trace", enhances: "SR-4"}
+  - {id: "SR-4(3)", group: "SR", title: "Validate as Genuine and Not Altered", enhances: "SR-4"}
+  - {id: "SR-4(4)", group: "SR", title: "Supply Chain Integrity — Pedigree", enhances: "SR-4"}
+  - {id: "SR-5", group: "SR", title: "Acquisition Strategies, Tools, and Methods", baselines: ["L", "M", "H"]}
+  - {id: "SR-5(1)", group: "SR", title: "Adequate Supply", enhances: "SR-5"}
+  - {id: "SR-5(2)", group: "SR", title: "Assessments Prior to Selection, Acceptance, Modification, or Update", enhances: "SR-5"}
+  - {id: "SR-6", group: "SR", title: "Supplier Assessments and Reviews", baselines: ["M", "H"]}
+  - {id: "SR-6(1)", group: "SR", title: "Testing and Analysis", enhances: "SR-6"}
+  - {id: "SR-7", group: "SR", title: "Supply Chain Operations Security"}
+  - {id: "SR-8", group: "SR", title: "Notification Agreements", baselines: ["L", "M", "H"]}
+  - {id: "SR-9", group: "SR", title: "Tamper Resistance and Detection", baselines: ["H"]}
+  - {id: "SR-9(1)", group: "SR", title: "Multiple Stages of System Development Life Cycle", baselines: ["H"], enhances: "SR-9"}
+  - {id: "SR-10", group: "SR", title: "Inspection of Systems or Components", baselines: ["L", "M", "H"]}
+  - {id: "SR-11", group: "SR", title: "Component Authenticity", baselines: ["L", "M", "H"]}
+  - {id: "SR-11(1)", group: "SR", title: "Anti-counterfeit Training", baselines: ["L", "M", "H"], enhances: "SR-11"}
+  - {id: "SR-11(2)", group: "SR", title: "Configuration Control for Component Service and Repair", baselines: ["L", "M", "H"], enhances: "SR-11"}
+  - {id: "SR-11(3)", group: "SR", title: "Anti-counterfeit Scanning", enhances: "SR-11"}
+  - {id: "SR-12", group: "SR", title: "Component Disposal", baselines: ["L", "M", "H"]}
