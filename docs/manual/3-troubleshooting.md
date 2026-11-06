@@ -47,7 +47,7 @@ Entries marked **(seen in the pilot)** happened during the Larkspur pilot, so th
 | Cloudflare screens don't match the instructions | [T-28](#t-28-cloudflare-screens-dont-match-the-instructions) |
 | E080 when citing evidence from the other framework's record | [T-29](#t-29-e080-evidence-from-the-other-frameworks-record) |
 | A second framework's workflow changed the wrong record | [T-30](#t-30-a-workflow-acted-on-the-wrong-record) |
-| SOC 2: E002 after adding a category, or E016 | [T-31](#t-31-soc-2-e002-after-adding-a-category-or-e016) |
+| E002 after adding a category, or E016 (SOC 2, HIPAA) | [T-31](#t-31-soc-2-e002-after-adding-a-category-or-e016) |
 | Actions storage is full | [T-32](#t-32-actions-storage-is-full) |
 | P305 on a certification, or the certification PR isn't assigned to anyone | [T-33](#t-33-p305-or-an-unassigned-certification) |
 | ITGC test fails with 403 or "not found" | [T-34](#t-34-itgc-test-fails-with-403-or-not-found) |
@@ -395,9 +395,9 @@ If the message says "this repository has no … record", the prefix is wrong, or
 
 **What you see:** after adding a category (say `privacy`) to `scope.categories` in a SOC 2 record, *validate* fails with many `E002 No assessment file for requirement P1.1 …`; or it fails with `E016 scope.categories: 'privcy' is not a category of SOC 2`.
 
-**Why:** each criterion in a chosen category needs its assessment file, and the files are only created by `grc init`. E016 is a misspelt category; the valid ones are `availability`, `confidentiality`, `processing_integrity` and `privacy` (Security is always included).
+**Why:** each criterion in a chosen category needs its assessment file, and the files are only created by `grc init`. E016 is a misspelt category. For SOC 2 the valid ones are `availability`, `confidentiality`, `processing_integrity` and `privacy` (Security is always included). For HIPAA they are `covered_entity`, `business_associate`, `clearinghouse`, `group_health_plan` and `government` (the core is always included).
 
-**Fix:** correct the spelling, then run `python -m grc --engagement engagement-soc2 init` and commit the new files in the same pull request. Then run *Policies and procedures* to draft the new category's document.
+**Fix:** correct the spelling, then run `python -m grc --engagement <record folder> init` (for example `engagement-soc2`) and commit the new files in the same pull request. Then run *Policies and procedures* to draft the new category's document.
 
 ### T-32: Actions storage is full
 

@@ -7,8 +7,41 @@
 | `iso42001` | ISO/IEC 42001:2023 (AI management system, AIMS) | 27 clauses + 38 Annex A controls | 17 documents | AI system impact assessments (6.1.4, 8.4, A.5) |
 | `iso27001` | ISO/IEC 27001:2022 (information security, ISMS) | 25 clauses + 93 Annex A controls | 20 documents | No impact assessments; risk treatment and the Statement of Applicability drive Annex A |
 | `soc2` | SOC 2 (AICPA Trust Services Criteria, 2017, revised points of focus 2022) | 33 common criteria (Security) + 28 in optional categories | 18 documents (fewer if categories are left out) | An attestation, not a certification; the client chooses categories; see [SOC 2](#soc-2) |
+| `hipaa` | HIPAA Security Rule and Breach Notification Rule (45 CFR Part 164, Subparts C and D) | 63 in the Security Rule + 7 breach notification + 4 for clearinghouses, group health plans and government entities | 17 documents (14 for most clients) | No certification; required and addressable specifications; see [HIPAA](#hipaa) |
 
-Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria.
+Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria. The HIPAA regulations are US Government works; the catalog still restates them in plain words, and the eCFR text is the authority.
+
+## HIPAA
+
+The HIPAA Security Rule (45 CFR 164.302–318) and the Breach Notification Rule (164.400–414), as in force in November 2026. HHS proposed a major revision of the Security Rule on 6 January 2025; it is not final (the regulatory agenda targets July 2027), so the catalog follows the rule in force. The Privacy Rule is not covered.
+
+**Requirements.** 32 standards (the Security Rule's 23, including 164.308(b)(2) for business associates, 164.306(a) and (e), and the seven Breach Notification sections), 21 required and 22 addressable implementation specifications. IDs are the citations: `164.308(a)(1)(ii)(A)` is the risk analysis.
+
+**Required and addressable.** Addressable doesn't mean optional. Nothing in scope can be excluded (E004). Each addressable specification records a decision (164.306(d)):
+
+```yaml
+decision: alternative          # or as_written
+justification: Session tokens expire after 15 minutes on the API, so a workstation logoff timer adds nothing.
+implementation: API tokens expire after 15 minutes of inactivity; kiosks lock after 5 minutes.
+```
+
+An `alternative` needs both the reason and the equivalent measure (E017). Either way the specification stays in scope and its four-part test checks the measure actually taken. Once work on it has started, a missing decision is W114, and it can't be *Ready* until the decision is recorded. The *Security Rule Applicability and Addressable Decisions* report (`soa.md`) has a **Decision** column for every addressable specification. The control matrix shows each requirement's kind: Standard, Required or Addressable.
+
+**Categories.** The core is always in scope: the Security Rule and the parts of the Breach Notification Rule that apply to everyone (definitions and risk assessment, law enforcement delay, burden of proof). Then choose the client's role, which decides the rest:
+
+| Category | Adds | Document |
+|---|---|---|
+| `covered_entity` | Business associate assurances (164.308(b)(1)) and the notices to individuals, the media and HHS (164.404–408) | Covered Entity Duties |
+| `business_associate` | Subcontractor assurances (164.308(b)(2), 164.314(a)(2)(iii)) and notifying the covered entity (164.410) | Business Associate Duties |
+| `clearinghouse`, `group_health_plan`, `government` | The specifications only those organizations have | One each |
+
+Choose at least one role (`--categories business_associate`, or both); until then validation warns (W113). A health-tech vendor serving providers is usually a business associate only.
+
+**Dates.** `dates.stage1` is the **readiness assessment** (the security evaluation, 164.308(a)(8)); `dates.stage2` is the **independent assessment** the client has committed to (a third-party assessor or a customer's audit). HIPAA has no certificate.
+
+**References.** The internal audit evidences 164.308(a)(8), corrective actions 164.308(a)(1)(ii)(B), and the leadership review 164.306(e). HIPAA doesn't require a management review, so a missing one is never a warning.
+
+**Mappings.** `mappings/hipaa__iso27001.yaml` proposes 6 equivalent, 5 subset and 33 related pairs; `mappings/hipaa__soc2.yaml` 24 related pairs. Before approving an `equivalent`, confirm the ISMS scope covers the whole ePHI environment; if it doesn't, downgrade the pair to `related`. In YAML, quote a citation with no parentheses (`'164.410'`): unquoted, it is read as the number 164.41, and validation says so. In the program layer, controls can map to `hipaa` and to NIST SP 800-53 together; NIST SP 800-66 Rev. 2 maps the Security Rule to 800-53.
 
 ## SOC 2
 

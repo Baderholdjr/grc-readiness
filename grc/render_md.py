@@ -83,27 +83,41 @@ def control_matrix(model: Engagement, out: Path):
 def soa(model: Engagement, out: Path):
     rows = applicability_rows(model)
     title = model.term("applicability_title")
-    md = [f"# {model.client} — {title} (draft)\n", GEN, model.term("applicability_intro"),
+    md = [f"# {model.client} — {title} (draft)\n", GEN, model.fmt(model.term("applicability_intro")),
           f" Approval of the {title} is recorded by merging the PR that changes it.\n\n", _table(applicability_headers(model), rows)]
     (out / "soa.md").write_text("".join(md), encoding="utf-8")
     _write_csv(out / "soa.csv", applicability_headers(model), rows)
 
 
+DECISION_LABEL = {"as_written": "As written", "alternative": "Alternative measure"}
+
+
+def _has_decisions(model: Engagement) -> bool:
+    return any(k.get("decision") for k in (model.catalog.get("kinds") or {}).values() if isinstance(k, dict))
+
+
 def applicability_headers(model: Engagement) -> list[str]:
-    return [model.term("applicability_id_header"), "Title", "Applicable", "Justification", "Implementation", "State", "Owner"]
+    third = "Decision" if _has_decisions(model) else "Applicable"
+    return [model.term("applicability_id_header"), "Title", third, "Justification", "Implementation", "State", "Owner"]
 
 
 def applicability_rows(model: Engagement) -> list[list]:
     """The requirements a client may exclude (ISO Annex A; every SOC 2 criterion), with the decision and reason.
     A SOC 2 criterion in a category the client didn't choose is listed as not applicable for that reason."""
     rows = []
+    decisions = _has_decisions(model)
     for r in model.requirements:
-        if model.is_mandatory(r["id"]):
-            continue
         c = model.controls.get(r["id"], {})
         if not model.in_category_scope(r["id"]):
-            rows.append([r["id"], r["title"], "No", f"{model.kind_label(r)} is not in the scope of this engagement.",
-                         "", "Excluded", ""])
+            cat = model.category_index.get(str(r.get("category") or ""), {})
+            rows.append([r["id"], r["title"], "Not in scope" if decisions else "No",
+                         f"{cat.get('short') or model.kind_label(r)} is not in the scope of this engagement.", "", "Excluded", ""])
+            continue
+        if model.is_mandatory(r["id"]) and not model.needs_decision(r["id"]):
+            continue
+        if model.needs_decision(r["id"]):
+            rows.append([r["id"], r["title"], DECISION_LABEL.get(c.get("decision"), "Not yet decided"),
+                         c.get("justification", ""), c.get("implementation", ""), requirement_state(model, r["id"]), c.get("owner", "")])
             continue
         rows.append([r["id"], r["title"], "Yes" if model.is_applicable(r["id"]) else "No",
                      c.get("justification", ""), c.get("implementation", ""), requirement_state(model, r["id"]), c.get("owner", "")])

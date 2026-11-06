@@ -1,0 +1,281 @@
+# HIPAA requirement catalog: the Security Rule (45 CFR Part 164, Subpart C) and the Breach Notification
+# Rule (Subpart D), as in effect in November 2026.
+#
+# The regulations are US Government works and not subject to copyright. Each `intent` restates the rule in
+# plain words; work from the eCFR text (https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164)
+# when interpreting a requirement.
+#
+# HHS proposed a major revision of the Security Rule on 6 January 2025 (90 FR 898). It is not final; the
+# regulatory agenda targets July 2027. This catalog follows the rule in force.
+#
+# HIPAA has no certification. Readiness here means an organization can show, to a customer, an assessor or
+# HHS's Office for Civil Rights, that it meets the rule and has the records to prove it.
+#
+# kind: standard    -> the rule's standards. A standard with implementation specifications is met through them
+#                      and its own policy.
+#       required    -> required implementation specification: must be implemented.
+#       addressable -> addressable implementation specification (164.306(d)): never optional. The record holds
+#                      a decision: `decision: as_written`, or `decision: alternative` with the reason it isn't
+#                      reasonable and appropriate as written (`justification`) and the equivalent measure taken
+#                      (`implementation`). Either way it stays in scope and its evidence is tested.
+# category: core (the Security Rule and the parts of the Breach Notification Rule that apply to everyone) is
+#   always in scope. Choose the client's role: covered_entity, business_associate, or both (W113 until one is
+#   chosen). clearinghouse, group_health_plan and government only for those organizations.
+
+framework:
+  id: hipaa
+  name: HIPAA Security Rule and Breach Notification Rule (45 CFR Part 164, Subparts C and D)
+  short_name: HIPAA
+  management_system: Security program for electronic protected health information (ePHI)
+  source: https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164
+
+kinds:
+  standard:    {label: "Standard", short: "Standard", mandatory: true}
+  required:    {label: "Required implementation specification", short: "Required", mandatory: true}
+  addressable: {label: "Addressable implementation specification", short: "Addressable", mandatory: true, decision: true}
+
+choose_at_least_one: [covered_entity, business_associate]
+
+categories:
+  - {id: core,               title: "Security Rule and breach notification (every regulated entity)", short: "Core", required: true}
+  - {id: covered_entity,     title: "Covered entity duties", short: "Covered entity"}
+  - {id: business_associate, title: "Business associate duties", short: "Business associate"}
+  - {id: clearinghouse,     title: "Health care clearinghouse functions", short: "Clearinghouse"}
+  - {id: group_health_plan, title: "Group health plan sponsors", short: "Group health plan"}
+  - {id: government,        title: "Government entities (other arrangements)", short: "Government"}
+
+groups:
+  - {id: GEN, title: "164.306 General rules"}
+  - {id: ADM, title: "164.308 Administrative safeguards"}
+  - {id: PHY, title: "164.310 Physical safeguards"}
+  - {id: TEC, title: "164.312 Technical safeguards"}
+  - {id: ORG, title: "164.314 Organizational requirements"}
+  - {id: DOC, title: "164.316 Policies, procedures and documentation"}
+  - {id: BRN, title: "164.400-414 Breach notification"}
+
+requirements:
+  - {id: "164.306(a)", kind: standard, category: core, group: GEN, title: "General requirements",
+     intent: "Ensure the confidentiality, integrity and availability of all ePHI created, received, maintained or transmitted; protect against reasonably anticipated threats, hazards and impermissible uses or disclosures; and ensure the workforce complies.",
+     evidence_examples: ["Security program charter", "Scope of ePHI systems and data flows"]}
+  - {id: "164.306(e)", kind: standard, category: core, group: GEN, title: "Maintenance",
+     intent: "Review and modify security measures as needed to keep protecting ePHI, and update their documentation.",
+     evidence_examples: ["Security measure review records", "Updated policies with version history"]}
+  - {id: "164.308(a)(1)(i)", kind: standard, category: core, group: ADM, title: "Security management process",
+     intent: "Implement policies and procedures to prevent, detect, contain and correct security violations.",
+     evidence_examples: ["Security management policy", "Security program plan"]}
+  - {id: "164.308(a)(1)(ii)(A)", kind: required, category: core, group: ADM, title: "Risk analysis",
+     intent: "Conduct an accurate and thorough assessment of the potential risks and vulnerabilities to the confidentiality, integrity and availability of all ePHI held.",
+     evidence_examples: ["Enterprise-wide risk analysis covering every ePHI system", "ePHI asset inventory and data-flow maps"]}
+  - {id: "164.308(a)(1)(ii)(B)", kind: required, category: core, group: ADM, title: "Risk management",
+     intent: "Implement security measures that reduce risks and vulnerabilities to a reasonable and appropriate level.",
+     evidence_examples: ["Risk treatment plan with owners and dates", "Evidence the planned measures are in place"]}
+  - {id: "164.308(a)(1)(ii)(C)", kind: required, category: core, group: ADM, title: "Sanction policy",
+     intent: "Apply appropriate sanctions to workforce members who fail to comply with security policies and procedures.",
+     evidence_examples: ["Sanction policy", "Records of sanctions applied"]}
+  - {id: "164.308(a)(1)(ii)(D)", kind: required, category: core, group: ADM, title: "Information system activity review",
+     intent: "Regularly review records of system activity, such as audit logs, access reports and security incident tracking reports.",
+     evidence_examples: ["Log review procedure", "Dated review records or SIEM alert triage"]}
+  - {id: "164.308(a)(2)", kind: standard, category: core, group: ADM, title: "Assigned security responsibility",
+     intent: "Identify the security official responsible for developing and implementing the security policies and procedures.",
+     evidence_examples: ["Appointment of the security official", "Role description"]}
+  - {id: "164.308(a)(3)(i)", kind: standard, category: core, group: ADM, title: "Workforce security",
+     intent: "Ensure workforce members have appropriate access to ePHI and prevent those who should not have access from obtaining it.",
+     evidence_examples: ["Workforce security policy"]}
+  - {id: "164.308(a)(3)(ii)(A)", kind: addressable, category: core, group: ADM, title: "Authorization and/or supervision",
+     intent: "Authorize or supervise workforce members who work with ePHI or in locations where it might be accessed.",
+     evidence_examples: ["Access authorization records", "Supervision arrangements"]}
+  - {id: "164.308(a)(3)(ii)(B)", kind: addressable, category: core, group: ADM, title: "Workforce clearance procedure",
+     intent: "Determine that a workforce member's access to ePHI is appropriate.",
+     evidence_examples: ["Background check procedure", "Clearance records"]}
+  - {id: "164.308(a)(3)(ii)(C)", kind: addressable, category: core, group: ADM, title: "Termination procedures",
+     intent: "End access to ePHI when employment or engagement ends, or when clearance no longer applies.",
+     evidence_examples: ["Leaver procedure", "Leaver list reconciled to access removal, with dates"]}
+  - {id: "164.308(a)(4)(i)", kind: standard, category: core, group: ADM, title: "Information access management",
+     intent: "Implement policies and procedures for authorizing access to ePHI consistent with the Privacy Rule.",
+     evidence_examples: ["Access management policy"]}
+  - {id: "164.308(a)(4)(ii)(A)", kind: required, category: clearinghouse, group: ADM, title: "Isolating health care clearinghouse functions",
+     intent: "A clearinghouse that is part of a larger organization protects its ePHI from unauthorized access by the larger organization.",
+     evidence_examples: ["Segregation design", "Access restrictions between the clearinghouse and the parent"]}
+  - {id: "164.308(a)(4)(ii)(B)", kind: addressable, category: core, group: ADM, title: "Access authorization",
+     intent: "Grant access to ePHI, for example through a workstation, transaction, program or process.",
+     evidence_examples: ["Access request and approval records"]}
+  - {id: "164.308(a)(4)(ii)(C)", kind: addressable, category: core, group: ADM, title: "Access establishment and modification",
+     intent: "Establish, document, review and modify a user's right of access.",
+     evidence_examples: ["Periodic access review records", "Access change tickets"]}
+  - {id: "164.308(a)(5)(i)", kind: standard, category: core, group: ADM, title: "Security awareness and training",
+     intent: "Run a security awareness and training program for all workforce members, including management.",
+     evidence_examples: ["Training program", "Completion records"]}
+  - {id: "164.308(a)(5)(ii)(A)", kind: addressable, category: core, group: ADM, title: "Security reminders",
+     intent: "Give periodic security updates.",
+     evidence_examples: ["Security reminder communications"]}
+  - {id: "164.308(a)(5)(ii)(B)", kind: addressable, category: core, group: ADM, title: "Protection from malicious software",
+     intent: "Have procedures for guarding against, detecting and reporting malicious software.",
+     evidence_examples: ["Anti-malware / EDR coverage report", "Malware reporting procedure"]}
+  - {id: "164.308(a)(5)(ii)(C)", kind: addressable, category: core, group: ADM, title: "Log-in monitoring",
+     intent: "Monitor log-in attempts and report discrepancies.",
+     evidence_examples: ["Failed log-in alerts", "Review of sign-in reports"]}
+  - {id: "164.308(a)(5)(ii)(D)", kind: addressable, category: core, group: ADM, title: "Password management",
+     intent: "Create, change and safeguard passwords.",
+     evidence_examples: ["Password standard", "Identity provider password and MFA settings"]}
+  - {id: "164.308(a)(6)(i)", kind: standard, category: core, group: ADM, title: "Security incident procedures",
+     intent: "Implement policies and procedures to address security incidents.",
+     evidence_examples: ["Incident response policy"]}
+  - {id: "164.308(a)(6)(ii)", kind: required, category: core, group: ADM, title: "Response and reporting",
+     intent: "Identify and respond to suspected or known security incidents, mitigate their harmful effects where practicable, and document incidents and outcomes.",
+     evidence_examples: ["Incident log", "Incident reports with mitigation and outcome"]}
+  - {id: "164.308(a)(7)(i)", kind: standard, category: core, group: ADM, title: "Contingency plan",
+     intent: "Have policies and procedures for responding to an emergency or other occurrence that damages systems containing ePHI.",
+     evidence_examples: ["Contingency plan"]}
+  - {id: "164.308(a)(7)(ii)(A)", kind: required, category: core, group: ADM, title: "Data backup plan",
+     intent: "Create and maintain retrievable exact copies of ePHI.",
+     evidence_examples: ["Backup configuration", "Backup success reports"]}
+  - {id: "164.308(a)(7)(ii)(B)", kind: required, category: core, group: ADM, title: "Disaster recovery plan",
+     intent: "Have procedures to restore any loss of data.",
+     evidence_examples: ["Disaster recovery plan", "Restore records"]}
+  - {id: "164.308(a)(7)(ii)(C)", kind: required, category: core, group: ADM, title: "Emergency mode operation plan",
+     intent: "Have procedures to continue critical processes that protect ePHI while operating in emergency mode.",
+     evidence_examples: ["Emergency mode procedures"]}
+  - {id: "164.308(a)(7)(ii)(D)", kind: addressable, category: core, group: ADM, title: "Testing and revision procedures",
+     intent: "Periodically test and revise contingency plans.",
+     evidence_examples: ["Contingency or DR test reports", "Plan revisions after tests"]}
+  - {id: "164.308(a)(7)(ii)(E)", kind: addressable, category: core, group: ADM, title: "Applications and data criticality analysis",
+     intent: "Assess the relative criticality of specific applications and data in support of the contingency plan.",
+     evidence_examples: ["Criticality analysis or business impact analysis"]}
+  - {id: "164.308(a)(8)", kind: standard, category: core, group: ADM, title: "Evaluation",
+     intent: "Perform periodic technical and nontechnical evaluations, at first against the Security Rule and then after environmental or operational changes, of how well policies and procedures meet it.",
+     evidence_examples: ["Security evaluation report", "Internal or third-party assessment results"]}
+  - {id: "164.308(b)(1)", kind: standard, category: covered_entity, group: ADM, title: "Business associate contracts and other arrangements",
+     intent: "A covered entity may let a business associate create, receive, maintain or transmit ePHI on its behalf only with satisfactory written assurances that it will safeguard the information. (A business associate's duty for its subcontractors is 164.308(b)(2).)",
+     evidence_examples: ["Business associate inventory", "Executed business associate agreements"]}
+  - {id: "164.308(b)(2)", kind: standard, category: business_associate, group: ADM, title: "Business associate's subcontractors",
+     intent: "A business associate may let a subcontractor create, receive, maintain or transmit ePHI on its behalf only with satisfactory written assurances, under 164.314(a), that the subcontractor will safeguard it.",
+     evidence_examples: ["Subcontractor inventory", "Executed subcontractor business associate agreements"]}
+  - {id: "164.308(b)(3)", kind: required, category: core, group: ADM, title: "Written contract or other arrangement",
+     intent: "Document the satisfactory assurances through a written contract or other arrangement that meets 164.314(a).",
+     evidence_examples: ["Business associate agreements meeting 164.314(a)"]}
+  - {id: "164.310(a)(1)", kind: standard, category: core, group: PHY, title: "Facility access controls",
+     intent: "Limit physical access to electronic information systems and the facilities they are housed in, while allowing properly authorized access.",
+     evidence_examples: ["Facility access policy", "Data centre provider assurance reports"]}
+  - {id: "164.310(a)(2)(i)", kind: addressable, category: core, group: PHY, title: "Contingency operations",
+     intent: "Allow facility access in support of restoring lost data under the disaster recovery and emergency mode operations plans.",
+     evidence_examples: ["Emergency facility access procedure"]}
+  - {id: "164.310(a)(2)(ii)", kind: addressable, category: core, group: PHY, title: "Facility security plan",
+     intent: "Safeguard the facility and equipment from unauthorized physical access, tampering and theft.",
+     evidence_examples: ["Facility security plan"]}
+  - {id: "164.310(a)(2)(iii)", kind: addressable, category: core, group: PHY, title: "Access control and validation procedures",
+     intent: "Control and validate a person's access to facilities based on role, including visitor control and access to software programs for testing and revision.",
+     evidence_examples: ["Badge access lists and reviews", "Visitor logs"]}
+  - {id: "164.310(a)(2)(iv)", kind: addressable, category: core, group: PHY, title: "Maintenance records",
+     intent: "Document repairs and modifications to the physical components of a facility related to security, such as hardware, walls, doors and locks.",
+     evidence_examples: ["Facility maintenance log"]}
+  - {id: "164.310(b)", kind: standard, category: core, group: PHY, title: "Workstation use",
+     intent: "Specify the proper functions, the manner of performing them, and the physical attributes of the surroundings of workstations that can access ePHI.",
+     evidence_examples: ["Workstation use policy", "Acceptable use acknowledgements"]}
+  - {id: "164.310(c)", kind: standard, category: core, group: PHY, title: "Workstation security",
+     intent: "Implement physical safeguards for all workstations that access ePHI, restricting access to authorized users.",
+     evidence_examples: ["Device management report (encryption, screen lock)", "Physical workstation safeguards"]}
+  - {id: "164.310(d)(1)", kind: standard, category: core, group: PHY, title: "Device and media controls",
+     intent: "Govern the receipt and removal of hardware and electronic media containing ePHI into, out of and within a facility.",
+     evidence_examples: ["Device and media policy"]}
+  - {id: "164.310(d)(2)(i)", kind: required, category: core, group: PHY, title: "Disposal",
+     intent: "Address the final disposition of ePHI and of the hardware or media it is stored on.",
+     evidence_examples: ["Disposal procedure", "Certificates of destruction"]}
+  - {id: "164.310(d)(2)(ii)", kind: required, category: core, group: PHY, title: "Media re-use",
+     intent: "Remove ePHI from electronic media before the media are made available for re-use.",
+     evidence_examples: ["Sanitization procedure", "Sanitization records"]}
+  - {id: "164.310(d)(2)(iii)", kind: addressable, category: core, group: PHY, title: "Accountability",
+     intent: "Keep a record of the movements of hardware and electronic media and the person responsible.",
+     evidence_examples: ["Asset inventory with custodians", "Media movement log"]}
+  - {id: "164.310(d)(2)(iv)", kind: addressable, category: core, group: PHY, title: "Data backup and storage",
+     intent: "Create a retrievable, exact copy of ePHI, when needed, before moving equipment.",
+     evidence_examples: ["Pre-move backup procedure"]}
+  - {id: "164.312(a)(1)", kind: standard, category: core, group: TEC, title: "Access control",
+     intent: "Allow access to systems that maintain ePHI only to people or software programs granted access rights under 164.308(a)(4).",
+     evidence_examples: ["Access control configuration", "Role and permission design"]}
+  - {id: "164.312(a)(2)(i)", kind: required, category: core, group: TEC, title: "Unique user identification",
+     intent: "Assign a unique name or number to identify and track each user.",
+     evidence_examples: ["Identity provider user export showing no shared accounts"]}
+  - {id: "164.312(a)(2)(ii)", kind: required, category: core, group: TEC, title: "Emergency access procedure",
+     intent: "Have procedures for obtaining necessary ePHI during an emergency.",
+     evidence_examples: ["Break-glass procedure", "Break-glass account monitoring"]}
+  - {id: "164.312(a)(2)(iii)", kind: addressable, category: core, group: TEC, title: "Automatic logoff",
+     intent: "End an electronic session after a set time of inactivity.",
+     evidence_examples: ["Session timeout settings", "Device screen-lock policy"]}
+  - {id: "164.312(a)(2)(iv)", kind: addressable, category: core, group: TEC, title: "Encryption and decryption",
+     intent: "Use a mechanism to encrypt and decrypt ePHI.",
+     evidence_examples: ["Encryption at rest configuration", "Key management records"]}
+  - {id: "164.312(b)", kind: standard, category: core, group: TEC, title: "Audit controls",
+     intent: "Use hardware, software or procedures that record and examine activity in systems that contain or use ePHI.",
+     evidence_examples: ["Audit logging configuration", "Log retention settings"]}
+  - {id: "164.312(c)(1)", kind: standard, category: core, group: TEC, title: "Integrity",
+     intent: "Protect ePHI from improper alteration or destruction.",
+     evidence_examples: ["Integrity controls design"]}
+  - {id: "164.312(c)(2)", kind: addressable, category: core, group: TEC, title: "Mechanism to authenticate ePHI",
+     intent: "Use electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized way.",
+     evidence_examples: ["Checksums, database integrity controls or immutable logs"]}
+  - {id: "164.312(d)", kind: standard, category: core, group: TEC, title: "Person or entity authentication",
+     intent: "Verify that a person or entity seeking access to ePHI is the one claimed.",
+     evidence_examples: ["MFA enforcement settings", "Service authentication design"]}
+  - {id: "164.312(e)(1)", kind: standard, category: core, group: TEC, title: "Transmission security",
+     intent: "Guard against unauthorized access to ePHI transmitted over an electronic communications network.",
+     evidence_examples: ["Network and transmission security design"]}
+  - {id: "164.312(e)(2)(i)", kind: addressable, category: core, group: TEC, title: "Integrity controls",
+     intent: "Ensure electronically transmitted ePHI is not improperly modified without detection until disposed of.",
+     evidence_examples: ["TLS configuration", "Message integrity controls"]}
+  - {id: "164.312(e)(2)(ii)", kind: addressable, category: core, group: TEC, title: "Encryption",
+     intent: "Encrypt ePHI whenever deemed appropriate.",
+     evidence_examples: ["TLS 1.2+ enforcement", "Encrypted email or file transfer configuration"]}
+  - {id: "164.314(a)(1)", kind: standard, category: core, group: ORG, title: "Business associate contracts or other arrangements",
+     intent: "Business associate contracts or other arrangements meet the requirements of 164.314(a)(2); the organization acts on a known pattern of activity or practice that breaches them.",
+     evidence_examples: ["Contract review checklist", "Records of action on business associate breaches"]}
+  - {id: "164.314(a)(2)(i)", kind: required, category: core, group: ORG, title: "Business associate contracts",
+     intent: "The contract requires the business associate to comply with the Security Rule, to have its subcontractors agree to the same, and to report security incidents, including breaches of unsecured PHI.",
+     evidence_examples: ["Business associate agreement template", "Executed agreements"]}
+  - {id: "164.314(a)(2)(ii)", kind: required, category: government, group: ORG, title: "Other arrangements",
+     intent: "Where the covered entity and its business associate are both government entities, other arrangements meeting 164.504(e)(3) may be used.",
+     evidence_examples: ["Memorandum of understanding or law that imposes the requirements"]}
+  - {id: "164.314(a)(2)(iii)", kind: required, category: business_associate, group: ORG, title: "Business associate contracts with subcontractors",
+     intent: "The same requirements apply to contracts between a business associate and a subcontractor.",
+     evidence_examples: ["Subcontractor agreements"]}
+  - {id: "164.314(b)(1)", kind: standard, category: group_health_plan, group: ORG, title: "Requirements for group health plans",
+     intent: "Plan documents require the plan sponsor to reasonably and appropriately safeguard ePHI it creates, receives, maintains or transmits for the plan.",
+     evidence_examples: ["Plan documents"]}
+  - {id: "164.314(b)(2)", kind: required, category: group_health_plan, group: ORG, title: "Implementation specifications (plan documents)",
+     intent: "Plan documents require the sponsor to implement safeguards, ensure adequate separation, have its agents agree to safeguards, and report security incidents.",
+     evidence_examples: ["Amended plan documents"]}
+  - {id: "164.316(a)", kind: standard, category: core, group: DOC, title: "Policies and procedures",
+     intent: "Implement reasonable and appropriate policies and procedures to comply with the Security Rule, and change them as needed, documenting the changes.",
+     evidence_examples: ["Approved policy set", "Change history"]}
+  - {id: "164.316(b)(1)", kind: standard, category: core, group: DOC, title: "Documentation",
+     intent: "Keep the policies and procedures, and records of required actions, activities or assessments, in written (which may be electronic) form.",
+     evidence_examples: ["Document repository"]}
+  - {id: "164.316(b)(2)(i)", kind: required, category: core, group: DOC, title: "Time limit",
+     intent: "Retain the documentation for six years from when it was created or last in effect, whichever is later.",
+     evidence_examples: ["Retention schedule", "Archive showing six years of versions"]}
+  - {id: "164.316(b)(2)(ii)", kind: required, category: core, group: DOC, title: "Availability",
+     intent: "Make the documentation available to those responsible for implementing the procedures it covers.",
+     evidence_examples: ["Policy portal access", "Acknowledgement records"]}
+  - {id: "164.316(b)(2)(iii)", kind: required, category: core, group: DOC, title: "Updates",
+     intent: "Review the documentation periodically and update it as needed in response to environmental or operational changes affecting the security of ePHI.",
+     evidence_examples: ["Document review records"]}
+  - {id: "164.402", kind: standard, category: core, group: BRN, title: "Breach definition and risk assessment",
+     intent: "An acquisition, access, use or disclosure of PHI not permitted by the Privacy Rule is presumed a breach unless one of the three statutory exceptions applies or a documented assessment of at least four factors shows a low probability that the PHI has been compromised. Notification duties apply to unsecured PHI: PHI not rendered unusable, unreadable or indecipherable (for example by encryption meeting HHS guidance).",
+     evidence_examples: ["Breach assessment procedure", "Completed breach risk assessments"]}
+  - {id: "164.404", kind: standard, category: covered_entity, group: BRN, title: "Notification to individuals",
+     intent: "Covered entities notify each affected individual without unreasonable delay and no later than 60 calendar days after discovering a breach of unsecured PHI, with the required content.",
+     evidence_examples: ["Notification procedure and letter template", "Notification records"]}
+  - {id: "164.406", kind: standard, category: covered_entity, group: BRN, title: "Notification to the media",
+     intent: "Covered entities notify prominent media outlets serving a State or jurisdiction when a breach affects more than 500 of its residents, without unreasonable delay and within 60 calendar days of discovery.",
+     evidence_examples: ["Media notification procedure"]}
+  - {id: "164.408", kind: standard, category: covered_entity, group: BRN, title: "Notification to the Secretary",
+     intent: "Covered entities notify HHS: for breaches affecting 500 or more individuals, at the same time as the notice to individuals; for fewer than 500, by keeping a log and reporting them within 60 days after the end of each calendar year.",
+     evidence_examples: ["HHS breach portal submissions", "Breach log"]}
+  - {id: "164.410", kind: standard, category: business_associate, group: BRN, title: "Notification by a business associate",
+     intent: "Business associates notify the covered entity without unreasonable delay and no later than 60 days after discovering a breach, identifying each affected individual where possible.",
+     evidence_examples: ["Business associate notification procedure", "Notifications sent to covered entities"]}
+  - {id: "164.412", kind: standard, category: core, group: BRN, title: "Law enforcement delay",
+     intent: "Delay a notification when a law enforcement official states it would impede a criminal investigation or damage national security, as the rule sets out.",
+     evidence_examples: ["Procedure for law enforcement delay requests"]}
+  - {id: "164.414", kind: standard, category: core, group: BRN, title: "Administrative requirements and burden of proof",
+     intent: "The Privacy Rule's administrative requirements (164.530(b), (d), (e), (g), (h), (i) and (j): training, complaints, sanctions, no retaliation or waiver, policies and documentation) apply to breach handling, and the organization must be able to show that all required notifications were made or that a use or disclosure was not a breach.",
+     evidence_examples: ["Breach documentation retained for six years"]}

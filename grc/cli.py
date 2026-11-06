@@ -474,13 +474,14 @@ def main(argv=None) -> int:
     n = sub.add_parser("new-engagement", help="reset engagement/ and intake/ for a new client")
     n.add_argument("--client", required=True)
     n.add_argument("--start", required=True, help="YYYY-MM-DD")
-    n.add_argument("--stage1", required=True, help="first audit milestone: ISO Stage 1 audit; SOC 2 observation period start")
-    n.add_argument("--stage2", required=True, help="second audit milestone: ISO Stage 2 audit; SOC 2 observation period end")
+    n.add_argument("--stage1", required=True, help="first audit milestone, YYYY-MM-DD: ISO Stage 1 audit; SOC 2 observation period start; HIPAA readiness assessment")
+    n.add_argument("--stage2", required=True, help="second audit milestone, YYYY-MM-DD: ISO Stage 2 audit; SOC 2 observation period end; HIPAA independent assessment")
     n.add_argument("--hours", type=float, default=200)
     n.add_argument("--framework", default="iso42001")
     n.add_argument("--lead", help="engagement lead name")
     n.add_argument("--categories", help="optional categories in scope, comma-separated "
-                   "(SOC 2: availability,confidentiality,processing_integrity,privacy; Security is always included)")
+                   "(SOC 2: availability,confidentiality,processing_integrity,privacy, Security always included; "
+                   "HIPAA: covered_entity and/or business_associate, plus clearinghouse,group_health_plan,government if they apply)")
     n.add_argument("--intake", help="default: intake/ for engagement/, intake-<name>/ for engagement-<name>/")
     n.add_argument("--confirm-reset", action="store_true")
     n.set_defaults(fn=cmd_new)

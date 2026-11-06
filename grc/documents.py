@@ -326,7 +326,7 @@ def load_again(model: Engagement) -> Engagement:
 
 
 # ------------------------------------------------------------------ AI fill
-SYSTEM = """grc-docs: You help a GRC analyst complete an {framework} policy or procedure for a client.
+SYSTEM = """grc-docs: You help a GRC analyst complete a policy or procedure for a client's {framework} program.
 The document contains numbered markers like [[TODO#3: guidance]]. For each marker, write replacement text ONLY
 if the engagement facts or client documents provided support it. Otherwise return null for that marker.
 
