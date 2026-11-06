@@ -1,0 +1,196 @@
+# Framework playbook: reusable engagement content for TX-RAMP readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+#
+# TX-RAMP certification is granted by the Texas Department of Information Resources (DIR) after it reviews the
+# vendor's Assessment Questionnaire (answered in DIR's SPECTRIM portal) and the attached TX-RAMP Security
+# Plan workbook, boundary diagram and data flow diagram. In the engagement record the two dates mean:
+# dates.stage1 = the day the assessment is submitted to DIR; dates.stage2 = the certification decision the
+# client is working towards (or the agency contract date that needs it).
+
+title_suffix: TX-RAMP Readiness Brief
+tldr_template: "Help {client} earn TX-RAMP certification for its cloud service, so Texas state agencies and public universities can buy it."
+usage_heading: Cloud Service, Boundary and Data in Scope
+requirements_heading: TX-RAMP Readiness Requirements
+
+terms:
+  goal: TX-RAMP certification
+  audit_body: Texas DIR (TX-RAMP)
+  focus: TX-RAMP readiness and certification
+  stage1: Assessment submission
+  stage2: Certification decision
+  countdown: assessment submission
+  system: TX-RAMP scoped system
+  applicability_title: TX-RAMP Control Applicability
+  applicability_short: Applicability
+  applicability_intro: "Every TX-RAMP control in the chosen level, with whether {client} implements it. A control marked not applicable names who is responsible for it instead (the customer, or a provider it is inherited from), which DIR asks for in the Security Plan."
+  internal_audit_ref: CA-2
+  corrective_ref: CA-5
+  review_ref: CA-7
+  record_control_ref: AU-11
+  scope_ref: PL-2
+  objectives_ref: PL-2
+  risk_ref: RA-3
+  review_required: "no"
+  applicability_id_header: Control
+
+glossary:
+  - term: TX-RAMP
+    plain: "Texas's security certification for cloud services sold to state agencies, public universities and community colleges. Without it, they can't buy the service."
+    tech: "Texas Government Code 2054.0593; run by the Department of Information Resources (DIR)."
+  - term: Level 1 and Level 2
+    plain: "Level 1 is for public or low-risk information. Level 2 is for confidential or regulated data and asks for about twice as many controls."
+    tech: "TX-RAMP Security Controls Baselines 2.0: 117 controls at Level 1, 223 at Level 2, all from NIST SP 800-53 Rev. 5."
+  - term: Security Plan workbook
+    plain: "DIR's spreadsheet listing every control in your level. For each one you say whether it is in place, who is responsible and how it works."
+    tech: "TX-RAMP Security Plan workbook: Implementation Status, Implementation Responsibility, Implementation Details."
+  - term: Authorization boundary
+    plain: "The line around everything that makes up the cloud service, drawn on a diagram: servers, databases, networks, and the outside services they connect to."
+    tech: "Authorization boundary diagram (ABD), a required attachment."
+  - term: POA&M
+    plain: "A plan of action and milestones: the list of controls not fully in place yet, with the fix and the date."
+    tech: "NIST SP 800-53 CA-5; DIR accepts the FedRAMP template."
+  - term: Inherited control
+    plain: "A control your hosting provider runs for you (for example the data center's physical security) and that you rely on."
+    tech: "Implementation Responsibility: Inherited."
+
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the control described in an approved policy or procedure and in the Security Plan?
+  - key: implemented
+    label: Implemented
+    question: Is the control in place across the whole authorization boundary, at the TX-RAMP parameter values?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing the control operated?
+  - key: tested
+    label: Tested
+    question: Does a test, done the way an assessor would, show the control works?
+
+gap_callout: Treat client statements as hypotheses until evidence shows the control is documented, in place across the boundary at the TX-RAMP parameter values, leaves records, and passes a test.
+
+working_rule: If a control is described but you cannot trace it to an owner, a requirement, and records, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The authorization boundary and data flows are drawn, labelled and match the system inventory.
+  - Every control in the chosen level is implemented, inherited with a named provider, or on the POA&M with a date.
+  - Policies and procedures exist for every control family, are approved, and are reviewed at the TX-RAMP interval.
+  - The Security Plan workbook has a status, a responsibility and details for every control in the level.
+  - Vulnerability scanning, an independent assessment and continuous monitoring are running, with records.
+  - The Assessment Questionnaire is answered and every required document is attached.
+
+phases:
+  - id: validate
+    objective: "Scope & boundary"
+    deliverables:
+      - Kickoff and owner alignment; confirm the target level with the agency sponsor
+      - Draw the authorization boundary and data flow diagrams
+      - Inventory components, external services and inherited controls
+      - Validate gap-analysis claims and evidence
+  - id: governance
+    objective: "Policies & plan"
+    deliverables:
+      - Approve the 17 family policies and procedures
+      - Record TX-RAMP parameter values for every control
+      - Start the POA&M
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Close control gaps (MFA, logging, encryption, scanning, baselines)
+      - Collect evidence and turn on evidence collection
+      - Run the first access review, restore test and incident exercise
+  - id: test
+    objective: "Assess"
+    deliverables:
+      - Test every control in the level against its evidence
+      - Complete the Security Plan workbook
+      - Update the POA&M with findings
+  - id: stage1
+    objective: "Submit to DIR"
+    deliverables:
+      - Answer the Assessment Questionnaire in SPECTRIM
+      - Attach the Security Plan, boundary diagram and data flow diagram
+      - Answer DIR's follow-up questions
+  - id: stage2
+    objective: "Certification"
+    deliverables:
+      - Receive the certification decision
+      - Hand over continuous monitoring and the renewal date
+
+needs:
+  - Maintain the control matrix, system inventory, evidence index, POA&M, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test across the whole boundary.
+  - Draft and revise policies, procedures and Security Plan details for lead review - do not invent operating practices.
+  - Track recurring controls (scans, access reviews, training, contingency tests, assessments).
+  - Name the responsible party for every inherited or customer control.
+
+default_guardrails:
+  - "{client} owns its controls and evidence; our team structures, reviews, tests, and challenges."
+  - DIR decides certification. We prepare the submission; we don't speak for DIR or the agency.
+  - No customer data in this repository or in our working files. Evidence is pointed to where it lives.
+  - Escalate unsupported claims in the Security Plan and questions about the target level to the engagement lead.
+
+default_risks:
+  - Security Plan details that restate the control text instead of saying how it is done.
+  - Inherited controls with no named provider or no provider attestation.
+  - A boundary diagram that leaves out external services or the development environment.
+  - TX-RAMP parameter values not met (for example review intervals or account disable times).
+
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`): one policy and procedures document per control family, which
+# is how DIR's guide expects the "-1" policy controls to be met. Each family document supports every control
+# in the family; documents for Level 2 controls are drafted only when level_2 is in scope.
+documents:
+  review_every_days: 365
+  library:
+    - {id: "DOC-TXR-AC", title: "Access Control Policy and Procedures", kind: "policy", template: "access.md", satisfies: ["AC-1", "AC-2", "AC-2(3)", "AC-2(5)", "AC-2(7)", "AC-2(9)", "AC-2(12)", "AC-3", "AC-4", "AC-5", "AC-6", "AC-6(1)", "AC-6(2)", "AC-6(5)", "AC-6(7)", "AC-6(9)", "AC-6(10)", "AC-7", "AC-11", "AC-12", "AC-14", "AC-17", "AC-17(1)", "AC-17(2)", "AC-17(3)", "AC-17(4)", "AC-17(9)", "AC-18", "AC-19", "AC-19(5)", "AC-20", "AC-20(1)", "AC-22"], sections: ["Purpose", "Policy", "Account management", "Least privilege and separation of duties", "Sign-in protection", "Remote, wireless and mobile access", "Information flow and publicly accessible content", "Access reviews", "Review"]}
+    - {id: "DOC-TXR-AT", title: "Security Awareness and Training Policy and Procedures", kind: "policy", template: "awareness.md", satisfies: ["AT-1", "AT-2", "AT-2(2)", "AT-2(3)", "AT-3", "AT-4"], sections: ["Purpose", "Policy", "Awareness training", "Role-based training", "Records", "Review"]}
+    - {id: "DOC-TXR-AU", title: "Audit Logging and Accountability Policy and Procedures", kind: "policy", template: "audit.md", satisfies: ["AU-1", "AU-2", "AU-3", "AU-3(1)", "AU-4", "AU-5", "AU-6", "AU-8", "AU-9", "AU-11", "AU-12"], sections: ["Purpose", "Policy", "Events logged", "Storage and protection", "Review and reporting", "Review"]}
+    - {id: "DOC-TXR-CA", title: "Security Assessment, Authorization and Continuous Monitoring Policy and Procedures", kind: "policy", template: "assessment.md", satisfies: ["CA-1", "CA-2", "CA-3", "CA-5", "CA-6", "CA-7", "CA-7(4)", "CA-8", "CA-9"], sections: ["Purpose", "Policy", "Control assessments", "Plan of action and milestones (POA&M)", "Authorization", "Continuous monitoring", "Interconnections", "Review"]}
+    - {id: "DOC-TXR-CM", title: "Configuration Management Policy and Procedures", kind: "policy", template: "configuration.md", satisfies: ["CM-1", "CM-2", "CM-2(3)", "CM-3", "CM-3(2)", "CM-3(4)", "CM-4", "CM-4(2)", "CM-5", "CM-5(5)", "CM-6", "CM-7", "CM-7(1)", "CM-7(2)", "CM-7(5)", "CM-8", "CM-8(1)", "CM-9", "CM-10", "CM-11", "CM-12"], sections: ["Purpose", "Policy", "Baseline configuration", "Change control", "Secure settings and least functionality", "Inventory", "Review"]}
+    - {id: "DOC-TXR-CP", title: "Contingency Planning, Backup and Recovery Policy and Procedures", kind: "policy", template: "contingency.md", satisfies: ["CP-1", "CP-2", "CP-3", "CP-4", "CP-6", "CP-7", "CP-8", "CP-9", "CP-9(1)", "CP-9(8)", "CP-10"], sections: ["Purpose", "Policy", "Contingency plan", "Backups", "Alternate processing and storage", "Training and testing", "Review"]}
+    - {id: "DOC-TXR-IA", title: "Identification and Authentication Policy and Procedures", kind: "policy", template: "identity.md", satisfies: ["IA-1", "IA-2", "IA-2(1)", "IA-2(8)", "IA-3", "IA-4", "IA-4(4)", "IA-5", "IA-5(1)", "IA-5(2)", "IA-5(6)", "IA-5(7)", "IA-6", "IA-7", "IA-8", "IA-11"], sections: ["Purpose", "Policy", "Users", "Devices and services", "Authenticators", "External users", "Review"]}
+    - {id: "DOC-TXR-IR", title: "Incident Response Policy and Procedures", kind: "policy", template: "incident.md", satisfies: ["IR-1", "IR-2", "IR-3", "IR-3(2)", "IR-4", "IR-5", "IR-6", "IR-7", "IR-8", "IR-9"], sections: ["Purpose", "Policy", "Reporting", "Handling", "Plan, training and testing", "Lessons learned", "Review"]}
+    - {id: "DOC-TXR-MA", title: "System Maintenance Policy and Procedures", kind: "policy", template: "maintenance.md", satisfies: ["MA-1", "MA-2", "MA-3", "MA-3(1)", "MA-3(2)", "MA-3(3)", "MA-4", "MA-5", "MA-6"], sections: ["Purpose", "Policy", "Controlled maintenance", "Tools and remote maintenance", "Maintenance personnel", "Timely maintenance", "Review"]}
+    - {id: "DOC-TXR-MP", title: "Media Protection Policy and Procedures", kind: "policy", template: "media.md", satisfies: ["MP-1", "MP-2", "MP-3", "MP-4", "MP-5", "MP-6", "MP-7"], sections: ["Purpose", "Policy", "Access and marking", "Storage and transport", "Sanitisation", "Use", "Review"]}
+    - {id: "DOC-TXR-PE", title: "Physical and Environmental Protection Policy and Procedures", kind: "policy", template: "physical.md", satisfies: ["PE-1", "PE-2", "PE-3", "PE-4", "PE-5", "PE-6", "PE-6(1)", "PE-8", "PE-9", "PE-10", "PE-11", "PE-12", "PE-13", "PE-14", "PE-15", "PE-16", "PE-17"], sections: ["Purpose", "Policy", "Data centres and inherited controls", "Company facilities", "Environmental protections", "Alternate work sites", "Review"]}
+    - {id: "DOC-TXR-PL", title: "Security Planning and Rules of Behavior Policy and Procedures", kind: "policy", template: "planning.md", satisfies: ["PL-1", "PL-2", "PL-4", "PL-4(1)", "PL-8"], sections: ["Purpose", "Policy", "Security plan", "Rules of behavior", "Architecture", "Review"]}
+    - {id: "DOC-TXR-PS", title: "Personnel Security Policy and Procedures", kind: "policy", template: "personnel.md", satisfies: ["PS-1", "PS-2", "PS-3", "PS-4", "PS-5", "PS-6", "PS-7", "PS-8"], sections: ["Purpose", "Policy", "Position risk and screening", "Termination and transfer", "Access agreements and third parties", "Sanctions", "Review"]}
+    - {id: "DOC-TXR-RA", title: "Risk Assessment and Vulnerability Management Policy and Procedures", kind: "policy", template: "risk.md", satisfies: ["RA-1", "RA-2", "RA-3", "RA-5", "RA-5(2)", "RA-5(3)", "RA-5(5)", "RA-7"], sections: ["Purpose", "Policy", "Security categorisation", "Risk assessment", "Vulnerability scanning", "Responding to risk", "Review"]}
+    - {id: "DOC-TXR-SA", title: "System and Services Acquisition Policy and Procedures", kind: "policy", template: "acquisition.md", satisfies: ["SA-1", "SA-3", "SA-4", "SA-4(1)", "SA-4(2)", "SA-4(9)", "SA-5", "SA-8", "SA-9", "SA-9(2)", "SA-9(5)", "SA-10", "SA-10(1)", "SA-11", "SA-15", "SA-22"], sections: ["Purpose", "Policy", "Resources and life cycle", "Acquisitions", "Secure development", "Unsupported components", "Review"]}
+    - {id: "DOC-TXR-SC", title: "System and Communications Protection Policy and Procedures", kind: "policy", template: "communications.md", satisfies: ["SC-1", "SC-2", "SC-4", "SC-5", "SC-7", "SC-7(3)", "SC-7(4)", "SC-7(5)", "SC-8", "SC-8(1)", "SC-10", "SC-12", "SC-13", "SC-15", "SC-17", "SC-18", "SC-20", "SC-21", "SC-22", "SC-23", "SC-28", "SC-28(1)", "SC-39"], sections: ["Purpose", "Policy", "Boundary protection", "Encryption", "Separation and availability", "Sessions and name resolution", "Review"]}
+    - {id: "DOC-TXR-SI", title: "System and Information Integrity Policy and Procedures", kind: "policy", template: "integrity.md", satisfies: ["SI-1", "SI-2", "SI-3", "SI-4", "SI-4(4)", "SI-5", "SI-7", "SI-7(1)", "SI-7(7)", "SI-10", "SI-11", "SI-12", "SI-16"], sections: ["Purpose", "Policy", "Flaw remediation", "Malicious code protection", "System monitoring and alerts", "Information integrity", "Review"]}
+
+# TX-RAMP doesn't require a management review; continuous monitoring (CA-7) is its closest equivalent.
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: environment_changes, content: context_changes, title: "Changes to the system, its boundary, providers or agency customers"}
+    - {id: control_performance, content: performance, title: "Control performance: assessments, scans, continuous monitoring and the POA&M"}
+    - {id: risks, content: risks_and_impacts, title: "Results of the risk assessment and its treatment"}
+    - {id: providers, content: suppliers, title: "Providers and inherited controls"}
+    - {id: incidents, content: incidents, title: "Security incidents"}
+    - {id: resources, title: "Adequacy of resources for the security program"}
+    - {id: improvement, title: "Opportunities for improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.15, governance: 0.2, implement: 0.3, test: 0.18, stage1: 0.12, stage2: 0.05}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and boundary", keywords: [kickoff, kick-off, scoping, scope, boundary, diagram, inventory, data flow]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, procedures and the Security Plan", keywords: [policy, procedure, document, drafting, security plan, ssp]}
+    - {id: risk_impact, title: "Risk assessment and providers", keywords: [risk, vendor, provider, inherited, assessment]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, collector, sample]}
+    - {id: internal_audit, title: "Control assessment", keywords: [assessment, internal audit, audit, workpaper, poam]}
+    - {id: management_review, title: "Leadership review", keywords: [management review, board, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: certification, title: "DIR submission and certification", keywords: [dir, spectrim, submission, certification, questionnaire]}
+    - {id: other, title: "Other", keywords: []}

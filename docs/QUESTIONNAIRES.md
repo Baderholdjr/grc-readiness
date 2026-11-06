@@ -7,6 +7,7 @@ Built in:
 | Definition | Questionnaire | Answered in |
 |---|---|---|
 | `hecvat-4` | **HECVAT 4** (EDUCAUSE; tested with 4.1.4: 331 questions across the Start Here, Organization, Product, Infrastructure, IT Accessibility, Case-Specific, AI and Privacy tabs) | The workbook the customer sends |
+| `txramp-ssp-2` | **TX-RAMP Security Plan workbook** (Texas DIR, Security Controls Baselines 2.0: 117 Level 1 and 223 Level 2 controls) | The workbook, control by control |
 | `txramp-aq-2` | **TX-RAMP Assessment Questionnaire** (Texas DIR, as described in the Vendor Guide v2.0: 47 general, system and required-document questions) | DIR's SPECTRIM vendor portal: `fill` writes an answer sheet to copy from |
 
 ## How it works
@@ -38,7 +39,22 @@ A TX-RAMP certification request is answered in DIR's portal, so it has no workbo
 - **Follow-up questions** (GEN-03a, GEN-09a and the like) apply only when their question has the answer that triggers them. Once GEN-03 is answered No, GEN-03a is `not_applicable`.
 - **Required documents** (the authorization boundary diagram, the data flow diagram and the completed TX-RAMP Security Plan) are answered with an evidence reference from a record, for example `iso27001:EV-014`. The answer sheet shows the document's title and location. Validation checks that the evidence exists and is current (Q112).
 - **Facts stay with people.** Breach history, data location, insurance and prohibited-technology ties are never proposed from controls. Only GEN-05 and GEN-20 have a compliant answer that controls can back.
-- **Not yet built:** the **TX-RAMP Security Plan workbook**, the Level 1 and Level 2 control baseline that DIR asks vendors to complete control by control (implementation status, responsibility, details). Its controls are NIST SP 800-53 controls, so the program's `nist80053` mappings will fill it once the workbook's layout is confirmed.
+### The Security Plan workbook
+
+The **TX-RAMP Security Plan workbook** is DIR's baseline: one row per control, each marked Level 1 and/or Level 2. Upload your copy and import it with **level** 1 or 2 (`--level`); the engine recognizes the workbook (definition `txramp-ssp-2`). Controls outside the level are `not_applicable`.
+
+Each control in the level is answered in four fields, written to the workbook's own columns:
+
+| Field | Column | From |
+|---|---|---|
+| `answer` | Implementation Status | Proposed as **Implemented** only when every program control mapped to that NIST control (`maps: {nist80053: [AC-2]}`) has current evidence |
+| `responsibility` | Implementation Responsibility | The mapped controls' `responsibility`, when they agree and it is one of the workbook's choices (Service Provider Responsibility, Inherited, Customer Responsibility, Shared) |
+| `detail` | Implementation Details | The mapped controls' descriptions, for a person to make specific |
+| `comments` | Other Comments | Optional |
+
+DIR needs status, responsibility and details for every control in the level, so approving one without all three is an error (Q113). A control enhancement no program control maps, such as AC-2(3), is routed to the owner of its base control (AC-2). `fill` also sets the level on the Summary tab, so the workbook's own completeness counts are right when it is opened.
+
+Add `responsibility:` to program controls (`program/controls.yaml`) to have it proposed.
 
 The question topics are our own short labels, and GEN-NOTES and the DOC-… ids are ours too. Read each question as the portal words it before approving.
 
@@ -85,6 +101,7 @@ The `basis` list names the controls and requirements, with their state and any o
 | Q108 | error | An answer for a question not in the workbook, or a question answered twice |
 | Q109 | warning | An approved answer in a section a Start Here answer switched off (fill leaves it blank) |
 | Q110 | info | Questions with no entry yet: run `draft` |
+| Q113 | error | Approved without every field the requester needs (TX-RAMP Security Plan: status, responsibility and details) |
 | Q112 | error/warning | A required document answered with evidence that doesn't exist (error) or is expired or failing (warning) |
 | Q111 | error | An answer or detail a workbook can't hold: control characters (often pasted from Word or a PDF), or more than 32,767 characters |
 

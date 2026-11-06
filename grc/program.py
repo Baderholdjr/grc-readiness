@@ -171,6 +171,15 @@ def load_program(root: str | Path = ".", today: dt.date | None = None) -> Progra
     for rdir in discover(root):
         rec = load(rdir, today=prog.today)
         prog.records.setdefault(str(rec.engagement.get("framework") or "iso42001"), rec)
+    # TX-RAMP's controls are NIST SP 800-53 controls with the same ids: a control mapped to nist80053 also
+    # counts for a TX-RAMP record, unless it lists its txramp ids itself.
+    if "txramp" in prog.records:
+        tx = prog.records["txramp"].requirement_index
+        for c in prog.controls:
+            if "nist80053" in c["maps"] and "txramp" not in c["maps"]:
+                same = [x for x in c["maps"]["nist80053"] if x in tx]
+                if same:
+                    c["maps"]["txramp"] = same
     if (d / "owners.yaml").exists():
         prog.raw["owners.yaml"], owners = _read(d / "owners.yaml", "owners")
         prog.owners = [o for o in owners if isinstance(o, dict)]

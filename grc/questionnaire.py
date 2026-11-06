@@ -172,9 +172,37 @@ def _unescape(s: str) -> str:
     return s.replace("&quot;", '"').replace("&apos;", "'").replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
 
 
+def read_rows(wbk: Workbook, d: dict) -> list[dict]:
+    """A workbook with one row per question (TX-RAMP Security Plan): every field of a row is an answer cell."""
+    lay = d["layout"]
+    pat = re.compile(lay["id_pattern"])
+    ws = wbk.values()[lay["sheet"]]
+    dv = wbk.validations(lay["sheet"])
+    qcols = lay.get("question_columns") or {}
+    out = []
+    for row in ws.iter_rows(min_row=int(lay.get("header_row", 1)) + 1):
+        by = {c.column_letter: c.value for c in row if c.value is not None}
+        qid = str(by.get(lay["id_column"]) or "").strip()
+        if not pat.fullmatch(qid):
+            continue
+        r = row[0].row
+        cells = {f: f"{col}{r}" for f, col in lay["fields"].items()}
+        levels = [lv for lv, col in (lay.get("levels") or {}).items() if str(by.get(col) or "").strip().lower() == "yes"]
+        text = {k: str(by.get(col) or "").strip() for k, col in qcols.items()}
+        out.append({"id": qid, "sheet": lay["sheet"], "section": text.get("family", ""),
+                    "answer_cell": cells.get("answer"), "detail_cell": cells.get("detail"), "cells": cells,
+                    "allowed": dv.get(cells.get("answer", ""), FREE_TEXT),
+                    "allowed_fields": {f: dv[c] for f, c in cells.items() if f != "answer" and dv.get(c)},
+                    "levels": levels, "question": text.get("text", ""), "description": text.get("description", ""),
+                    "compliant": str(d.get("compliant_answer") or ""), "guidance": text.get("guidance", "")})
+    return out
+
+
 def read_questions(wbk: Workbook, d: dict) -> list[dict]:
     """Every question that takes an answer: id, sheet, answer cell, detail cell, allowed values and text."""
     lay = d["layout"]
+    if lay.get("kind") == "rows":
+        return read_rows(wbk, d)
     pat = re.compile(lay["id_pattern"])
     qcols = lay["question_columns"]
     text = {}
@@ -258,6 +286,8 @@ def load_questionnaire(root: Path, name: str) -> Questionnaire:
     if not isinstance(meta, dict):
         raise ValueError("questionnaire.yaml must be a mapping (definition:, requester:, due:, status:)")
     d = load_definition(str(meta.get("definition")), root)
+    if meta.get("level"):
+        d = {**d, "_level": str(meta["level"])}
     qfile = load_yaml(qdir / "questions.yaml") if (qdir / "questions.yaml").exists() else {}
     questions = [q for q in (qfile.get("questions") if isinstance(qfile, dict) else None) or [] if isinstance(q, dict)]
     raw = load_yaml(qdir / "answers.yaml") if (qdir / "answers.yaml").exists() else {"answers": []}
@@ -282,6 +312,15 @@ def load_profile(root: Path) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+class _NoAliases(yaml.SafeDumper):
+    def ignore_aliases(self, data):            # the same choice list on every row: write it out, no &id001
+        return True
+
+
+def _dump(data) -> str:
+    return yaml.dump(data, Dumper=_NoAliases, sort_keys=False, allow_unicode=True, width=120)
+
+
 QUESTIONS_HEADER = """# Questions read from the workbook by `grc questionnaire import`. Don't edit: re-import instead.
 # The question text is the publisher's and stays in this (private) repository.
 """
@@ -293,36 +332,62 @@ ANSWERS_HEADER = """# Answers for this questionnaire. `grc questionnaire draft` 
 """
 
 
-def import_workbook(root: Path, workbook: Path | None, name: str, definition: str = "hecvat-4", requester: str = "",
-                    due: str | None = None, today: dt.date | None = None, force: bool = False) -> Path:
+def detect(workbook: Path, root: Path | None = None) -> str | None:
+    """The built-in definition whose sheets this workbook has."""
+    sheets = set(Workbook(workbook).sheets)
+    for qid in definitions():
+        lay = load_definition(qid, root).get("layout") or {}
+        need = [lay["sheet"]] if lay.get("kind") == "rows" else lay.get("answer_sheets", []) + [lay.get("question_sheet")]
+        if lay and all(s in sheets for s in need):
+            return qid
+    return None
+
+
+def import_workbook(root: Path, workbook: Path | None, name: str, definition: str | None = None, requester: str = "",
+                    due: str | None = None, today: dt.date | None = None, force: bool = False,
+                    level: str | None = None) -> Path:
     root = Path(root)
     qdir = root / QDIR / name
     if (qdir / "questionnaire.yaml").exists() and not force:
         raise SystemExit(f"questionnaire: {qdir.relative_to(root)}/ already exists (use --force to re-import "
                          "the workbook; answers.yaml is kept)")
+    if definition is None:
+        definition = detect(workbook, root) if workbook else None
+        if definition is None:
+            raise SystemExit("questionnaire: can't tell which questionnaire this is; give --definition "
+                             f"({', '.join(definitions())})")
     d = load_definition(definition, root)
     if d.get("form"):
         return _import_form(root, qdir, d, requester, due, today)
     if workbook is None:
         raise SystemExit(f"questionnaire: {d['title']} is a workbook: give --workbook")
     wbk = Workbook(workbook)
-    missing = [s for s in d["layout"]["answer_sheets"] + [d["layout"]["question_sheet"]] if s not in wbk.sheets]
+    lay = d["layout"]
+    need = [lay["sheet"]] if lay.get("kind") == "rows" else lay["answer_sheets"] + [lay["question_sheet"]]
+    missing = [s for s in need if s not in wbk.sheets]
     if missing:
         raise SystemExit(f"questionnaire: {workbook} doesn't look like {d['title']}: no sheet {', '.join(missing)}")
     vc = d.get("version_cell") or {}
     version = str(wbk.cell(vc["sheet"], vc["cell"]) or "").replace("Version", "").strip() if vc else ""
+    if vc.get("pattern") and re.search(vc["pattern"], version):
+        version = re.search(vc["pattern"], version).group(1)
     questions = read_questions(wbk, d)
     qdir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(workbook, qdir / "received.xlsx")
     meta = {"definition": d["id"], "title": f"{d['title']} for {requester}".strip() if requester else d["title"],
             "version": version, "requester": requester, "received_on": (today or dt.date.today()).isoformat(),
             "due": due, "status": "open", "sent_on": None}
+    levels = sorted({lv for q in questions for lv in q.get("levels") or []})
+    if levels:
+        if level is None or str(level) not in levels:
+            raise SystemExit(f"questionnaire: {d['title']} needs --level ({' or '.join(levels)})")
+        meta["level"] = str(level)
     if (qdir / "questionnaire.yaml").exists():
         old = load_yaml(qdir / "questionnaire.yaml") or {}
-        meta.update({k: old[k] for k in ("requester", "due", "status", "sent_on", "title") if old.get(k)})
+        meta.update({k: old[k] for k in ("requester", "due", "status", "sent_on", "title")
+                     if isinstance(old, dict) and old.get(k)})
     (qdir / "questionnaire.yaml").write_text(yaml.safe_dump(meta, sort_keys=False, allow_unicode=True), encoding="utf-8")
-    (qdir / "questions.yaml").write_text(QUESTIONS_HEADER + yaml.safe_dump({"questions": questions}, sort_keys=False,
-                                         allow_unicode=True, width=120), encoding="utf-8")
+    (qdir / "questions.yaml").write_text(QUESTIONS_HEADER + _dump({"questions": questions}), encoding="utf-8")
     if not (qdir / "answers.yaml").exists():
         (qdir / "answers.yaml").write_text(ANSWERS_HEADER + "answers: []\n", encoding="utf-8")
     return qdir
@@ -374,6 +439,7 @@ class Support:
     owners: list[str] = field(default_factory=list)
     gaps: list[str] = field(default_factory=list)
     statements: list[str] = field(default_factory=list)
+    responsibilities: list[str] = field(default_factory=list)
 
 
 def support(prog, maps: dict) -> Support:
@@ -394,6 +460,8 @@ def support(prog, maps: dict) -> Support:
             s.owners.append(str(c["owner"]))
         if str(c.get("description") or "").strip():
             s.statements.append(str(c["description"]).strip())
+        if str(c.get("responsibility") or "").strip():
+            s.responsibilities.append(str(c["responsibility"]).strip())
     for fw, ids in wanted.items():
         rec = prog.records.get(fw)
         if rec is None:
@@ -427,6 +495,15 @@ def support(prog, maps: dict) -> Support:
     return s
 
 
+def _base_owner(prog, qid: str, d: dict) -> str | None:
+    """For a control enhancement nobody maps (AC-2(3)), the owner of the base control (AC-2) is who to ask."""
+    fw = d.get("maps_from_id")
+    base = qid.split("(")[0]
+    if not fw or base == qid:
+        return None
+    return next((str(c["owner"]) for c in prog.controls if base in c.get("maps", {}).get(fw, []) and c.get("owner")), None)
+
+
 def _library_index(lib: dict, qid_prefix: str) -> dict[str, dict]:
     out = {}
     entries = lib.get("answers") if isinstance(lib.get("answers"), list) else []
@@ -438,6 +515,13 @@ def _library_index(lib: dict, qid_prefix: str) -> dict[str, dict]:
             if ref.startswith(qid_prefix + ":"):
                 out.setdefault(ref.split(":", 1)[1], e)
     return out
+
+
+def _is_question(d: dict, qid: str) -> bool:
+    if qid in (d.get("questions") or {}):
+        return True
+    lay = d.get("layout") or {}
+    return bool(d.get("maps_from_id") and re.fullmatch(lay.get("id_pattern", "$^"), qid))
 
 
 def _library_current(e: dict, today: dt.date) -> bool:
@@ -454,6 +538,9 @@ def _library_current(e: dict, today: dt.date) -> bool:
 def _gated_off(q: dict, d: dict, answers: dict[str, dict]) -> dict | None:
     """What switches this question off: a section gate answered No, or a follow-up whose question was
     answered otherwise ("if: {GEN-03: Yes}"). Returns {question, label, why}."""
+    lv = d.get("_level")
+    if lv and q.get("levels") is not None and lv not in q["levels"]:
+        return {"question": "level", "label": f"Level {lv}", "why": f"not in the Level {lv} baseline: leave it blank"}
     for g in d.get("gates") or []:
         hit = q["sheet"] in (g.get("sheets") or []) or q["id"][:4] in (g.get("prefixes") or [])
         if hit and str((answers.get(g["question"]) or {}).get("answer") or "").strip().lower() == "no":
@@ -488,6 +575,8 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
         q = qn.qindex[qid]
         prev = old.get(qid)
         info = defq.get(qid) or {}
+        if d.get("maps_from_id"):                  # each row is a control of that catalog (NIST SP 800-53)
+            info = {**info, "maps": {d["maps_from_id"]: [qid]}, "topic": info.get("topic") or q.get("question") or ""}
         if prev and (prev.get("status") == "approved" or prev.get("source") == "person"):
             if info.get("maps"):                 # what backs it can change: refresh, never the answer
                 s = support(prog, info["maps"])
@@ -498,6 +587,9 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
         entry = {"id": qid, "topic": info.get("topic") or "", "status": "needs_answer", "answer": None,
                  "detail": None, "source": None, "support": None, "basis": [], "owner": None,
                  "approved_by": None, "approved_on": None}
+        for f in (q.get("cells") or {}):
+            if f not in ("answer", "detail"):
+                entry[f] = None
         if prev and str(prev.get("notes") or "").strip():
             entry["notes"] = prev["notes"]
         gate = _gated_off(q, d, new)
@@ -509,6 +601,9 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
             e = lib[qid]
             entry.update(status="proposed", answer=e.get("answer"), detail=e.get("detail"),
                          source=f"library:{e.get('id')}", owner=e.get("owner"))
+            for f in ("responsibility", "comments"):
+                if f in entry and e.get(f):
+                    entry[f] = e[f]
             s = support(prog, info.get("maps") or {})
             entry.update(support=s.level, basis=s.basis + [f"open gap {g}" for g in s.gaps])
         elif qid in prof_map and str(profile.get(prof_map[qid]) or "").strip():
@@ -521,16 +616,21 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
                              basis=[hint.get("reason", "")])
         else:
             s = support(prog, info.get("maps") or {})
-            entry.update(support=s.level, basis=s.basis, owner=s.owners[0] if s.owners else None)
+            owner = s.owners[0] if s.owners else _base_owner(prog, qid, d)
+            entry.update(support=s.level, basis=s.basis, owner=owner)
             if s.gaps:
                 entry["basis"] = entry["basis"] + [f"open gap {g}" for g in s.gaps]
             # Only a Yes: a control in place shows that something is done. It can't prove a negative
             # ("No, staff can't see customer data"), so questions whose compliant answer is No stay with a person.
             want = (q.get("compliant") or "").strip()
             kind = info.get("answer") or ("yes_no" if q.get("allowed") else "text")
-            if s.level == "supported" and want == "Yes" and q.get("allowed") and want in q["allowed"]:
+            positive = want == "Yes" or (want and want == str(d.get("compliant_answer") or ""))
+            if s.level == "supported" and positive and q.get("allowed") and want in q["allowed"]:
                 entry.update(status="proposed", answer=want, source="program",
                              detail=" ".join(s.statements[:2]) or None)
+                allowed_r = (q.get("allowed_fields") or {}).get("responsibility") or []
+                if "responsibility" in entry and len(set(s.responsibilities)) == 1 and s.responsibilities[0] in allowed_r:
+                    entry["responsibility"] = s.responsibilities[0]
             elif s.level == "supported" and kind == "text" and not q.get("allowed") and s.statements:
                 # a description question: the controls' own implementation statements, for a person to edit
                 entry.update(status="proposed", answer=" ".join(s.statements[:3]), source="program")
@@ -543,8 +643,7 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
 
 def write_answers(qn: Questionnaire) -> Path:
     path = qn.dir / "answers.yaml"
-    path.write_text(ANSWERS_HEADER + yaml.safe_dump({"answers": qn.answers}, sort_keys=False, allow_unicode=True,
-                                                    width=120), encoding="utf-8")
+    path.write_text(ANSWERS_HEADER + _dump({"answers": qn.answers}), encoding="utf-8")
     return path
 
 
@@ -665,7 +764,13 @@ def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt
         edits.setdefault(part, {})[q["answer_cell"]] = str(a["answer"])
         if detail and q.get("detail_cell"):
             edits[part][q["detail_cell"]] = detail
+        for f, ref in (q.get("cells") or {}).items():
+            if f not in ("answer", "detail") and str(a.get(f) or "").strip():
+                edits[part][ref] = str(a[f]).strip()
         written += 1
+    lc = qn.definition["layout"].get("level_cell")
+    if lc and qn.meta.get("level") and written:
+        edits.setdefault(wbk.sheets[lc["sheet"]], {})[lc["cell"]] = lc["values"][str(qn.meta["level"])]
     dc = qn.definition["layout"].get("date_cell")
     if dc and written:
         stamp = (today or dt.date.today()).isoformat()
@@ -718,6 +823,9 @@ def learn(qn: Questionnaire) -> int:
             entries.append(e)
             by_ref[ref] = e
         changed = (e.get("answer"), e.get("detail")) != (a.get("answer"), a.get("detail"))
+        for f in ("responsibility", "comments"):
+            if a.get(f):
+                e[f] = a[f]
         e.update({"topic": a.get("topic") or e.get("topic"), "answer": a.get("answer"), "detail": a.get("detail"),
                   "owner": a.get("owner") or e.get("owner"), "approved_by": a.get("approved_by"),
                   "approved_on": a.get("approved_on"), "review_every_days": e.get("review_every_days") or 365})
@@ -770,7 +878,7 @@ def validate(root: Path, prog, today: dt.date | None = None) -> list[Finding]:
                 if not definition_path(qdef, root).exists():
                     out.append(Finding("error", "Q105", f"{eid}: '{ref}' names no questionnaire ({', '.join(definitions())}).",
                                        lib_file, eid))
-                elif qid not in (load_definition(qdef, root).get("questions") or {}):
+                elif not _is_question(load_definition(qdef, root), qid):
                     out.append(Finding("error", "Q105", f"{eid}: '{ref}' is not a question of {qdef}.", lib_file, eid))
             if not (e.get("approved_by") and _date(e.get("approved_on"))):
                 out.append(Finding("error", "Q103", f"{eid}: a library answer needs approved_by and approved_on.", lib_file, eid))
@@ -812,6 +920,10 @@ def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict], prog=N
     ans = a.get("answer")
     if ans not in (None, "") and q.get("allowed") and str(ans) not in q["allowed"]:
         out.append(("error", "Q102", f"{qid}: '{ans}' isn't one of the workbook's choices ({', '.join(q['allowed'])})."))
+    for f, allowed in (q.get("allowed_fields") or {}).items():
+        v = a.get(f)
+        if v not in (None, "") and str(v) not in allowed:
+            out.append(("error", "Q102", f"{qid}: {f} '{v}' isn't one of the workbook's choices ({', '.join(allowed)})."))
     if q.get("kind") == "document" and ans not in (None, "") and prog is not None:
         rec, ev = prog.evidence(str(ans))
         if ev is None:
@@ -819,7 +931,7 @@ def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict], prog=N
                         "<framework>:<EV-id>, e.g. iso27001:EV-014."))
         elif not rec.evidence_is_current(ev):
             out.append(("warning", "Q112", f"{qid}: {ans} ({ev.get('title')}) is expired or failing; attach a current version."))
-    for key in ("answer", "detail"):
+    for key in ("answer", "detail", *[f for f in (q.get("cells") or {}) if f not in ("answer", "detail")]):
         why = _writable(a.get(key))
         if why:
             out.append(("error", "Q111", f"{qid}: the {key} {why}."))
@@ -828,6 +940,9 @@ def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict], prog=N
             out.append(("error", "Q103", f"{qid} is approved but has no answer."))
         if not (a.get("approved_by") and _date(a.get("approved_on"))):
             out.append(("error", "Q103", f"{qid} is approved without approved_by and approved_on."))
+        missing = [f for f in qn.definition.get("required_fields") or [] if f != "answer" and a.get(f) in (None, "")]
+        if missing and not _gated_off(q, qn.definition, answers):
+            out.append(("error", "Q113", f"{qid} is approved without {' and '.join(missing)} (the requester needs every one)."))
         gate = _gated_off(q, qn.definition, answers)
         if gate:
             out.append(("warning", "Q109", f"{qid}: {gate['why']} (fill leaves it blank)."))

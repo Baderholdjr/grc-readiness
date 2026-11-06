@@ -531,3 +531,110 @@ def test_txramp_form_drafts_follow_ups_documents_and_answer_sheet(tmp_path):
     csv_out = tmp_path / "sheet.csv"
     assert main(fill[:-1] + [str(csv_out)]) == 0
     assert csv_out.read_text().splitlines()[0] == "Question,Section,Topic,Answer,Detail,Status"
+
+
+# ------------------------------------------------------------------ TX-RAMP Security Plan (one row per control)
+SSP_ROWS = [("AC-01-00", "AC-1", "Access Control", "Policy and Procedures", "Yes", "Yes"),
+            ("AC-02-00", "AC-2", "Access Control", "Account Management", "Yes", "Yes"),
+            ("AC-02-03", "AC-2(3)", "Access Control", "Account Management | Disable Accounts", "No", "Yes"),
+            ("AT-02-00", "AT-2", "Awareness and Training", "Literacy Training and Awareness", "Yes", "Yes")]
+STATUS = ["Implemented", "Implemented (Inherited)", "Partially Implemented", "Alternative Implementation",
+          "Not Implemented", "Not Applicable"]
+RESP = ["Service Provider Responsibility", "Inherited", "Customer Responsibility",
+        "Shared Responsibility (Service Provider and Customer Responsibility)"]
+
+
+def make_ssp(path: Path) -> Path:
+    wb = openpyxl.Workbook()
+    ins = wb.active
+    ins.title = "Instructions"
+    ins["D8"] = "TX-RAMP Security Controls Baselines\xa02.0"
+    ci = wb.create_sheet("Control Implementation")
+    summary = wb.create_sheet("Summary")
+    dvs = wb.create_sheet("DV")
+    for i, v in enumerate(STATUS, start=2):
+        dvs[f"A{i}"] = v
+    for i, v in enumerate(RESP, start=2):
+        dvs[f"B{i}"] = v
+    for col, h in zip("ABCDEFGHIJKLMNO", ["SORT ID", "ID", "Control Family", "Control Name", "Level 1", "Level 2",
+                                          "Control Description", "TX-RAMP Parameters", "Guidance", "Implementation Status",
+                                          "Implementation Responsibility", "Implementation Details", "Other Comments",
+                                          "helper_count", "Additional Control Information"]):
+        ci[f"{col}1"] = h
+    for r, row in enumerate(SSP_ROWS, start=2):
+        for col, v in zip("ABCDEF", row):
+            ci[f"{col}{r}"] = v
+        ci[f"G{r}"] = "Made-up control text."
+        ci[f"N{r}"] = f"=COUNTA(J{r}:L{r})"
+    ci.add_data_validation(DataValidation(type="list", formula1="DV!$A$2:$A$7", sqref="J2:J5"))
+    ci.add_data_validation(DataValidation(type="list", formula1="DV!$B$2:$B$5", sqref="K2:K5"))
+    summary["B18"] = "Level 1"
+    summary.add_data_validation(DataValidation(type="list", formula1='"Level 1,Level 2"', sqref="B18"))
+    wb.save(path)
+    return path
+
+
+def test_txramp_security_plan_rows_levels_and_four_fields(tmp_path):
+    root = setup_repo(tmp_path)
+    ctl = yaml.safe_load((root / "program" / "controls.yaml").read_text())
+    ctl["controls"].append({"id": "CTL-ACCT", "title": "Account management", "owner": "IT Lead",
+                            "responsibility": "Service Provider Responsibility",
+                            "description": "Accounts are approved, reviewed quarterly and disabled at leaving.",
+                            "evidence": ["iso27001:EV-001"], "maps": {"nist80053": ["AC-2"]}})
+    (root / "program" / "controls.yaml").write_text(yaml.safe_dump(ctl))
+    ssp = make_ssp(tmp_path / "ssp.xlsx")
+    base = ["--today", TODAY.isoformat(), "questionnaire"]
+    assert main(base + ["import", "--root", str(root), "--workbook", str(ssp), "--name", "ssp"]) == 2   # level needed
+    assert main(base + ["import", "--root", str(root), "--workbook", str(ssp), "--name", "ssp", "--level", "1"]) == 0
+    qn = Q.load_questionnaire(root, "ssp")
+    assert qn.meta["definition"] == "txramp-ssp-2" and qn.meta["version"] == "2.0" and qn.meta["level"] == "1"
+    q = qn.qindex["AC-2(3)"]
+    assert q["cells"] == {"answer": "J4", "responsibility": "K4", "detail": "L4", "comments": "M4"}
+    assert q["allowed"] == STATUS and q["allowed_fields"]["responsibility"] == RESP and q["levels"] == ["2"]
+    assert main(base + ["draft", "--root", str(root), "--name", "ssp"]) == 0
+    a = Q.load_questionnaire(root, "ssp").aindex
+    assert a["AC-2(3)"]["status"] == "not_applicable"                         # Level 2 only
+    assert a["AC-2"]["status"] == "proposed" and a["AC-2"]["answer"] == "Implemented"
+    assert a["AC-2"]["responsibility"] == "Service Provider Responsibility"
+    assert a["AC-2"]["detail"] == "Accounts are approved, reviewed quarterly and disabled at leaving."
+    assert a["AC-1"]["status"] == "needs_answer" and a["AC-1"]["owner"] is None
+    # approving needs status, responsibility and details (Q113); responsibility must be a choice (Q102)
+    p = qn.dir / "answers.yaml"
+    d = yaml.safe_load(p.read_text())
+    for e in d["answers"]:
+        if e["id"] == "AC-2":
+            e.update(status="approved", approved_by="CISO", approved_on="2026-11-06")
+        if e["id"] == "AT-2":
+            e.update(answer="Implemented", source="person", status="approved", approved_by="CISO", approved_on="2026-11-06")
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+    assert "Q113" in _codes(root)
+    for e in d["answers"]:
+        if e["id"] == "AT-2":
+            e.update(responsibility="Us", detail="Yearly training for all staff.", comments="Records kept 2 years.")
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+    assert "Q113" not in _codes(root) and "Q102" in _codes(root)
+    for e in d["answers"]:
+        if e["id"] == "AT-2":
+            e["responsibility"] = "Shared Responsibility (Service Provider and Customer Responsibility)"
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+    assert not [c for c in _codes(root) if c.startswith("Q1") and c not in ("Q110",)]
+    out = tmp_path / "plan.xlsx"
+    assert main(base + ["fill", "--root", str(root), "--name", "ssp", "--out", str(out)]) == 0
+    wb = openpyxl.load_workbook(out)
+    ws = wb["Control Implementation"]
+    assert [ws[f"{c}3"].value for c in "JKLM"] == ["Implemented", "Service Provider Responsibility",
+                                                   "Accounts are approved, reviewed quarterly and disabled at leaving.", None]
+    assert [ws[f"{c}5"].value for c in "JKLM"] == ["Implemented", RESP[3], "Yearly training for all staff.",
+                                                   "Records kept 2 years."]
+    assert ws["J4"].value is None and ws["N3"].value == "=COUNTA(J3:L3)"
+    assert wb["Summary"]["B18"].value == "Level 1"
+    # the library keeps the responsibility for the next plan
+    assert main(["questionnaire", "learn", "--root", str(root), "--name", "ssp"]) == 0
+    lib = {e["id"]: e for e in yaml.safe_load((root / "questionnaires" / "library.yaml").read_text())["answers"]}
+    assert lib["ANS-AT-2"]["questions"] == ["txramp-ssp-2:AT-2"] and lib["ANS-AT-2"]["responsibility"] == RESP[3]
+    assert "Q105" not in _codes(root)
+
+
+def test_definition_is_recognized_from_the_workbook(tmp_path):
+    assert Q.detect(make_ssp(tmp_path / "s.xlsx")) == "txramp-ssp-2"
+    assert Q.detect(make_workbook(tmp_path / "h.xlsx")) == "hecvat-4"

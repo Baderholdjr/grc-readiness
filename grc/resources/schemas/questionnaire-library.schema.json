@@ -4,24 +4,85 @@
   "title": "Approved answers reused across questionnaires (questionnaires/library.yaml)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["answers"],
+  "required": [
+    "answers"
+  ],
   "properties": {
     "answers": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "questions", "answer"],
+        "required": [
+          "id",
+          "questions",
+          "answer"
+        ],
         "properties": {
-          "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
-          "questions": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-z0-9-]+:[A-Za-z0-9._-]+$"}},
-          "topic": {"type": ["string", "null"]},
-          "answer": {"type": "string", "minLength": 1},
-          "detail": {"type": ["string", "null"]},
-          "owner": {"type": ["string", "null"]},
-          "approved_by": {"type": ["string", "null"]},
-          "approved_on": {"type": ["string", "null"], "format": "date"},
-          "review_every_days": {"type": "integer", "minimum": 1, "maximum": 3650}
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "questions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+:[A-Za-z0-9._-]+$"
+            }
+          },
+          "topic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "owner": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "approved_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "approved_on": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "review_every_days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3650
+          },
+          "responsibility": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
     }

@@ -206,3 +206,30 @@ def test_api_failures_are_explained_once():
     assert "out of credit" in explain(Exception('HTTP 400: {"message":"Your credit balance is too low to access the Anthropic API."}'))
     assert "rejected" in explain(Exception('HTTP 401: {"type":"authentication_error"}'))
     assert explain(Exception("timed out")).startswith("Anthropic API call failed")
+
+
+def test_many_documents_are_read_in_batches_and_an_overflowing_batch_is_split(tmp_path):
+    edir, intake = setup(tmp_path, ai=True)
+    for i in range(9):
+        _doc(intake / f"doc{i}.docx", f"Procedure {i}.")
+    calls = []
+
+    def transport(body):
+        n = body["messages"][0]["content"].count("<document ")
+        calls.append(n)
+        if n > 2:                                   # pretend more than two documents never fit in one answer
+            return {"stop_reason": "max_tokens", "content": []}
+        return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps({})}]}
+    report = ingest.run(edir, intake, transport=transport)
+    assert calls[0] == 4 and max(calls) == 4 and sum(c for c in calls if c <= 2) == 9
+    assert "not read" not in report and report.count("drafted by Claude") == 9
+    # out of credit: the first batch fails, the rest aren't sent, and every document waits for the next run
+    for i in range(9):
+        _doc(intake / f"doc{i}.docx", f"Procedure {i}, revised.")
+    calls.clear()
+
+    def broke(body):
+        calls.append(1)
+        raise RuntimeError("HTTP Error 400: Your credit balance is too low to access the Anthropic API.")
+    report = ingest.run(edir, intake, transport=broke)
+    assert len(calls) == 1 and "**9 document(s) not read:" in report

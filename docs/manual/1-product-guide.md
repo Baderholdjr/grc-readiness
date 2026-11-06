@@ -434,16 +434,31 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - Start a record with `new-engagement --framework hipaa --categories business_associate` (or the *categories* input of New engagement).
 > - Catalog and playbook: `frameworks/hipaa/`. Mappings: `mappings/hipaa__iso27001.yaml`, `mappings/hipaa__soc2.yaml`.
 
-The four frameworks side by side:
+### TX-RAMP
 
-| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA |
-|---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations |
-| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) |
-| Impact assessments | Yes (AI systems) | No | No | No |
-| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance |
-| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related |
+> **In plain terms:** Texas state agencies and public universities can only buy cloud services that Texas has certified under TX-RAMP. Level 1 is for public information; Level 2, for confidential or regulated data, asks for about twice the controls. The company fills in DIR's Security Plan spreadsheet control by control and answers a questionnaire in DIR's portal.
+
+> **For GRC practitioners:**
+> - **Scope:** TX-RAMP Security Controls Baselines 2.0: 223 NIST SP 800-53 Rev. 5 controls (IDs such as `AC-2(3)`). `core` is Level 1 (117); add `level_2` for the other 106.
+> - **Not applicable:** allowed with a justification that names the responsible party (customer, or the provider it is inherited from).
+> - **Dates:** `stage1` is the assessment submission to DIR; `stage2` the certification decision.
+> - **Deliverables:** the Security Plan workbook (`questionnaire import --definition txramp-ssp-2 --level 1|2`) and the Assessment Questionnaire (`txramp-aq-2`); see `docs/QUESTIONNAIRES.md`.
+> - **NIST:** a program control mapped to `nist80053` counts for TX-RAMP automatically.
+
+> **Under the hood:**
+> - Start a record with `new-engagement --framework txramp --categories level_2` (or the *categories* input of New engagement).
+> - Catalog and playbook: `frameworks/txramp/`.
+
+The five frameworks side by side:
+
+| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP |
+|---|---|---|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) |
+| Impact assessments | Yes (AI systems) | No | No | No | No |
+| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR |
+| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count |
 
 ## 19. The compliance program: common controls, calendar and certification
 
@@ -602,7 +617,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | P202–P209 | | Program: governance calendar (completions without evidence, wrong periods, overdue occurrences, future dates) |
 | P301–P312 | | Program: owner certification (pending answers, missing notes, wrong signer or signing commit, another owner's control, overdue) |
 | P401–P407 | | ITGC workpapers (conclusion without performer, effective with unexplained exceptions, self-review, population or sample altered) |
-| Q101–Q112 | | Security questionnaires (answer not a dropdown choice, approved without approver, claim over open gaps, stale library answer, due soon, text a workbook can't hold, required document not in the evidence; see `docs/QUESTIONNAIRES.md`) |
+| Q101–Q113 | | Security questionnaires (answer not a dropdown choice, approved without approver, claim over open gaps, stale library answer, due soon, text a workbook can't hold, required document not in the evidence, TX-RAMP Security Plan row missing a field; see `docs/QUESTIONNAIRES.md`) |
 
 ## Appendix D: Glossary
 

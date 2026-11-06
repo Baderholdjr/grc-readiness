@@ -1,0 +1,30 @@
+# TX-RAMP Security Plan workbook (Texas Department of Information Resources), for TX-RAMP Security Controls
+# Baselines 2.0: one row per NIST SP 800-53 Rev. 5 control, marked Level 1 and/or Level 2.
+#
+# The engine ships no part of the workbook. A client imports its copy, chooses the level (--level 1 or 2),
+# and each in-level control is answered in four columns: Implementation Status (J), Implementation
+# Responsibility (K), Implementation Details (L) and Other Comments (M, optional). DIR needs J, K and L for
+# every control in the chosen level before it starts a review.
+#
+# Each row is answered from the program controls mapped to that NIST control (maps: nist80053: [AC-2(3)]):
+# "Implemented" is proposed only when every one of them has current evidence; the details come from their
+# descriptions; the responsibility from their `responsibility` (when it is one of the workbook's choices).
+id: txramp-ssp-2
+title: TX-RAMP Security Plan
+publisher: Texas Department of Information Resources
+tested_versions: ["2.0"]
+version_cell: {sheet: Instructions, cell: D8, pattern: "(\\d+\\.\\d+)"}
+layout:
+  kind: rows
+  sheet: Control Implementation
+  header_row: 1
+  id_column: B
+  id_pattern: "^[A-Z]{2}-\\d+(\\(\\d+\\))?$"
+  fields: {answer: J, responsibility: K, detail: L, comments: M}
+  question_columns: {text: D, family: C, description: G, guidance: H}
+  levels: {"1": E, "2": F}
+  level_cell: {sheet: Summary, cell: B18, values: {"1": "Level 1", "2": "Level 2"}}
+required_fields: [answer, responsibility, detail]
+compliant_answer: Implemented
+maps_from_id: nist80053
+questions: {}
