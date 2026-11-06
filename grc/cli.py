@@ -412,8 +412,12 @@ def cmd_questionnaire(args) -> int:
             print("questionnaire import needs --name (and --workbook, unless it is a portal form)", file=sys.stderr)
             return 2
 
-        qdir = Q.import_workbook(root, Path(args.workbook) if args.workbook else None, args.name, args.definition, args.requester or "",
-                                 args.due, today=today, force=args.force)
+        try:
+            qdir = Q.import_workbook(root, Path(args.workbook) if args.workbook else None, args.name, args.definition,
+                                     args.requester or "", args.due, today=today, force=args.force, level=args.level)
+        except SystemExit as exc:
+            print(exc, file=sys.stderr)
+            return 2
         qn = Q.load_questionnaire(root, args.name)
         print(f"imported {len(qn.questions)} questions into {qdir.relative_to(root.resolve()) if qdir.is_absolute() else qdir}/ "
               f"({qn.meta.get('version') or 'version unknown'})")
@@ -673,9 +677,11 @@ def main(argv=None) -> int:
     qu.add_argument("action", choices=["import", "draft", "fill", "learn", "report", "validate"])
     qu.add_argument("--name", help="questionnaire folder under questionnaires/ (import: required; others: default all)")
     qu.add_argument("--workbook", help="import: the workbook as received")
-    qu.add_argument("--definition", default="hecvat-4", help="import: questionnaire definition: hecvat-4 (workbook, default) or txramp-aq-2 (TX-RAMP portal form)")
+    qu.add_argument("--definition", help="import: hecvat-4, txramp-ssp-2 (TX-RAMP Security Plan workbook) or "
+                    "txramp-aq-2 (TX-RAMP portal form); default: recognized from the workbook")
     qu.add_argument("--requester", help="import: who sent it")
     qu.add_argument("--due", help="import: date the answers are due (YYYY-MM-DD)")
+    qu.add_argument("--level", choices=["1", "2"], help="import: TX-RAMP Security Plan level (1 or 2)")
     qu.add_argument("--force", action="store_true", help="import: re-import over an existing questionnaire (answers kept)")
     qu.add_argument("--draft", action="store_true", help="fill: also write proposed answers, marked as drafts")
     qu.add_argument("--out", help="fill: workbook to write (a form: .md or .csv answer sheet); report: Markdown file")

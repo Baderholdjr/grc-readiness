@@ -42,6 +42,24 @@ def pending(intake: Path, force: bool = False) -> list[Path]:
     return files
 
 
+BATCH_DOCS = 4               # documents per model call
+BATCH_CHARS = 60_000         # and at most this much text per call (a larger single document goes alone)
+
+
+def _batches(items: list[tuple]) -> list[list[tuple]]:
+    out, cur, size = [], [], 0
+    for it in items:
+        n = len(it[1] or "")
+        if cur and (len(cur) >= BATCH_DOCS or size + n > BATCH_CHARS):
+            out.append(cur)
+            cur, size = [], 0
+        cur.append(it)
+        size += n
+    if cur:
+        out.append(cur)
+    return out
+
+
 def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str = "auto",
         force: bool = False, transport=None, files: list[Path] | None = None) -> str:
     """mode: auto (templates + AI if enabled), templates, ai."""
@@ -78,19 +96,38 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
 
     from .. import sandbox
     if for_ai:
-        try:
-            result = ai.draft([(n, t) for n, t, _ in for_ai],
-                              [r for r in model.requirements if model.in_category_scope(r["id"])], model.gaps, model.client,
-                              model=settings.get("model"), transport=transport, framework=model.framework_name)
+        catalog = [r for r in model.requirements if model.in_category_scope(r["id"])]
+        failed: list[tuple[str, str]] = []
+
+        def read(batch):
+            """One call per batch; a batch whose answer doesn't fit is split in half and tried again."""
+            nonlocal combined
+            try:
+                result = ai.draft([(n, t) for n, t, _ in batch], catalog, model.gaps, model.client,
+                                  model=settings.get("model"), transport=transport, framework=model.framework_name)
+            except ai.AIUnavailable as exc:
+                if len(batch) > 1 and "truncated" in str(exc):
+                    half = len(batch) // 2
+                    read(batch[:half])
+                    read(batch[half:])
+                    return
+                failed.extend((n, str(exc)) for n, _, _ in batch)
+                return
             combined = draft.merge(combined, result)
-            for n, _, p in for_ai:
+            for n, _, p in batch:
                 notes.append(f"`{n}`: " + ("sandbox AI draft (canned, sandbox/ai_draft.json)" if sandbox.active()
                              else f"drafted by Claude ({settings.get('model') or ai.DEFAULT_MODEL})"))
                 ledger_updates[n] = {"sha256": _sha(p), "mode": "ai"}
-        except ai.AIUnavailable as exc:
-            notes.insert(0, f"**{len(for_ai)} document(s) not read: {exc}.** Spreadsheets in the intake template "
-                            "format are imported regardless.")
-            notes += [f"`{n}`: not processed (see above)" for n, _, _ in for_ai]
+
+        for batch in _batches(for_ai):
+            if failed and not any("truncated" in why for _, why in failed):
+                failed.extend((n, failed[0][1]) for n, _, _ in batch)   # out of credit, bad key: don't keep calling
+                continue
+            read(batch)
+        if failed:
+            notes.insert(0, f"**{len(failed)} document(s) not read: {failed[0][1]}.** Spreadsheets in the intake "
+                            "template format are imported regardless; the rest are read on the next run.")
+            notes += [f"`{n}`: not processed ({why})" for n, why in failed]
 
     label = ", ".join(sorted(ledger_updates)) or "intake"
     report = apply.apply(model, combined, label, files=sorted(ledger_updates))

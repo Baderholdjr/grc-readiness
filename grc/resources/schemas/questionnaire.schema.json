@@ -4,16 +4,60 @@
   "title": "A questionnaire received from a customer (questionnaires/<name>/questionnaire.yaml)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["definition", "status"],
+  "required": [
+    "definition",
+    "status"
+  ],
   "properties": {
-    "definition": {"type": "string", "description": "Built-in questionnaire definition, e.g. hecvat-4."},
-    "title": {"type": "string"},
-    "version": {"type": "string", "description": "Version printed in the workbook."},
-    "requester": {"type": "string", "description": "Who asked for it (the customer or prospect)."},
-    "received_on": {"type": "string", "format": "date"},
-    "due": {"type": ["string", "null"], "format": "date"},
-    "status": {"enum": ["open", "sent", "withdrawn"]},
-    "sent_on": {"type": ["string", "null"], "format": "date"},
-    "notes": {"type": "string"}
+    "definition": {
+      "type": "string",
+      "description": "Built-in questionnaire definition, e.g. hecvat-4."
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version printed in the workbook."
+    },
+    "requester": {
+      "type": "string",
+      "description": "Who asked for it (the customer or prospect)."
+    },
+    "received_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "due": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "sent",
+        "withdrawn"
+      ]
+    },
+    "sent_on": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "level": {
+      "enum": [
+        "1",
+        "2"
+      ],
+      "description": "TX-RAMP: the certification level the plan is for."
+    }
   }
 }

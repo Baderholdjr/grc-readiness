@@ -4,27 +4,111 @@
   "title": "Answers for one questionnaire (questionnaires/<name>/answers.yaml)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["answers"],
+  "required": [
+    "answers"
+  ],
   "properties": {
     "answers": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "status"],
+        "required": [
+          "id",
+          "status"
+        ],
         "properties": {
-          "id": {"type": "string"},
-          "topic": {"type": "string"},
-          "status": {"enum": ["needs_answer", "proposed", "approved", "not_applicable"]},
-          "answer": {"type": ["string", "null"]},
-          "detail": {"type": ["string", "null"], "description": "Goes in the workbook's Additional Information column."},
-          "source": {"type": ["string", "null"], "description": "library:<id>, profile:<key>, program, gate:<id>, or person."},
-          "support": {"type": ["string", "null"], "enum": ["supported", "partial", "gap", "unmapped", "n/a", null]},
-          "basis": {"type": "array", "items": {"type": "string"}},
-          "owner": {"type": ["string", "null"]},
-          "approved_by": {"type": ["string", "null"]},
-          "approved_on": {"type": ["string", "null"], "format": "date"},
-          "notes": {"type": "string", "description": "Internal; never written to the workbook."}
+          "id": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "needs_answer",
+              "proposed",
+              "approved",
+              "not_applicable"
+            ]
+          },
+          "answer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Goes in the workbook's Additional Information column."
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "library:<id>, profile:<key>, program, gate:<id>, or person."
+          },
+          "support": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "supported",
+              "partial",
+              "gap",
+              "unmapped",
+              "n/a",
+              null
+            ]
+          },
+          "basis": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "owner": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "approved_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "approved_on": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Internal; never written to the workbook."
+          },
+          "responsibility": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "TX-RAMP Security Plan: Implementation Responsibility."
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "TX-RAMP Security Plan: Other Comments (optional)."
+          }
         }
       }
     }

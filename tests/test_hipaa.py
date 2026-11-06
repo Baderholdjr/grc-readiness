@@ -262,7 +262,7 @@ def test_timesheets_and_collectors_accept_hipaa_ids(tmp_path):
     assert HIPAA_REF.findall("164.308(a)(1)(ii)(A) risk analysis; 164.312(b) logging, 164.402.") == [
         "164.308(a)(1)(ii)(A)", "164.312(b)", "164.402"]
     text = (ENGINE / "schemas" / "collectors.schema.json").read_text()
-    pat = re.compile(re.search(r'"pattern": "(\^\[0-9A-Za-z\.\(\)\]\+:[^"]+)"', text).group(1).replace("\\\\", "\\"))
+    pat = re.compile(re.search(r'"pattern": "(\^\[0-9A-Za-z\.\(\)-?\]\+:[^"]+)"', text).group(1).replace("\\\\", "\\"))
     assert pat.match("164.312(a)(2)(iv):implemented") and pat.match("CC8.1:implemented")
 
 

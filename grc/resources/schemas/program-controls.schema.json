@@ -80,6 +80,10 @@
           },
           "notes": {
             "type": "string"
+          },
+          "responsibility": {
+            "type": "string",
+            "description": "Who is responsible for it, in the words questionnaires use, e.g. Service Provider Responsibility, Shared Responsibility (Service Provider and Customer Responsibility), Inherited."
           }
         }
       }

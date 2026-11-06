@@ -7,9 +7,10 @@
 | `iso42001` | ISO/IEC 42001:2023 (AI management system, AIMS) | 27 clauses + 38 Annex A controls | 17 documents | AI system impact assessments (6.1.4, 8.4, A.5) |
 | `iso27001` | ISO/IEC 27001:2022 (information security, ISMS) | 25 clauses + 93 Annex A controls | 20 documents | No impact assessments; risk treatment and the Statement of Applicability drive Annex A |
 | `soc2` | SOC 2 (AICPA Trust Services Criteria, 2017, revised points of focus 2022) | 33 common criteria (Security) + 28 in optional categories | 18 documents (fewer if categories are left out) | An attestation, not a certification; the client chooses categories; see [SOC 2](#soc-2) |
-| `hipaa` | HIPAA Security Rule and Breach Notification Rule (45 CFR Part 164, Subparts C and D) | 63 in the Security Rule + 7 breach notification + 4 for clearinghouses, group health plans and government entities | 17 documents (14 for most clients) | No certification; required and addressable specifications; see [HIPAA](#hipaa) |
+| `hipaa` | HIPAA Security Rule and Breach Notification Rule (45 CFR Part 164, Subparts C and D) | 64 core + 4 covered entity + 3 business associate + 4 for clearinghouses, group health plans and government entities | 19 documents (15 for most clients) | No certification; required and addressable specifications; see [HIPAA](#hipaa) |
+| `txramp` | TX-RAMP Security Controls Baselines 2.0 (Texas DIR) | 117 Level 1 controls + 106 more at Level 2 (NIST SP 800-53 Rev. 5) | 17 documents, one per control family | Certification by DIR; see [TX-RAMP](#tx-ramp) |
 
-Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria. The HIPAA regulations are US Government works; the catalog still restates them in plain words, and the eCFR text is the authority.
+Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria. The HIPAA regulations are US Government works; the catalog still restates them in plain words, and the eCFR text is the authority. TX-RAMP's controls are NIST SP 800-53 controls, also a US Government work, so the catalog uses NIST's titles and statements; TX-RAMP's own parameter values stay in the client's copy of DIR's Security Plan workbook.
 
 ## HIPAA
 
@@ -42,6 +43,22 @@ Choose at least one role (`--categories business_associate`, or both); until the
 **References.** The internal audit evidences 164.308(a)(8), corrective actions 164.308(a)(1)(ii)(B), and the leadership review 164.306(e). HIPAA doesn't require a management review, so a missing one is never a warning.
 
 **Mappings.** `mappings/hipaa__iso27001.yaml` proposes 6 equivalent, 5 subset and 33 related pairs; `mappings/hipaa__soc2.yaml` 24 related pairs. Before approving an `equivalent`, confirm the ISMS scope covers the whole ePHI environment; if it doesn't, downgrade the pair to `related`. In YAML, quote a citation with no parentheses (`'164.410'`): unquoted, it is read as the number 164.41, and validation says so. In the program layer, controls can map to `hipaa` and to NIST SP 800-53 together; NIST SP 800-66 Rev. 2 maps the Security Rule to 800-53.
+
+## TX-RAMP
+
+The Texas Risk and Authorization Management Program certifies cloud services for Texas state agencies, public universities and community colleges. The catalog is DIR's TX-RAMP Security Controls Baselines 2.0: 223 NIST SP 800-53 Rev. 5 controls, with IDs such as `AC-2(3)`.
+
+**Levels.** Level 1 (117 controls, public or low-impact data) is always in scope as the `core` category. Add `level_2` for confidential or regulated data in moderate or high impact systems (`--categories level_2`): it adds 106 controls.
+
+**Not applicable.** A control the cloud service provider doesn't run (fully inherited from its hosting provider, or the customer's) can be marked `applicable: false`. Its `justification` must name who is responsible, as DIR's Security Plan asks.
+
+**Dates.** `dates.stage1` is the **assessment submission** to DIR; `dates.stage2` is the **certification decision**. DIR certifies on the Assessment Questionnaire and the attached Security Plan, boundary diagram and data flow diagram (`docs/QUESTIONNAIRES.md`).
+
+**Documents.** One policy and procedures document per control family (17), each supporting every control in its family. That is how DIR's guide expects the `-1` policy controls to be met.
+
+**NIST mappings.** A program control mapped to `nist80053` also counts for a TX-RAMP record, because the IDs are the same. The engine adds `txramp` to its mappings, unless the control lists its `txramp` IDs itself.
+
+**References.** The internal audit evidences CA-2, corrective actions CA-5, and the leadership review CA-7 (continuous monitoring). TX-RAMP doesn't require a management review.
 
 ## SOC 2
 
