@@ -3,7 +3,8 @@ name: Security questionnaire (reusable)
 # Answers security questionnaires (HECVAT 4) from the compliance program (docs/QUESTIONNAIRES.md).
 #   import - read a workbook committed under questionnaires/inbox/ into questionnaires/<name>/ (pull request)
 #   draft  - propose answers from the answer library, the company profile and the controls (pull request)
-#   fill   - write the APPROVED answers into a copy of the workbook (run artifact, kept 7 days);
+#   fill   - write the APPROVED answers into a copy of the workbook, or for a portal form (TX-RAMP) an answer
+#            sheet to copy from (run artifact, kept 7 days);
 #            with draft: true, proposed answers too, marked "[DRAFT - not approved]", for internal review
 #   learn  - copy approved answers into questionnaires/library.yaml for the next questionnaire (pull request)
 # Nothing here approves an answer: people do, in the pull request.
@@ -19,6 +20,9 @@ on:
       name:
         type: string
         required: true
+      definition:
+        type: string
+        default: hecvat-4
       workbook:
         type: string
         default: ""
@@ -39,6 +43,7 @@ jobs:
       ACTION: ${{ inputs.action }}
       QNAME: ${{ inputs.name }}
       WORKBOOK: ${{ inputs.workbook }}
+      DEFINITION: ${{ inputs.definition }}
       REQUESTER: ${{ inputs.requester }}
       DUE: ${{ inputs.due }}
     steps:
@@ -48,7 +53,9 @@ jobs:
           [[ "$QNAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,60}$ && "$QNAME" != *..* && "$QNAME" != *. && "$QNAME" != *.lock ]] || {
             echo "::error::name may contain letters, digits, . _ - (no '..', not ending in . or .lock)"; exit 1; }
           if [ "$ACTION" = import ]; then
-            [[ "$WORKBOOK" =~ ^questionnaires/inbox/[A-Za-z0-9._\ -]+\.xlsx$ ]] || {
+            [[ "$DEFINITION" =~ ^[a-z0-9-]{1,40}$ ]] || { echo "::error::definition must be e.g. hecvat-4 or txramp-aq-2"; exit 1; }
+            # portal forms (TX-RAMP) have no workbook; workbooks must be uploaded to questionnaires/inbox/ first
+            [ -z "$WORKBOOK" ] || [[ "$WORKBOOK" =~ ^questionnaires/inbox/[A-Za-z0-9._\ -]+\.xlsx$ ]] || {
               echo "::error::workbook must be an .xlsx under questionnaires/inbox/ (upload it there first)"; exit 1; }
             [ -z "$DUE" ] || [[ "$DUE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "::error::due must be YYYY-MM-DD"; exit 1; }
           fi
@@ -78,25 +85,27 @@ jobs:
         run: |
           case "$ACTION" in
             import)
-              python -m grc questionnaire import --name "$QNAME" --workbook "$WORKBOOK" --requester "$REQUESTER" ${DUE:+--due "$DUE"}
-              git rm -q --cached "$WORKBOOK" 2>/dev/null || true; rm -f "$WORKBOOK"
+              python -m grc questionnaire import --name "$QNAME" --definition "$DEFINITION" ${WORKBOOK:+--workbook "$WORKBOOK"} \
+                --requester "$REQUESTER" ${DUE:+--due "$DUE"}
+              if [ -n "$WORKBOOK" ]; then git rm -q --cached "$WORKBOOK" 2>/dev/null || true; rm -f "$WORKBOOK"; fi
               python -m grc questionnaire draft --name "$QNAME" ;;
             draft) python -m grc questionnaire draft --name "$QNAME" ;;
             learn) python -m grc questionnaire learn --name "$QNAME" ;;
             fill)
               # nothing leaves with an error in it: stop here if any answer fails validation
               python -m grc questionnaire validate --format github
-              if [ "$DRAFT" = true ]; then python -m grc questionnaire fill --name "$QNAME" --draft --out "out/$QNAME-DRAFT.xlsx"
-              else python -m grc questionnaire fill --name "$QNAME" --out "out/$QNAME.xlsx"; fi ;;
+              mkdir -p out
+              if [ "$DRAFT" = true ]; then python -m grc questionnaire fill --name "$QNAME" --draft --out-dir out
+              else python -m grc questionnaire fill --name "$QNAME" --out-dir out; fi ;;
           esac
           python -m grc questionnaire report --name "$QNAME" --out report.md --summary "$GITHUB_STEP_SUMMARY"
           python -m grc questionnaire validate --format github || true
-      - name: Keep the filled workbook
+      - name: Keep the filled workbook or answer sheet
         if: inputs.action == 'fill'
         uses: actions/upload-artifact@v6
         with:
           name: questionnaire-${{ inputs.name }}${{ inputs.draft && '-DRAFT' || '' }}
-          path: out/*.xlsx
+          path: out/*
           retention-days: 7
       - name: Open a pull request
         if: inputs.action == 'import' || inputs.action == 'draft' || inputs.action == 'learn'

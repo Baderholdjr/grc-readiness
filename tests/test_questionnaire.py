@@ -464,3 +464,70 @@ def test_list_validations_by_name_by_range_and_after_other_validations(tmp_path)
     got = Q.Workbook(path).validations("Answers")
     assert got == {"C5": ["Yes", "No"], "C7": ["Yes", "No"], "C9": ["Yes", "No", "N/A"], "C11": ["High", "Low"],
                    "C13": None}
+
+
+# ------------------------------------------------------------------ portal forms (TX-RAMP)
+def test_txramp_form_imports_without_a_workbook_and_maps_real_requirements():
+    d = yaml.safe_load((ENGINE / "questionnaires" / "txramp-aq-2.yaml").read_text())
+    assert d["form"] is True and len(d["questions"]) == 47
+    nist = {str(r["id"]) for r in yaml.safe_load((ENGINE / "reference" / "nist80053.yaml").read_text())["requirements"]}
+    iso = {str(r["id"]) for r in yaml.safe_load((ENGINE / "frameworks" / "iso27001" / "catalog.yaml").read_text())["requirements"]}
+    for qid, v in d["questions"].items():
+        assert set(map(str, (v.get("maps") or {}).get("nist80053", []))) <= nist, qid
+        assert set(map(str, (v.get("maps") or {}).get("iso27001", []))) <= iso, qid
+        for parent in (v.get("if") or {}):
+            assert parent in d["questions"], qid
+    assert {k for k, v in d["questions"].items() if v.get("compliant") == "Yes"} == {"GEN-05", "GEN-20"}
+
+
+def test_txramp_form_drafts_follow_ups_documents_and_answer_sheet(tmp_path):
+    root = setup_repo(tmp_path)
+    ctl = yaml.safe_load((root / "program" / "controls.yaml").read_text())
+    ctl["controls"].append({"id": "CTL-SCAN", "title": "Vulnerability scanning", "owner": "Security Lead",
+                            "description": "Authenticated scans run weekly; external penetration test yearly.",
+                            "evidence": ["iso27001:EV-001"], "maps": {"nist80053": ["RA-5", "CA-8"]}})
+    (root / "program" / "controls.yaml").write_text(yaml.safe_dump(ctl))
+    _ready(root / "engagement", "A.8.8")        # GEN-18 also maps to ISO A.8.8: Ready, so the backing is complete
+    assert main(["--today", TODAY.isoformat(), "questionnaire", "import", "--root", str(root), "--definition", "txramp-aq-2",
+                 "--name", "txramp", "--requester", "Texas DIR"]) == 0
+    qn = Q.load_questionnaire(root, "txramp")
+    assert len(qn.questions) == 47 and qn.qindex["SYS-04"]["allowed"] == ["Low", "Moderate", "High"]
+    assert not (qn.dir / "received.xlsx").exists()
+    run = ["--today", TODAY.isoformat(), "questionnaire", "draft", "--root", str(root), "--name", "txramp"]
+    assert main(run) == 0
+    a = Q.load_questionnaire(root, "txramp").aindex
+    # a description question backed by a control: its own words, proposed for a person to edit
+    assert a["GEN-18"]["status"] == "proposed" and a["GEN-18"]["answer"].startswith("Authenticated scans run weekly")
+    assert a["GEN-03"]["status"] == "needs_answer"                         # breach history: always a person
+    p = qn.dir / "answers.yaml"
+    d = yaml.safe_load(p.read_text())
+    ok = dict(source="person", status="approved", approved_by="CISO", approved_on="2026-11-06")
+    for e in d["answers"]:
+        if e["id"] == "GEN-03":
+            e.update(answer="No", **ok)
+        if e["id"] == "DOC-ABD":
+            e.update(answer="iso27001:EV-404", **ok)
+        if e["id"] == "GEN-18":
+            e.update(status="approved", approved_by="CISO", approved_on="2026-11-06")
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+    assert main(run) == 0
+    a = Q.load_questionnaire(root, "txramp").aindex
+    assert a["GEN-03a"]["status"] == "not_applicable" and "GEN-03 is No" in a["GEN-03a"]["basis"][0]
+    assert "Q112" in _codes(root)                                            # no such evidence
+    out = tmp_path / "sheet.md"
+    fill = ["--today", TODAY.isoformat(), "questionnaire", "fill", "--root", str(root), "--name", "txramp", "--out", str(out)]
+    assert main(fill) == 1
+    d = yaml.safe_load(p.read_text())
+    for e in d["answers"]:
+        if e["id"] == "DOC-ABD":
+            e["answer"] = "iso27001:EV-001"
+    p.write_text(yaml.safe_dump(d, sort_keys=False))
+    assert "Q112" not in _codes(root)
+    assert main(fill) == 0
+    text = out.read_text()
+    assert "| GEN-03 | General | Significant security breach in last 3 years | No |  | approved |" in text
+    assert "Information security policy, approved (iso27001:EV-001; drive://x)" in text
+    assert "GEN-03a" not in text
+    csv_out = tmp_path / "sheet.csv"
+    assert main(fill[:-1] + [str(csv_out)]) == 0
+    assert csv_out.read_text().splitlines()[0] == "Question,Section,Topic,Answer,Detail,Status"

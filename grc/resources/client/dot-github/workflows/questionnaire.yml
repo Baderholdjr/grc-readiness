@@ -16,8 +16,13 @@ on:
       name:
         description: "short name for this questionnaire, e.g. hecvat-state-university-2026"
         required: true
+      definition:
+        description: "import: which questionnaire (hecvat-4: a workbook; txramp-aq-2: TX-RAMP, answered in DIR's portal)"
+        type: choice
+        options: [hecvat-4, txramp-aq-2]
+        default: hecvat-4
       workbook:
-        description: "import: path of the uploaded workbook, e.g. questionnaires/inbox/HECVAT414.xlsx"
+        description: "import: path of the uploaded workbook, e.g. questionnaires/inbox/HECVAT414.xlsx (none for a portal form)"
         required: false
       requester:
         description: "import: who sent it"
@@ -46,6 +51,7 @@ jobs:
       engine: pinned
       action: ${{ inputs.action }}
       name: ${{ inputs.name }}
+      definition: ${{ inputs.definition }}
       workbook: ${{ inputs.workbook }}
       requester: ${{ inputs.requester }}
       due: ${{ inputs.due }}
