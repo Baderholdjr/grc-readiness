@@ -12,7 +12,7 @@ on:
         type: string
         default: engagement
       framework:
-        description: "Framework id: iso42001, iso27001 or soc2"
+        description: "Framework id: iso42001, iso27001, soc2 or hipaa"
         type: string
         default: iso42001
       engine:

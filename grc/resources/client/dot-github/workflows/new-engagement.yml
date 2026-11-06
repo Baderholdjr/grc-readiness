@@ -15,10 +15,10 @@ on:
       framework:
         description: "Framework"
         type: choice
-        options: [iso42001, iso27001, soc2]
+        options: [iso42001, iso27001, soc2, hipaa]
         default: iso42001
-      engagement: {description: "Record folder: engagement (main) or engagement-27001, engagement-soc2 etc. for another framework", required: false, default: engagement}
-      categories: {description: "SOC 2 only: optional categories, comma-separated (availability,confidentiality,processing_integrity,privacy)", required: false}
+      engagement: {description: "Record folder: engagement (main) or engagement-27001, engagement-soc2, engagement-hipaa etc. for another framework", required: false, default: engagement}
+      categories: {description: "Optional categories, comma-separated. SOC 2: availability,confidentiality,processing_integrity,privacy. HIPAA: breach,clearinghouse,group_health_plan,government", required: false}
 
 permissions:
   contents: write

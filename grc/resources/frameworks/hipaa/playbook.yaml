@@ -1,0 +1,225 @@
+# Framework playbook: reusable engagement content for HIPAA readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+#
+# HIPAA has no certification. In the engagement record the two dates mean: dates.stage1 = the readiness
+# assessment (every standard and implementation specification tested against its evidence); dates.stage2 =
+# the independent HIPAA assessment the client has committed to (a third-party assessor, a customer audit,
+# or the date the client wants to be able to answer an OCR inquiry).
+
+title_suffix: HIPAA Security Readiness Brief
+tldr_template: "Help {client} show, with records, that it meets the HIPAA Security Rule and the Breach Notification Rule for the electronic protected health information it handles."
+usage_heading: ePHI, Systems and Business Associates in Scope
+requirements_heading: HIPAA Readiness Requirements
+
+# Wording used across reports, the client site and the auditor package.
+terms:
+  goal: demonstrable HIPAA compliance
+  audit_body: Independent HIPAA assessor
+  focus: HIPAA Security Rule readiness and gap closure
+  stage1: Readiness assessment
+  stage2: Independent assessment
+  countdown: readiness assessment
+  system: ePHI environment
+  applicability_title: Security Rule Applicability and Addressable Decisions
+  applicability_short: Applicability
+  applicability_intro: "Every addressable implementation specification in scope, and the decision on each: implemented as written, or not implemented as written, with the documented reason and the equivalent measure, as 164.306(d) requires. Standards and required specifications are not optional and are not listed here."
+  internal_audit_ref: "164.308(a)(8)"
+  corrective_ref: "164.308(a)(1)(ii)(B)"
+  review_ref: "164.306(e)"
+  record_control_ref: "164.316(b)(1)"
+  scope_ref: "164.306(a)"
+  objectives_ref: "164.308(a)(1)(i)"
+  risk_ref: "164.308(a)(1)(ii)(A)"
+  review_required: "no"
+  applicability_id_header: Requirement
+
+# Framework-specific entries for the client site's Help page.
+glossary:
+  - term: ePHI
+    plain: "Health information about a person, held or sent electronically, that could identify them. Everything in this program is about protecting it."
+    tech: "Electronic protected health information, 45 CFR 160.103."
+  - term: Covered entity and business associate
+    plain: "Health plans, clearinghouses and most healthcare providers are covered entities. A company that handles their health data for them is a business associate. Both must follow the Security Rule."
+    tech: "45 CFR 160.103; business associates are directly liable under the Security Rule since the 2013 Omnibus Rule."
+  - term: Required and addressable
+    plain: "Required items must be done. Addressable items must be done if they are reasonable for you; if not, you write down why and do something equivalent. Addressable never means optional."
+    tech: "45 CFR 164.306(d)."
+  - term: Risk analysis
+    plain: "A full look at every place your health data lives, what could go wrong and how likely it is. Regulators ask for it first."
+    tech: "45 CFR 164.308(a)(1)(ii)(A); OCR's most frequently cited deficiency."
+  - term: Business associate agreement
+    plain: "The contract a vendor signs before it handles your health data, promising to protect it and to tell you about breaches."
+    tech: "45 CFR 164.308(b) and 164.314(a)."
+  - term: Breach of unsecured PHI
+    plain: "Health data seen or taken by someone who shouldn't have it, unless it was encrypted or a documented assessment shows it's unlikely to have been compromised. Breaches have notification deadlines."
+    tech: "45 CFR 164.402-414; notification within 60 days of discovery."
+  - term: OCR
+    plain: "The part of the US Department of Health and Human Services that enforces HIPAA, through complaints, breach investigations and audits."
+    tech: "HHS Office for Civil Rights."
+
+# The four-part evidence test. Every control file records a status for each leg.
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the safeguard described in an approved policy or procedure, and is any addressable decision written down?
+  - key: implemented
+    label: Implemented
+    question: Is the safeguard actually in place for every system that holds ePHI?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing the safeguard operated, kept for six years?
+  - key: tested
+    label: Tested
+    question: Does a test, done the way an assessor or OCR would, show the safeguard works?
+
+gap_callout: Treat client statements as hypotheses until evidence shows the safeguard is documented, in place across every ePHI system, leaves records, and passes a test.
+
+working_rule: If a safeguard is described but you cannot trace it to an owner, a requirement, and records for every ePHI system, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The ePHI inventory and data flows cover every system, device and business associate, and the security official is appointed.
+  - An enterprise-wide risk analysis is complete and current, and the risk management plan has owners and dates.
+  - Every required implementation specification is in place; every addressable one is implemented or has a documented decision and an equivalent measure.
+  - Policies are approved, available, acknowledged and kept for six years; training has run for the whole workforce.
+  - Business associate agreements are signed with every vendor that handles ePHI.
+  - Access reviews, log reviews, a contingency test and a security evaluation have run at least once, with records.
+  - Breach assessment and notification procedures are in place and have been exercised.
+
+phases:
+  - id: validate
+    objective: "Scope & inventory"
+    deliverables:
+      - Kickoff and owner alignment; appoint the security official
+      - Confirm covered entity or business associate status
+      - Build the ePHI inventory and data-flow maps
+      - Validate gap-analysis claims and evidence
+  - id: governance
+    objective: "Risk & policies"
+    deliverables:
+      - Run the enterprise-wide risk analysis
+      - Approve the HIPAA policy and procedure set
+      - Record addressable decisions
+      - Inventory business associates and their agreements
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Close safeguard gaps (access, MFA, encryption, logging, backup)
+      - Train the whole workforce and collect acknowledgements
+      - Run the first access review, log review and restore test
+      - Turn on evidence collection
+  - id: test
+    objective: "Evaluation"
+    deliverables:
+      - Test every standard and implementation specification against its evidence
+      - Exercise incident response and breach notification
+      - Fix findings and update the risk management plan
+  - id: stage1
+    objective: "Readiness assessment"
+    deliverables:
+      - Complete the security evaluation (164.308(a)(8))
+      - Confirm documentation is retained and available
+      - Prepare the evidence package
+  - id: stage2
+    objective: "Independent assessment"
+    deliverables:
+      - Support the independent assessor or customer audit
+      - Track findings to closure
+      - Hand over the annual calendar (risk analysis, evaluation, training, access reviews)
+
+needs:
+  - Maintain the requirement/control matrix, ePHI inventory, evidence index, remediation tracker, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test, for every ePHI system, not a sample.
+  - Draft and revise policies, procedures and addressable decisions for lead review - do not invent operating practices.
+  - Track recurring safeguards (risk analysis, access reviews, log reviews, training, contingency tests, evaluation).
+  - Check every vendor that handles ePHI has a signed business associate agreement.
+  - Keep documentation and records for six years.
+
+default_guardrails:
+  - "{client} owns its safeguards and evidence; our team structures, reviews, tests, and challenges."
+  - We assess readiness; we don't give legal advice. Questions of covered-entity status, Privacy Rule obligations, breach determinations and state law go to {client}'s counsel.
+  - No ePHI in this repository or in our working files. Evidence is pointed to where it lives.
+  - Escalate breach determinations, business associate disputes and unsupported high-risk claims to the engagement lead.
+
+default_risks:
+  - A risk analysis that covers some systems, not all ePHI (OCR's most cited deficiency).
+  - Addressable specifications treated as optional, with no documented decision.
+  - Vendors handling ePHI without a business associate agreement.
+  - Shared accounts or missing MFA on systems that hold ePHI.
+  - Records not kept for six years.
+
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`). Each entry is drafted from documents/<template>.
+# Together the documents cover every requirement exactly once; documents for categories the client didn't
+# choose (clearinghouse, group health plan, government) are left out automatically.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-HIPAA-PROGRAM, title: "Security Program, Responsibility and Sanctions", kind: policy, template: program.md,
+       satisfies: ["164.306(a)", "164.306(e)", "164.308(a)(1)(i)", "164.308(a)(1)(ii)(C)", "164.308(a)(2)"], sections: [Purpose, Scope, Security official, Objectives, Preventing and correcting violations, Sanctions, Maintenance, Review]}
+    - {id: DOC-HIPAA-RISK, title: "Risk Analysis and Risk Management", kind: procedure, template: risk.md,
+       satisfies: ["164.308(a)(1)(ii)(A)", "164.308(a)(1)(ii)(B)"], sections: [Purpose, Inventory, Risk analysis, Risk management, Records, Review]}
+    - {id: DOC-HIPAA-WORKFORCE, title: "Workforce Security and Training", kind: procedure, template: workforce.md,
+       satisfies: ["164.308(a)(3)(i)", "164.308(a)(3)(ii)(A)", "164.308(a)(3)(ii)(B)", "164.308(a)(3)(ii)(C)", "164.308(a)(5)(i)", "164.308(a)(5)(ii)(A)"], sections: [Purpose, Authorization and supervision, Clearance, Termination, Training, Security reminders, Review]}
+    - {id: DOC-HIPAA-ACCESS, title: "Access Management and Technical Access Controls", kind: policy, template: access.md,
+       satisfies: ["164.308(a)(4)(i)", "164.308(a)(4)(ii)(B)", "164.308(a)(4)(ii)(C)", "164.308(a)(5)(ii)(D)", "164.312(a)(1)", "164.312(a)(2)(i)", "164.312(a)(2)(ii)", "164.312(a)(2)(iii)", "164.312(a)(2)(iv)", "164.312(d)"], sections: [Purpose, Authorizing access, Establishing and modifying access, Unique user identification, Emergency access, Automatic logoff, Encryption, Authentication, Review]}
+    - {id: DOC-HIPAA-MONITORING, title: "Audit Controls and Activity Review", kind: procedure, template: monitoring.md,
+       satisfies: ["164.308(a)(1)(ii)(D)", "164.308(a)(5)(ii)(C)", "164.312(b)"], sections: [Purpose, Audit controls, Activity review, Log-in monitoring, Records, Review]}
+    - {id: DOC-HIPAA-ENDPOINT, title: "Workstations, Devices and Media", kind: procedure, template: endpoint.md,
+       satisfies: ["164.308(a)(5)(ii)(B)", "164.310(b)", "164.310(c)", "164.310(d)(1)", "164.310(d)(2)(i)", "164.310(d)(2)(ii)", "164.310(d)(2)(iii)", "164.310(d)(2)(iv)"], sections: [Purpose, Workstation use, Workstation security, Malicious software, Device and media movement, Disposal and re-use, Review]}
+    - {id: DOC-HIPAA-INCIDENT, title: "Security Incident Procedures", kind: procedure, template: incident.md,
+       satisfies: ["164.308(a)(6)(i)", "164.308(a)(6)(ii)"], sections: [Purpose, Reporting, Response, Documentation, Testing, Review]}
+    - {id: DOC-HIPAA-CONTINGENCY, title: "Contingency Plan", kind: procedure, template: contingency.md,
+       satisfies: ["164.308(a)(7)(i)", "164.308(a)(7)(ii)(A)", "164.308(a)(7)(ii)(B)", "164.308(a)(7)(ii)(C)", "164.308(a)(7)(ii)(D)", "164.308(a)(7)(ii)(E)", "164.310(a)(2)(i)"], sections: [Purpose, Criticality, Data backup, Disaster recovery, Emergency mode operation, Testing and revision, Review]}
+    - {id: DOC-HIPAA-FACILITY, title: "Facility Access Controls", kind: procedure, template: facility.md,
+       satisfies: ["164.310(a)(1)", "164.310(a)(2)(ii)", "164.310(a)(2)(iii)", "164.310(a)(2)(iv)"], sections: [Purpose, Facilities in scope, Facility security plan, Access control and validation, Maintenance records, Review]}
+    - {id: DOC-HIPAA-DATA, title: "Integrity and Transmission Security", kind: procedure, template: data.md,
+       satisfies: ["164.312(c)(1)", "164.312(c)(2)", "164.312(e)(1)", "164.312(e)(2)(i)", "164.312(e)(2)(ii)"], sections: [Purpose, Integrity, Authenticating ePHI, Transmission security, Encryption decisions, Review]}
+    - {id: DOC-HIPAA-BA, title: "Business Associate Management", kind: procedure, template: business-associates.md,
+       satisfies: ["164.308(b)(1)", "164.308(b)(3)", "164.314(a)(1)", "164.314(a)(2)(i)", "164.314(a)(2)(iii)"], sections: [Purpose, Inventory, Agreements, Subcontractors, Acting on breaches, Review]}
+    - {id: DOC-HIPAA-EVALUATION, title: "Security Evaluation", kind: procedure, template: evaluation.md,
+       satisfies: ["164.308(a)(8)"], sections: [Purpose, When, Who, Method, Review]}
+    - {id: DOC-HIPAA-DOCUMENTATION, title: "Policies, Documentation and Retention", kind: procedure, template: documentation.md,
+       satisfies: ["164.316(a)", "164.316(b)(1)", "164.316(b)(2)(i)", "164.316(b)(2)(ii)", "164.316(b)(2)(iii)"], sections: [Purpose, Policies and procedures, Retention, Availability, Updates, Review]}
+    - {id: DOC-HIPAA-BREACH, title: "Breach Assessment and Notification", kind: procedure, template: breach.md,
+       satisfies: ["164.402", "164.404", "164.406", "164.408", "164.410", "164.412", "164.414"], sections: [Purpose, Assessment, Notifying individuals, Notifying the media and HHS, Business associate notification, Law enforcement delay, Records, Review]}
+    - {id: DOC-HIPAA-CLEARINGHOUSE, title: "Clearinghouse Isolation", kind: procedure, template: clearinghouse.md,
+       satisfies: ["164.308(a)(4)(ii)(A)"], sections: [Purpose, Isolation, Review]}
+    - {id: DOC-HIPAA-GHP, title: "Group Health Plan Safeguards", kind: procedure, template: group-health-plan.md,
+       satisfies: ["164.314(b)(1)", "164.314(b)(2)"], sections: [Purpose, Plan documents, Review]}
+    - {id: DOC-HIPAA-GOVERNMENT, title: "Government Entity Arrangements", kind: procedure, template: government.md,
+       satisfies: ["164.314(a)(2)(ii)"], sections: [Purpose, Arrangement, Review]}
+
+# HIPAA doesn't require a management review; the security evaluation (164.308(a)(8)) and the maintenance
+# review (164.306(e)) are its closest equivalents. The pack serves the leadership review the client holds.
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: environment_changes, content: context_changes, title: "Changes to the ePHI environment, systems, business associates or regulations"}
+    - {id: safeguard_performance, content: performance, title: "Safeguard performance: evaluations, log and access reviews, findings and their remediation"}
+    - {id: risks, content: risks_and_impacts, title: "Results of the risk analysis and the risk management plan"}
+    - {id: business_associates, content: suppliers, title: "Business associates: agreements and issues"}
+    - {id: incidents, content: incidents, title: "Security incidents and breach determinations"}
+    - {id: resources, title: "Adequacy of resources for the security program"}
+    - {id: improvement, title: "Opportunities for improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.15, governance: 0.22, implement: 0.28, test: 0.17, stage1: 0.1, stage2: 0.08}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and scoping", keywords: [kickoff, kick-off, scoping, scope, inventory, data flow]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, procedures and addressable decisions", keywords: [policy, procedure, document, drafting, addressable]}
+    - {id: risk_impact, title: "Risk analysis and business associates", keywords: [risk, baa, business associate, vendor, assessment]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, collector, sample]}
+    - {id: internal_audit, title: "Security evaluation", keywords: [evaluation, internal audit, audit, workpaper]}
+    - {id: management_review, title: "Leadership review", keywords: [management review, board, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: certification, title: "Independent assessment support", keywords: [assessor, assessment, ocr, customer audit]}
+    - {id: other, title: "Other", keywords: []}

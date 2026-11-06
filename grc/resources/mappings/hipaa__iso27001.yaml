@@ -1,0 +1,271 @@
+# PROPOSED mappings between the HIPAA Security and Breach Notification Rules and ISO/IEC 27001:2022 (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against both frameworks and the client's actual controls, and fill reviewed_by
+# and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count for both records (cited
+# as "<framework>:<id>"). The rest are pointers. `subset`: the HIPAA requirement (first framework) is narrower;
+# `superset`: wider. Our own judgement; no standard's text is reproduced. NIST SP 800-66 Rev. 2 maps the
+# Security Rule to NIST SP 800-53 and the Cybersecurity Framework, which reviewers may find useful.
+
+frameworks:
+- hipaa
+- iso27001
+mappings:
+- hipaa: 164.308(a)(1)(ii)(A)
+  iso27001: '8.2'
+  relationship: subset
+  note: HIPAA's risk analysis covers ePHI; ISO's risk assessment covers all information in the ISMS scope.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(A)
+  iso27001: 6.1.2
+  relationship: related
+  note: ISO sets the risk assessment method; HIPAA requires the assessment itself.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(B)
+  iso27001: '8.3'
+  relationship: subset
+  note: Both require risks to be treated; HIPAA's scope is ePHI.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(C)
+  iso27001: A.6.4
+  relationship: equivalent
+  note: Both require a formal process for acting on policy violations by staff.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(D)
+  iso27001: A.8.16
+  relationship: related
+  note: HIPAA requires regular review of activity records; ISO requires monitoring for anomalous behaviour.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(D)
+  iso27001: A.8.15
+  relationship: related
+  note: Logs that the activity review relies on.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(2)
+  iso27001: A.5.2
+  relationship: related
+  note: HIPAA names one security official; ISO assigns security roles and responsibilities.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(3)(ii)(B)
+  iso27001: A.6.1
+  relationship: equivalent
+  note: Both require staff to be screened before access.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(3)(ii)(C)
+  iso27001: A.6.5
+  relationship: related
+  note: Responsibilities that continue after employment ends.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(3)(ii)(C)
+  iso27001: A.5.18
+  relationship: related
+  note: Removal of access rights on termination.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(4)(ii)(B)
+  iso27001: A.5.15
+  relationship: related
+  note: Access granted according to rules set by the organization.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(4)(ii)(C)
+  iso27001: A.5.18
+  relationship: subset
+  note: Both cover provisioning, review, change and removal of access; HIPAA's scope is ePHI.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(5)(i)
+  iso27001: A.6.3
+  relationship: equivalent
+  note: Both require security awareness and training for all staff.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(5)(ii)(B)
+  iso27001: A.8.7
+  relationship: equivalent
+  note: Both require protection against malware.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(5)(ii)(D)
+  iso27001: A.5.17
+  relationship: equivalent
+  note: Both govern how passwords and other authentication information are created, changed and protected.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(6)(ii)
+  iso27001: A.5.26
+  relationship: related
+  note: Responding to incidents; HIPAA also requires mitigation and documentation of outcomes.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(6)(i)
+  iso27001: A.5.24
+  relationship: related
+  note: Incident management planning and preparation.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(7)(ii)(A)
+  iso27001: A.8.13
+  relationship: equivalent
+  note: Both require backup copies that can be restored.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(7)(ii)(B)
+  iso27001: A.5.30
+  relationship: related
+  note: ICT readiness for continuity includes restoring data.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(7)(ii)(D)
+  iso27001: A.5.30
+  relationship: related
+  note: ISO expects continuity plans to be tested.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(8)
+  iso27001: '9.2'
+  relationship: related
+  note: An internal audit can serve as the periodic evaluation if it covers the Security Rule.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(8)
+  iso27001: A.5.35
+  relationship: related
+  note: Independent review of information security.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(b)(1)
+  iso27001: A.5.20
+  relationship: related
+  note: Security requirements in supplier agreements; HIPAA requires a specific business associate agreement.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(a)(1)
+  iso27001: A.7.2
+  relationship: related
+  note: Physical entry controls.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(a)(2)(ii)
+  iso27001: A.7.1
+  relationship: related
+  note: Physical security perimeters.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(a)(2)(iii)
+  iso27001: A.7.2
+  relationship: related
+  note: Controlling and validating entry, including visitors.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(b)
+  iso27001: A.8.1
+  relationship: related
+  note: Rules for user endpoint devices.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(c)
+  iso27001: A.7.7
+  relationship: related
+  note: Clear desk and clear screen.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(d)(2)(i)
+  iso27001: A.7.14
+  relationship: equivalent
+  note: Both require secure disposal of equipment and media holding sensitive data.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(d)(2)(ii)
+  iso27001: A.7.14
+  relationship: related
+  note: ISO's control also covers re-use.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(d)(2)(iii)
+  iso27001: A.5.9
+  relationship: related
+  note: Inventory of assets with owners.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(a)(1)
+  iso27001: A.8.3
+  relationship: related
+  note: Restricting access to information.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(a)(2)(i)
+  iso27001: A.5.16
+  relationship: equivalent
+  note: Both require each user to have a unique, managed identity.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(a)(2)(iii)
+  iso27001: A.8.5
+  relationship: related
+  note: Session controls as part of secure authentication.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(a)(2)(iv)
+  iso27001: A.8.24
+  relationship: related
+  note: Use of cryptography.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(b)
+  iso27001: A.8.15
+  relationship: related
+  note: Recording activity in systems; HIPAA also requires examining it.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(d)
+  iso27001: A.8.5
+  relationship: equivalent
+  note: Both require verifying identity before access.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(e)(1)
+  iso27001: A.5.14
+  relationship: related
+  note: Protecting information in transfer.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(e)(2)(ii)
+  iso27001: A.8.24
+  relationship: related
+  note: Encryption in transit.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.314(a)(2)(i)
+  iso27001: A.5.20
+  relationship: related
+  note: Contract terms with suppliers; HIPAA specifies what the agreement must contain.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.316(a)
+  iso27001: A.5.1
+  relationship: related
+  note: Approved policies for information security.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.316(b)(2)(i)
+  iso27001: A.5.33
+  relationship: related
+  note: Protection and retention of records; HIPAA sets six years.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: '164.402'
+  iso27001: A.5.25
+  relationship: related
+  note: Assessing events; HIPAA's four-factor breach assessment is specific.
+  reviewed_by: ''
+  reviewed_on: null

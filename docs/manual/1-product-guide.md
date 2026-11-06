@@ -417,14 +417,32 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - Adding a category later: set `scope.categories`, then `python -m grc init` creates the new assessment files (E002 until then). An unknown category is E016.
 > - Catalog and playbook: `frameworks/soc2/`. Mapping: `mappings/iso27001__soc2.yaml`.
 
-| | ISO 42001 | ISO 27001 | SOC 2 |
-|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional |
-| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) |
-| Impact assessments | Yes (AI systems) | No | No |
-| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) |
-| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) |
+### HIPAA
+
+> **In plain terms:** HIPAA is the US law on protecting health information. The Security Rule says how electronic health data must be safeguarded, and the Breach Notification Rule says who must be told, and how fast, when it leaks. There is no certificate: a client shows it complies, with records, to its customers, an assessor, or the government if asked. Some safeguards are *required*; others are *addressable*, which means the client must do them if they are reasonable, or write down why not and do something equivalent.
+
+> **For GRC practitioners:**
+> - **Scope:** 45 CFR 164.302–318 and 164.400–414, as in force (the January 2025 proposed revision is not final). Not the Privacy Rule.
+> - **Requirements:** 31 standards, 21 required and 22 addressable implementation specifications; IDs are the citations, such as `164.308(a)(1)(ii)(A)`.
+> - **Applicability:** standards and required specifications can't be excluded. An addressable one marked not applicable needs the documented decision and the equivalent measure (E004). The *Security Rule Applicability and Addressable Decisions* report lists them.
+> - **Categories:** the Security Rule always; `breach` for the Breach Notification Rule; `clearinghouse`, `group_health_plan`, `government` only for those organizations.
+> - **Dates:** `stage1` is the readiness assessment (the 164.308(a)(8) evaluation); `stage2` the independent assessment.
+> - **Boundaries:** no ePHI in the repository; breach determinations and covered-entity status are for the client's counsel.
+
+> **Under the hood:**
+> - Start a record with `new-engagement --framework hipaa --categories breach` (or the *categories* input of New engagement).
+> - Catalog and playbook: `frameworks/hipaa/`. Mappings: `mappings/hipaa__iso27001.yaml`, `mappings/hipaa__soc2.yaml`.
+
+The four frameworks side by side:
+
+| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA |
+|---|---|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 63 Security Rule + 7 breach notification + 4 for special organizations |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 17 documents (14 for most clients) |
+| Impact assessments | Yes (AI systems) | No | No | No |
+| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance |
+| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 9 equivalent, 3 subset, 31 related; to SOC 2: 24 related |
 
 ## 19. The compliance program: common controls, calendar and certification
 

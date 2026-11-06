@@ -1,0 +1,157 @@
+# PROPOSED mappings between the HIPAA Security and Breach Notification Rules and SOC 2 (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against both frameworks and the client's actual controls, and fill reviewed_by
+# and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count for both records (cited
+# as "<framework>:<id>"). The rest are pointers. `subset`: the HIPAA requirement (first framework) is narrower;
+# `superset`: wider. Our own judgement; no standard's text is reproduced. NIST SP 800-66 Rev. 2 maps the
+# Security Rule to NIST SP 800-53 and the Cybersecurity Framework, which reviewers may find useful.
+
+frameworks:
+- hipaa
+- soc2
+mappings:
+- hipaa: 164.308(a)(1)(ii)(A)
+  soc2: CC3.2
+  relationship: related
+  note: Identifying and analysing risks; HIPAA's scope is ePHI.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(B)
+  soc2: CC5.1
+  relationship: related
+  note: Selecting controls that reduce risks.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(C)
+  soc2: CC1.5
+  relationship: related
+  note: Holding people accountable for their control responsibilities.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(1)(ii)(D)
+  soc2: CC7.2
+  relationship: related
+  note: Monitoring system components for anomalies.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(2)
+  soc2: CC1.3
+  relationship: related
+  note: Structures, reporting lines and responsibilities.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(3)(ii)(B)
+  soc2: CC1.4
+  relationship: related
+  note: Attracting and vetting competent people.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(3)(ii)(C)
+  soc2: CC6.2
+  relationship: related
+  note: Removing access when it is no longer authorized.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(4)(ii)(B)
+  soc2: CC6.2
+  relationship: related
+  note: Authorizing access before it is granted.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(4)(ii)(C)
+  soc2: CC6.3
+  relationship: related
+  note: Managing and reviewing access based on roles.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(5)(i)
+  soc2: CC2.2
+  relationship: related
+  note: Communicating security responsibilities, including training.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(5)(ii)(B)
+  soc2: CC6.8
+  relationship: related
+  note: Preventing and detecting malicious software.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(6)(ii)
+  soc2: CC7.4
+  relationship: related
+  note: Responding to identified security incidents.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(7)(ii)(A)
+  soc2: A1.2
+  relationship: related
+  note: Backup as part of the availability criteria (an optional SOC 2 category).
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(7)(ii)(D)
+  soc2: A1.3
+  relationship: related
+  note: Testing recovery plan procedures.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(a)(8)
+  soc2: CC4.1
+  relationship: related
+  note: Ongoing and separate evaluations of controls.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.308(b)(1)
+  soc2: CC9.2
+  relationship: related
+  note: Assessing and managing vendor risk.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(a)(1)
+  soc2: CC6.4
+  relationship: related
+  note: Restricting physical access to facilities.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(d)(2)(i)
+  soc2: CC6.5
+  relationship: related
+  note: Disposing of assets and recovering data from them.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(a)(1)
+  soc2: CC6.1
+  relationship: related
+  note: Logical access security over protected information.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(b)
+  soc2: CC7.2
+  relationship: related
+  note: Monitoring and logging activity.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(d)
+  soc2: CC6.1
+  relationship: related
+  note: Authenticating users before access.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.312(e)(1)
+  soc2: CC6.7
+  relationship: related
+  note: Protecting information during transmission.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: '164.404'
+  soc2: P6.6
+  relationship: related
+  note: Notifying affected people of breaches (Privacy category).
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: '164.410'
+  soc2: P6.5
+  relationship: related
+  note: Vendors notifying the organization of breaches.
+  reviewed_by: ''
+  reviewed_on: null
