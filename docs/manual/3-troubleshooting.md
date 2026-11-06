@@ -51,6 +51,7 @@ Entries marked **(seen in the pilot)** happened during the Larkspur pilot, so th
 | Actions storage is full | [T-32](#t-32-actions-storage-is-full) |
 | P305 on a certification, or the certification PR isn't assigned to anyone | [T-33](#t-33-p305-or-an-unassigned-certification) |
 | ITGC test fails with 403 or "not found" | [T-34](#t-34-itgc-test-fails-with-403-or-not-found) |
+| Questionnaire: Q102, or the filled workbook is blank | [T-35](#t-35-questionnaire-q102-or-the-filled-workbook-is-blank) |
 
 ---
 
@@ -422,6 +423,14 @@ If the message says "this repository has no … record", the prefix is wrong, or
 **Why:** testing another repository needs the `GH_COLLECTOR_TOKEN` secret, with read access to that repository. The access test also needs **Administration: read** to list collaborators and invitations. A token that can't see the repository gets 404, not 403.
 
 **Fix:** edit the fine-grained token: add the repository under *Repository access*, and give it **Metadata, Contents, Pull requests, Checks: Read** (plus **Administration: Read** for the access test). Testing the repository the workflow runs in needs no extra secret.
+
+### T-35: Questionnaire: Q102, or the filled workbook is blank
+
+**What you see:** *Validate* fails with `Q102 DATA-03: 'yes' isn't one of the workbook's choices (Yes, No, N/A)`. Or *Security questionnaire* `fill` reports `wrote 0 answer(s)`, and the workbook comes back empty.
+
+**Why:** a dropdown answer must match one of the workbook's choices exactly, capital letters included. `fill` writes **approved** answers only: proposed answers are suggestions until a person approves them.
+
+**Fix:** correct the answer to one of the listed choices. Approve the answers you accept in `answers.yaml`: `status: approved`, `approved_by` and `approved_on: YYYY-MM-DD`. Merge, then run `fill` again. For an internal review copy before approval, run `fill` with **draft** ticked; every unapproved detail is then marked `[DRAFT - not approved]`. Don't send that copy.
 
 ## When you need help
 

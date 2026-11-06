@@ -24,6 +24,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -398,6 +399,82 @@ def cmd_program(args) -> int:
     return 2
 
 
+def cmd_questionnaire(args) -> int:
+    from . import program as P
+    from . import questionnaire as Q
+    root = Path(args.root)
+    today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
+    if args.action == "import":
+        if args.name and not Q.valid_name(args.name):
+            print("questionnaire: --name may contain letters, digits, . _ - (no '..', not ending in . or .lock)", file=sys.stderr)
+            return 2
+        if not (args.workbook and args.name):
+            print("questionnaire import needs --workbook and --name", file=sys.stderr)
+            return 2
+
+        qdir = Q.import_workbook(root, Path(args.workbook), args.name, args.definition, args.requester or "",
+                                 args.due, today=today, force=args.force)
+        qn = Q.load_questionnaire(root, args.name)
+        print(f"imported {len(qn.questions)} questions into {qdir.relative_to(root.resolve()) if qdir.is_absolute() else qdir}/ "
+              f"({qn.meta.get('version') or 'version unknown'})")
+        tested = qn.definition.get("tested_versions") or []
+        if qn.meta.get("version") and tested and qn.meta["version"] not in tested:
+            print(f"warning: tested with {', '.join(tested)}; check the filled workbook carefully", file=sys.stderr)
+        return 0
+    prog = P.load_program(root, today=today)
+    if args.action == "validate":
+        findings = Q.validate(root, prog, today)
+        _emit(findings, args.format)
+        errors = sum(f.severity == "error" for f in findings)
+        print(f"\nquestionnaires: {errors} error(s), {sum(f.severity == 'warning' for f in findings)} warning(s).",
+              file=sys.stderr)
+        return 1 if errors else 0
+    if args.name and not Q.valid_name(args.name):
+        print("questionnaire: --name may contain letters, digits, . _ - (no '..', not ending in . or .lock)", file=sys.stderr)
+        return 2
+    targets = [args.name] if args.name else Q.names(root)
+    if not targets:
+        print(f"No questionnaires in {root.resolve() / Q.QDIR}.", file=sys.stderr)
+        return 0 if args.action == "report" else 2
+    for name in targets:
+        if name not in Q.names(root):
+            print(f"questionnaire: no questionnaire '{name}' (have: {', '.join(Q.names(root)) or 'none'})", file=sys.stderr)
+            return 2
+        try:
+            qn = Q.load_questionnaire(root, name)
+        except (ValueError, AttributeError, TypeError, KeyError) as exc:
+            print(f"questionnaire {name}: can't be read: {exc}. Run `questionnaire validate` for details.", file=sys.stderr)
+            return 2
+        if args.action == "draft":
+            counts = Q.draft(qn, prog, today)
+            Q.write_answers(qn)
+            print(f"{name}: " + ", ".join(f"{v} {k.replace('_', ' ')}" for k, v in counts.items()))
+        elif args.action == "fill":
+            out = Path(args.out or f"out/questionnaires/{name}{'-DRAFT' if args.draft else ''}.xlsx")
+            res = Q.fill(qn, out, include_proposed=args.draft, today=today)
+            print(f"{name}: wrote {res['written']} answer(s) to {out}; {res['left_blank']} left blank"
+                  + (" (DRAFT: proposed answers included and marked)" if args.draft else " (approved answers only)"))
+            for msg in res["refused"]:
+                print(f"not written: {msg}", file=sys.stderr)
+            if res["refused"]:
+                print(f"{len(res['refused'])} answer(s) not written; fix them (questionnaire validate) and fill again.",
+                      file=sys.stderr)
+                return 1
+        elif args.action == "learn":
+            print(f"{name}: {Q.learn(qn)} answer(s) added or updated in {Q.LIBRARY}")
+        elif args.action == "report":
+            text = Q.report_md(qn)
+            if args.out:
+                Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+                Path(args.out).write_text(text + "\n", encoding="utf-8")
+            if args.summary:
+                with open(args.summary, "a", encoding="utf-8") as fh:
+                    fh.write(text + "\n")
+            if not (args.out or args.summary):
+                print(text)
+    return 0
+
+
 def cmd_itgc(args) -> int:
     from . import itgc
     today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
@@ -590,6 +667,21 @@ def main(argv=None) -> int:
     ig.add_argument("--root", default=".", help="repository root to write program/itgc/ into")
     ig.add_argument("--report", help="also write the Markdown workpaper here")
     ig.set_defaults(fn=cmd_itgc)
+
+    qu = sub.add_parser("questionnaire", help="security questionnaires (HECVAT): import, draft answers, fill the workbook")
+    qu.add_argument("action", choices=["import", "draft", "fill", "learn", "report", "validate"])
+    qu.add_argument("--name", help="questionnaire folder under questionnaires/ (import: required; others: default all)")
+    qu.add_argument("--workbook", help="import: the workbook as received")
+    qu.add_argument("--definition", default="hecvat-4", help="import: questionnaire definition (default hecvat-4)")
+    qu.add_argument("--requester", help="import: who sent it")
+    qu.add_argument("--due", help="import: date the answers are due (YYYY-MM-DD)")
+    qu.add_argument("--force", action="store_true", help="import: re-import over an existing questionnaire (answers kept)")
+    qu.add_argument("--draft", action="store_true", help="fill: also write proposed answers, marked as drafts")
+    qu.add_argument("--out", help="fill: workbook to write; report: Markdown file")
+    qu.add_argument("--summary", help="report: append to this file (e.g. $GITHUB_STEP_SUMMARY)")
+    qu.add_argument("--root", default=".", help="repository root (default .)")
+    qu.add_argument("--format", choices=["text", "text-verbose", "github", "json"], default="text")
+    qu.set_defaults(fn=cmd_questionnaire)
 
     args = p.parse_args(argv)
     return args.fn(args)

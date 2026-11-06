@@ -178,6 +178,10 @@ Above the framework records, an optional `program/` folder runs the organization
 
 See [docs/PROGRAM.md](docs/PROGRAM.md) and [docs/ITGC.md](docs/ITGC.md).
 
+## Security questionnaires
+
+`grc questionnaire` answers customer security questionnaires from the program. HECVAT 4 is built in. It imports the workbook as received, proposes answers from the answer library, the company profile and the controls mapped to each question (only where a control is in place with current evidence), and routes the rest to their owners. Once people approve the answers in a pull request, it writes them back into the workbook without breaking its dropdowns or scoring. Approved answers go into a library for the next questionnaire. See [docs/QUESTIONNAIRES.md](docs/QUESTIONNAIRES.md).
+
 ## Important boundaries
 
 - **ISO text is copyrighted.** The catalog contains identifiers, short titles and *our own paraphrased* intent. It doesn't reproduce the standard's text. Work from a licensed copy.
