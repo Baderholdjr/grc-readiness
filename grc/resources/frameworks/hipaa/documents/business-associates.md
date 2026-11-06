@@ -12,13 +12,9 @@ Every vendor that creates, receives, maintains or transmits ePHI for {{client}} 
 
 No vendor receives ePHI before a business associate agreement is signed. The agreement requires the vendor to comply with the Security Rule, to bind its subcontractors to the same terms, and to report security incidents and breaches of unsecured PHI.
 
-## Subcontractors
-
-Where {{client}} is itself a business associate, its subcontractors that handle ePHI sign agreements with the same requirements.
-
 ## Acting on breaches
 
-If {{client}} learns of a pattern of activity or practice by a business associate that breaches the agreement, it takes reasonable steps to end it, and ends the contract if those fail.
+If {{client}} learns of a pattern of activity or practice by a business associate that breaches the agreement, it takes reasonable steps to cure the breach or end the violation, and terminates the contract, if feasible, if those steps fail.
 
 ## Review
 

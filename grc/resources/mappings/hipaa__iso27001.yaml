@@ -6,6 +6,10 @@
 # as "<framework>:<id>"). The rest are pointers. `subset`: the HIPAA requirement (first framework) is narrower;
 # `superset`: wider. Our own judgement; no standard's text is reproduced. NIST SP 800-66 Rev. 2 maps the
 # Security Rule to NIST SP 800-53 and the Cybersecurity Framework, which reviewers may find useful.
+#
+# Before approving any `equivalent`, confirm the ISMS scope includes the whole ePHI environment (every system,
+# location and vendor that handles ePHI). If part of it is outside the ISMS, change those lines to `related`:
+# ISO evidence from outside the ePHI environment doesn't show the HIPAA requirement is met.
 
 frameworks:
 - hipaa
@@ -55,8 +59,8 @@ mappings:
   reviewed_on: null
 - hipaa: 164.308(a)(3)(ii)(B)
   iso27001: A.6.1
-  relationship: equivalent
-  note: Both require staff to be screened before access.
+  relationship: related
+  note: ISO screens candidates before employment; HIPAA asks whether a workforce member's access to ePHI is appropriate, which can include later reassessment.
   reviewed_by: ''
   reviewed_on: null
 - hipaa: 164.308(a)(3)(ii)(C)
@@ -181,8 +185,14 @@ mappings:
   reviewed_on: null
 - hipaa: 164.310(d)(2)(i)
   iso27001: A.7.14
-  relationship: equivalent
-  note: Both require secure disposal of equipment and media holding sensitive data.
+  relationship: subset
+  note: HIPAA covers the final disposal of ePHI and the hardware or media it's stored on; A.7.14 covers equipment disposal and re-use more broadly.
+  reviewed_by: ''
+  reviewed_on: null
+- hipaa: 164.310(d)(2)(i)
+  iso27001: A.7.10
+  relationship: related
+  note: A.7.10 covers storage media through its life cycle, including disposal.
   reviewed_by: ''
   reviewed_on: null
 - hipaa: 164.310(d)(2)(ii)
@@ -205,8 +215,8 @@ mappings:
   reviewed_on: null
 - hipaa: 164.312(a)(2)(i)
   iso27001: A.5.16
-  relationship: equivalent
-  note: Both require each user to have a unique, managed identity.
+  relationship: subset
+  note: HIPAA requires a unique name or number to identify and track each user; A.5.16 manages the whole identity life cycle.
   reviewed_by: ''
   reviewed_on: null
 - hipaa: 164.312(a)(2)(iii)

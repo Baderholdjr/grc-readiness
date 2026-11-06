@@ -149,9 +149,9 @@ mappings:
   note: Notifying affected people of breaches (Privacy category).
   reviewed_by: ''
   reviewed_on: null
-- hipaa: '164.410'
+- hipaa: 164.314(a)(2)(i)
   soc2: P6.5
   relationship: related
-  note: Vendors notifying the organization of breaches.
+  note: Both get vendors to commit, in their contracts, to report unauthorized disclosures to the organization.
   reviewed_by: ''
   reviewed_on: null

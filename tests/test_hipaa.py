@@ -21,7 +21,7 @@ def codes(m):
     return [f.code for f in validate(m)]
 
 
-def _new(tmp_path, categories="breach", name="engagement-hipaa"):
+def _new(tmp_path, categories="business_associate", name="engagement-hipaa"):
     root = tmp_path / "repo"
     edir = root / name
     args = ["--engagement", str(edir), "new-engagement", "--client", "Calloway Clinics", "--start", "2026-11-09",
@@ -45,17 +45,27 @@ def test_catalog_follows_the_rule():
     cat = yaml.safe_load((FW / "catalog.yaml").read_text())
     reqs = cat["requirements"]
     ids = [r["id"] for r in reqs]
-    assert len(ids) == len(set(ids)) == 74
+    assert len(ids) == len(set(ids)) == 75
     kinds = collections.Counter(r["kind"] for r in reqs)
-    # the Security Rule's 22 standards plus 164.306(a)/(e) and 7 Breach Notification sections; its 36
-    # implementation specifications in 164.308-312 (14 required, 22 addressable) plus 7 required in 164.314/316
-    assert kinds == {"standard": 31, "required": 21, "addressable": 22}
+    # the Security Rule's 23 standards (164.308(b)(1) and (b)(2) separately) plus 164.306(a)/(e) and 7 Breach
+    # Notification sections; 36 implementation specifications in 164.308-312 (14 required, 22 addressable)
+    # plus 7 required in 164.314/316
+    assert kinds == {"standard": 32, "required": 21, "addressable": 22}
     spec = [r for r in reqs if r["id"].split("(")[0] in ("164.308", "164.310", "164.312") and r["kind"] != "standard"]
     assert collections.Counter(r["kind"] for r in spec) == {"required": 14, "addressable": 22}
-    assert {r["category"] for r in reqs} == {"security", "breach", "clearinghouse", "group_health_plan", "government"}
+    cats = collections.Counter(r["category"] for r in reqs)
+    assert cats == {"core": 64, "covered_entity": 4, "business_associate": 3, "clearinghouse": 1, "group_health_plan": 2,
+                    "government": 1}
+    role = {r["id"]: r["category"] for r in reqs if r["category"] in ("covered_entity", "business_associate")}
+    assert role == {"164.308(b)(1)": "covered_entity", "164.404": "covered_entity", "164.406": "covered_entity",
+                    "164.408": "covered_entity", "164.308(b)(2)": "business_associate",
+                    "164.314(a)(2)(iii)": "business_associate", "164.410": "business_associate"}
+    assert cat["choose_at_least_one"] == ["covered_entity", "business_associate"]
     groups = {g["id"] for g in cat["groups"]}
     assert all(r["group"] in groups and r["intent"] and r["evidence_examples"] for r in reqs)
-    assert cat["kinds"]["addressable"]["mandatory"] is False and cat["kinds"]["required"]["mandatory"] is True
+    assert cat["kinds"]["addressable"] == {"label": "Addressable implementation specification", "short": "Addressable",
+                                           "mandatory": True, "decision": True}
+    assert cat["kinds"]["required"]["mandatory"] is True
     assert all(re.fullmatch(r"164\.\d{3}(\([a-z0-9A-Z]+\))*", i) for i in ids)
 
 
@@ -82,26 +92,36 @@ def test_document_library_covers_every_requirement_once():
 def test_new_hipaa_engagement_validates_builds_and_speaks_hipaa(tmp_path):
     edir = _new(tmp_path)
     m = load(edir, today=TODAY)
-    assert m.categories_in_scope == {"security", "breach"}
-    assert len(m.controls) == 70 and not m.uses_impact_assessments and m.system_abbrev == "ePHI environment"
-    assert not m.is_applicable("164.308(a)(4)(ii)(A)") and m.is_applicable("164.404")
+    assert m.categories_in_scope == {"core", "business_associate"}
+    assert len(m.controls) == 67 and not m.uses_impact_assessments and m.system_abbrev == "ePHI environment"
+    assert not m.is_applicable("164.308(a)(4)(ii)(A)") and not m.is_applicable("164.404") and m.is_applicable("164.410")
+    assert m.is_applicable("164.402") and m.is_applicable("164.312(a)(2)(iv)")
     assert (edir / "controls" / "164.308(a)(1)(ii)(A).yaml").exists()
     assert codes(m) == ["W140"]
     assert "164.308(a)(8)" in (edir / "audit" / "program.yaml").read_text()
 
     documents.new(m, "all", mode="templates")
     drafted = sorted(p.stem for p in (edir / "documents").glob("DOC-*.md"))
-    assert len(drafted) == 14 and "DOC-HIPAA-BREACH" in drafted and "DOC-HIPAA-GHP" not in drafted
+    assert len(drafted) == 15 and {"DOC-HIPAA-BREACH", "DOC-HIPAA-BA-DUTIES"} <= set(drafted)
+    assert "DOC-HIPAA-CE" not in drafted and "DOC-HIPAA-GHP" not in drafted
+    breach = (edir / "documents" / "DOC-HIPAA-BREACH.md").read_text()
+    assert "covered entity" not in breach.split("## Discovery")[1].lower().split("## records")[0].replace(
+        "covered entity, business associate", "")                    # the core document has no role sections
     assert all("{{" not in (edir / "documents" / f"{d}.md").read_text() for d in drafted)
 
     out = tmp_path / "out"
     assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "build", "--out", str(out)]) == 0
     soa = (out / "soa.md").read_text()
     assert soa.startswith("# Calloway Clinics — Security Rule Applicability and Addressable Decisions")
-    assert "| 164.312(a)(2)(iv) | Encryption and decryption | Yes |" in soa
+    assert "| Requirement | Title | Decision | Justification |" in soa
+    assert "| 164.312(a)(2)(iv) | Encryption and decryption | Not yet decided |" in soa
+    assert "| 164.404 | Notification to individuals | Not in scope | Covered entity is not in the scope" in soa
     assert "| 164.308(a)(1)(ii)(A) |" not in soa                 # required: never an applicability decision
     matrix = (out / "control-matrix.md").read_text()
-    assert "## TEC 164.312 Technical safeguards" in matrix and "| 164.308(a)(1)(ii)(A) | Risk analysis |" in matrix
+    assert "## TEC 164.312 Technical safeguards" in matrix
+    assert "| 164.308(a)(1)(ii)(A) | Risk analysis | Required |" in matrix
+    assert "| 164.312(a)(2)(iv) | Encryption and decryption | Addressable |" in matrix
+    assert "| 164.312(a)(1) | Access control | Standard |" in matrix
     for f in ("soa.md", "control-matrix.md", "brief.md", "client-view.md", "internal-audit.md", "README.md"):
         assert not OTHER_WORDS.search((out / f).read_text()), f
     cv = (out / "client-view.md").read_text()
@@ -119,26 +139,81 @@ def test_new_hipaa_engagement_validates_builds_and_speaks_hipaa(tmp_path):
     assert "| Independent HIPAA assessor | TBD |" in idx and not OTHER_WORDS.search(idx)
 
 
-def test_addressable_needs_a_documented_decision_and_required_cannot_be_dropped(tmp_path):
+def test_addressable_records_a_decision_and_stays_in_scope(tmp_path):
     edir = _new(tmp_path)
-    _set(edir, "164.312(a)(2)(iv)", applicable=False)
-    e4 = [f for f in validate(load(edir, today=TODAY)) if f.code == "E004"]
-    assert len(e4) == 1 and "164.312(a)(2)(iv)" in e4[0].message
-    _set(edir, "164.312(a)(2)(iv)", applicable=False,
-         justification="Not reasonable for the legacy lab analyser; equivalent measure: isolated VLAN, physical lock, "
-                       "replacement by 2027-06 (risk RA-14).")
+    rid = "164.312(a)(2)(iv)"
+    # addressable is not optional: excluding it is an error, with or without a justification
+    _set(edir, rid, applicable=False, justification="Too expensive.")
+    e4 = [f.message for f in validate(load(edir, today=TODAY)) if f.code == "E004"]
+    assert e4 == [f"Addressable implementation specification {rid} is mandatory and cannot be excluded."]
+    _set(edir, rid, applicable=True)
+    # once work starts, an undecided specification is W114, and it can't be Ready
+    d = yaml.safe_load((edir / "controls" / f"{rid}.yaml").read_text())
+    for leg in d["test"]:
+        d["test"][leg] = {"status": "claimed"}
+    (edir / "controls" / f"{rid}.yaml").write_text(yaml.safe_dump(d, sort_keys=False))
+    assert "W114" in codes(load(edir, today=TODAY))
+    # an alternative needs the reason and the measure
+    _set(edir, rid, decision="alternative", justification="Legacy lab analyser can't encrypt at rest.")
+    e17 = [f.message for f in validate(load(edir, today=TODAY)) if f.code == "E017"]
+    assert len(e17) == 1 and "no implementation" in e17[0]
+    _set(edir, rid, implementation="Isolated VLAN, physical lock and replacement by 2027-06 (risk RA-14).")
     m = load(edir, today=TODAY)
-    assert "E004" not in codes(m) and not m.is_applicable("164.312(a)(2)(iv)")
+    assert not {"E017", "W114", "E004"} & set(codes(m)) and m.is_applicable(rid)
+    _set(edir, rid, decision="skip")
+    assert "E001" in codes(load(edir, today=TODAY))                # schema: as_written or alternative
+    # the applicability report shows the decision
+    _set(edir, rid, decision="alternative")
+    from grc.render_md import applicability_headers, applicability_rows
+    m = load(edir, today=TODAY)
+    assert applicability_headers(m)[2] == "Decision"
+    row = next(r for r in applicability_rows(m) if r[0] == rid)
+    assert row[2] == "Alternative measure" and row[4].startswith("Isolated VLAN") and row[5] != "Excluded"
     # a required specification can't be excluded, justification or not
     _set(edir, "164.312(a)(2)(i)", applicable=False, justification="We share accounts.")
     e4 = [f.message for f in validate(load(edir, today=TODAY)) if f.code == "E004"]
     assert e4 == ["Required implementation specification 164.312(a)(2)(i) is mandatory and cannot be excluded."]
 
 
-def test_categories_drop_out_of_scope_requirements(tmp_path):
+def test_a_verified_addressable_needs_its_decision_to_be_ready(tmp_path):
+    from grc.rules import requirement_state
+    edir = _new(tmp_path)
+    rid = "164.312(a)(2)(iii)"
+    root = edir.parent
+    (edir / "evidence" / "index.yaml").write_text(yaml.safe_dump({"evidence": [
+        {"id": "EV-001", "title": "Session timeout configuration", "type": "record", "location": "drive://x",
+         "collected": "2026-11-01", "approved_by": "CTO", "approved_on": "2026-11-01", "valid_for_days": 365}]}))
+    d = yaml.safe_load((edir / "controls" / f"{rid}.yaml").read_text())
+    d["owner"] = "CTO"
+    for leg in d["test"]:
+        d["test"][leg] = {"status": "verified", "evidence": ["EV-001"], "verified_by": "Lead", "verified_on": "2026-11-02"}
+    (edir / "controls" / f"{rid}.yaml").write_text(yaml.safe_dump(d, sort_keys=False))
+    assert requirement_state(load(edir, today=TODAY), rid) == "In progress"
+    _set(edir, rid, decision="as_written")
+    assert requirement_state(load(edir, today=TODAY), rid) == "Ready"
+    assert root.exists()
+
+
+def test_roles_decide_the_breach_duties(tmp_path):
     edir = _new(tmp_path, categories=None)
     m = load(edir, today=TODAY)
-    assert m.categories_in_scope == {"security"} and not m.is_applicable("164.404") and len(m.controls) == 63
+    assert m.categories_in_scope == {"core"} and len(m.controls) == 64
+    assert m.is_applicable("164.402") and m.is_applicable("164.412") and m.is_applicable("164.414")
+    assert not m.is_applicable("164.404") and not m.is_applicable("164.410")
+    w = [f.message for f in validate(m) if f.code == "W113"]
+    assert w and "covered_entity, business_associate" in w[0]
+    both = _new(tmp_path / "b", categories="covered_entity,business_associate")
+    m = load(both, today=TODAY)
+    assert len(m.controls) == 71 and "W113" not in codes(m) and m.is_applicable("164.404") and m.is_applicable("164.410")
+
+
+def test_unquoted_numeric_ids_get_a_hint(tmp_path):
+    edir = _new(tmp_path)
+    (edir / "gaps.yaml").write_text("gaps:\n- id: GAP-001\n  area: Breach\n  finding: No BA notice procedure.\n"
+                                    "  requirements: [164.410]\n  owner: CTO\n  due: 2027-01-15\n  severity: high\n"
+                                    "  status: open\n")
+    msgs = [f.message for f in validate(load(edir, today=TODAY)) if f.code == "E010"]
+    assert msgs and "Put the id in quotes ('164.410')" in msgs[0]
 
 
 # ------------------------------------------------------------------ mappings, references, collectors

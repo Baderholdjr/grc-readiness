@@ -22,7 +22,7 @@ terms:
   system: ePHI environment
   applicability_title: Security Rule Applicability and Addressable Decisions
   applicability_short: Applicability
-  applicability_intro: "Every addressable implementation specification in scope, and the decision on each: implemented as written, or not implemented as written, with the documented reason and the equivalent measure, as 164.306(d) requires. Standards and required specifications are not optional and are not listed here."
+  applicability_intro: "Every addressable implementation specification and the decision on each, as 164.306(d) requires: implemented as written, or an alternative measure, with the reason the specification isn't reasonable and appropriate as written and the equivalent measure taken. Either way it stays in scope and its measure is tested. Standards and required specifications in scope are not listed; duties for roles {client} doesn't have (covered entity, business associate) or for special organizations are listed as not in scope."
   internal_audit_ref: "164.308(a)(8)"
   corrective_ref: "164.308(a)(1)(ii)(B)"
   review_ref: "164.306(e)"
@@ -152,7 +152,7 @@ impact_assessment:
 
 # Policy and procedure library (`grc docs new`). Each entry is drafted from documents/<template>.
 # Together the documents cover every requirement exactly once; documents for categories the client didn't
-# choose (clearinghouse, group health plan, government) are left out automatically.
+# choose (covered entity, business associate, clearinghouse, group health plan, government) are left out automatically.
 documents:
   review_every_days: 365
   library:
@@ -177,13 +177,17 @@ documents:
     - {id: DOC-HIPAA-DATA, title: "Integrity and Transmission Security", kind: procedure, template: data.md,
        satisfies: ["164.312(c)(1)", "164.312(c)(2)", "164.312(e)(1)", "164.312(e)(2)(i)", "164.312(e)(2)(ii)"], sections: [Purpose, Integrity, Authenticating ePHI, Transmission security, Encryption decisions, Review]}
     - {id: DOC-HIPAA-BA, title: "Business Associate Management", kind: procedure, template: business-associates.md,
-       satisfies: ["164.308(b)(1)", "164.308(b)(3)", "164.314(a)(1)", "164.314(a)(2)(i)", "164.314(a)(2)(iii)"], sections: [Purpose, Inventory, Agreements, Subcontractors, Acting on breaches, Review]}
+       satisfies: ["164.308(b)(3)", "164.314(a)(1)", "164.314(a)(2)(i)"], sections: [Purpose, Inventory, Agreements, Acting on breaches, Review]}
     - {id: DOC-HIPAA-EVALUATION, title: "Security Evaluation", kind: procedure, template: evaluation.md,
        satisfies: ["164.308(a)(8)"], sections: [Purpose, When, Who, Method, Review]}
     - {id: DOC-HIPAA-DOCUMENTATION, title: "Policies, Documentation and Retention", kind: procedure, template: documentation.md,
        satisfies: ["164.316(a)", "164.316(b)(1)", "164.316(b)(2)(i)", "164.316(b)(2)(ii)", "164.316(b)(2)(iii)"], sections: [Purpose, Policies and procedures, Retention, Availability, Updates, Review]}
-    - {id: DOC-HIPAA-BREACH, title: "Breach Assessment and Notification", kind: procedure, template: breach.md,
-       satisfies: ["164.402", "164.404", "164.406", "164.408", "164.410", "164.412", "164.414"], sections: [Purpose, Assessment, Notifying individuals, Notifying the media and HHS, Business associate notification, Law enforcement delay, Records, Review]}
+    - {id: DOC-HIPAA-BREACH, title: "Breach Assessment", kind: procedure, template: breach.md,
+       satisfies: ["164.402", "164.412", "164.414"], sections: [Purpose, Discovery, Assessment, Law enforcement delay, Administrative requirements, Records, Review]}
+    - {id: DOC-HIPAA-CE, title: "Covered Entity Duties: Breach Notices and Business Associates", kind: procedure, template: covered-entity.md,
+       satisfies: ["164.308(b)(1)", "164.404", "164.406", "164.408"], sections: [Purpose, Business associate assurances, Notifying individuals, Content of the notice, Substitute notice, Notifying the media, Notifying HHS, Review]}
+    - {id: DOC-HIPAA-BA-DUTIES, title: "Business Associate Duties: Subcontractors and Breach Reporting", kind: procedure, template: business-associate-duties.md,
+       satisfies: ["164.308(b)(2)", "164.314(a)(2)(iii)", "164.410"], sections: [Purpose, Subcontractors, Subcontractor agreements, Notifying the covered entity, Review]}
     - {id: DOC-HIPAA-CLEARINGHOUSE, title: "Clearinghouse Isolation", kind: procedure, template: clearinghouse.md,
        satisfies: ["164.308(a)(4)(ii)(A)"], sections: [Purpose, Isolation, Review]}
     - {id: DOC-HIPAA-GHP, title: "Group Health Plan Safeguards", kind: procedure, template: group-health-plan.md,

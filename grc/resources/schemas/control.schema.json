@@ -17,6 +17,11 @@
       "default": true,
       "description": "Annex A only. Clauses 4-10 are always applicable."
     },
+    "decision": {
+      "type": "string",
+      "enum": ["as_written", "alternative"],
+      "description": "HIPAA addressable specifications: implemented as written, or an equivalent alternative (justification says why, implementation says what)."
+    },
     "justification": {
       "type": "string",
       "description": "Why the control is included or excluded (Statement of Applicability)."

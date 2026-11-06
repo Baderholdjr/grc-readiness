@@ -10,7 +10,7 @@ An evaluation, technical and nontechnical, runs every [[TODO: 12 months]] and af
 
 ## Who
 
-Evaluations are performed by [[TODO: internal audit or an independent assessor]], independent of the controls they test.
+Evaluations are performed by [[TODO: internal staff or an external assessor]]. Independence from the controls being tested isn't required by the rule, but it is recommended, because it makes the results more credible to auditors and partners.
 
 ## Method
 

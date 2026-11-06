@@ -49,6 +49,25 @@ def _hint(msg: str) -> str:
     return msg
 
 
+def _id_hint(model: Engagement, ref) -> str:
+    """An unquoted id like 164.410 is read by YAML as the number 164.41; say which id was meant."""
+    if isinstance(ref, (int, float)) and not isinstance(ref, bool):
+        for rid in model.requirement_index:
+            try:
+                if float(rid) == float(ref):
+                    return f" Put the id in quotes ('{rid}'): unquoted, YAML reads it as the number {ref}."
+            except ValueError:
+                continue
+    return ""
+
+
+def _as_number(text: str):
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
 # --------------------------------------------------------------------- schema
 def check_schemas(model: Engagement) -> list[Finding]:
     out: list[Finding] = []
@@ -126,7 +145,8 @@ def check_structure(model: Engagement) -> list[Finding]:
     # E003 unknown control ids / filename mismatch
     for cid, path in model.control_files.items():
         if cid not in req_ids:
-            out.append(Finding("error", "E003", f"'{cid}' is not a requirement in the {model.catalog['framework']['short_name']} catalog.",
+            out.append(Finding("error", "E003", f"'{cid}' is not a requirement in the {model.catalog['framework']['short_name']} catalog."
+                               + _id_hint(model, _as_number(cid)),
                                _rel(model, path), cid))
         elif path.stem != cid:
             out.append(Finding("error", "E003", f"File name should be {cid}.yaml.", _rel(model, path), cid))
@@ -155,6 +175,25 @@ def check_applicability(model: Engagement) -> list[Finding]:
         elif c.get("applicable") is False and model.in_category_scope(cid) and not (c.get("justification") or "").strip():
             out.append(Finding("error", "E004", f"{label} {cid} is excluded without a justification "
                                f"(needed for the {model.term('applicability_title')}).", path, cid))
+    # E017/W114 decision kinds (HIPAA addressable): as written, or an alternative with its reason and measure
+    for cid, c in model.controls.items():
+        if cid not in model.requirement_index or not model.needs_decision(cid) or not model.in_category_scope(cid):
+            continue
+        path = _rel(model, model.control_files[cid])
+        label = model.kind(model.requirement_index[cid].get("kind"))["label"]
+        dec = c.get("decision")
+        if dec is None:
+            started = any(leg_effective(model, (c.get("test") or {}).get(k, {})) != "not_started" for k in LEGS)
+            if started:
+                out.append(Finding("warning", "W114", f"{label} {cid} has no decision yet: set `decision: as_written`, or "
+                                   "`decision: alternative` with the reason (justification) and the equivalent measure (implementation).", path, cid))
+        elif dec not in ("as_written", "alternative"):
+            out.append(Finding("error", "E017", f"{label} {cid}: decision '{dec}' must be as_written or alternative.", path, cid))
+        elif dec == "alternative":
+            missing = [k for k in ("justification", "implementation") if not str(c.get(k) or "").strip()]
+            if missing:
+                out.append(Finding("error", "E017", f"{label} {cid} uses an alternative but has no {' or '.join(missing)}: record why "
+                                   "the specification isn't reasonable and appropriate as written, and the equivalent measure taken.", path, cid))
     # E016 optional parts of the framework (SOC 2 categories) must exist in the catalog
     chosen = (model.engagement.get("scope") or {}).get("categories") or []
     if chosen and not model.category_index:
@@ -165,6 +204,11 @@ def check_applicability(model: Engagement) -> list[Finding]:
             out.append(Finding("error", "E016", f"scope.categories: '{c}' is not a category of "
                                f"{model.catalog['framework']['short_name']} (choose from: {', '.join(model.category_index)}).",
                                _rel(model, model.engagement_dir / "engagement.yaml")))
+    # W113 a framework that needs at least one of several roles (HIPAA: covered entity, business associate)
+    one_of = [str(x) for x in model.catalog.get("choose_at_least_one") or [] if str(x) in model.category_index]
+    if one_of and not set(one_of) & {str(c) for c in chosen}:
+        out.append(Finding("warning", "W113", f"scope.categories: choose at least one of {', '.join(one_of)}; until then the "
+                           "duties that depend on it are left out.", _rel(model, model.engagement_dir / "engagement.yaml")))
     return out
 
 
@@ -288,7 +332,7 @@ def check_gaps(model: Engagement) -> list[Finding]:
         gid = g.get("id")
         for r in g.get("requirements", []):
             if r not in model.requirement_index:
-                out.append(Finding("error", "E010", f"{gid} references unknown requirement {r}.", path, gid))
+                out.append(Finding("error", "E010", f"{gid} references unknown requirement {r}.{_id_hint(model, r)}", path, gid))
         ph = g.get("phase")
         if ph and ph not in phases:
             out.append(Finding("error", "E010", f"{gid} references unknown phase '{ph}'.", path, gid))
@@ -443,7 +487,7 @@ def _check_one_audit(model: Engagement, a: dict, prog: str, out: list[Finding]) 
         if wp.get("audit") != aid:
             out.append(Finding("error", "E025", f"{ref}: audit field is '{wp.get('audit')}'.", path, ref))
         if wp.get("requirement") not in model.requirement_index:
-            out.append(Finding("error", "E025", f"{ref}: unknown requirement {wp.get('requirement')}.", path, ref))
+            out.append(Finding("error", "E025", f"{ref}: unknown requirement {wp.get('requirement')}.{_id_hint(model, wp.get('requirement'))}", path, ref))
         concl = wp.get("conclusion", "not_started")
         sample = [s for s in wp.get("sample") or [] if isinstance(s, dict)]
         pending = [str(s.get("item")) for s in sample if s.get("result", "not_tested") == "not_tested"]
@@ -477,7 +521,7 @@ def _check_one_audit(model: Engagement, a: dict, prog: str, out: list[Finding]) 
 def _check_one_finding(model: Engagement, f: dict, fpath: str, out: list[Finding]) -> None:
     fid, st = f["id"], f.get("status")
     if f.get("requirement") not in model.requirement_index:
-        out.append(Finding("error", "E025", f"{fid}: unknown requirement {f.get('requirement')}.", fpath, fid))
+        out.append(Finding("error", "E025", f"{fid}: unknown requirement {f.get('requirement')}.{_id_hint(model, f.get('requirement'))}", fpath, fid))
     if f.get("audit") and f["audit"] not in model.audit_index:
         out.append(Finding("error", "E025", f"{fid}: unknown audit {f['audit']}.", fpath, fid))
     if f.get("workpaper") and f.get("audit") and f["workpaper"] not in model.workpapers.get(f["audit"], {}):
@@ -571,7 +615,7 @@ def check_impact(model: Engagement) -> list[Finding]:
                     out.append(Finding("error", "E030", f"{ref}: unknown category '{x.get('category')}'.", path, iid))
                 for r in x.get("controls") or []:
                     if r not in model.requirement_index:
-                        out.append(Finding("error", "E030", f"{ref}: unknown requirement {r}.", path, iid))
+                        out.append(Finding("error", "E030", f"{ref}: unknown requirement {r}.{_id_hint(model, r)}", path, iid))
                 for g in x.get("gaps") or []:
                     if g not in model.gap_index:
                         out.append(Finding("error", "E030", f"{ref}: unknown gap {g}.", path, iid))
@@ -664,7 +708,7 @@ def check_documents(model: Engagement) -> list[Finding]:
                 out.append(Finding("error", "E040", f"{did}: document file names must look like DOC-NAME.md.", path, did))
             for r in meta.get("satisfies") or []:
                 if r not in model.requirement_index:
-                    out.append(Finding("error", "E040", f"{did}: satisfies unknown requirement {r}.", path, did))
+                    out.append(Finding("error", "E040", f"{did}: satisfies unknown requirement {r}.{_id_hint(model, r)}", path, did))
             st = meta.get("status")
             if st in ("draft", "in_review"):
                 out.append(Finding("warning", "W141", f"{did} ({meta.get('title')}) is {st}, not yet approved.", path, did))
@@ -975,7 +1019,7 @@ def requirement_state(model: Engagement, cid: str) -> str:
         return "Missing"
     eff = {k: leg_effective(model, c.get("test", {}).get(k, {})) for k in LEGS}
     if all(v == "verified" for v in eff.values()):
-        return "Ready"
+        return "In progress" if model.needs_decision(cid) and c.get("decision") not in ("as_written", "alternative") else "Ready"
     if all(v == "not_started" for v in eff.values()):
         return "Not started"
     if all(v in ("not_started", "claimed") for v in eff.values()):

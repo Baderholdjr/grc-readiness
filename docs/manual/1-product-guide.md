@@ -423,26 +423,26 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 > **For GRC practitioners:**
 > - **Scope:** 45 CFR 164.302–318 and 164.400–414, as in force (the January 2025 proposed revision is not final). Not the Privacy Rule.
-> - **Requirements:** 31 standards, 21 required and 22 addressable implementation specifications; IDs are the citations, such as `164.308(a)(1)(ii)(A)`.
-> - **Applicability:** standards and required specifications can't be excluded. An addressable one marked not applicable needs the documented decision and the equivalent measure (E004). The *Security Rule Applicability and Addressable Decisions* report lists them.
-> - **Categories:** the Security Rule always; `breach` for the Breach Notification Rule; `clearinghouse`, `group_health_plan`, `government` only for those organizations.
+> - **Requirements:** 32 standards, 21 required and 22 addressable implementation specifications; IDs are the citations, such as `164.308(a)(1)(ii)(A)`.
+> - **Applicability:** nothing in scope can be excluded. Each addressable specification records `decision: as_written`, or `decision: alternative` with the reason and the equivalent measure (E017; W114 while undecided). It stays in scope and its measure is tested. The *Security Rule Applicability and Addressable Decisions* report lists the decisions.
+> - **Categories:** the core (Security Rule and the common breach rules) always; then the role, `covered_entity` and/or `business_associate` (W113 until one is chosen); `clearinghouse`, `group_health_plan`, `government` only for those organizations.
 > - **Dates:** `stage1` is the readiness assessment (the 164.308(a)(8) evaluation); `stage2` the independent assessment.
 > - **Boundaries:** no ePHI in the repository; breach determinations and covered-entity status are for the client's counsel.
 
 > **Under the hood:**
-> - Start a record with `new-engagement --framework hipaa --categories breach` (or the *categories* input of New engagement).
+> - Start a record with `new-engagement --framework hipaa --categories business_associate` (or the *categories* input of New engagement).
 > - Catalog and playbook: `frameworks/hipaa/`. Mappings: `mappings/hipaa__iso27001.yaml`, `mappings/hipaa__soc2.yaml`.
 
 The four frameworks side by side:
 
 | | ISO 42001 | ISO 27001 | SOC 2 | HIPAA |
 |---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 63 Security Rule + 7 breach notification + 4 for special organizations |
-| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 17 documents (14 for most clients) |
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) |
 | Impact assessments | Yes (AI systems) | No | No | No |
 | Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance |
 | Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 9 equivalent, 3 subset, 31 related; to SOC 2: 24 related |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related |
 
 ## 19. The compliance program: common controls, calendar and certification
 
@@ -553,6 +553,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | E014 | error | Dates out of order: Stage 1 not before Stage 2 (SOC 2: observation start not before its end), a phase ending before it starts, an audit ending before it starts |
 | E015 | error | Leg verified on evidence whose check is failing, or on an unsound document, assessment or review |
 | E016 | error | `scope.categories` names a category the framework doesn't have (or the framework has no optional categories) |
+| E017 | error | HIPAA: an addressable specification's `decision` isn't `as_written` or `alternative`, or an `alternative` has no `justification` or `implementation` |
 | E020–E022, E024–E026 | error | Internal audit: independence, status ahead of work, incomplete workpapers, finding lifecycle, unknown references, Tested verified with an open major NC |
 | E030–E032 | error | Impact assessment: unknown references, approved while incomplete or by its assessor, residual risk not acceptable or not accepted |
 | E040–E042 | error | Documents: unknown requirement, approved while incomplete or self-approved, changed after approval |
@@ -570,6 +571,8 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W108 / W109 | warning | A collector check is failing / ran but errored |
 | W110 / W111 | warning | Client claim with no owner / owner not in owners.yaml |
 | W112 | warning | SOC 2: an open gap whose requirements are all in categories taken out of scope; it is no longer chased (no request, issue closed) |
+| W113 | warning | HIPAA: no role chosen; add `covered_entity` and/or `business_associate` to `scope.categories` |
+| W114 | warning | HIPAA: work has started on an addressable specification but its `decision` isn't recorded |
 | W120–W123 | warning | Finding past due; 9.2 verified while no audit has reached reporting or closed; audit overrunning; in-scope requirement without a workpaper |
 | W124 / W125 | warning | Audit scope or exclude entry matches no requirement / a workpaper cited on a different requirement from the one it tested |
 | W130–W133 | warning | AI system without an assessment; not yet approved; past review; residual above inherent |

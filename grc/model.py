@@ -285,12 +285,17 @@ class Engagement:
         return {**base, **((self.catalog.get("kinds") or {}).get(k) or {})}
 
     def kind_label(self, req: dict) -> str:
-        """Short label for a requirement's kind in tables: 'Clause', 'Annex A', or a SOC 2 category."""
+        """Short label for a requirement's kind in tables: 'Clause', 'Annex A', a SOC 2 category, or, when a
+        catalog declares several kinds (HIPAA: Standard, Required, Addressable), the kind itself."""
         cat = self.category_index.get(str(req.get("category") or ""))
-        if cat:
+        if cat and len(self.catalog.get("kinds") or {}) < 2:
             return str(cat.get("short") or cat.get("title"))
         info = self.kind(req.get("kind"))
         return str(info.get("short") or info.get("label"))
+
+    def needs_decision(self, req_id: str) -> bool:
+        """A kind that stays in scope but records how it is met (HIPAA addressable: as written, or an alternative)."""
+        return bool(self.kind(self.requirement_index.get(req_id, {}).get("kind")).get("decision"))
 
     def is_mandatory(self, req_id: str) -> bool:
         return bool(self.kind(self.requirement_index.get(req_id, {}).get("kind")).get("mandatory"))
