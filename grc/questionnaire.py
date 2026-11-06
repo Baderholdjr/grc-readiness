@@ -293,7 +293,7 @@ ANSWERS_HEADER = """# Answers for this questionnaire. `grc questionnaire draft` 
 """
 
 
-def import_workbook(root: Path, workbook: Path, name: str, definition: str = "hecvat-4", requester: str = "",
+def import_workbook(root: Path, workbook: Path | None, name: str, definition: str = "hecvat-4", requester: str = "",
                     due: str | None = None, today: dt.date | None = None, force: bool = False) -> Path:
     root = Path(root)
     qdir = root / QDIR / name
@@ -301,6 +301,10 @@ def import_workbook(root: Path, workbook: Path, name: str, definition: str = "he
         raise SystemExit(f"questionnaire: {qdir.relative_to(root)}/ already exists (use --force to re-import "
                          "the workbook; answers.yaml is kept)")
     d = load_definition(definition, root)
+    if d.get("form"):
+        return _import_form(root, qdir, d, requester, due, today)
+    if workbook is None:
+        raise SystemExit(f"questionnaire: {d['title']} is a workbook: give --workbook")
     wbk = Workbook(workbook)
     missing = [s for s in d["layout"]["answer_sheets"] + [d["layout"]["question_sheet"]] if s not in wbk.sheets]
     if missing:
@@ -322,6 +326,44 @@ def import_workbook(root: Path, workbook: Path, name: str, definition: str = "he
     if not (qdir / "answers.yaml").exists():
         (qdir / "answers.yaml").write_text(ANSWERS_HEADER + "answers: []\n", encoding="utf-8")
     return qdir
+
+
+ANSWER_CHOICES = {"yes_no": ["Yes", "No"]}
+
+
+def form_questions(d: dict) -> list[dict]:
+    """A form (answered in a portal) has no workbook: its questions come from the definition."""
+    out = []
+    for qid, info in (d.get("questions") or {}).items():
+        kind = info.get("answer") or "text"
+        out.append({"id": qid, "sheet": (d.get("sections") or {}).get(qid.split("-")[0], qid.split("-")[0]),
+                    "answer_cell": None, "detail_cell": None,
+                    "allowed": info.get("allowed") or ANSWER_CHOICES.get(kind), "kind": kind,
+                    "question": info.get("topic") or "", "compliant": str(info.get("compliant") or ""),
+                    "guidance": "", "optional": bool(info.get("optional"))})
+    return out
+
+
+def _import_form(root: Path, qdir: Path, d: dict, requester: str, due, today) -> Path:
+    qdir.mkdir(parents=True, exist_ok=True)
+    meta = {"definition": d["id"], "title": f"{d['title']} for {requester}".strip() if requester else d["title"],
+            "version": (d.get("tested_versions") or [""])[0], "requester": requester,
+            "received_on": (today or dt.date.today()).isoformat(), "due": due, "status": "open", "sent_on": None}
+    if (qdir / "questionnaire.yaml").exists():
+        old = load_yaml(qdir / "questionnaire.yaml") or {}
+        meta.update({k: old[k] for k in ("requester", "due", "status", "sent_on", "title", "received_on")
+                     if isinstance(old, dict) and old.get(k)})
+    (qdir / "questionnaire.yaml").write_text(yaml.safe_dump(meta, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    (qdir / "questions.yaml").write_text(FORM_HEADER + yaml.safe_dump({"questions": form_questions(d)}, sort_keys=False,
+                                         allow_unicode=True, width=120), encoding="utf-8")
+    if not (qdir / "answers.yaml").exists():
+        (qdir / "answers.yaml").write_text(ANSWERS_HEADER + "answers: []\n", encoding="utf-8")
+    return qdir
+
+
+FORM_HEADER = """# Questions of a form answered in the requester's portal, from the engine's definition (our own short topics:
+# read each question as the portal words it). Don't edit: re-import instead.
+"""
 
 
 # ------------------------------------------------------------------ what backs an answer
@@ -410,11 +452,18 @@ def _library_current(e: dict, today: dt.date) -> bool:
 
 
 def _gated_off(q: dict, d: dict, answers: dict[str, dict]) -> dict | None:
-    """The gate that switches this question's section off, if its answer is No."""
+    """What switches this question off: a section gate answered No, or a follow-up whose question was
+    answered otherwise ("if: {GEN-03: Yes}"). Returns {question, label, why}."""
     for g in d.get("gates") or []:
         hit = q["sheet"] in (g.get("sheets") or []) or q["id"][:4] in (g.get("prefixes") or [])
         if hit and str((answers.get(g["question"]) or {}).get("answer") or "").strip().lower() == "no":
-            return g
+            return {**g, "why": f"{g['question']} is No ({g.get('label', '')}): leave this section blank"}
+    cond = ((d.get("questions") or {}).get(q["id"]) or {}).get("if") or {}
+    for parent, want in cond.items():
+        got = str((answers.get(parent) or {}).get("answer") or "").strip()
+        if got and got.lower() != str(want).strip().lower():
+            return {"question": parent, "label": f"only when {parent} is {want}",
+                    "why": f"{parent} is {got}: this follow-up only applies when it is {want}"}
     return None
 
 
@@ -455,7 +504,7 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
         if gate:
             entry.update(status="not_applicable", source=f"gate:{gate['question']}",
                          detail=None, support="n/a")
-            entry["basis"] = [f"{gate['question']} is No ({gate.get('label', '')}): leave this section blank"]
+            entry["basis"] = [gate["why"]]
         elif qid in lib and _library_current(lib[qid], today):
             e = lib[qid]
             entry.update(status="proposed", answer=e.get("answer"), detail=e.get("detail"),
@@ -478,9 +527,13 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
             # Only a Yes: a control in place shows that something is done. It can't prove a negative
             # ("No, staff can't see customer data"), so questions whose compliant answer is No stay with a person.
             want = (q.get("compliant") or "").strip()
+            kind = info.get("answer") or ("yes_no" if q.get("allowed") else "text")
             if s.level == "supported" and want == "Yes" and q.get("allowed") and want in q["allowed"]:
                 entry.update(status="proposed", answer=want, source="program",
                              detail=" ".join(s.statements[:2]) or None)
+            elif s.level == "supported" and kind == "text" and not q.get("allowed") and s.statements:
+                # a description question: the controls' own implementation statements, for a person to edit
+                entry.update(status="proposed", answer=" ".join(s.statements[:3]), source="program")
         new[qid] = entry
         counts[entry["status"]] += 1
     # keep answers for ids no longer in the workbook out (validation reports stray ones in the old file)
@@ -533,13 +586,9 @@ def _set_cell(xml: str, ref: str, text: str) -> str:
     return xml[:start] + body + xml[rm.end("body"):]
 
 
-def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt.date | None = None) -> dict:
-    """Write answers into a copy of the received workbook. Only the answer and detail cells change."""
-    src = qn.dir / "received.xlsx"
-    wbk = Workbook(src)
-    edits: dict[str, dict[str, str]] = {}
-    written = skipped = 0
-    refused: list[str] = []
+def _to_send(qn: Questionnaire, include_proposed: bool, prog=None):
+    """The answers that may be written, and why the others can't."""
+    picked, refused, skipped = [], [], 0
     answers = qn.aindex
     for a in qn.answers:
         q = qn.qindex.get(str(a.get("id")))
@@ -549,18 +598,71 @@ def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt
         if not ok or a.get("answer") in (None, ""):
             skipped += 1
             continue
-        blocking = [m for sev, code, m in answer_problems(qn, a, answers)
+        blocking = [m for sev, code, m in answer_problems(qn, a, answers, prog)
                     if (sev == "error" and not (include_proposed and code == "Q103")) or code == "Q109"]
         if a.get("status") == "proposed" and _gated_off(q, qn.definition, answers):
             blocking.append(f"{q['id']}: its section is switched off")
         if blocking:
             refused += blocking
             continue
-        part = wbk.sheets[q["sheet"]]
-        edits.setdefault(part, {})[q["answer_cell"]] = str(a["answer"])
         detail = str(a.get("detail") or "").strip()
         if include_proposed and a.get("status") == "proposed":
             detail = ("[DRAFT - not approved] " + detail).strip()
+        picked.append((a, q, detail))
+    return picked, refused, skipped
+
+
+def _cell_text(s: str) -> str:
+    return " ".join(str(s).split()).replace("|", "\\|")
+
+
+def fill_form(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt.date | None = None,
+              prog=None) -> dict:
+    """A form is answered in a portal: write an answer sheet to copy from (Markdown, or CSV by extension)."""
+    picked, refused, skipped = _to_send(qn, include_proposed, prog)
+    rows = []
+    for a, q, detail in picked:
+        ans = str(a["answer"])
+        if q.get("kind") == "document" and prog is not None:
+            rec, ev = prog.evidence(ans)
+            if ev:
+                ans = f"{ev.get('title')} ({ans}; {ev.get('location')})"
+        rows.append([q["id"], q.get("sheet") or "", q.get("question") or "", ans, detail,
+                     "approved" if a.get("status") == "approved" else "DRAFT - not approved"])
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    head = ["Question", "Section", "Topic", "Answer", "Detail", "Status"]
+    if out.suffix.lower() == ".csv":
+        import csv
+        with out.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            w.writerow(head)
+            w.writerows(rows)
+    else:
+        m = qn.meta
+        lines = [f"# {m.get('title') or qn.definition['title']}" + (" (DRAFT, not approved)" if include_proposed else ""), "",
+                 f"Answer sheet for the {qn.definition.get('publisher', '')} portal, {(today or dt.date.today()).isoformat()}. "
+                 "Copy each answer into the field with the same question id. Questions not listed are unanswered "
+                 "or don't apply.", "", "| " + " | ".join(head) + " |", "|" + "---|" * len(head)]
+        lines += ["| " + " | ".join(_cell_text(c) for c in r) + " |" for r in rows]
+        out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return {"written": len(rows), "left_blank": skipped, "refused": refused}
+
+
+def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt.date | None = None,
+         prog=None) -> dict:
+    """Write answers into a copy of the received workbook. Only the answer and detail cells change."""
+    if qn.definition.get("form"):
+        return fill_form(qn, out, include_proposed, today, prog)
+    src = qn.dir / "received.xlsx"
+    wbk = Workbook(src)
+    edits: dict[str, dict[str, str]] = {}
+    written = skipped = 0
+    refused: list[str] = []
+    picked, refused, skipped = _to_send(qn, include_proposed, prog)
+    for a, q, detail in picked:
+        part = wbk.sheets[q["sheet"]]
+        edits.setdefault(part, {})[q["answer_cell"]] = str(a["answer"])
         if detail and q.get("detail_cell"):
             edits[part][q["detail_cell"]] = detail
         written += 1
@@ -700,7 +802,7 @@ def _writable(text) -> str | None:
     return None
 
 
-def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict]) -> list[tuple[str, str, str]]:
+def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict], prog=None) -> list[tuple[str, str, str]]:
     """(severity, code, message) for one answer: what validate reports and what stops fill from writing it."""
     out = []
     qid = str(a.get("id"))
@@ -710,6 +812,13 @@ def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict]) -> lis
     ans = a.get("answer")
     if ans not in (None, "") and q.get("allowed") and str(ans) not in q["allowed"]:
         out.append(("error", "Q102", f"{qid}: '{ans}' isn't one of the workbook's choices ({', '.join(q['allowed'])})."))
+    if q.get("kind") == "document" and ans not in (None, "") and prog is not None:
+        rec, ev = prog.evidence(str(ans))
+        if ev is None:
+            out.append(("error", "Q112", f"{qid}: '{ans}' isn't evidence in a record; answer with "
+                        "<framework>:<EV-id>, e.g. iso27001:EV-014."))
+        elif not rec.evidence_is_current(ev):
+            out.append(("warning", "Q112", f"{qid}: {ans} ({ev.get('title')}) is expired or failing; attach a current version."))
     for key in ("answer", "detail"):
         why = _writable(a.get(key))
         if why:
@@ -721,8 +830,7 @@ def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict]) -> lis
             out.append(("error", "Q103", f"{qid} is approved without approved_by and approved_on."))
         gate = _gated_off(q, qn.definition, answers)
         if gate:
-            out.append(("warning", "Q109", f"{qid}: {gate['question']} is No, so this section should be left blank "
-                        "(fill leaves it blank)."))
+            out.append(("warning", "Q109", f"{qid}: {gate['why']} (fill leaves it blank)."))
     return out
 
 
@@ -737,7 +845,7 @@ def check_answers(qn: Questionnaire, today: dt.date, prog=None) -> list[Finding]
         if qid in seen:
             out.append(Finding("error", "Q108", f"{qid}: answered twice.", afile, qid))
         seen.add(qid)
-        for sev, code, msg in answer_problems(qn, a, answers):
+        for sev, code, msg in answer_problems(qn, a, answers, prog):
             out.append(Finding(sev, code, msg, afile, qid))
         q = qn.qindex.get(qid)
         claims = str(a.get("answer") or "").strip()

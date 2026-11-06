@@ -2,7 +2,12 @@
 
 Customers send security questionnaires before they buy. Universities send the **HECVAT** (Higher Education Community Vendor Assessment Toolkit, published by EDUCAUSE). The engine answers them from the compliance program, so an answer rests on a control and its evidence, not on memory. Every answer is approved by a person before it leaves.
 
-Built in: **HECVAT 4** (`hecvat-4`, tested with version 4.1.4: 331 questions across the Start Here, Organization, Product, Infrastructure, IT Accessibility, Case-Specific, AI and Privacy tabs).
+Built in:
+
+| Definition | Questionnaire | Answered in |
+|---|---|---|
+| `hecvat-4` | **HECVAT 4** (EDUCAUSE; tested with 4.1.4: 331 questions across the Start Here, Organization, Product, Infrastructure, IT Accessibility, Case-Specific, AI and Privacy tabs) | The workbook the customer sends |
+| `txramp-aq-2` | **TX-RAMP Assessment Questionnaire** (Texas DIR, as described in the Vendor Guide v2.0: 47 general, system and required-document questions) | DIR's SPECTRIM vendor portal: `fill` writes an answer sheet to copy from |
 
 ## How it works
 
@@ -24,7 +29,18 @@ questionnaires/
 5. **Send** the workbook, then set `status: sent` and `sent_on` in `questionnaire.yaml`.
 6. **Learn.** Run `learn`. Approved answers go into `library.yaml`, and the next questionnaire starts from them.
 
-From the command line: `python -m grc questionnaire import|draft|fill|learn|report|validate` (`--name`, `--workbook`, `--requester`, `--due`, `--draft`, `--out`).
+From the command line: `python -m grc questionnaire import|draft|fill|learn|report|validate` (`--name`, `--definition`, `--workbook`, `--requester`, `--due`, `--draft`, `--out`, `--out-dir`).
+
+## TX-RAMP
+
+A TX-RAMP certification request is answered in DIR's portal, so it has no workbook to fill. Import it with **definition** `txramp-aq-2` and no workbook. Draft, review and approve as above. `fill` then writes an answer sheet (`.md`, or `.csv` with `--out sheet.csv`) listing each approved answer under its question id, ready to copy into the portal.
+
+- **Follow-up questions** (GEN-03a, GEN-09a and the like) apply only when their question has the answer that triggers them. Once GEN-03 is answered No, GEN-03a is `not_applicable`.
+- **Required documents** (the authorization boundary diagram, the data flow diagram and the completed TX-RAMP Security Plan) are answered with an evidence reference from a record, for example `iso27001:EV-014`. The answer sheet shows the document's title and location. Validation checks that the evidence exists and is current (Q112).
+- **Facts stay with people.** Breach history, data location, insurance and prohibited-technology ties are never proposed from controls. Only GEN-05 and GEN-20 have a compliant answer that controls can back.
+- **Not yet built:** the **TX-RAMP Security Plan workbook**, the Level 1 and Level 2 control baseline that DIR asks vendors to complete control by control (implementation status, responsibility, details). Its controls are NIST SP 800-53 controls, so the program's `nist80053` mappings will fill it once the workbook's layout is confirmed.
+
+The question topics are our own short labels, and GEN-NOTES and the DOC-… ids are ours too. Read each question as the portal words it before approving.
 
 ## Where proposed answers come from
 
@@ -36,7 +52,7 @@ In this order, for each question:
 | Answer library | An approved library answer for this question, approved within its review period (default 365 days) | `proposed` |
 | Company profile | The general questions (GNRL-01 to 09) from `profile.yaml` | `proposed` |
 | Program hint | REQU-04 (AI features) when an ISO 42001 record exists; REQU-05 (HIPAA) when a HIPAA record exists | `proposed` |
-| Controls | The question is mapped to framework requirements, and **every** mapped program control has current evidence, **every** mapped requirement is Ready, and none has an open gap. Then the workbook's compliant answer is proposed, but only when that answer is Yes: a control shows something is done, it can't prove a negative ("No, staff can't see customer data"). The control's description, or the record's implementation statement, becomes the detail | `proposed` |
+| Controls | For a description question (no dropdown), the controls' implementation statements, proposed as the answer for a person to edit, when the backing is `supported`. For a choice question: the question is mapped to framework requirements, and **every** mapped program control has current evidence, **every** mapped requirement is Ready, and none has an open gap. Then the workbook's compliant answer is proposed, but only when that answer is Yes: a control shows something is done, it can't prove a negative ("No, staff can't see customer data"). The control's description, or the record's implementation statement, becomes the detail | `proposed` |
 | Nothing fits | | `needs_answer` |
 
 Every entry records its **backing**, so a reviewer can see what an answer rests on:
@@ -69,6 +85,7 @@ The `basis` list names the controls and requirements, with their state and any o
 | Q108 | error | An answer for a question not in the workbook, or a question answered twice |
 | Q109 | warning | An approved answer in a section a Start Here answer switched off (fill leaves it blank) |
 | Q110 | info | Questions with no entry yet: run `draft` |
+| Q112 | error/warning | A required document answered with evidence that doesn't exist (error) or is expired or failing (warning) |
 | Q111 | error | An answer or detail a workbook can't hold: control characters (often pasted from Word or a PDF), or more than 32,767 characters |
 
 `fill` refuses to write any answer with an error (or Q109), lists them and fails, and the workflow runs `validate` before `fill`, so nothing with an error leaves.

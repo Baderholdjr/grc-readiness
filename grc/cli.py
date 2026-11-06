@@ -408,11 +408,11 @@ def cmd_questionnaire(args) -> int:
         if args.name and not Q.valid_name(args.name):
             print("questionnaire: --name may contain letters, digits, . _ - (no '..', not ending in . or .lock)", file=sys.stderr)
             return 2
-        if not (args.workbook and args.name):
-            print("questionnaire import needs --workbook and --name", file=sys.stderr)
+        if not args.name:
+            print("questionnaire import needs --name (and --workbook, unless it is a portal form)", file=sys.stderr)
             return 2
 
-        qdir = Q.import_workbook(root, Path(args.workbook), args.name, args.definition, args.requester or "",
+        qdir = Q.import_workbook(root, Path(args.workbook) if args.workbook else None, args.name, args.definition, args.requester or "",
                                  args.due, today=today, force=args.force)
         qn = Q.load_questionnaire(root, args.name)
         print(f"imported {len(qn.questions)} questions into {qdir.relative_to(root.resolve()) if qdir.is_absolute() else qdir}/ "
@@ -450,8 +450,9 @@ def cmd_questionnaire(args) -> int:
             Q.write_answers(qn)
             print(f"{name}: " + ", ".join(f"{v} {k.replace('_', ' ')}" for k, v in counts.items()))
         elif args.action == "fill":
-            out = Path(args.out or f"out/questionnaires/{name}{'-DRAFT' if args.draft else ''}.xlsx")
-            res = Q.fill(qn, out, include_proposed=args.draft, today=today)
+            ext = ".md" if qn.definition.get("form") else ".xlsx"
+            out = Path(args.out or f"{args.out_dir or 'out/questionnaires'}/{name}{'-DRAFT' if args.draft else ''}{ext}")
+            res = Q.fill(qn, out, include_proposed=args.draft, today=today, prog=prog)
             print(f"{name}: wrote {res['written']} answer(s) to {out}; {res['left_blank']} left blank"
                   + (" (DRAFT: proposed answers included and marked)" if args.draft else " (approved answers only)"))
             for msg in res["refused"]:
@@ -672,12 +673,13 @@ def main(argv=None) -> int:
     qu.add_argument("action", choices=["import", "draft", "fill", "learn", "report", "validate"])
     qu.add_argument("--name", help="questionnaire folder under questionnaires/ (import: required; others: default all)")
     qu.add_argument("--workbook", help="import: the workbook as received")
-    qu.add_argument("--definition", default="hecvat-4", help="import: questionnaire definition (default hecvat-4)")
+    qu.add_argument("--definition", default="hecvat-4", help="import: questionnaire definition: hecvat-4 (workbook, default) or txramp-aq-2 (TX-RAMP portal form)")
     qu.add_argument("--requester", help="import: who sent it")
     qu.add_argument("--due", help="import: date the answers are due (YYYY-MM-DD)")
     qu.add_argument("--force", action="store_true", help="import: re-import over an existing questionnaire (answers kept)")
     qu.add_argument("--draft", action="store_true", help="fill: also write proposed answers, marked as drafts")
-    qu.add_argument("--out", help="fill: workbook to write; report: Markdown file")
+    qu.add_argument("--out", help="fill: workbook to write (a form: .md or .csv answer sheet); report: Markdown file")
+    qu.add_argument("--out-dir", help="fill: folder for the output, named after the questionnaire (default out/questionnaires)")
     qu.add_argument("--summary", help="report: append to this file (e.g. $GITHUB_STEP_SUMMARY)")
     qu.add_argument("--root", default=".", help="repository root (default .)")
     qu.add_argument("--format", choices=["text", "text-verbose", "github", "json"], default="text")

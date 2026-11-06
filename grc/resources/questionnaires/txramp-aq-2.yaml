@@ -1,0 +1,89 @@
+# TX-RAMP Assessment Questionnaire (Texas Department of Information Resources), as described in the
+# "TX-RAMP Vendor Guide: Completing a TX-RAMP Assessment Questionnaire" v2.0 (April 2023).
+#
+# The questionnaire is answered in DIR's SPECTRIM vendor portal, not in a workbook. So this is a form:
+# `grc questionnaire import --definition txramp-aq-2 --name ...` needs no workbook, and `fill` writes an
+# answer sheet (Markdown or CSV) to copy into the portal. Topics are our own short labels; read each
+# question as DIR words it in the portal before approving an answer.
+#
+# GEN-NOTES and the DOC-… ids are ours: the portal shows those fields without an id.
+# The three required documents are answered with evidence references ("<framework>:EV-…") from a record;
+# validation checks that each one exists and is current. Only GEN-05 and GEN-20 have a compliant answer the
+# controls can support (Yes); facts such as data location, breach history and insurance are always a person's answer. The TX-RAMP Security Plan workbook (the Level 1 /
+# Level 2 control baseline) is a separate workbook, filled control by control.
+id: txramp-aq-2
+title: TX-RAMP Assessment Questionnaire
+publisher: Texas Department of Information Resources
+form: true
+tested_versions: ["2.0"]
+sections:
+  GEN: General
+  SYS: System Information
+  DOC: Required Documents
+profile:
+  GEN-01: organization_history
+  GEN-02: texas_customer_base
+  GEN-04: security_staff_count
+  GEN-08: hosting_structure
+  GEN-15a: subservice_providers
+  SYS-01: system_overview
+  SYS-02: system_status
+  SYS-04: system_sensitivity
+questions:
+  GEN-01:  {topic: Years in this product area, answer: text}
+  GEN-02:  {topic: Customer base incl. Texas public entities, answer: text}
+  GEN-03:  {topic: Significant security breach in last 3 years, answer: yes_no, compliant: "No"}
+  GEN-03a: {topic: Breach circumstances and follow-up, answer: text, if: {GEN-03: "Yes"},
+            maps: {nist80053: [IR-4, IR-6], iso27001: [A.5.27]}}
+  GEN-04:  {topic: Number of dedicated security staff, answer: text}
+  GEN-05:  {topic: Dedicated development and support teams, answer: yes_no, compliant: "Yes"}
+  GEN-06:  {topic: Data export and portability, answer: text}
+  GEN-07:  {topic: Processing limited to contiguous US, answer: choice,
+            allowed: ["Yes", "No", "Optionally Upon Customer Request"], maps: {nist80053: [SA-9]}}
+  GEN-08:  {topic: Hosting providers and where data resides, answer: text, maps: {nist80053: [SA-9], iso27001: [A.5.23]}}
+  GEN-08a: {topic: Customer choice of hosting region, answer: text}
+  GEN-09:  {topic: Customer data shared with third parties, answer: choice, allowed: ["Yes", "No", "Customer Specific"]}
+  GEN-09a: {topic: Third-party data sharing explained, answer: text, if: {GEN-09: "Yes"},
+            maps: {nist80053: [SA-9, PT-2], iso27001: [A.5.19, A.5.20], soc2: [CC9.2]}}
+  GEN-10:  {topic: Single sign-on for customers, answer: text, maps: {nist80053: [IA-2, IA-8]}}
+  GEN-11:  {topic: Multifactor authentication options, answer: text, maps: {nist80053: [IA-2], iso27001: [A.8.5], soc2: [CC6.1]}}
+  GEN-12:  {topic: Vetting third parties that hold Texas data, answer: text,
+            maps: {nist80053: [SA-9, SR-6], iso27001: [A.5.19, A.5.21, A.5.22], soc2: [CC9.2]}}
+  GEN-12a: {topic: Why each third party has customer data, answer: text, maps: {nist80053: [SA-9]}}
+  GEN-13:  {topic: Breach liability safeguards and contracts, answer: text, maps: {soc2: [CC9.1]}}
+  GEN-14:  {topic: Separate government and commercial offerings, answer: yes_no}
+  GEN-14a: {topic: Government versus commercial differences, answer: text, if: {GEN-14: "Yes"}}
+  GEN-15:  {topic: Uses subservice cloud providers, answer: yes_no}
+  GEN-15a: {topic: Subservice providers and products, answer: text, if: {GEN-15: "Yes"},
+            maps: {nist80053: [SA-9], iso27001: [A.5.23]}}
+  GEN-16:  {topic: Personnel screening and background checks, answer: text,
+            maps: {nist80053: [PS-3], iso27001: [A.6.1], soc2: [CC1.4]}}
+  GEN-17:  {topic: Service functions outsourced outside the US, answer: yes_no}
+  GEN-17a: {topic: Non-US access and information, answer: text, if: {GEN-17: "Yes"}, maps: {nist80053: [SA-9, PS-7]}}
+  GEN-18:  {topic: Vulnerability scanning and penetration testing, answer: text,
+            maps: {nist80053: [RA-5, CA-8], iso27001: [A.8.8], soc2: [CC7.1]}}
+  GEN-19:  {topic: Provides payment processing, answer: choice, allowed: ["Yes", "No", "Customer Specific"]}
+  GEN-20:  {topic: Independent security assessment at least yearly, answer: yes_no, compliant: "Yes",
+            maps: {nist80053: [CA-2], iso27001: ["9.2", A.5.35], soc2: [CC4.1]}}
+  GEN-21:  {topic: User account and activity data collected, answer: text, maps: {nist80053: [AU-2, AU-3], iso27001: [A.8.15]}}
+  GEN-22:  {topic: Ties to Texas prohibited technologies, answer: yes_no, compliant: "No"}
+  GEN-22a: {topic: Prohibited entities or technologies named, answer: text, if: {GEN-22: "Yes"}}
+  GEN-23:  {topic: Security policy review approach, answer: text,
+            maps: {nist80053: [PL-1, PM-1], iso27001: [A.5.1], soc2: [CC5.3]}}
+  GEN-24:  {topic: Security procedure review approach, answer: text, maps: {nist80053: [PL-1], iso27001: [A.5.37], soc2: [CC5.3]}}
+  GEN-25:  {topic: Current cybersecurity insurance, answer: yes_no}
+  GEN-26:  {topic: Insurance coverage and customer coverage, answer: text, if: {GEN-25: "Yes"}}
+  GEN-NOTES: {topic: General comments (optional), answer: text, optional: true}
+  SYS-01:  {topic: System purpose, functions and components, answer: text, maps: {nist80053: [PL-2]}}
+  SYS-02:  {topic: Operational status, answer: choice, allowed: [Operational, Under Development, Major Modification, Other]}
+  SYS-03:  {topic: Design components and modules in scope, answer: text, maps: {nist80053: [PL-2, CM-8], iso27001: [A.5.9]}}
+  SYS-04:  {topic: System sensitivity level, answer: choice, allowed: [Low, Moderate, High], maps: {nist80053: [RA-2]}}
+  SYS-05:  {topic: External systems and services, answer: text, maps: {nist80053: [CA-3, SA-9], iso27001: [A.5.14]}}
+  SYS-06:  {topic: Data flows and their protection, answer: text,
+            maps: {nist80053: [AC-4, SC-8, SC-28], iso27001: [A.5.14, A.8.24], soc2: [CC6.7]}}
+  DOC-ABD: {topic: Authorization boundary diagram, answer: document, maps: {nist80053: [PL-2, CA-3]}}
+  DOC-DFD: {topic: Data flow diagram, answer: document, maps: {nist80053: [AC-4, PL-2]}}
+  DOC-SSP: {topic: Completed TX-RAMP Security Plan workbook, answer: document, maps: {nist80053: [PL-2]}}
+  DOC-SSP-NOTES: {topic: Security plan comments (optional), answer: text, optional: true}
+  DOC-OTHER: {topic: Additional policies and procedures (optional), answer: document, optional: true}
+  DOC-NOTES: {topic: Documentation comments (optional), answer: text, optional: true}
