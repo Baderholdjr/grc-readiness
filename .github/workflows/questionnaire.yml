@@ -1,0 +1,53 @@
+name: Security questionnaire
+
+# HECVAT and other security questionnaires answered from the compliance program (docs/QUESTIONNAIRES.md).
+# 1. Upload the workbook you received to questionnaires/inbox/ (Add file > Upload files), then run: import.
+# 2. Review the draft pull request: approve answers there. Re-run draft after controls or the library change.
+# 3. Run fill to get the workbook with the approved answers (Actions run > Artifacts).
+# 4. Run learn so the next questionnaire starts from these answers.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "import a workbook, draft answers, fill the workbook, learn approved answers, or report"
+        type: choice
+        options: [import, draft, fill, learn, report]
+        default: draft
+      name:
+        description: "short name for this questionnaire, e.g. hecvat-state-university-2026"
+        required: true
+      workbook:
+        description: "import: path of the uploaded workbook, e.g. questionnaires/inbox/HECVAT414.xlsx"
+        required: false
+      requester:
+        description: "import: who sent it"
+        required: false
+      due:
+        description: "import: answers due (YYYY-MM-DD)"
+        required: false
+      draft:
+        description: "fill: include proposed answers, marked as drafts (internal review only)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: questionnaire-${{ inputs.name }}
+  cancel-in-progress: false
+
+jobs:
+  questionnaire:
+    uses: ./.github/workflows/grc-questionnaire.yml
+    with:
+      engine: local
+      action: ${{ inputs.action }}
+      name: ${{ inputs.name }}
+      workbook: ${{ inputs.workbook }}
+      requester: ${{ inputs.requester }}
+      due: ${{ inputs.due }}
+      draft: ${{ inputs.draft }}
+    secrets: inherit

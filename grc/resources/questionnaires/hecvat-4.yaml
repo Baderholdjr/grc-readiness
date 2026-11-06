@@ -1,0 +1,2422 @@
+# HECVAT 4 (Higher Education Community Vendor Assessment Toolkit), published by EDUCAUSE.
+#
+# The engine does NOT ship the workbook or the question text: they are EDUCAUSE's. A client imports its own
+# copy (`grc questionnaire import`), and the question text is read from that copy. This file holds only:
+#   layout  - where the questions, answers and dropdowns are in the workbook
+#   gates   - the "Start Here" questions that switch whole sections on or off
+#   profile - general questions answered from questionnaires/profile.yaml (company facts)
+#   questions - for each question id: our own short topic label, the kind of answer, and the framework
+#               requirements whose controls are the evidence for answering it (our judgement, proposed:
+#               the client's reviewer approves every answer before it leaves).
+id: hecvat-4
+title: HECVAT 4
+publisher: EDUCAUSE
+tested_versions: ["4.1.4"]
+version_cell: {sheet: Auto Responses, cell: A36}
+layout:
+  answer_sheets: [START HERE, Organization, Product, Infrastructure, IT Accessibility, Case-Specific, AI, Privacy]
+  id_column: A
+  answer_column: C
+  detail_column: D
+  id_pattern: "^[A-Z]{4}-\\d{2}$"
+  question_sheet: Questions
+  question_columns: {id: A, text: B, guidance: O, compliant: U}
+  date_cell: {sheet: START HERE, cell: C3}
+gates:
+  - {question: REQU-01, sheets: [Product, Infrastructure], label: "cloud-based product"}
+  - {question: REQU-02, sheets: [IT Accessibility], label: "user interface"}
+  - {question: REQU-03, prefixes: [CONS], label: "consulting services"}
+  - {question: REQU-04, sheets: [AI], label: "AI features"}
+  - {question: REQU-05, prefixes: [HIPA], label: "HIPAA data"}
+  - {question: REQU-06, prefixes: [PCID], label: "payment card data"}
+  - {question: REQU-07, prefixes: [OPEM], label: "on-premises components"}
+  - {question: REQU-08, sheets: [Privacy], label: "personal or institutional data"}
+# A gate answer the engine can propose from the program: Yes when the repository has a record for that
+# framework. A person still approves it.
+gate_hints:
+  REQU-04: {record: iso42001, reason: "an ISO 42001 (AI management system) record is in this repository"}
+  REQU-05: {record: hipaa, reason: "a HIPAA record is in this repository"}
+profile:
+  GNRL-01: provider_name
+  GNRL-02: solution_name
+  GNRL-03: solution_description
+  GNRL-04: contact_name
+  GNRL-05: contact_title
+  GNRL-06: contact_email
+  GNRL-07: contact_phone
+  GNRL-08: headquarters_country
+  GNRL-09: work_locations
+questions:
+  GNRL-01:
+    topic: Vendor company name
+    answer: text
+  GNRL-02:
+    topic: Product name
+    answer: text
+  GNRL-03:
+    topic: Product overview
+    answer: text
+  GNRL-04:
+    topic: Vendor point of contact
+    answer: text
+  GNRL-05:
+    topic: Contact person's job role
+    answer: text
+  GNRL-06:
+    topic: Contact email address
+    answer: text
+  GNRL-07:
+    topic: Contact telephone
+    answer: text
+  GNRL-08:
+    topic: Headquarters country
+    answer: text
+  GNRL-09:
+    topic: Locations where staff work
+    answer: text
+  COMP-01:
+    topic: Dedicated development and support teams
+    answer: yes_no
+  COMP-02:
+    topic: Company background and ownership
+    answer: text
+  COMP-03:
+    topic: Recent unplanned service outages
+    answer: yes_no
+  COMP-04:
+    topic: Dedicated security function
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.2
+      - '5.3'
+      soc2:
+      - CC1.3
+      hipaa:
+      - 164.308(a)(2)
+      nist80053:
+      - PM-2
+  COMP-05:
+    topic: Additional security program context
+    answer: text
+  REQU-01:
+    topic: Cloud-based offering scope
+    answer: yes_no
+  REQU-02:
+    topic: Product user interface present
+    answer: yes_no
+  REQU-03:
+    topic: Consulting services scope
+    answer: yes_no
+  REQU-04:
+    topic: AI features current or planned
+    answer: yes_no
+  REQU-05:
+    topic: PHI processing applicability
+    answer: yes_no
+  REQU-06:
+    topic: Payment card data applicability
+    answer: yes_no
+  REQU-07:
+    topic: On-premises appliance or inbound access need
+    answer: yes_no
+  REQU-08:
+    topic: Solution reach into sensitive data
+    answer: yes_no
+  DOCU-01:
+    topic: Business continuity plan and testing
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.29
+      - A.5.30
+      soc2:
+      - CC9.1
+      - A1.3
+      hipaa:
+      - 164.308(a)(7)(i)
+      - 164.308(a)(7)(ii)(D)
+      nist80053:
+      - CP-2
+      - CP-4
+  DOCU-02:
+    topic: Disaster recovery plan and testing
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.30
+      soc2:
+      - A1.2
+      - A1.3
+      hipaa:
+      - 164.308(a)(7)(ii)(B)
+      - 164.308(a)(7)(ii)(D)
+      nist80053:
+      - CP-2
+      - CP-4
+      - CP-10
+  DOCU-03:
+    topic: Independent SOC 2 attestation
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.35
+      soc2:
+      - CC4.1
+      nist80053:
+      - CA-2
+  DOCU-04:
+    topic: Alignment to recognized security framework
+    answer: yes_no
+    maps:
+      iso27001:
+      - '4.4'
+      nist80053:
+      - PM-1
+  DOCU-05:
+    topic: Architecture and data flow documentation
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.27
+      nist80053:
+      - PL-8
+      - SA-5
+  DOCU-06:
+    topic: Organizational privacy policy
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+      nist80053:
+      - PT-1
+      - PM-18
+  DOCU-07:
+    topic: Joiner and leaver procedures
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.2
+      - A.6.5
+      soc2:
+      - CC6.2
+      hipaa:
+      - 164.308(a)(3)(ii)(C)
+      nist80053:
+      - PS-1
+      - PS-4
+  THRD-01:
+    topic: Vendor security assessments
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.19
+      - A.5.22
+      soc2:
+      - CC9.2
+      nist80053:
+      - SA-9
+      - SR-6
+  THRD-02:
+    topic: Third-party data access contract terms
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.20
+      soc2:
+      - CC9.2
+      nist80053:
+      - SA-9
+      - SA-4
+  THRD-03:
+    topic: Breach liability in supplier contracts
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.20
+      soc2:
+      - CC9.2
+      nist80053:
+      - SA-9
+  THRD-04:
+    topic: Third-party risk management program
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.19
+      - A.5.22
+      soc2:
+      - CC9.2
+      nist80053:
+      - SR-2
+      - SA-9
+  THRD-05:
+    topic: Hardware supply chain controls
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.21
+      nist80053:
+      - SR-3
+      - SR-11
+  CHNG-01:
+    topic: Customer notice of significant environment changes
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.37
+      soc2:
+      - CC2.3
+  CHNG-02:
+    topic: Customizations preserved across releases
+    answer: yes_no
+  CHNG-03:
+    topic: Secure baseline configuration management
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.9
+      soc2:
+      - CC7.1
+      nist80053:
+      - CM-2
+      - CM-6
+  CHNG-04:
+    topic: Formal change control procedure
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.32
+      soc2:
+      - CC8.1
+      nist80053:
+      - CM-3
+  CHNG-05:
+    topic: Change approval, impact and testing steps
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.32
+      soc2:
+      - CC8.1
+      nist80053:
+      - CM-3
+      - CM-4
+  CHNG-06:
+    topic: Dependency support checks during changes
+    answer: yes_no
+    maps:
+      nist80053:
+      - SA-22
+  CHNG-07:
+    topic: Critical patch management
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      soc2:
+      - CC7.1
+      nist80053:
+      - SI-2
+  CHNG-08:
+    topic: Interim mitigation pending patches
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      nist80053:
+      - SI-2
+  CHNG-09:
+    topic: Customer ability to defer upgrades
+    answer: yes_no
+  CHNG-10:
+    topic: Supported concurrent version policy
+    answer: yes_no
+  CHNG-11:
+    topic: Product release cadence
+    answer: yes_no
+  CHNG-12:
+    topic: Multi-year product roadmap
+    answer: yes_no
+  CHNG-13:
+    topic: Vendor-performed updates without customer effort
+    answer: yes_no
+  CHNG-14:
+    topic: Low-impact deployment windows
+    answer: yes_no
+  CHNG-15:
+    topic: Emergency change documentation and approval
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.32
+      soc2:
+      - CC8.1
+      nist80053:
+      - CM-3
+  CHNG-16:
+    topic: Enterprise-wide systems configuration strategy
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.9
+      - A.8.1
+      nist80053:
+      - CM-9
+      - CM-2
+  PPPR-01:
+    topic: Documented patching procedure
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      soc2:
+      - CC7.1
+      nist80053:
+      - SI-2
+  PPPR-02:
+    topic: Adherence to customer privacy policies
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+  PPPR-03:
+    topic: Jurisdiction governing the company
+    answer: yes_no
+  PPPR-04:
+    topic: Open-standard cryptography support
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.24
+      soc2:
+      - CC6.7
+      nist80053:
+      - SC-13
+  PPPR-05:
+    topic: Documented development lifecycle
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.25
+      soc2:
+      - CC8.1
+      nist80053:
+      - SA-3
+  PPPR-06:
+    topic: Pre-hire background screening
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.1
+      soc2:
+      - CC1.4
+      hipaa:
+      - 164.308(a)(3)(ii)(B)
+      nist80053:
+      - PS-3
+  PPPR-07:
+    topic: New hire agreements and policy acknowledgment
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.2
+      - A.6.6
+      soc2:
+      - CC1.1
+      nist80053:
+      - PS-6
+      - PL-4
+  PPPR-08:
+    topic: Documented security policy set
+    answer: yes_no
+    maps:
+      iso27001:
+      - '5.2'
+      - A.5.1
+      soc2:
+      - CC5.3
+      hipaa:
+      - 164.316(a)
+      nist80053:
+      - PM-1
+  PPPR-09:
+    topic: Security by design in product
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.25
+      - A.8.27
+      nist80053:
+      - SA-8
+      - SA-3
+  PPPR-10:
+    topic: Breach notification compliance
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.26
+      soc2:
+      - P6.6
+      nist80053:
+      - IR-6
+  PPPR-11:
+    topic: Security awareness and education
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      - '7.3'
+      soc2:
+      - CC2.2
+      hipaa:
+      - 164.308(a)(5)(i)
+      nist80053:
+      - AT-2
+  PPPR-12:
+    topic: Mandatory security training coverage
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      soc2:
+      - CC2.2
+      hipaa:
+      - 164.308(a)(5)(i)
+      nist80053:
+      - AT-2
+      - AT-4
+  PPPR-13:
+    topic: Privileged access reviews
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.2
+      - A.5.18
+      soc2:
+      - CC6.2
+      - CC6.3
+      hipaa:
+      - 164.308(a)(4)(ii)(C)
+      nist80053:
+      - AC-2
+      - AC-6
+  PPPR-14:
+    topic: Internal audit program
+    answer: yes_no
+    maps:
+      iso27001:
+      - '9.2'
+      soc2:
+      - CC4.1
+      nist80053:
+      - CA-2
+  PPPR-15:
+    topic: Physical protection of facilities
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.1
+      - A.7.2
+      soc2:
+      - CC6.4
+      hipaa:
+      - 164.310(a)(1)
+      nist80053:
+      - PE-1
+      - PE-3
+  AAAI-01:
+    topic: Single sign-on support
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.5
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-2
+      - IA-8
+  AAAI-02:
+    topic: Local authentication option
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.5
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-2
+  AAAI-03:
+    topic: Customer-defined password rules
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-5
+  AAAI-04:
+    topic: Password length or character limits
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      nist80053:
+      - IA-5
+  AAAI-05:
+    topic: Credential reset procedures
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-5
+  AAAI-06:
+    topic: Academic identity federation membership
+    answer: yes_no
+  AAAI-07:
+    topic: Embedded static credentials
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      - A.8.28
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-5
+  AAAI-08:
+    topic: Unencrypted credential storage
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      - A.8.24
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-5
+  AAAI-09:
+    topic: Audit log event coverage
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      soc2:
+      - CC7.2
+      nist80053:
+      - AU-2
+      - AU-3
+  AAAI-10:
+    topic: Security event logging and SIEM
+    answer: text
+    maps:
+      iso27001:
+      - A.8.15
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - AU-2
+      - AU-6
+      - SI-4
+  AAAI-11:
+    topic: Log retention and protection documentation
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      nist80053:
+      - AU-9
+      - AU-11
+  AAAI-12:
+    topic: External identity system integration
+    answer: yes_no
+  AAAI-13:
+    topic: Custom identity attribute mapping
+    answer: yes_no
+  AAAI-14:
+    topic: Directory service integration
+    answer: yes_no
+  AAAI-15:
+    topic: Supported web SSO protocols
+    answer: yes_no
+  AAAI-16:
+    topic: Email separate from user identifier
+    answer: yes_no
+  AAAI-17:
+    topic: Multifactor authentication support
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.5
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-2
+  AAAI-18:
+    topic: Idle session timeout
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.5
+      soc2:
+      - CC6.1
+      nist80053:
+      - AC-11
+      - AC-12
+  DATA-01:
+    topic: Data hosts on public IP space
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.22
+      nist80053:
+      - SC-7
+  DATA-02:
+    topic: Encryption of data in transit
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.24
+      soc2:
+      - CC6.7
+      hipaa:
+      - 164.312(e)(2)(ii)
+      nist80053:
+      - SC-8
+  DATA-03:
+    topic: Encryption of data at rest
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.24
+      soc2:
+      - CC6.1
+      hipaa:
+      - 164.312(a)(2)(iv)
+      nist80053:
+      - SC-28
+  DATA-04:
+    topic: FIPS-validated cryptographic modules
+    answer: yes_no
+    maps:
+      nist80053:
+      - SC-13
+  DATA-05:
+    topic: Post-contract data availability window
+    answer: yes_no
+  DATA-06:
+    topic: Data ownership through acquisition or bankruptcy
+    answer: yes_no
+  DATA-07:
+    topic: Backups leaving customer data region
+    answer: yes_no
+    maps:
+      nist80053:
+      - CM-12
+  DATA-08:
+    topic: Secure environmental storage of archive media
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.10
+      soc2:
+      - A1.2
+      nist80053:
+      - MP-4
+  DATA-09:
+    topic: Data return or deletion at termination
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.10
+      soc2:
+      - C1.2
+  DATA-10:
+    topic: Customer-initiated data export
+    answer: yes_no
+  DATA-11:
+    topic: Backup completeness for full recovery
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.13
+      soc2:
+      - A1.2
+      nist80053:
+      - CP-9
+  DATA-12:
+    topic: Network-based offsite backups
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.13
+      soc2:
+      - A1.2
+      nist80053:
+      - CP-6
+      - CP-9
+  DATA-13:
+    topic: Physical offsite backup transport
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.13
+      nist80053:
+      - CP-6
+      - MP-5
+  DATA-14:
+    topic: Backup encryption
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.13
+      - A.8.24
+      nist80053:
+      - CP-9
+  DATA-15:
+    topic: Media handling and sanitization process
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.10
+      - A.7.14
+      soc2:
+      - CC6.5
+      hipaa:
+      - 164.310(d)(2)(i)
+      - 164.310(d)(2)(ii)
+      nist80053:
+      - MP-6
+  DATA-16:
+    topic: Sanitization standard conformance
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.14
+      nist80053:
+      - MP-6
+  DATA-17:
+    topic: Vendor staff access to customer data
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.15
+      - A.8.2
+      soc2:
+      - CC6.3
+      nist80053:
+      - AC-6
+  DATA-18:
+    topic: Remote worker endpoint security
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.7
+      - A.8.1
+      nist80053:
+      - AC-17
+  DATA-19:
+    topic: Tenant isolation model
+    answer: yes_no
+    maps:
+      nist80053:
+      - SC-4
+  DATA-20:
+    topic: Customer data ownership rights
+    answer: yes_no
+  DATA-21:
+    topic: Wind-down data migration period
+    answer: yes_no
+  DATA-22:
+    topic: Scheduled immutable backups and retention
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.13
+      soc2:
+      - A1.2
+      hipaa:
+      - 164.308(a)(7)(ii)(A)
+      nist80053:
+      - CP-9
+  DATA-23:
+    topic: Cryptographic key lifecycle management
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.24
+      nist80053:
+      - SC-12
+  APPL-01:
+    topic: Rule-based access for customer accounts
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.15
+      - A.8.3
+      soc2:
+      - CC6.3
+      hipaa:
+      - 164.312(a)(1)
+      nist80053:
+      - AC-3
+  APPL-02:
+    topic: WAF in front of application
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.20
+      soc2:
+      - CC6.6
+      nist80053:
+      - SC-7
+  APPL-03:
+    topic: Only vendor-supported software components
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      nist80053:
+      - SA-22
+  APPL-04:
+    topic: Use of device location data
+    answer: yes_no
+  APPL-05:
+    topic: Application role separation
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.3
+      soc2:
+      - CC6.3
+      nist80053:
+      - AC-5
+  APPL-06:
+    topic: Static analysis before release
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.29
+      soc2:
+      - CC8.1
+      nist80053:
+      - SA-11
+  APPL-07:
+    topic: Established software testing
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.29
+      soc2:
+      - CC8.1
+      nist80053:
+      - SA-11
+  APPL-08:
+    topic: Rule-based access for internal staff
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.15
+      - A.5.18
+      soc2:
+      - CC6.3
+      hipaa:
+      - 164.308(a)(4)(ii)(B)
+      nist80053:
+      - AC-3
+      - AC-6
+  APPL-09:
+    topic: Input validation and error handling
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.28
+      soc2:
+      - PI1.2
+      nist80053:
+      - SI-10
+      - SI-11
+  APPL-10:
+    topic: Software supply chain management
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.21
+      - A.8.30
+      nist80053:
+      - SR-3
+  APPL-11:
+    topic: Developer secure coding training
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.28
+      - A.6.3
+      soc2:
+      - CC1.4
+      nist80053:
+      - AT-3
+  APPL-12:
+    topic: Secure coding practices applied
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.28
+      nist80053:
+      - SA-15
+  APPL-13:
+    topic: Mobile app distribution channel
+    answer: yes_no
+  APPL-14:
+    topic: Staff admin access to customer instance
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.2
+      soc2:
+      - CC6.3
+      hipaa:
+      - 164.308(a)(4)(ii)(B)
+      nist80053:
+      - AC-2
+      - AC-6
+  DCTR-01:
+    topic: Type of hosting arrangement
+    answer: choice
+  DCTR-02:
+    topic: Hosting provider SOC 2 report
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.22
+      soc2:
+      - CC9.2
+      nist80053:
+      - SA-9
+  DCTR-03:
+    topic: Regional data residency
+    answer: yes_no
+    maps:
+      nist80053:
+      - CM-12
+  DCTR-04:
+    topic: Round-the-clock facility staffing
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.4
+      soc2:
+      - CC6.4
+      nist80053:
+      - PE-6
+  DCTR-05:
+    topic: Physical tenant segregation
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.1
+      - A.7.2
+      soc2:
+      - CC6.4
+      nist80053:
+      - PE-3
+  DCTR-06:
+    topic: Enclosed equipment space
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.1
+      soc2:
+      - CC6.4
+      nist80053:
+      - PE-3
+  DCTR-07:
+    topic: Geographically separate data centers
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.14
+      soc2:
+      - A1.2
+      nist80053:
+      - CP-6
+      - CP-7
+  DCTR-08:
+    topic: High-availability hosting setup
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.14
+      soc2:
+      - A1.2
+      nist80053:
+      - CP-7
+  DCTR-09:
+    topic: Backup power supply
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.11
+      soc2:
+      - A1.2
+      nist80053:
+      - PE-11
+  DCTR-10:
+    topic: Backup power testing
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.11
+      soc2:
+      - A1.2
+      nist80053:
+      - PE-11
+  DCTR-11:
+    topic: Cooling and fire suppression
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.5
+      - A.7.11
+      soc2:
+      - A1.2
+      nist80053:
+      - PE-13
+      - PE-14
+  DCTR-12:
+    topic: Redundant internet connectivity
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.14
+      soc2:
+      - A1.2
+      nist80053:
+      - CP-8
+  DCTR-13:
+    topic: Diverse carrier entry points
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.7.11
+      soc2:
+      - A1.2
+      nist80053:
+      - CP-8
+  DCTR-14:
+    topic: MFA for administrative accounts
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.5
+      soc2:
+      - CC6.1
+      nist80053:
+      - IA-2
+  DCTR-15:
+    topic: Cloud system hardening
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.9
+      soc2:
+      - CC7.1
+      nist80053:
+      - CM-6
+      - CM-7
+  DCTR-16:
+    topic: Provider access to encryption keys
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.24
+      soc2:
+      - CC6.1
+      nist80053:
+      - SC-12
+  FIDP-01:
+    topic: Stateful firewall in use
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.20
+      soc2:
+      - CC6.6
+      nist80053:
+      - SC-7
+  FIDP-02:
+    topic: Firewall change request policy
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.32
+      soc2:
+      - CC8.1
+      nist80053:
+      - CM-3
+  FIDP-03:
+    topic: Network intrusion detection
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  FIDP-04:
+    topic: Host intrusion detection
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  FIDP-05:
+    topic: Logging of network security changes
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      soc2:
+      - CC7.2
+      hipaa:
+      - 164.312(b)
+      nist80053:
+      - AU-2
+      - AU-12
+  FIDP-06:
+    topic: Firewall change approvers defined
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.32
+      soc2:
+      - CC8.1
+      nist80053:
+      - CM-3
+  FIDP-07:
+    topic: Network intrusion prevention
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.16
+      - A.8.20
+      soc2:
+      - CC6.6
+      nist80053:
+      - SI-4
+  FIDP-08:
+    topic: Host intrusion prevention
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  FIDP-09:
+    topic: Advanced persistent threat monitoring
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.16
+      - A.5.7
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  FIDP-10:
+    topic: Intrusion monitoring operating model
+    answer: text
+    maps:
+      iso27001:
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  FIDP-11:
+    topic: Round-the-clock intrusion monitoring
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  HFIH-01:
+    topic: Documented security incident plan
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.24
+      soc2:
+      - CC7.4
+      nist80053:
+      - IR-8
+  HFIH-02:
+    topic: Internal or retained responders
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.24
+      soc2:
+      - CC7.4
+      nist80053:
+      - IR-4
+  HFIH-03:
+    topic: Continuous incident response coverage
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.26
+      soc2:
+      - CC7.4
+      nist80053:
+      - IR-4
+  HFIH-04:
+    topic: Cyber insurance coverage
+    answer: yes_no
+    maps:
+      soc2:
+      - CC9.1
+  VULN-01:
+    topic: Authenticated pre-release vulnerability scanning
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      - A.8.29
+      soc2:
+      - CC7.1
+      nist80053:
+      - RA-5
+  VULN-02:
+    topic: Sharing scan results with customers
+    answer: yes_no
+  VULN-03:
+    topic: Customer-performed security testing
+    answer: yes_no
+  VULN-04:
+    topic: Annual independent security assessment
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.35
+      soc2:
+      - CC4.1
+      nist80053:
+      - CA-2
+      - CA-8
+  VULN-05:
+    topic: Web application vulnerability scanning
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      soc2:
+      - CC7.1
+      nist80053:
+      - RA-5
+  VULN-06:
+    topic: Recurring external vulnerability scans
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.8
+      soc2:
+      - CC7.1
+      nist80053:
+      - RA-5
+  ITAC-01:
+    topic: Name of accessibility lead
+    answer: text
+  ITAC-02:
+    topic: Role of accessibility lead
+    answer: text
+  ITAC-03:
+    topic: Email for accessibility lead
+    answer: text
+  ITAC-04:
+    topic: Phone for accessibility lead
+    answer: text
+  ITAC-05:
+    topic: Accessibility statement link
+    answer: text
+  ITAC-06:
+    topic: Recent accessibility conformance report
+    answer: yes_no
+  ITAC-07:
+    topic: Contractual accessibility commitment
+    answer: yes_no
+  ITAC-08:
+    topic: WCAG conformance level
+    answer: yes_no
+  ITAC-09:
+    topic: Accessibility issue tracking
+    answer: yes_no
+  ITAC-10:
+    topic: Accessibility feature documentation
+    answer: yes_no
+  ITAC-11:
+    topic: Independent accessibility audit
+    answer: yes_no
+  ITAC-12:
+    topic: Accessibility conformance verification
+    answer: yes_no
+  ITAC-13:
+    topic: Adopted accessibility standard
+    answer: yes_no
+  ITAC-14:
+    topic: Planned accessibility improvements timeline
+    answer: yes_no
+  ITAC-15:
+    topic: Staff accessibility skills
+    answer: yes_no
+  ITAC-16:
+    topic: Accessibility in development lifecycle
+    answer: yes_no
+  ITAC-17:
+    topic: Full keyboard-only operation
+    answer: yes_no
+  ITAC-18:
+    topic: Reliance on alternate accessible interface
+    answer: yes_no
+  CONS-01:
+    topic: Consultant network access need
+    answer: yes_no
+  CONS-02:
+    topic: Consultant sensitive data training
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      soc2:
+      - CC1.4
+      nist80053:
+      - AT-3
+  CONS-03:
+    topic: Consultant-held data encrypted at rest
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.24
+      soc2:
+      - CC6.1
+      nist80053:
+      - SC-28
+  CONS-04:
+    topic: Source IP access restriction
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.20
+      soc2:
+      - CC6.1
+      nist80053:
+      - SC-7
+  CONS-05:
+    topic: Onsite consulting engagement
+    answer: yes_no
+  CONS-06:
+    topic: Consultant data center hardware access
+    answer: yes_no
+  CONS-07:
+    topic: Consultant institutional domain account
+    answer: yes_no
+  CONS-08:
+    topic: Data transfer to consultant
+    answer: yes_no
+  CONS-09:
+    topic: Consultant remote access need
+    answer: yes_no
+  HIPA-01:
+    topic: Workforce HIPAA training
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      soc2:
+      - CC1.4
+      hipaa:
+      - 164.308(a)(5)(i)
+      nist80053:
+      - AT-2
+  HIPA-02:
+    topic: Risk area identification
+    answer: yes_no
+    maps:
+      iso27001:
+      - 6.1.2
+      soc2:
+      - CC3.2
+      hipaa:
+      - 164.308(a)(1)(ii)(A)
+      nist80053:
+      - RA-3
+  HIPA-03:
+    topic: Testing of policies and plans
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.308(a)(7)(ii)(D)
+      - 164.308(a)(8)
+      nist80053:
+      - CP-4
+  HIPA-04:
+    topic: Subcontractor business associate agreements
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.308(b)(2)
+      - 164.314(a)(2)(iii)
+  HIPA-05:
+    topic: Tracking HIPAA regulatory changes
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.31
+      hipaa:
+      - 164.306(e)
+  HIPA-06:
+    topic: Designated privacy and security officers
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.2
+      hipaa:
+      - 164.308(a)(2)
+      nist80053:
+      - PM-2
+  HIPA-07:
+    topic: HITECH compliance
+    answer: yes_no
+    maps:
+      hipaa:
+      - '164.410'
+  HIPA-08:
+    topic: Security Rule risk analysis
+    answer: yes_no
+    maps:
+      iso27001:
+      - 6.1.2
+      - '8.2'
+      soc2:
+      - CC3.2
+      hipaa:
+      - 164.308(a)(1)(ii)(A)
+      nist80053:
+      - RA-3
+  HIPA-09:
+    topic: Risk mitigation actions
+    answer: yes_no
+    maps:
+      iso27001:
+      - 6.1.3
+      - '8.3'
+      hipaa:
+      - 164.308(a)(1)(ii)(B)
+      nist80053:
+      - RA-7
+  HIPA-10:
+    topic: Periodic password rotation
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      hipaa:
+      - 164.308(a)(5)(ii)(D)
+      nist80053:
+      - IA-5
+  HIPA-11:
+    topic: Forced password change after reset
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      hipaa:
+      - 164.308(a)(5)(ii)(D)
+      nist80053:
+      - IA-5
+  HIPA-12:
+    topic: Failed-login account lockout
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.5
+      nist80053:
+      - AC-7
+  HIPA-13:
+    topic: Inactivity session timeout
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.312(a)(2)(iii)
+      nist80053:
+      - AC-11
+      - AC-12
+  HIPA-14:
+    topic: Cleartext password exposure
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      nist80053:
+      - IA-5
+      - IA-6
+  HIPA-15:
+    topic: Customer control of privileged credentials
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.17
+      nist80053:
+      - IA-5
+  HIPA-16:
+    topic: Configurable user access levels
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.15
+      - A.8.3
+      soc2:
+      - CC6.3
+      hipaa:
+      - 164.312(a)(1)
+      nist80053:
+      - AC-3
+  HIPA-17:
+    topic: Per-user administrative permissions
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.2
+      soc2:
+      - CC6.3
+      nist80053:
+      - AC-6
+  HIPA-18:
+    topic: Record-level access by user
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.3
+      hipaa:
+      - 164.312(a)(1)
+      nist80053:
+      - AC-3
+  HIPA-19:
+    topic: Group membership limits
+    answer: yes_no
+  HIPA-20:
+    topic: Vendor support account controls
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.312(d)
+      nist80053:
+      - MA-4
+  HIPA-21:
+    topic: User access audit logging
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      hipaa:
+      - 164.312(b)
+      nist80053:
+      - AU-2
+      - AU-3
+  HIPA-22:
+    topic: Administrative activity logging
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      hipaa:
+      - 164.312(b)
+      nist80053:
+      - AU-2
+      - AU-3
+  HIPA-23:
+    topic: Log retention period
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      nist80053:
+      - AU-11
+  HIPA-24:
+    topic: Log archiving capability
+    answer: yes_no
+    maps:
+      nist80053:
+      - AU-11
+      - AU-9
+  HIPA-25:
+    topic: External log export
+    answer: yes_no
+    maps:
+      nist80053:
+      - AU-9
+  HIPA-26:
+    topic: Disaster recovery and emergency operations plans
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.30
+      soc2:
+      - A1.2
+      hipaa:
+      - 164.308(a)(7)(ii)(B)
+      - 164.308(a)(7)(ii)(C)
+      nist80053:
+      - CP-2
+  HIPA-27:
+    topic: Attestation of HIPAA conformance
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.308(a)(8)
+  HIPA-28:
+    topic: Willingness to sign a BAA
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.314(a)(1)
+  HIPA-29:
+    topic: HIPAA-compliant backup and retention
+    answer: yes_no
+    maps:
+      hipaa:
+      - 164.308(a)(7)(ii)(A)
+      - 164.310(d)(2)(iv)
+      nist80053:
+      - CP-9
+  PCID-01:
+    topic: Current PCI attestation or report
+    answer: yes_no
+  PCID-02:
+    topic: PA-DSS application listing
+    answer: yes_no
+  PCID-03:
+    topic: Third-party cardholder data handling
+    answer: yes_no
+  PCID-04:
+    topic: Cardholder data in scope
+    answer: yes_no
+  PCID-05:
+    topic: PCI DSS compliance status
+    answer: yes_no
+  PCID-06:
+    topic: PCI service provider status
+    answer: yes_no
+  PCID-07:
+    topic: Card brand service provider listing
+    answer: yes_no
+  PCID-08:
+    topic: PCI merchant level
+    answer: choice
+  PCID-09:
+    topic: Card transaction authorization design
+    answer: text
+  PCID-10:
+    topic: Supported payment gateways
+    answer: text
+  PCID-11:
+    topic: PCI-compliant deployment option
+    answer: yes_no
+  PCID-12:
+    topic: PCI capability documentation
+    answer: text
+  OPEM-01:
+    topic: Role-based administrator access
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.15
+      - A.8.2
+      soc2:
+      - CC6.3
+      nist80053:
+      - AC-3
+      - AC-6
+  OPEM-02:
+    topic: Vendor remote access to customer systems
+    answer: yes_no
+    maps:
+      nist80053:
+      - AC-17
+      - MA-4
+  OPEM-03:
+    topic: Architecture and data flow diagrams
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.27
+      nist80053:
+      - PL-8
+      - SA-5
+  OPEM-04:
+    topic: Remote management requirement
+    answer: yes_no
+    maps:
+      nist80053:
+      - MA-4
+  OPEM-05:
+    topic: Logging of remote vendor actions
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      nist80053:
+      - MA-4
+      - AU-2
+  OPEM-06:
+    topic: FERPA handling during remote access
+    answer: yes_no
+  OPEM-07:
+    topic: Campus health monitoring support
+    answer: yes_no
+  OPEM-08:
+    topic: Malicious activity monitoring safeguards
+    answer: text
+    maps:
+      iso27001:
+      - A.8.16
+      soc2:
+      - CC7.2
+      nist80053:
+      - SI-4
+  OPEM-09:
+    topic: Years in this market
+    answer: text
+  OPEM-10:
+    topic: Higher education customer base
+    answer: yes_no
+  AIQU-01:
+    topic: Machine learning usage
+    answer: yes_no
+  AIQU-02:
+    topic: Large language model usage
+    answer: yes_no
+  AIGN-01:
+    topic: AI risk framework applied
+    answer: yes_no
+    maps:
+      iso42001:
+      - 6.1.2
+      - '8.2'
+  AIGN-02:
+    topic: Tenant or user AI opt-out
+    answer: yes_no
+  AIGN-03:
+    topic: Responsible AI staff training
+    answer: yes_no
+    maps:
+      iso42001:
+      - '7.2'
+      - '7.3'
+  AIGN-04:
+    topic: AI feature capabilities overview
+    answer: text
+    maps:
+      iso42001:
+      - A.8.2
+  AIGN-05:
+    topic: Sensitive data exclusion from AI
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.11
+      - A.8.12
+      iso42001:
+      - A.7.2
+  AIPL-01:
+    topic: Published AI risk governance
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.2.2
+      - 6.1.1
+  AIPL-02:
+    topic: AI risk identification and measurement
+    answer: yes_no
+    maps:
+      iso42001:
+      - 6.1.2
+      - '8.2'
+  AIPL-03:
+    topic: Disabling AI features during incidents
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.6
+  AIPL-04:
+    topic: Restoring AI features after incidents
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.6
+  AIPL-05:
+    topic: AI negative impact management
+    answer: yes_no
+    maps:
+      iso42001:
+      - 6.1.4
+      - A.5.2
+      - 6.1.3
+  AISC-01:
+    topic: Removal of sensitive data from model
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.10
+  AISC-02:
+    topic: Customer inputs used for model training
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.7.2
+  AISC-03:
+    topic: AI activity audit logging
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.15
+      nist80053:
+      - AU-3
+      iso42001:
+      - A.6.2.8
+  AISC-04:
+    topic: AI input validation approach
+    answer: text
+    maps:
+      iso27001:
+      - A.8.26
+      soc2:
+      - PI1.2
+      nist80053:
+      - SI-10
+  AISC-05:
+    topic: AI supply chain risk
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.21
+      soc2:
+      - CC9.2
+      nist80053:
+      - SR-3
+      iso42001:
+      - A.10.3
+  AIML-01:
+    topic: Training data segregated from production
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.7.2
+      nist80053:
+      - PM-25
+  AIML-02:
+    topic: Model feedback verification
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.6
+  AIML-03:
+    topic: Training data validation
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.7.4
+      - A.7.6
+  AIML-04:
+    topic: Training data monitoring and audit
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.7.4
+      - A.7.5
+  AIML-05:
+    topic: Restricted access to training data
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.15
+      nist80053:
+      - AC-6
+      iso42001:
+      - A.4.3
+  AIML-06:
+    topic: Model adversarial defenses
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.4
+  AIML-07:
+    topic: Model documentation and I/O logging
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.7
+      - A.6.2.8
+  AIML-08:
+    topic: Training data watermarking
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.7.5
+  AILM-01:
+    topic: Default LLM privilege restriction
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.2
+      nist80053:
+      - AC-6
+  AILM-02:
+    topic: Training data validation
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.7.4
+      - A.7.5
+  AILM-03:
+    topic: Human approval for LLM actions
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.9.2
+  AILM-04:
+    topic: Limits on chained plugin calls
+    answer: yes_no
+  AILM-05:
+    topic: LLM resource consumption limits
+    answer: yes_no
+    maps:
+      nist80053:
+      - SC-6
+  AILM-06:
+    topic: Model tuning and validation
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.6.2.4
+  PRGN-01:
+    topic: Student records data in scope
+    answer: yes_no
+  PRGN-02:
+    topic: EU or China personal data in scope
+    answer: yes_no
+  PRGN-03:
+    topic: US state privacy law data in scope
+    answer: yes_no
+  PRGN-04:
+    topic: User-supplied regulated data
+    answer: yes_no
+  PRGN-05:
+    topic: Privacy notice link
+    answer: text
+    maps:
+      soc2:
+      - P1.1
+      nist80053:
+      - PT-5
+  PCOM-01:
+    topic: Reportable personal data breaches
+    answer: yes_no
+  PCOM-02:
+    topic: Additional privacy program context
+    answer: text
+  PCOM-03:
+    topic: Recent privacy violations
+    answer: yes_no
+  PCOM-04:
+    topic: Dedicated privacy function
+    answer: yes_no
+    maps:
+      nist80053:
+      - PM-19
+  PDOC-01:
+    topic: SOC 2 privacy criteria coverage
+    answer: yes_no
+  PDOC-02:
+    topic: Privacy framework conformance
+    answer: yes_no
+  PDOC-03:
+    topic: Security and privacy training at onboarding
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      soc2:
+      - CC1.4
+      nist80053:
+      - AT-2
+  PTHP-01:
+    topic: Contractual compliance terms for third parties
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.20
+      soc2:
+      - CC9.2
+      - P6.4
+      nist80053:
+      - SA-9
+  PTHP-02:
+    topic: Third-party privacy impact assessments
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.19
+      soc2:
+      - CC9.2
+      nist80053:
+      - SR-6
+  PCHG-01:
+    topic: Privacy review in change process
+    answer: yes_no
+    maps:
+      soc2:
+      - CC8.1
+      nist80053:
+      - CM-4
+  PCHG-02:
+    topic: Interim privacy risk mitigation
+    answer: yes_no
+    maps:
+      nist80053:
+      - RA-7
+  PDAT-01:
+    topic: Demographic data collection
+    answer: yes_no
+  PDAT-02:
+    topic: Biometric or genetic data capture
+    answer: yes_no
+  PDAT-03:
+    topic: Combining data with outside sources
+    answer: yes_no
+    maps:
+      soc2:
+      - P4.1
+      nist80053:
+      - PT-3
+  PDAT-04:
+    topic: Cross-border data transfer
+    answer: yes_no
+  PDAT-05:
+    topic: Device identifier collection
+    answer: yes_no
+  PDAT-06:
+    topic: Web tracking technologies
+    answer: yes_no
+  PDAT-07:
+    topic: Staff access to institutional data
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.3
+      soc2:
+      - CC6.3
+      nist80053:
+      - AC-6
+  PDAT-08:
+    topic: Legal and policy compliant data handling
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.31
+      - A.5.34
+  PRPO-01:
+    topic: Documented privacy program management
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+      nist80053:
+      - PM-18
+  PRPO-02:
+    topic: Privacy by design
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+      nist80053:
+      - SA-8
+      - RA-8
+  PRPO-03:
+    topic: Privacy breach notification compliance
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.26
+      soc2:
+      - P6.6
+      nist80053:
+      - IR-6
+  PRPO-04:
+    topic: Following customer privacy policies
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+  PRPO-05:
+    topic: Subject to local jurisdiction
+    answer: yes_no
+  PRPO-06:
+    topic: Privacy awareness program
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      soc2:
+      - CC2.2
+      nist80053:
+      - AT-2
+  PRPO-07:
+    topic: Mandatory privacy training coverage
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.6.3
+      nist80053:
+      - AT-2
+      - AT-4
+  PRPO-08:
+    topic: AI ethics training for AI staff
+    answer: yes_no
+    maps:
+      nist80053:
+      - AT-3
+      iso42001:
+      - '7.2'
+      - '7.3'
+  PRPO-09:
+    topic: Fully automated decisions
+    answer: yes_no
+  PRPO-10:
+    topic: Governance of automated processing
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+      soc2:
+      - P5.1
+  PRPO-11:
+    topic: Law enforcement disclosure policy
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+      soc2:
+      - P6.1
+  PRPO-12:
+    topic: Warrantless disclosure to law enforcement
+    answer: yes_no
+    maps:
+      soc2:
+      - P6.1
+  PRPO-13:
+    topic: Privacy role in incident response
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.24
+      soc2:
+      - CC7.4
+      nist80053:
+      - IR-8
+  INTL-01:
+    topic: Data processing in the EEA
+    answer: yes_no
+  INTL-02:
+    topic: Data protection officer appointed
+    answer: yes_no
+    maps:
+      nist80053:
+      - PM-19
+  INTL-03:
+    topic: Signing GDPR standard contractual clauses
+    answer: yes_no
+  INTL-04:
+    topic: Data processing in China
+    answer: yes_no
+  INTL-05:
+    topic: PIPL compliance
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.31
+  DRPV-01:
+    topic: Solution privacy impact assessment
+    answer: yes_no
+    maps:
+      nist80053:
+      - RA-8
+  DRPV-02:
+    topic: Published privacy notice for users
+    answer: yes_no
+    maps:
+      soc2:
+      - P1.1
+      nist80053:
+      - PT-5
+  DRPV-03:
+    topic: Individual choice and consent
+    answer: yes_no
+    maps:
+      soc2:
+      - P2.1
+      nist80053:
+      - PT-4
+  DRPV-04:
+    topic: Purpose-limited collection
+    answer: yes_no
+    maps:
+      soc2:
+      - P3.1
+      nist80053:
+      - PT-3
+  DRPV-05:
+    topic: Personal data inventory
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.9
+      - A.5.34
+      nist80053:
+      - CM-12
+  DRPV-06:
+    topic: Retention limits and disposal
+    answer: yes_no
+    maps:
+      soc2:
+      - P4.2
+      - P4.3
+      nist80053:
+      - SI-12
+  DRPV-07:
+    topic: Data subject access and correction
+    answer: yes_no
+    maps:
+      soc2:
+      - P5.1
+      - P5.2
+  DRPV-08:
+    topic: Purpose-limited third-party disclosure
+    answer: yes_no
+    maps:
+      soc2:
+      - P6.1
+  DRPV-09:
+    topic: Safeguarding personal information
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.34
+      soc2:
+      - CC6.1
+      - CC6.4
+  DRPV-10:
+    topic: Personal data quality
+    answer: yes_no
+    maps:
+      soc2:
+      - P7.1
+      nist80053:
+      - SI-18
+  DRPV-11:
+    topic: Privacy complaint handling
+    answer: yes_no
+    maps:
+      soc2:
+      - P8.1
+      nist80053:
+      - PM-26
+  DRPV-12:
+    topic: Data anonymization and masking
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.8.11
+      nist80053:
+      - SI-19
+  DRPV-13:
+    topic: Secondary use of de-identified data
+    answer: yes_no
+    maps:
+      soc2:
+      - P4.1
+  DRPV-14:
+    topic: Honoring stop-processing requests
+    answer: yes_no
+    maps:
+      soc2:
+      - P2.1
+  DRPV-15:
+    topic: Ethical code review
+    answer: yes_no
+  DPAI-01:
+    topic: AI use on institutional data
+    answer: yes_no
+  DPAI-02:
+    topic: Data retention in AI processing
+    answer: yes_no
+    maps:
+      soc2:
+      - P4.2
+      iso42001:
+      - A.7.2
+      nist80053:
+      - SI-12
+  DPAI-03:
+    topic: Subprocessor AI data agreements
+    answer: yes_no
+    maps:
+      iso27001:
+      - A.5.20
+      soc2:
+      - CC9.2
+      - P6.4
+      iso42001:
+      - A.10.3
+      nist80053:
+      - SA-9
+  DPAI-04:
+    topic: Subprocessors using AI
+    answer: yes_no
+  DPAI-05:
+    topic: Enterprise-licensed AI services only
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.10.3
+  DPAI-06:
+    topic: Shared AI service use
+    answer: yes_no
+  DPAI-07:
+    topic: Guarding data from unintended AI use
+    answer: yes_no
+    maps:
+      iso42001:
+      - A.9.4
+  DPAI-08:
+    topic: User opt-out of AI
+    answer: yes_no
+    maps:
+      soc2:
+      - P2.1
+      nist80053:
+      - PT-4

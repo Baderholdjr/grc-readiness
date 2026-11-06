@@ -24,7 +24,8 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 18. [Frameworks](#18-frameworks)
 19. [The compliance program: common controls, calendar and certification](#19-the-compliance-program-common-controls-calendar-and-certification)
 20. [ITGC tests on GitHub](#20-itgc-tests-on-github)
-21. [Boundaries: what the tool will and won't do](#21-boundaries-what-the-tool-will-and-wont-do)
+21. [Security questionnaires](#21-security-questionnaires)
+22. [Boundaries: what the tool will and won't do](#22-boundaries-what-the-tool-will-and-wont-do)
 - [Appendix A: Commands](#appendix-a-commands)
 - [Appendix B: Workflows](#appendix-b-workflows)
 - [Appendix C: Validation codes](#appendix-c-validation-codes)
@@ -467,7 +468,18 @@ The program layer lives in `program/` at the root of the repository, above the f
 
 > **For GRC practitioners:** These are tests of operating effectiveness of change management and logical access ITGCs, re-performable from `population.json` and the recorded seed. The sample sizes follow the internal audit table (`docs/AUDIT.md`). GitHub is the population source, so changes made outside it (console changes, other pipelines) need their own population. See `docs/ITGC.md`.
 
-## 21. Boundaries: what the tool will and won't do
+## 21. Security questionnaires
+
+> **In plain terms:** Before a university or hospital buys software, it sends a long security questionnaire, such as the HECVAT. The tool fills in what the company's controls already prove, tells you who should answer the rest, and writes the approved answers back into the customer's own spreadsheet. Approved answers are kept, so the next questionnaire takes minutes instead of days.
+
+- **Import** the workbook as received (**Actions → Security questionnaire**, `import`). The engine reads every question, where its answer goes and which answers its dropdown allows.
+- **Draft.** Answers come from the answer library, the company profile, and the controls mapped to each question. A proposed answer needs a control in place with current evidence. A Start Here answer of No switches its section off, as the workbook instructs.
+- **Approve** in the pull request (`status: approved`, `approved_by`, `approved_on`). Nothing is approved automatically.
+- **Fill** writes the approved answers into a copy of the workbook, keeping its dropdowns, formulas and scoring. **Learn** saves them for next time.
+
+> **For GRC practitioners:** Each answer records its backing (supported, partial, gap, unmapped) and its basis: the program controls and record requirements behind it, with their state and open gaps. That makes overstatement visible before the questionnaire leaves. A compliant answer approved over open gaps is flagged (Q104). The HECVAT 4 mapping covers 218 of 331 questions across ISO 27001, SOC 2, HIPAA, ISO 42001 and NIST SP 800-53, and is our judgement. See `docs/QUESTIONNAIRES.md`.
+
+## 22. Boundaries: what the tool will and won't do
 
 > **In plain terms:** The tool keeps the books straight. It doesn't decide whether the client is compliant; people do that.
 
@@ -506,6 +518,7 @@ Run from a client repository (or the engine repo) with the engine installed. Two
 | `python -m grc engagements` | List the records in this repository (`engagement/`, `engagement-*/`) |
 | `python -m grc program validate\|report\|certify\|issues` | The program layer: check it, build its reports, open owner certifications, sync obligation Issues (`--root`, `--period`, `--apply`) |
 | `python -m grc itgc change --repo OWNER/NAME --id ID --from … --to …` / `itgc access --repo … --id …` | ITGC tests on GitHub; writes `program/itgc/<id>/` |
+| `python -m grc questionnaire import\|draft\|fill\|learn\|report\|validate --name …` | Security questionnaires (HECVAT 4): read the workbook, propose answers, write approved answers back (`--workbook`, `--requester`, `--due`, `--draft`, `--out`) |
 
 ## Appendix B: Workflows
 
@@ -530,6 +543,7 @@ In each client repository, under **Actions**:
 | Publish evidence package | When you publish a Release | Attaches the auditor package zip and index PDF |
 | Compliance program | Mondays (obligation Issues); first day of each quarter (owner certifications); or Run workflow | Governance calendar Issues and certification pull requests, for `program/` |
 | ITGC test | Run workflow | Change management or logical access test; opens a PR with the workpaper |
+| Security questionnaire | Run workflow | `import`, `draft` or `learn` (opens a PR), `fill` (the workbook as a run artifact), `report` |
 
 In the engine repository, **Release GRC engine** publishes a new engine version.
 
@@ -588,6 +602,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | P202–P209 | | Program: governance calendar (completions without evidence, wrong periods, overdue occurrences, future dates) |
 | P301–P312 | | Program: owner certification (pending answers, missing notes, wrong signer or signing commit, another owner's control, overdue) |
 | P401–P407 | | ITGC workpapers (conclusion without performer, effective with unexplained exceptions, self-review, population or sample altered) |
+| Q101–Q110 | | Security questionnaires (answer not a dropdown choice, approved without approver, claim over open gaps, stale library answer, due soon; see `docs/QUESTIONNAIRES.md`) |
 
 ## Appendix D: Glossary
 

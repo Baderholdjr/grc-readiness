@@ -68,6 +68,10 @@ jobs:
             echo "### Compliance program" >> "$GITHUB_STEP_SUMMARY"
             python -m grc program validate --format github --summary "$GITHUB_STEP_SUMMARY" || rc=1
           fi
+          # Security questionnaires (questionnaires/: answers, the answer library), if there are any.
+          if [ -d questionnaires ]; then
+            python -m grc questionnaire validate --format github || rc=1
+          fi
           exit $rc
       - name: Check who signed owner certifications
         if: github.event_name == 'pull_request' && hashFiles('program/certifications/**') != ''
