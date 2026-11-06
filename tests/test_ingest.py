@@ -233,3 +233,18 @@ def test_many_documents_are_read_in_batches_and_an_overflowing_batch_is_split(tm
         raise RuntimeError("HTTP Error 400: Your credit balance is too low to access the Anthropic API.")
     report = ingest.run(edir, intake, transport=broke)
     assert len(calls) == 1 and "**9 document(s) not read:" in report
+
+
+def test_later_batches_see_the_gaps_earlier_batches_drafted(tmp_path):
+    edir, intake = setup(tmp_path, ai=True)
+    for i in range(5):
+        _doc(intake / f"doc{i}.docx", f"Procedure {i}.")
+    prompts = []
+
+    def transport(body):
+        prompts.append(body["messages"][0]["content"])
+        gap = {"area": f"Area {len(prompts)}", "finding": f"Finding from call {len(prompts)}", "requirements": [],
+               "owner": "", "severity": "medium", "source": "doc0.docx: x"}
+        return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps({"gaps": [gap]})}]}
+    ingest.run(edir, intake, transport=transport)
+    assert len(prompts) == 2 and "Finding from call 1" not in prompts[0] and "Finding from call 1" in prompts[1]

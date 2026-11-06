@@ -103,7 +103,10 @@ def run(engagement_dir: str | Path, intake_dir: str | Path = "intake", mode: str
             """One call per batch; a batch whose answer doesn't fit is split in half and tried again."""
             nonlocal combined
             try:
-                result = ai.draft([(n, t) for n, t, _ in batch], catalog, model.gaps, model.client,
+                # gaps drafted from earlier batches count as existing, so a later batch doesn't raise them again
+                known = model.gaps + [{"id": "(drafted in this run)", "area": g.get("area", ""), "finding": g.get("finding", "")}
+                                      for g in combined.get("gaps") or [] if isinstance(g, dict)]
+                result = ai.draft([(n, t) for n, t, _ in batch], catalog, known, model.client,
                                   model=settings.get("model"), transport=transport, framework=model.framework_name)
             except ai.AIUnavailable as exc:
                 if len(batch) > 1 and "truncated" in str(exc):
