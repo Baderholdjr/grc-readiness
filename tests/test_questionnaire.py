@@ -75,6 +75,15 @@ def _ev(edir, eid="EV-001"):
          "collected": "2026-11-01", "approved_by": "CISO", "approved_on": "2026-11-01", "valid_for_days": 365}]}))
 
 
+def _ready(edir, rid):
+    f = edir / "controls" / f"{rid}.yaml"
+    d = yaml.safe_load(f.read_text())
+    d["owner"] = "CISO"
+    for leg in d["test"]:
+        d["test"][leg] = {"status": "verified", "evidence": ["EV-001"], "verified_by": "Lead", "verified_on": "2026-11-02"}
+    f.write_text(yaml.safe_dump(d, sort_keys=False))
+
+
 def setup_repo(tmp_path, with_program=True) -> Path:
     root = tmp_path / "repo"
     root.mkdir()
@@ -84,6 +93,8 @@ def setup_repo(tmp_path, with_program=True) -> Path:
                      "--stage1", "2027-02-01", "--stage2", "2027-04-01", "--framework", "iso27001",
                      "--intake", str(root / "intake"), "--confirm-reset"]) == 0
         _ev(e)
+        for rid in ("5.2", "A.5.1"):        # PPPR-08 maps to both: Ready, so the policy control fully backs it
+            _ready(e, rid)
         (root / "program").mkdir()
         (root / "program" / "controls.yaml").write_text(yaml.safe_dump({"controls": [
             {"id": "CTL-POL", "title": "Security policy set", "owner": "CISO",
@@ -329,3 +340,127 @@ def test_report_lists_open_questions_by_owner(tmp_path):
     assert text.startswith("# HECVAT 4 for Fictional State University")
     assert "| Proposed, waiting for approval | 1 |" in text
     assert "| DATA-01 | Data hosts on public IP space | needs_answer |  | Head of Platform | partial |" in text
+
+
+# ------------------------------------------------------------------ review findings (0.17.0)
+def test_fill_refuses_answers_with_errors_and_never_breaks_the_xml(tmp_path):
+    root = setup_repo(tmp_path)
+    _draft(root)
+    ok = dict(status="approved", approved_by="CISO", approved_on="2026-11-06", source="person")
+    _set(root, "COMP-03", answer="Yes", detail="Pasted from a PDF:\x0b {braces} & <tags>", **ok)
+    assert "Q111" in _codes(root)
+    out = tmp_path / "f.xlsx"
+    assert main(["--today", TODAY.isoformat(), "questionnaire", "fill", "--root", str(root), "--out", str(out)]) == 1
+    _set(root, "COMP-03", detail="Clean {braces} & <tags>")
+    _set(root, "PPPR-08", answer="Yes", status="approved", approved_by="CISO", approved_on=None)   # Q103
+    _set(root, "CHNG-01", answer="yes", **ok)                                                     # Q102
+    _set(root, "REQU-06", answer="No", **ok)
+    _set(root, "PCID-01", answer="Yes", **ok)                                                     # Q109
+    assert main(["--today", TODAY.isoformat(), "questionnaire", "fill", "--root", str(root), "--out", str(out)]) == 1
+    wb = openpyxl.load_workbook(out)
+    assert wb["START HERE"]["D17"].value == "Clean {braces} & <tags>"
+    assert wb["Organization"]["C13"].value is None and wb["Organization"]["C14"].value is None
+    assert wb["Case-Specific"]["C13"].value is None and wb["START HERE"]["C16"].value == "No"
+    res = Q.fill(_q(root), tmp_path / "g.xlsx", today=TODAY)
+    assert len(res["refused"]) == 3 and res["written"] == 2
+    assert Q._set_cell('<sheetData><row r="1"><c r="A1"/></row></sheetData>', "A1", "a\x01b{0}") == \
+        '<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t xml:space="preserve">ab{0}</t></is></c></row></sheetData>'
+
+
+def test_backing_is_strict_and_only_yes_is_ever_proposed(tmp_path):
+    root = setup_repo(tmp_path)
+    e = root / "engagement"
+    # every control and requirement behind DATA-01 in place, but its compliant answer is No: never proposed
+    _ready(e, "A.8.22")
+    ctl = yaml.safe_load((root / "program" / "controls.yaml").read_text())
+    ctl["controls"][1]["evidence"] = ["iso27001:EV-001"]
+    (root / "program" / "controls.yaml").write_text(yaml.safe_dump(ctl))
+    a = _draft(root)
+    assert a["DATA-01"]["support"] == "supported" and a["DATA-01"]["status"] == "needs_answer"
+    assert a["PPPR-08"]["status"] == "proposed"
+    # one mapped requirement not started is enough to make the backing partial
+    f = e / "controls" / "5.2.yaml"
+    d = yaml.safe_load(f.read_text())
+    d["test"] = {k: {"status": "not_started"} for k in d["test"]}
+    f.write_text(yaml.safe_dump(d, sort_keys=False))
+    a = _draft(root)
+    assert a["PPPR-08"]["support"] == "partial" and a["PPPR-08"]["status"] == "needs_answer"
+    assert "iso27001:5.2 Not started" in a["PPPR-08"]["basis"]
+
+
+def test_q104_is_worked_out_afresh_for_approved_and_person_answers(tmp_path):
+    root = setup_repo(tmp_path)
+    _draft(root)
+    _set(root, "PPPR-08", answer="Yes", source="person", status="approved", approved_by="CISO",
+         approved_on="2026-11-06", support="supported", notes="Checked with legal.")
+    assert "Q104" not in _codes(root)
+    (root / "engagement" / "gaps.yaml").write_text(yaml.safe_dump({"gaps": [
+        {"id": "GAP-001", "area": "Policy", "finding": "Policy set not approved.", "requirements": ["A.5.1"],
+         "owner": "CISO", "due": "2027-01-15", "severity": "high", "status": "open"}]}))
+    assert "Q104" in _codes(root)                          # the stored support: supported is ignored
+    a = _draft(root)["PPPR-08"]
+    assert a["answer"] == "Yes" and a["status"] == "approved" and a["notes"] == "Checked with legal."
+    assert a["support"] == "partial" and "open gap iso27001:GAP-001" in a["basis"]
+
+
+def test_malformed_files_are_findings_not_crashes(tmp_path):
+    root = setup_repo(tmp_path)
+    qdir = root / "questionnaires" / "hecvat-fsu"
+    (qdir / "answers.yaml").write_text("- id: COMP-03\n")
+    assert "Q101" in _codes(root)
+    assert main(["questionnaire", "draft", "--root", str(root)]) == 0      # a list is read as no answers yet
+    (qdir / "questionnaire.yaml").write_text("- nope\n")
+    assert "Q101" in _codes(root)
+    assert main(["questionnaire", "draft", "--root", str(root)]) == 2
+    (qdir / "questionnaire.yaml").write_text(yaml.safe_dump({"definition": "hecvat-4", "status": "open"}))
+    (root / "questionnaires" / "library.yaml").write_text(yaml.safe_dump({"answers": [
+        {"id": "ANS-1", "questions": ["hecvat-4:COMP-03"], "answer": "Yes", "approved_by": "CISO",
+         "approved_on": "2026-02-30", "review_every_days": 99999999999}]}))
+    assert "Q101" in _codes(root)
+    assert main(["--today", TODAY.isoformat(), "questionnaire", "draft", "--root", str(root)]) == 0
+    assert _q(root).aindex["COMP-03"]["status"] == "needs_answer"
+
+
+def test_names_must_also_be_branch_names(tmp_path):
+    root = setup_repo(tmp_path, with_program=False)
+    for bad in ("a..b", "x.", "y.lock", "../up", "-x"):
+        assert main(["questionnaire", "import", "--root", str(root), "--workbook", str(tmp_path / "received.xlsx"),
+                     f"--name={bad}"]) == 2, bad
+        assert not Q.valid_name(bad)
+    assert Q.valid_name("hecvat-state-u.2026")
+
+
+def test_draft_fill_is_marked_as_a_draft(tmp_path):
+    root = setup_repo(tmp_path)
+    _draft(root)
+    out = tmp_path / "d.xlsx"
+    assert main(["--today", TODAY.isoformat(), "questionnaire", "fill", "--root", str(root), "--draft", "--out", str(out)]) == 0
+    wb = openpyxl.load_workbook(out)
+    assert wb["START HERE"]["C3"].value == "DRAFT, not approved (2026-11-06)"
+    assert wb["Organization"]["D13"].value.startswith("[DRAFT - not approved]")
+
+
+def test_list_validations_by_name_by_range_and_after_other_validations(tmp_path):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Answers"
+    lists = wb.create_sheet("Bob's List")
+    for i, v in enumerate(["Yes", "No", "N/A"], start=1):
+        lists[f"A{i}"] = v
+    from openpyxl.workbook.defined_name import DefinedName
+    dn = DefinedName("YesNo", attr_text="'Bob''s List'!$A$1:$A$2")
+    try:
+        wb.defined_names["YesNo"] = dn
+    except TypeError:
+        wb.defined_names.append(dn)
+    for dv in (DataValidation(type="whole", operator="between", formula1="0", formula2="9", sqref="A1:A50"),
+               DataValidation(type="list", formula1="YesNo", sqref="C5 C7"),
+               DataValidation(type="list", formula1="'Bob''s List'!$A$1:$A$3", sqref="C9"),
+               DataValidation(type="list", formula1='"High,Low"', sqref="C11"),
+               DataValidation(type="list", formula1="Nowhere", sqref="C13")):
+        ws.add_data_validation(dv)
+    path = tmp_path / "v.xlsx"
+    wb.save(path)
+    got = Q.Workbook(path).validations("Answers")
+    assert got == {"C5": ["Yes", "No"], "C7": ["Yes", "No"], "C9": ["Yes", "No", "N/A"], "C11": ["High", "Low"],
+                   "C13": None}

@@ -473,7 +473,7 @@ The program layer lives in `program/` at the root of the repository, above the f
 > **In plain terms:** Before a university or hospital buys software, it sends a long security questionnaire, such as the HECVAT. The tool fills in what the company's controls already prove, tells you who should answer the rest, and writes the approved answers back into the customer's own spreadsheet. Approved answers are kept, so the next questionnaire takes minutes instead of days.
 
 - **Import** the workbook as received (**Actions → Security questionnaire**, `import`). The engine reads every question, where its answer goes and which answers its dropdown allows.
-- **Draft.** Answers come from the answer library, the company profile, and the controls mapped to each question. A proposed answer needs a control in place with current evidence. A Start Here answer of No switches its section off, as the workbook instructs.
+- **Draft.** Answers come from the answer library, the company profile, and the controls mapped to each question. A proposed answer needs every mapped control in place with current evidence, and is only ever a Yes. A Start Here answer of No switches its section off, as the workbook instructs.
 - **Approve** in the pull request (`status: approved`, `approved_by`, `approved_on`). Nothing is approved automatically.
 - **Fill** writes the approved answers into a copy of the workbook, keeping its dropdowns, formulas and scoring. **Learn** saves them for next time.
 
@@ -602,7 +602,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | P202–P209 | | Program: governance calendar (completions without evidence, wrong periods, overdue occurrences, future dates) |
 | P301–P312 | | Program: owner certification (pending answers, missing notes, wrong signer or signing commit, another owner's control, overdue) |
 | P401–P407 | | ITGC workpapers (conclusion without performer, effective with unexplained exceptions, self-review, population or sample altered) |
-| Q101–Q110 | | Security questionnaires (answer not a dropdown choice, approved without approver, claim over open gaps, stale library answer, due soon; see `docs/QUESTIONNAIRES.md`) |
+| Q101–Q111 | | Security questionnaires (answer not a dropdown choice, approved without approver, claim over open gaps, stale library answer, due soon, text a workbook can't hold; see `docs/QUESTIONNAIRES.md`) |
 
 ## Appendix D: Glossary
 

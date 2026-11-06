@@ -45,7 +45,8 @@ jobs:
       - name: Check the inputs
         run: |
           [[ "$ACTION" =~ ^(import|draft|fill|learn|report)$ ]] || { echo "::error::action must be import, draft, fill, learn or report"; exit 1; }
-          [[ "$QNAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,60}$ ]] || { echo "::error::name may contain letters, digits, . _ -"; exit 1; }
+          [[ "$QNAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,60}$ && "$QNAME" != *..* && "$QNAME" != *. && "$QNAME" != *.lock ]] || {
+            echo "::error::name may contain letters, digits, . _ - (no '..', not ending in . or .lock)"; exit 1; }
           if [ "$ACTION" = import ]; then
             [[ "$WORKBOOK" =~ ^questionnaires/inbox/[A-Za-z0-9._\ -]+\.xlsx$ ]] || {
               echo "::error::workbook must be an .xlsx under questionnaires/inbox/ (upload it there first)"; exit 1; }
@@ -83,6 +84,8 @@ jobs:
             draft) python -m grc questionnaire draft --name "$QNAME" ;;
             learn) python -m grc questionnaire learn --name "$QNAME" ;;
             fill)
+              # nothing leaves with an error in it: stop here if any answer fails validation
+              python -m grc questionnaire validate --format github
               if [ "$DRAFT" = true ]; then python -m grc questionnaire fill --name "$QNAME" --draft --out "out/$QNAME-DRAFT.xlsx"
               else python -m grc questionnaire fill --name "$QNAME" --out "out/$QNAME.xlsx"; fi ;;
           esac

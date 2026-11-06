@@ -405,12 +405,13 @@ def cmd_questionnaire(args) -> int:
     root = Path(args.root)
     today = dt.date.fromisoformat(args.today) if args.today else dt.date.today()
     if args.action == "import":
+        if args.name and not Q.valid_name(args.name):
+            print("questionnaire: --name may contain letters, digits, . _ - (no '..', not ending in . or .lock)", file=sys.stderr)
+            return 2
         if not (args.workbook and args.name):
             print("questionnaire import needs --workbook and --name", file=sys.stderr)
             return 2
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,60}", args.name):
-            print("questionnaire: --name may contain letters, digits, . _ -", file=sys.stderr)
-            return 2
+
         qdir = Q.import_workbook(root, Path(args.workbook), args.name, args.definition, args.requester or "",
                                  args.due, today=today, force=args.force)
         qn = Q.load_questionnaire(root, args.name)
@@ -428,6 +429,9 @@ def cmd_questionnaire(args) -> int:
         print(f"\nquestionnaires: {errors} error(s), {sum(f.severity == 'warning' for f in findings)} warning(s).",
               file=sys.stderr)
         return 1 if errors else 0
+    if args.name and not Q.valid_name(args.name):
+        print("questionnaire: --name may contain letters, digits, . _ - (no '..', not ending in . or .lock)", file=sys.stderr)
+        return 2
     targets = [args.name] if args.name else Q.names(root)
     if not targets:
         print(f"No questionnaires in {root.resolve() / Q.QDIR}.", file=sys.stderr)
@@ -436,7 +440,11 @@ def cmd_questionnaire(args) -> int:
         if name not in Q.names(root):
             print(f"questionnaire: no questionnaire '{name}' (have: {', '.join(Q.names(root)) or 'none'})", file=sys.stderr)
             return 2
-        qn = Q.load_questionnaire(root, name)
+        try:
+            qn = Q.load_questionnaire(root, name)
+        except (ValueError, AttributeError, TypeError, KeyError) as exc:
+            print(f"questionnaire {name}: can't be read: {exc}. Run `questionnaire validate` for details.", file=sys.stderr)
+            return 2
         if args.action == "draft":
             counts = Q.draft(qn, prog, today)
             Q.write_answers(qn)
@@ -446,6 +454,12 @@ def cmd_questionnaire(args) -> int:
             res = Q.fill(qn, out, include_proposed=args.draft, today=today)
             print(f"{name}: wrote {res['written']} answer(s) to {out}; {res['left_blank']} left blank"
                   + (" (DRAFT: proposed answers included and marked)" if args.draft else " (approved answers only)"))
+            for msg in res["refused"]:
+                print(f"not written: {msg}", file=sys.stderr)
+            if res["refused"]:
+                print(f"{len(res['refused'])} answer(s) not written; fix them (questionnaire validate) and fill again.",
+                      file=sys.stderr)
+                return 1
         elif args.action == "learn":
             print(f"{name}: {Q.learn(qn)} answer(s) added or updated in {Q.LIBRARY}")
         elif args.action == "report":

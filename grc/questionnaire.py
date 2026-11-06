@@ -35,6 +35,11 @@ PROFILE = QDIR / "profile.yaml"
 STATUSES = ("needs_answer", "proposed", "approved", "not_applicable")
 CLOSED_GAP = ("closed", "risk_accepted")
 FREE_TEXT = None          # allowed values for a cell with no dropdown
+NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+NS_X14 = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"
+NS_XM = "http://schemas.microsoft.com/office/excel/2006/main"
+MAX_CELL = 32767          # Excel's limit on the characters in one cell
+BAD_XML = re.compile("[^\x09\x0a\x0d\x20-\ud7ff\ue000-\ufffd\U00010000-\U0010ffff]")
 
 
 # ------------------------------------------------------------------ definitions
@@ -112,34 +117,55 @@ class Workbook:
     def cell(self, sheet: str, ref: str):
         return self.values()[sheet][ref].value
 
+    def defined_names(self) -> dict[str, str]:
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(self.zip.read("xl/workbook.xml"))
+        return {el.get("name"): (el.text or "").strip() for el in root.iter(f"{{{NS_MAIN}}}definedName")
+                if el.get("name") and el.get("localSheetId") is None}
+
     def validations(self, sheet: str) -> dict[str, list[str]]:
         """cell -> allowed values, from the sheet's list validations (classic and x14)."""
-        text = self.xml(sheet)
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(self.zip.read(self.sheets[sheet]))
+        found: list[tuple[str, str]] = []                       # (formula, sqref)
+        for dv in root.iter(f"{{{NS_MAIN}}}dataValidation"):     # classic
+            f = dv.find(f"{{{NS_MAIN}}}formula1")
+            if dv.get("type") == "list" and f is not None and dv.get("sqref"):
+                found.append((f.text or "", dv.get("sqref")))
+        for dv in root.iter(f"{{{NS_X14}}}dataValidation"):      # Excel 2010+ (lists on other sheets)
+            f = dv.find(f"{{{NS_X14}}}formula1/{{{NS_XM}}}f")
+            sq = dv.find(f"{{{NS_XM}}}sqref")
+            if dv.get("type") == "list" and f is not None and sq is not None:
+                found.append((f.text or "", sq.text or ""))
         out: dict[str, list[str]] = {}
-        blocks = re.findall(r"<x14:dataValidation\b(.*?)</x14:dataValidation>", text, re.S)
-        blocks += re.findall(r"<dataValidation\b(.*?)</dataValidation>", text, re.S)
-        for b in blocks:
-            if 'type="list"' not in b:
-                continue
-            f = re.search(r"<(?:xm:f|formula1)>(.*?)</(?:xm:f|formula1)>", b, re.S)
-            sq = re.search(r'<xm:sqref>(.*?)</xm:sqref>', b) or re.search(r'sqref="([^"]+)"', b)
-            if not (f and sq):
-                continue
-            allowed = self._list_values(_unescape(f.group(1)), sheet)
-            for ref in _expand(sq.group(1)):
+        for formula, sqref in found:
+            allowed = self._list_values(formula, sheet)
+            for ref in _expand(sqref):
                 out[ref] = allowed
         return out
 
-    def _list_values(self, formula: str, sheet: str) -> list[str]:
+    def _list_values(self, formula: str, sheet: str, depth: int = 0) -> list[str] | None:
+        """The values a list validation allows; None if they can't be worked out (the cell is then free text)."""
         formula = formula.strip().lstrip("=")
         if formula.startswith('"'):
             return [v.strip() for v in formula.strip('"').split(",")]
-        m = re.fullmatch(r"(?:'([^']+)'|([^!]+))!(\$?[A-Z]+\$?\d+)(?::(\$?[A-Z]+\$?\d+))?", formula)
-        if not m:
-            return []
-        ws = self.values()[m.group(1) or m.group(2)]
-        a, b = m.group(3).replace("$", ""), (m.group(4) or m.group(3)).replace("$", "")
-        return [str(c.value) for row in ws[a:b] for c in row if c.value not in (None, "")]
+        names = self.defined_names()
+        if formula in names and depth < 3:
+            return self._list_values(names[formula], sheet, depth + 1)
+        m = re.fullmatch(r"(?:'((?:[^']|'')+)'|([^!']+))!(\$?[A-Z]+\$?\d+)(?::(\$?[A-Z]+\$?\d+))?", formula)
+        if m:
+            target = (m.group(1) or "").replace("''", "'") or m.group(2)
+            a, b = m.group(3), m.group(4) or m.group(3)
+        elif re.fullmatch(r"\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?", formula):
+            target, (a, _, b) = sheet, formula.partition(":")
+            b = b or a
+        else:
+            return None
+        if target not in self.values().sheetnames:
+            return None
+        ws = self.values()[target]
+        vals = [str(c.value) for row in ws[a.replace("$", ""):b.replace("$", "")] for c in row if c.value not in (None, "")]
+        return vals or None
 
 
 def _unescape(s: str) -> str:
@@ -214,6 +240,12 @@ def _yes_no(entries) -> None:
             e["answer"] = "Yes" if e["answer"] else "No"
 
 
+def valid_name(name: str) -> bool:
+    """Also a git branch component: no '..', not ending in '.' or '.lock'."""
+    return bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,60}", name)) and ".." not in name \
+        and not name.endswith((".", ".lock"))
+
+
 def names(root: Path) -> list[str]:
     d = Path(root) / QDIR
     return sorted(p.parent.name for p in d.glob("*/questionnaire.yaml")) if d.is_dir() else []
@@ -223,20 +255,24 @@ def load_questionnaire(root: Path, name: str) -> Questionnaire:
     root = Path(root)
     qdir = root / QDIR / name
     meta = load_yaml(qdir / "questionnaire.yaml")
+    if not isinstance(meta, dict):
+        raise ValueError("questionnaire.yaml must be a mapping (definition:, requester:, due:, status:)")
     d = load_definition(str(meta.get("definition")), root)
-    questions = (load_yaml(qdir / "questions.yaml") or {}).get("questions") or []
+    qfile = load_yaml(qdir / "questions.yaml") if (qdir / "questions.yaml").exists() else {}
+    questions = [q for q in (qfile.get("questions") if isinstance(qfile, dict) else None) or [] if isinstance(q, dict)]
     raw = load_yaml(qdir / "answers.yaml") if (qdir / "answers.yaml").exists() else {"answers": []}
     if isinstance(raw, dict):
-        _yes_no(raw.get("answers"))
-    answers = [a for a in (raw or {}).get("answers") or [] if isinstance(a, dict)]
-    return Questionnaire(root, name, meta or {}, d, questions, answers, raw)
+        _yes_no(raw.get("answers") if isinstance(raw.get("answers"), list) else [])
+    items = raw.get("answers") if isinstance(raw, dict) else None
+    answers = [a for a in items if isinstance(a, dict)] if isinstance(items, list) else []
+    return Questionnaire(root, name, meta, d, questions, answers, raw)
 
 
 def load_library(root: Path) -> dict:
     p = Path(root) / LIBRARY
     data = load_yaml(p) if p.exists() else {}
-    if isinstance(data, dict):
-        _yes_no(data.get("answers"))
+    if isinstance(data, dict) and isinstance(data.get("answers"), list):
+        _yes_no(data["answers"])
     return data if isinstance(data, dict) else {}
 
 
@@ -340,8 +376,8 @@ def support(prog, maps: dict) -> Support:
     s.gaps = sorted(set(s.gaps))
     if not levels:
         s.level = "unmapped"
-    elif "supported" in levels and not s.gaps:
-        s.level = "supported"
+    elif all(x == "supported" for x in levels) and not s.gaps:
+        s.level = "supported"           # every mapped control and requirement in place, nothing open
     elif all(x == "gap" for x in levels):
         s.level = "gap"
     else:
@@ -351,10 +387,11 @@ def support(prog, maps: dict) -> Support:
 
 def _library_index(lib: dict, qid_prefix: str) -> dict[str, dict]:
     out = {}
-    for e in lib.get("answers") or []:
-        if not isinstance(e, dict):
+    entries = lib.get("answers") if isinstance(lib.get("answers"), list) else []
+    for e in entries:
+        if not isinstance(e, dict) or not isinstance(e.get("questions"), list):
             continue
-        for ref in e.get("questions") or []:
+        for ref in e["questions"]:
             ref = str(ref)
             if ref.startswith(qid_prefix + ":"):
                 out.setdefault(ref.split(":", 1)[1], e)
@@ -362,11 +399,14 @@ def _library_index(lib: dict, qid_prefix: str) -> dict[str, dict]:
 
 
 def _library_current(e: dict, today: dt.date) -> bool:
-    on = e.get("approved_on")
-    on = on if isinstance(on, dt.date) else (dt.date.fromisoformat(on) if isinstance(on, str) and on else None)
+    on = _date(e.get("approved_on"))
     if not (e.get("approved_by") and on):
         return False
-    return on + dt.timedelta(days=int(e.get("review_every_days") or 365)) >= today
+    try:
+        days = min(max(int(e.get("review_every_days") or 365), 1), 3650)
+    except (TypeError, ValueError):
+        days = 365
+    return on + dt.timedelta(days=days) >= today
 
 
 def _gated_off(q: dict, d: dict, answers: dict[str, dict]) -> dict | None:
@@ -398,14 +438,19 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
         seen.add(qid)
         q = qn.qindex[qid]
         prev = old.get(qid)
+        info = defq.get(qid) or {}
         if prev and (prev.get("status") == "approved" or prev.get("source") == "person"):
+            if info.get("maps"):                 # what backs it can change: refresh, never the answer
+                s = support(prog, info["maps"])
+                prev.update(support=s.level, basis=s.basis + [f"open gap {g}" for g in s.gaps])
             new[qid] = prev
             counts[prev.get("status") if prev.get("status") in STATUSES else "needs_answer"] += 1
             continue
-        info = defq.get(qid) or {}
         entry = {"id": qid, "topic": info.get("topic") or "", "status": "needs_answer", "answer": None,
                  "detail": None, "source": None, "support": None, "basis": [], "owner": None,
                  "approved_by": None, "approved_on": None}
+        if prev and str(prev.get("notes") or "").strip():
+            entry["notes"] = prev["notes"]
         gate = _gated_off(q, d, new)
         if gate:
             entry.update(status="not_applicable", source=f"gate:{gate['question']}",
@@ -416,7 +461,7 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
             entry.update(status="proposed", answer=e.get("answer"), detail=e.get("detail"),
                          source=f"library:{e.get('id')}", owner=e.get("owner"))
             s = support(prog, info.get("maps") or {})
-            entry.update(support=s.level, basis=s.basis)
+            entry.update(support=s.level, basis=s.basis + [f"open gap {g}" for g in s.gaps])
         elif qid in prof_map and str(profile.get(prof_map[qid]) or "").strip():
             entry.update(status="proposed", answer=str(profile[prof_map[qid]]).strip(),
                          source=f"profile:{prof_map[qid]}", support="n/a")
@@ -430,8 +475,10 @@ def draft(qn: Questionnaire, prog, today: dt.date | None = None) -> dict:
             entry.update(support=s.level, basis=s.basis, owner=s.owners[0] if s.owners else None)
             if s.gaps:
                 entry["basis"] = entry["basis"] + [f"open gap {g}" for g in s.gaps]
+            # Only a Yes: a control in place shows that something is done. It can't prove a negative
+            # ("No, staff can't see customer data"), so questions whose compliant answer is No stay with a person.
             want = (q.get("compliant") or "").strip()
-            if s.level == "supported" and q.get("allowed") and want in q["allowed"]:
+            if s.level == "supported" and want == "Yes" and q.get("allowed") and want in q["allowed"]:
                 entry.update(status="proposed", answer=want, source="program",
                              detail=" ".join(s.statements[:2]) or None)
         new[qid] = entry
@@ -451,15 +498,17 @@ def write_answers(qn: Questionnaire) -> Path:
 # ------------------------------------------------------------------ writing the workbook
 def _set_cell(xml: str, ref: str, text: str) -> str:
     col, row = _col_row(ref)
-    cell = (f'<c r="{ref}"{{style}} t="inlineStr"><is><t xml:space="preserve">'
-            f'{escape(text)}</t></is></c>')
+    body = escape(BAD_XML.sub("", text)[:MAX_CELL])
+
+    def cell_xml(style: str) -> str:
+        return f'<c r="{ref}"{style} t="inlineStr"><is><t xml:space="preserve">{body}</t></is></c>'
     m = re.search(rf'<c r="{ref}"(?P<attrs>[^>]*?)(?:/>|>.*?</c>)', xml, re.S)
     if m:
         style = re.search(r'\ss="(\d+)"', m.group("attrs"))
-        return xml[:m.start()] + cell.format(style=f' s="{style.group(1)}"' if style else "") + xml[m.end():]
+        return xml[:m.start()] + cell_xml(f' s="{style.group(1)}"' if style else "") + xml[m.end():]
     rm = re.search(rf'<row r="{row}"(?P<attrs>[^>]*?)(?:/>|>(?P<body>.*?)</row>)', xml, re.S)
     from openpyxl.utils import column_index_from_string
-    new_cell = cell.format(style="")
+    new_cell = cell_xml("")
     if not rm:                            # an empty row isn't stored: add it before the first later row
         if "<sheetData" not in xml:
             raise ValueError(f"no sheet data to put {ref} in")
@@ -490,6 +539,8 @@ def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt
     wbk = Workbook(src)
     edits: dict[str, dict[str, str]] = {}
     written = skipped = 0
+    refused: list[str] = []
+    answers = qn.aindex
     for a in qn.answers:
         q = qn.qindex.get(str(a.get("id")))
         if not q or a.get("status") == "not_applicable":
@@ -497,6 +548,13 @@ def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt
         ok = a.get("status") == "approved" or (include_proposed and a.get("status") == "proposed")
         if not ok or a.get("answer") in (None, ""):
             skipped += 1
+            continue
+        blocking = [m for sev, code, m in answer_problems(qn, a, answers)
+                    if (sev == "error" and not (include_proposed and code == "Q103")) or code == "Q109"]
+        if a.get("status") == "proposed" and _gated_off(q, qn.definition, answers):
+            blocking.append(f"{q['id']}: its section is switched off")
+        if blocking:
+            refused += blocking
             continue
         part = wbk.sheets[q["sheet"]]
         edits.setdefault(part, {})[q["answer_cell"]] = str(a["answer"])
@@ -508,7 +566,9 @@ def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt
         written += 1
     dc = qn.definition["layout"].get("date_cell")
     if dc and written:
-        edits.setdefault(wbk.sheets[dc["sheet"]], {})[dc["cell"]] = (today or dt.date.today()).isoformat()
+        stamp = (today or dt.date.today()).isoformat()
+        edits.setdefault(wbk.sheets[dc["sheet"]], {})[dc["cell"]] = (f"DRAFT, not approved ({stamp})"
+                                                                      if include_proposed else stamp)
     buf = io.BytesIO()
     with zipfile.ZipFile(src) as zin, zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
         for item in zin.infolist():
@@ -530,7 +590,7 @@ def fill(qn: Questionnaire, out: Path, include_proposed: bool = False, today: dt
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(buf.getvalue())
-    return {"written": written, "left_blank": skipped}
+    return {"written": written, "left_blank": skipped, "refused": refused}
 
 
 # ------------------------------------------------------------------ the library
@@ -597,6 +657,8 @@ def validate(root: Path, prog, today: dt.date | None = None) -> list[Finding]:
     if (root / LIBRARY).exists() and _schema("questionnaire-library", lib, lib_file, out):
         seen = set()
         for e in lib.get("answers") or []:
+            if not isinstance(e, dict):
+                continue
             eid = str(e.get("id"))
             if eid in seen:
                 out.append(Finding("error", "Q105", f"{eid}: duplicate library id.", lib_file, eid))
@@ -617,49 +679,75 @@ def validate(root: Path, prog, today: dt.date | None = None) -> list[Finding]:
     for name in names(root):
         try:
             qn = load_questionnaire(root, name)
-        except (SystemExit, ValueError) as exc:
-            out.append(Finding("error", "Q101", f"{name}: {exc}", str(QDIR / name)))
+        except (SystemExit, ValueError, AttributeError, TypeError, KeyError) as exc:
+            out.append(Finding("error", "Q101", f"{name}: can't be read: {exc}", str(QDIR / name)))
             continue
         afile = str(QDIR / name / "answers.yaml")
         _schema("questionnaire", qn.meta, str(QDIR / name / "questionnaire.yaml"), out)
         if not _schema("questionnaire-answers", qn.raw_answers or {"answers": []}, afile, out):
             continue
-        out += check_answers(qn, today)
+        out += check_answers(qn, today, prog)
     return out
 
 
-def check_answers(qn: Questionnaire, today: dt.date) -> list[Finding]:
+def _writable(text) -> str | None:
+    """Why a value can't go into a workbook cell, or None."""
+    s = str(text or "")
+    if BAD_XML.search(s):
+        return "contains control characters a workbook can't hold (often pasted from Word or a PDF)"
+    if len(s) > MAX_CELL:
+        return f"is {len(s)} characters; a workbook cell holds at most {MAX_CELL}"
+    return None
+
+
+def answer_problems(qn: Questionnaire, a: dict, answers: dict[str, dict]) -> list[tuple[str, str, str]]:
+    """(severity, code, message) for one answer: what validate reports and what stops fill from writing it."""
+    out = []
+    qid = str(a.get("id"))
+    q = qn.qindex.get(qid)
+    if q is None:
+        return [("error", "Q108", f"{qid} is not a question in this workbook.")]
+    ans = a.get("answer")
+    if ans not in (None, "") and q.get("allowed") and str(ans) not in q["allowed"]:
+        out.append(("error", "Q102", f"{qid}: '{ans}' isn't one of the workbook's choices ({', '.join(q['allowed'])})."))
+    for key in ("answer", "detail"):
+        why = _writable(a.get(key))
+        if why:
+            out.append(("error", "Q111", f"{qid}: the {key} {why}."))
+    if a.get("status") == "approved":
+        if ans in (None, ""):
+            out.append(("error", "Q103", f"{qid} is approved but has no answer."))
+        if not (a.get("approved_by") and _date(a.get("approved_on"))):
+            out.append(("error", "Q103", f"{qid} is approved without approved_by and approved_on."))
+        gate = _gated_off(q, qn.definition, answers)
+        if gate:
+            out.append(("warning", "Q109", f"{qid}: {gate['question']} is No, so this section should be left blank "
+                        "(fill leaves it blank)."))
+    return out
+
+
+def check_answers(qn: Questionnaire, today: dt.date, prog=None) -> list[Finding]:
     out = []
     afile = str(QDIR / qn.name / "answers.yaml")
     seen = set()
     answers = qn.aindex
+    defq = qn.definition.get("questions") or {}
     for a in qn.answers:
         qid = str(a.get("id"))
         if qid in seen:
             out.append(Finding("error", "Q108", f"{qid}: answered twice.", afile, qid))
         seen.add(qid)
+        for sev, code, msg in answer_problems(qn, a, answers):
+            out.append(Finding(sev, code, msg, afile, qid))
         q = qn.qindex.get(qid)
-        if q is None:
-            out.append(Finding("error", "Q108", f"{qid} is not a question in this workbook.", afile, qid))
-            continue
-        ans = a.get("answer")
-        if ans not in (None, "") and q.get("allowed") and str(ans) not in q["allowed"]:
-            out.append(Finding("error", "Q102", f"{qid}: '{ans}' isn't one of the workbook's choices "
-                               f"({', '.join(q['allowed'])}).", afile, qid))
-        if a.get("status") == "approved":
-            if ans in (None, ""):
-                out.append(Finding("error", "Q103", f"{qid} is approved but has no answer.", afile, qid))
-            if not (a.get("approved_by") and _date(a.get("approved_on"))):
-                out.append(Finding("error", "Q103", f"{qid} is approved without approved_by and approved_on.", afile, qid))
-            claims = str(ans or "").strip()
-            if claims and claims == (q.get("compliant") or "").strip() and a.get("support") == "gap":
-                out.append(Finding("warning", "Q104", f"{qid}: answered '{claims}', but the controls behind it aren't in place "
-                                   f"yet ({'; '.join(x for x in a.get('basis') or [] if 'gap' in x.lower()) or 'not started'}).",
-                                   afile, qid))
-        gate = _gated_off(q, qn.definition, answers)
-        if gate and a.get("status") == "approved":
-            out.append(Finding("warning", "Q109", f"{qid}: {gate['question']} is No, so this section should be left blank.",
-                               afile, qid))
+        claims = str(a.get("answer") or "").strip()
+        if (q and prog is not None and a.get("status") == "approved" and claims
+                and claims == (q.get("compliant") or "").strip() and (defq.get(qid) or {}).get("maps")):
+            s = support(prog, defq[qid]["maps"])            # worked out now: the stored field could be stale or edited
+            if s.level == "gap" or s.gaps:
+                why = "; ".join([f"open gap {g}" for g in s.gaps] + [b for b in s.basis if b.endswith("Not started")])
+                out.append(Finding("warning", "Q104", f"{qid}: answered '{claims}', but the controls behind it aren't in "
+                                   f"place yet ({why or 'not started'}).", afile, qid))
     due = _date(qn.meta.get("due"))
     open_items = [a for a in qn.answers if a.get("status") in ("needs_answer", "proposed")]
     missing = [q["id"] for q in qn.questions if q["id"] not in answers]
@@ -706,7 +794,7 @@ def report_md(qn: Questionnaire) -> str:
     if s["support"]:
         lines += ["How well the control program backs the answers in scope:", "",
                   "| Backing | Questions | Meaning |", "|---|---|---|"]
-        meaning = {"supported": "a mapped control is in place with current evidence",
+        meaning = {"supported": "every mapped control has current evidence and every mapped requirement is Ready",
                    "partial": "work under way, or evidence missing or out of date",
                    "gap": "mapped requirements not started or with open gaps",
                    "unmapped": "no mapped control: answered from knowledge, not evidence",

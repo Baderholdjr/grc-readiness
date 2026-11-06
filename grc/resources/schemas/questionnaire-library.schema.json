@@ -21,7 +21,7 @@
           "owner": {"type": ["string", "null"]},
           "approved_by": {"type": ["string", "null"]},
           "approved_on": {"type": ["string", "null"], "format": "date"},
-          "review_every_days": {"type": "integer", "minimum": 1}
+          "review_every_days": {"type": "integer", "minimum": 1, "maximum": 3650}
         }
       }
     }
