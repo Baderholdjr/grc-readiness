@@ -130,7 +130,7 @@ def _areas(model: Engagement) -> list[dict]:
             state = requirement_state(model, r["id"])
             test = (model.controls.get(r["id"]) or {}).get("test") or {}
             reqs.append({"id": r["id"], "title": r.get("title", ""), "kind": r.get("kind", ""),
-                         "kind_label": model.kind(r.get("kind"))["label"], "state": state,
+                         "kind_label": model.kind(model.effective_kind(r))["label"], "state": state,
                          "plain": STATE_WORDS.get(state, state),
                          "legs": {k: LEG_STATUS.get(leg_effective(model, test.get(k) or {}), "not started") for k in LEGS}})
         if not reqs:

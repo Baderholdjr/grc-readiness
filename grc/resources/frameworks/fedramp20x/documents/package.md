@@ -54,7 +54,7 @@ The framework used is [[TODO: framework and completion date]].
 
 ### Certification Package Overview
 
-(Class B and C) The overview must be supplied in both human-readable and JSON formats and must include at least the information required by (CPO-CSO-OVR):
+(Class B and C) The overview must be supplied in both human-readable and JSON formats and must include at least the information required by (CPO-CSO-OVR). A Class A package, which FRC-CSO-PKG also requires, includes the overview as far as these items apply:
 
 - CPO-CSO-MTD, metadata (below);
 - CDS-CSO-PUB, CDS-CSO-SVC and CDS-CSO-IRP, public information, the service list and relevant policies (DOC-FR-TRUST);
@@ -89,7 +89,7 @@ The maintenance cycle is run by [[TODO: scheduled job or calendar owner]] and ea
 
 The security decision record (SDR) replaces the traditional system security plan. It records how each applicable FedRAMP Practice is addressed, the rationale, the resulting risk to customers, assessment findings and supporting artifacts. It is kept in [[TODO: SDR repository or tool]].
 
-(Class B and C) For each applicable FedRAMP rule, the SDR must hold, in both human-readable and JSON formats (SDR-CSO-FRR):
+(Class B and C; a Class A package includes it as far as it applies) For each applicable FedRAMP rule, the SDR must hold, in both human-readable and JSON formats (SDR-CSO-FRR):
 
 - how the rule is followed, or the reason and the resulting risk to customers for not following it;
 - verification that the implementation is appropriate for the rule, or that the reason for not implementing it is accepted by a senior official;
@@ -100,7 +100,7 @@ The security decision record (SDR) replaces the traditional system security plan
 
 The SDR uses https://fedramp.gov/schemas/fedramp-security-decision-record-schema-2026-06-24.json. Its metadata must include the version, the date and time of the last update, and the source of the update (SDR-CSO-MTD).
 
-(Class B and C) For each applicable Key Security Indicator, the SDR must give short, simple summaries of (SDR-CSX-KSI):
+(Every class; for Class A it is on FedRAMP's mandatory Class A list, FRC-CLA-MFR) For each applicable Key Security Indicator, the SDR must give short, simple summaries of (SDR-CSX-KSI):
 
 - the measures, and their objectives, that demonstrate the indicator, or the reason and resulting risk to customers for not having measures;
 - the cycle of any measure that is implemented persistently;

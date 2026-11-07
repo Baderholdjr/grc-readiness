@@ -13,10 +13,12 @@
 # senior official accepts it. Record that as an accepted risk in the gap register; don't exclude the item.
 #
 # category: core = every 20x class (A, B and C). Choose the certification class in scope.categories:
-#   Class A (pilot)    -> class_a
-#   Class B (Low)      -> class_b
-#   Class C (Moderate) -> class_b and class_c   (class_c adds to class_b)
-# Class D (High) is on the Rev5 path, not 20x. `nist80053` lists FedRAMP's own control mappings.
+#   Class A -> class_a  (FedRAMP's lists FRC-CLA-MFR and FRC-CLA-RFR decide what Class A addresses)
+#   Class B -> class_b
+#   Class C -> class_b and class_c   (class_c adds to class_b)
+# Class D is not covered: FedRAMP has not yet set all of its 20x specifics.
+# mandatory_in: a rule that is a MUST only for some classes and a SHOULD for a lower one is a recommendation
+#   unless one of these categories is chosen. `nist80053` lists FedRAMP's own control mappings.
 
 framework:
   id: fedramp20x
@@ -47,16 +49,16 @@ categories:
   short: All classes
   required: true
 - id: class_a
-  title: Class A (pilot) only
+  title: Class A only
   short: Class A
   excludes:
   - class_b
   - class_c
 - id: class_b
-  title: Class B (Low) and Class C (Moderate)
+  title: Class B and Class C
   short: Class B+
 - id: class_c
-  title: Class C (Moderate) only
+  title: Class C only
   short: Class C
   requires:
   - class_b
@@ -227,6 +229,7 @@ requirements:
   - Most recent Ongoing Certification Report. If the report is not available, the provider MUST provide a sample report that includes
     all required information.
   - How the report will be delivered
+  - 'In FedRAMP''s format: FedRAMP Ongoing Certification Report (CCM-OCR-AVL) (https://fedramp.gov/schemas/fedramp-ongoing-certification-report-schema-2026-06-24.json)'
   nist80053:
   - CA-7
 - id: CCM-OCR-NRD
@@ -301,7 +304,10 @@ requirements:
   - Independent validation.
 - id: CCM-QTR-MTG
   kind: rule
-  category: class_c
+  mandatory_in:
+  - class_c
+  kind_otherwise: recommendation
+  category: class_b
   group: CCM
   title: Quarterly Review Meeting
   intent: 'Class B: Providers SHOULD host a synchronous Quarterly Review every 3 months, open to all necessary parties, to review aspects
@@ -309,6 +315,8 @@ requirements:
     MUST host a synchronous Quarterly Review every 3 months, open to all necessary parties, to review aspects of the most recent Ongoing
     Certification Reports that the provider determines are of the most relevance to agencies.'
   evidence_examples:
+  - Selected ordinal recurrence for the Ongoing Certification Report cycle if applicable OR explanation for why Ongoing Certification
+    Reports are not being delivered.
   - Selected ordinal recurrence for the Ongoing Certification Report cycle.
   nist80053:
   - CA-7
@@ -428,6 +436,7 @@ requirements:
   evidence_examples:
   - URL to the human-readable data.
   - URL to the machine-readable data.
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview (FRC-CSO-PKG) (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
 - id: CDS-CSO-SVC
   kind: rule
   category: class_b
@@ -440,6 +449,7 @@ requirements:
   evidence_examples:
   - URL to the human-readable data.
   - URL to the machine-readable data (if applicable).
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview (FRC-CSO-PKG) (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
 - id: CDS-CSO-FID
   kind: rule
   category: class_b
@@ -474,7 +484,10 @@ requirements:
   - Independent validation.
 - id: CDS-CSO-AVR
   kind: rule
-  category: class_b
+  mandatory_in:
+  - class_b
+  kind_otherwise: recommendation
+  category: core
   group: CDS
   title: Availability Reporting
   intent: 'Class A: Providers SHOULD maintain a web service, available to all necessary parties, that indicates current and historical
@@ -509,6 +522,7 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview (FRC-CSO-PKG) (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
 - id: CDS-CSO-CBF
   kind: rule
   category: class_b
@@ -721,6 +735,7 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview Schema (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
 - id: CPO-CSO-MTD
   kind: rule
   category: class_b
@@ -761,7 +776,10 @@ requirements:
   - CA-7(1)
 - id: CPO-CSX-CPM
   kind: rule
-  category: class_b
+  mandatory_in:
+  - class_b
+  kind_otherwise: recommendation
+  category: core
   group: CPO
   title: Certification Package Maintenance for 20x
   intent: 'Class A: Providers with 20x Class A Certifications SHOULD persistently maintain their FedRAMP Certification Package to ensure
@@ -811,6 +829,7 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview (FRC-CSO-PKG) (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
 - id: FRC-CSO-JSN
   kind: rule
   category: core
@@ -1025,7 +1044,10 @@ requirements:
   - Independent validation.
 - id: FRC-CSX-VVK
   kind: rule
-  category: class_c
+  mandatory_in:
+  - class_c
+  kind_otherwise: recommendation
+  category: class_b
   group: FRC
   title: Automated Verification and Validation of Key Security Indicators
   intent: 'Class B: Providers seeking 20x Class B Certification SHOULD implement automated methods to persistently verify and validate
@@ -1111,7 +1133,10 @@ requirements:
   - Independent validation.
 - id: IEC-CSO-IIR
   kind: rule
-  category: class_b
+  mandatory_in:
+  - class_b
+  kind_otherwise: recommendation
+  category: core
   group: IEC
   title: Initial Incident Report
   intent: 'Class A: Providers SHOULD responsibly notify all affected parties after identifying FedRAMP Reportable Incidents by providing
@@ -1145,12 +1170,16 @@ requirements:
   evidence_examples:
   - An Initial Incident Report for one or more incidents. The report can be from real incidents, simulated incidents, or a combination
     of sources.
+  - 'In FedRAMP''s format: FedRAMP Incident Report (IEC-CSO-IIR / IEC-CSO-OIR / IEC-CSO-FIR) (https://fedramp.gov/schemas/fedramp-incident-report-schema-2026-06-24.json)'
   nist80053:
   - AU-5(2)
   - IR-5
 - id: IEC-CSO-OIR
   kind: rule
-  category: class_b
+  mandatory_in:
+  - class_b
+  kind_otherwise: recommendation
+  category: core
   group: IEC
   title: Ongoing Incident Reports
   intent: 'Class A: Providers SHOULD responsibly notify all affected parties of ongoing activity as new information becomes available
@@ -1171,6 +1200,7 @@ requirements:
   evidence_examples:
   - An Ongoing Incident Report for one or more incidents. The report can be from real incidents, simulated incidents, or a combination
     of sources.
+  - 'In FedRAMP''s format: FedRAMP Incident Report (IEC-CSO-IIR / IEC-CSO-OIR / IEC-CSO-FIR) (https://fedramp.gov/schemas/fedramp-incident-report-schema-2026-06-24.json)'
   nist80053:
   - IR-5
 - id: IEC-CSO-FIR
@@ -1186,6 +1216,7 @@ requirements:
   evidence_examples:
   - An Final Incident Report for one or more incidents. The report can be from real incidents, simulated incidents, or a combination
     of sources.
+  - 'In FedRAMP''s format: FedRAMP Incident Report (IEC-CSO-IIR / IEC-CSO-OIR / IEC-CSO-FIR) (https://fedramp.gov/schemas/fedramp-incident-report-schema-2026-06-24.json)'
   nist80053:
   - IR-5
 - id: IEC-CSO-EFI
@@ -1202,6 +1233,7 @@ requirements:
   evidence_examples:
   - An incident log showing an example of one or more incidents being evaluated including the reason for the determination. The log
     can be from real incidents, simulated incidents, or a combination of sources.
+  - 'In FedRAMP''s format: FedRAMP Incident Report (IEC-CSO-IIR / IEC-CSO-OIR / IEC-CSO-FIR) (https://fedramp.gov/schemas/fedramp-incident-report-schema-2026-06-24.json)'
 - id: IEC-CSO-AIR
   kind: recommendation
   category: class_b
@@ -1391,6 +1423,7 @@ requirements:
     data handled by the cloud service offering.
   - A human readable explanation of how the machine readable output is derived.
   - The code for the automated process used to generate the machine readable output.
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview (FRC-CSO-PKG) (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
   nist80053:
   - RA-3
 - id: MAS-CSO-MDI
@@ -1420,6 +1453,7 @@ requirements:
   evidence_examples:
   - URL to the human-readable data.
   - URL to the machine-readable data.
+  - 'In FedRAMP''s format: FedRAMP Certification Package Overview (FRC-CSO-PKG) (https://fedramp.gov/schemas/fedramp-certification-package-overview-schema-2026-06-24.json)'
   nist80053:
   - CM-7
 - id: SCG-CSO-AUP
@@ -1515,6 +1549,7 @@ requirements:
   - Evidence of significant change evaluation including a description fo the change, the determined type, and an explanation for the
     decision. At least one example must be provided for each type of change. Real examples are prefered but the provider may use fictitious
     examples as long as the example provides evidence of the decision making process.
+  - 'In FedRAMP''s format: FedRAMP Significant Change Notification (SCN-CSO-INF) (https://fedramp.gov/schemas/fedramp-significant-change-notifications-schema-2026-06-24.json)'
   nist80053:
   - CM-4
 - id: SCN-CSO-MAR
@@ -1540,6 +1575,7 @@ requirements:
     of the information may vary depending on how the provider tracks this internally.'
   evidence_examples:
   - A recent Significant Change Notification or sample Significant Change Notification
+  - 'In FedRAMP''s format: FedRAMP Significant Change Notification (SCN-CSO-INF) (https://fedramp.gov/schemas/fedramp-significant-change-notifications-schema-2026-06-24.json)'
 - id: SCN-CSO-HIS
   kind: rule
   category: class_b
@@ -1557,6 +1593,7 @@ requirements:
   evidence_examples:
   - URL or explanation of how to request these materials.
   - Explanation of how the provider decides whether or not to share these materials or other related policies.
+  - 'In FedRAMP''s format: FedRAMP Significant Change Notifications Schema (https://fedramp.gov/schemas/fedramp-significant-change-notifications-schema-2026-06-24.json)'
 - id: SCN-ADP-NTF
   kind: rule
   category: class_b
@@ -1671,6 +1708,7 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Security Decision Record Schema (https://fedramp.gov/schemas/fedramp-security-decision-record-schema-2026-06-24.json)'
 - id: SDR-CSO-MTD
   kind: rule
   category: class_b
@@ -1706,9 +1744,13 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Security Decision Record Schema (https://fedramp.gov/schemas/fedramp-security-decision-record-schema-2026-06-24.json)'
 - id: SDR-CSX-KMT
   kind: rule
-  category: class_c
+  mandatory_in:
+  - class_c
+  kind_otherwise: recommendation
+  category: class_b
   group: SDR
   title: Key Security Indicator Metrics
   intent: 'Class B: Providers with 20x Class B Certifications SHOULD also include historical metrics in their Security Decision Record,
@@ -1729,6 +1771,7 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Security Decision Record Schema (https://fedramp.gov/schemas/fedramp-security-decision-record-schema-2026-06-24.json)'
 - id: VDR-CSO-DET
   kind: rule
   category: core
@@ -2024,7 +2067,10 @@ requirements:
   - Independent validation.
 - id: VDR-TFR-MVX
   kind: rule
-  category: class_b
+  mandatory_in:
+  - class_b
+  kind_otherwise: recommendation
+  category: core
   group: VDR
   title: Persistent Machine Verification and Validation for 20x
   intent: 'Class A: Providers of FedRAMP 20x Class A offerings SHOULD verify and validate the status of machine-based information resources
@@ -2178,6 +2224,7 @@ requirements:
     senior official.
   - Independent verification.
   - Independent validation.
+  - 'In FedRAMP''s format: FedRAMP Vulnerability Detail Report (VER-RPT-VDT) (https://fedramp.gov/schemas/fedramp-vulnerability-detail-report-schema-2026-06-24.json)'
   nist80053:
   - SI-7(2)
 - id: VER-RPT-VDT
@@ -2196,6 +2243,7 @@ requirements:
     Final disposition of the vulnerability.'
   evidence_examples:
   - A recent vulnerability report or a sample vulnerability report
+  - 'In FedRAMP''s format: FedRAMP Vulnerability Detail Report (VER-RPT-VDT) (https://fedramp.gov/schemas/fedramp-vulnerability-detail-report-schema-2026-06-24.json)'
   nist80053:
   - SI-2(3)
 - id: VER-RPT-AVI
@@ -2211,6 +2259,7 @@ requirements:
     resulting from the accepted vulnerability.'
   evidence_examples:
   - A recent vulnerability report or a sample vulnerability report
+  - 'In FedRAMP''s format: FedRAMP Accepted Vulnerability Info (VER-RPT-AVI) (https://fedramp.gov/schemas/fedramp-accepted-vulnerability-info-schema-2026-06-24.json)'
 - id: VER-RPT-NID
   kind: rule
   category: class_b
@@ -2280,6 +2329,7 @@ requirements:
   evidence_examples:
   - URL and access instructions for historical vulnerability detection and response activity in machine readable format
   - Or an explanation of why machine readable content is not being provided
+  - 'In FedRAMP''s format: FedRAMP Historical Vulnerability Evaluation and Reporting Activity (VER-TFR-MRH) (https://fedramp.gov/schemas/fedramp-historical-ver-activity-schema-2026-06-24.json)'
 - id: VER-TFR-EVU
   kind: recommendation
   category: core

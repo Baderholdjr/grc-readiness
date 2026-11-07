@@ -41,12 +41,15 @@ def test_catalog_shape():
     ids = [r["id"] for r in reqs]
     assert len(ids) == len(set(ids)) == 187 and all(ID.fullmatch(i) for i in ids)
     assert collections.Counter(r["kind"] for r in reqs) == {"rule": 96, "indicator": 46, "recommendation": 45}
-    assert collections.Counter(r["category"] for r in reqs) == {"class_b": 138, "core": 35, "class_c": 10, "class_a": 4}
+    assert collections.Counter(r["category"] for r in reqs) == {"class_b": 136, "core": 40, "class_c": 7, "class_a": 4}
     ksi = [r for r in reqs if r["id"].startswith("KSI-")]
     assert len(ksi) == 46 and {r["kind"] for r in ksi} == {"indicator"}
     # Class A addresses only the indicators FRC-CLA-MFR names
     assert {r["id"] for r in ksi if r["category"] == "core"} == {
         "KSI-CED-RAT", "KSI-CMT-LMC", "KSI-CNA-RNT", "KSI-IAM-AAM", "KSI-IAM-APM", "KSI-INR-RIR", "KSI-SVC-SIN"}
+    assert {r["id"] for r in reqs if "mandatory_in" in r} == {
+        "CDS-CSO-AVR", "CPO-CSX-CPM", "IEC-CSO-IIR", "IEC-CSO-OIR", "VDR-TFR-MVX", "CCM-QTR-MTG", "FRC-CSX-VVK", "SDR-CSX-KMT"}
+    assert any("fedramp.gov/schemas" in e for r in reqs for e in r["evidence_examples"])
     assert {r["id"] for r in ksi if r["category"] == "class_c"} == {
         "KSI-CNA-EIS", "KSI-MLA-ALA", "KSI-SVC-PRR", "KSI-SVC-RUD", "KSI-SVC-VCM"}
     assert all(r["intent"] and r["evidence_examples"] and "**" not in r["intent"] for r in reqs)
@@ -62,7 +65,8 @@ def test_catalog_shape():
     assert by["IEC-CSO-FIR"]["intent"].startswith("Classes A and B: Providers MUST")
     # rules FRC-CLA-MFR makes mandatory for Class A are in every class; the ones it recommends keep Class A's SHOULD
     assert by["MAS-CSO-IIR"]["category"] == by["VDR-CSO-DET"]["category"] == "core"
-    assert by["IEC-CSO-IIR"]["category"] == "class_b" and by["IEC-CSO-IIR"]["intent"].startswith("Class A: Providers SHOULD")
+    assert by["IEC-CSO-IIR"]["category"] == "core" and by["IEC-CSO-IIR"]["mandatory_in"] == ["class_b"]
+    assert by["IEC-CSO-IIR"]["intent"].startswith("Class A: Providers SHOULD")
 
 
 def test_generator_reproduces_the_catalog(tmp_path):
@@ -95,7 +99,8 @@ def test_generator_reproduces_the_catalog(tmp_path):
     assert by["FRC-CLA-MFR"]["category"] == "class_a" and by["FRC-CLA-RFR"]["kind"] == "recommendation"
     assert by["ABC-CSO-ONE"] == {"id": "ABC-CSO-ONE", "kind": "rule", "category": "core", "group": "ABC", "title": "One",
                                       "intent": "Providers MUST do one.", "evidence_examples": ["Explain"], "nist80053": ["AC-2(3)"]}
-    assert by["ABC-CSO-TWO"]["kind"] == "rule" and by["ABC-CSO-TWO"]["category"] == "class_c"
+    assert by["ABC-CSO-TWO"]["kind"] == "rule" and by["ABC-CSO-TWO"]["category"] == "class_b"
+    assert by["ABC-CSO-TWO"]["mandatory_in"] == ["class_c"] and by["ABC-CSO-TWO"]["kind_otherwise"] == "recommendation"
     assert by["ABC-CSO-TWO"]["intent"] == "Class B: Providers SHOULD do two. Class C: Providers MUST do two."
     assert by["KSI-XYZ-ONE"]["category"] == "core" and by["KSI-XYZ-ONE"]["evidence_examples"] == ["Measures"]
     assert by["KSI-XYZ-TWO"]["category"] == "class_c"     # not named for Class A; optional for Class B
@@ -121,12 +126,12 @@ def test_documents_cover_each_requirement_once():
 
 def test_class_decides_scope(tmp_path):
     m = load(_new(tmp_path / "none", categories=None), today=TODAY)
-    assert m.categories_in_scope == {"core"} and len(m.controls) == 35 and "W113" in codes(m)
+    assert m.categories_in_scope == {"core"} and len(m.controls) == 40 and "W113" in codes(m)
     m = load(_new(tmp_path / "a", categories="class_a"), today=TODAY)
-    assert len(m.controls) == 39 and m.is_applicable("FRC-CLA-MFR") and m.is_applicable("VDR-CSO-DET")
+    assert len(m.controls) == 44 and m.is_applicable("FRC-CLA-MFR") and m.is_applicable("VDR-CSO-DET")
     assert not m.is_applicable("KSI-IAM-ELP") and m.term("internal_audit_ref") == "FRC-CSO-MRA"
     m = load(_new(tmp_path / "b", categories="class_b"), today=TODAY)
-    assert len(m.controls) == 173 and not m.is_applicable("KSI-CNA-EIS") and m.term("internal_audit_ref") == "KSI-SVC-EIS"
+    assert len(m.controls) == 176 and not m.is_applicable("KSI-CNA-EIS") and m.term("internal_audit_ref") == "KSI-SVC-EIS"
     e = _new(tmp_path / "c")
     m = load(e, today=TODAY)
     assert len(m.controls) == 183 and m.is_applicable("KSI-CNA-EIS")
@@ -162,6 +167,15 @@ def test_should_rules_can_be_set_aside_with_a_reason_but_must_rules_cannot(tmp_p
                   "Key Security Indicator KSI-IAM-ELP is mandatory and cannot be excluded."]
     row = next(r for r in applicability_rows(m) if r[0] == "SCG-ENH-API")
     assert row[2] == "No" and row[3].startswith("Settings are managed")
+
+
+def test_a_rule_is_a_should_for_a_lower_class(tmp_path):
+    a = load(_new(tmp_path / "a", categories="class_a"), today=TODAY)
+    b = load(_new(tmp_path / "b", categories="class_b"), today=TODAY)
+    c = load(_new(tmp_path / "c"), today=TODAY)
+    assert not a.is_mandatory("IEC-CSO-IIR") and b.is_mandatory("IEC-CSO-IIR")          # SHOULD for Class A
+    assert b.is_applicable("CCM-QTR-MTG") and not b.is_mandatory("CCM-QTR-MTG") and c.is_mandatory("CCM-QTR-MTG")
+    assert a.kind_label(a.requirement_index["IEC-CSO-IIR"]) == "Should" and b.kind_label(b.requirement_index["IEC-CSO-IIR"]) == "Rule"
 
 
 def test_reports_use_fedramp_terms(tmp_path):

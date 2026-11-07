@@ -38,7 +38,7 @@ Every message is logged in [[TODO: tracking system]] with time received, designa
 
 FedRAMP marks some messages with a designation. The person monitoring the inbox reads the designation first.
 
-- Emergency and Emergency Test: {{client}} must route these to a senior security official for awareness (AFC-CSO-EMR). The senior security official is [[TODO: name or role]], reached through [[TODO: routing method, e.g. mail rule plus paging]]. The routing rule is part of the mailbox configuration that is checked automatically.
+- Emergency: {{client}} must route these to a senior security official for awareness (AFC-CSO-EMR). Emergency Test messages are routed the same way as an internal choice, so the routing is exercised; both designations also carry required actions (AFC-CSO-CRA). The senior security official is [[TODO: name or role]], reached through [[TODO: routing method, e.g. mail rule plus paging]]. The routing rule is part of the mailbox configuration that is checked automatically.
 - Important: handled as in "Required actions" below.
 - Other messages: assigned to an owner and answered within [[TODO: internal target]].
 

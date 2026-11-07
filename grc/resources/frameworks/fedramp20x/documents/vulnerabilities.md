@@ -93,7 +93,7 @@ For each vulnerability, considering the context of the offering, {{client}}:
 
 Customer effects use FedRAMP's definitions: minimal (noticeable by some users), narrow (some users for less than 12 hours, or extremely limited data), disruptive (many users for less than 24 hours, or large amounts or many types of data), debilitating (most users or most data; unknown effects count as debilitating until shown otherwise).
 
-The rating is revisited after each mitigation. A mitigation that lowers the rating or likelihood makes the vulnerability partially mitigated; one that makes both negligible while the vulnerability is still detected makes it fully mitigated; a vulnerability no longer detected is remediated.
+The rating is revisited after each mitigation. A mitigation that lowers the rating or likelihood makes the vulnerability partially mitigated; one that reduces either the likelihood of exploitation or the rating until it is negligible, while the vulnerability is still detected makes it fully mitigated; a vulnerability no longer detected is remediated.
 
 ## Mitigation and remediation timeframes
 
@@ -130,7 +130,7 @@ A Known Exploited Vulnerability (KEV) is any vulnerability in CISA's Known Explo
 {{client}} should remediate KEVs by the due dates in the CISA KEV catalog, even when the vulnerability is already fully mitigated, as required by CISA BOD 26-04 or successor CISA guidance (VDR-TFR-KEV).
 
 - Findings are matched to the KEV catalog automatically by [[TODO: tool or feed]].
-- The register shows the CISA due date next to the FedRAMP timeframe; the earlier date governs.
+- The register shows the CISA due date next to the FedRAMP timeframe; as an internal policy choice (FedRAMP doesn't set this), {{client}} works to the earlier date.
 - New resources with KEVs are not deployed (VDR-CSO-AKE).
 
 ## Accepted vulnerabilities
