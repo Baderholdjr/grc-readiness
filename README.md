@@ -14,6 +14,7 @@
 | [Evidence index](evidence-index.md) | Requirement → evidence traceability ([CSV](evidence-index.csv)) |
 | [Excel workbook](example-client-iso42001-workbook.xlsx?raw=1) | Control matrix, SoA, gaps, evidence, findings, impact assessments, documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet |
 | [Client view](client-view.md) | For the client's people: progress, dates and 77 open request(s) by owner ([HTML to share](client-view.html?raw=1)) |
+| [Gap assessment](gap-assessment.md) | Client-facing: how far the existing setup goes, the gaps to close and the roadmap ([Word](gap-assessment.docx?raw=1)) |
 | [Policies and procedures](documents.md) | 0 of 17 library documents approved and current |
 | [Internal audit](internal-audit.md) | Audit programme, per-audit reports and workpaper results (9.2) |
 
