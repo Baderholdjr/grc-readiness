@@ -30,7 +30,7 @@ The right to object is shown clearly and separately from other information, at t
 
 When data is not collected from the person, the notice also says what categories of data are held and where they came from, including whether from public sources (Art. 14). It is given within a reasonable period and at the latest within one month, or at first contact, or before the data is first disclosed to another recipient, whichever is earliest (Art. 14(3)).
 
-An Art. 14(5) exception (the person already has the information, notice is impossible or would take disproportionate effort, the law expressly provides for obtaining the data, or professional secrecy) is used only after a documented assessment. Where disproportionate effort is relied on, {{client}} still protects the person, including by making the information publicly available.
+An Art. 14(5) exception (the person already has the information, notice is impossible or would take disproportionate effort, the law expressly provides for obtaining or disclosing the data, or professional secrecy) is used only after a documented assessment. Where disproportionate effort is relied on, {{client}} still protects the person, including by making the information publicly available.
 
 ## Keeping notices accurate
 

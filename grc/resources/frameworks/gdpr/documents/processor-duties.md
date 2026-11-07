@@ -6,7 +6,7 @@ This procedure sets {{client}}'s duties as a processor of personal data for its 
 
 ## Customer instructions
 
-{{client}} processes customer personal data only on the customer's documented instructions, including on transfers outside the EEA, unless Union or Member State law requires otherwise; it then tells the customer first, unless that law forbids it (Art. 28(3)(a)). Instructions are set in the data processing agreement and [[TODO: other documented instructions]]. If an instruction would infringe data protection law, {{client}} immediately tells the customer. Staff and contractors with access process the data only on those instructions and are bound by confidentiality (Art. 29). If {{client}} decided the purposes and means itself, it would become a controller for that processing (Art. 28(10)).
+{{client}} processes customer personal data only on the customer's documented instructions, including on transfers outside the EEA, unless Union or Member State law requires otherwise; it then tells the customer first, unless that law forbids it (Art. 28(3)(a)). Instructions are set in the data processing agreement and [[TODO: other documented instructions]]. If an instruction would infringe data protection law, {{client}} immediately tells the customer. Staff and contractors with access process the data only on those instructions (Art. 29) and have committed themselves to confidentiality or are under a statutory obligation of confidentiality (Art. 28(3)(b)). If {{client}} decided the purposes and means itself, it would become a controller for that processing (Art. 28(10)).
 
 ## Sub-processors
 

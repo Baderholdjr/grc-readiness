@@ -12,7 +12,7 @@ Every new or changed processing activity is screened during the privacy review, 
 - large-scale processing of special category data or criminal offence data;
 - systematic monitoring of a publicly accessible area on a large scale.
 
-The screening also checks the list of processing operations published by [[TODO: the lead supervisory authority]] (Art. 35(4)) and the EDPB criteria, such as vulnerable people, innovative technology, matching datasets or large scale. Where two or more criteria apply, a DPIA is done. The screening result and its reasons are recorded, even when no DPIA is needed.
+The screening also checks the lists of processing operations published by the supervisory authorities concerned (Art. 35(4)), starting with [[TODO: the lead or main supervisory authority]], and the EDPB criteria, such as vulnerable people, innovative technology, matching datasets or large scale. As a rule of thumb, where two or more criteria apply a DPIA is done; one criterion can be enough. The screening result and its reasons are recorded, even when no DPIA is needed.
 
 ## Carrying out a DPIA
 

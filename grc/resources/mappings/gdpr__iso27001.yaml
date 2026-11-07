@@ -6,7 +6,7 @@
 # as "<framework>:<id>"). The rest are pointers. `subset`: the GDPR requirement (first framework) is narrower;
 # `superset`: wider. Our own judgement; no standard's text is reproduced.
 #
-# None is `equivalent`: a GDPR obligation is about personal data and people's rights; a ISO 27001 control is about
+# None is `equivalent`: a GDPR obligation is about personal data and people's rights; an ISO 27001 control is about
 # information security. Evidence for one is a strong pointer for the other, never proof on its own.
 
 frameworks:
@@ -20,9 +20,15 @@ mappings:
   reviewed_by: ''
   reviewed_on: null
 - gdpr: Art5(1)(f)
+  iso27001: A.8.24
+  relationship: related
+  note: Cryptography is one of the measures that keep personal data confidential and intact.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(2)
   iso27001: A.5.34
   relationship: related
-  note: Privacy and protection of PII under applicable law.
+  note: Identifying and meeting privacy and PII protection requirements supports demonstrating compliance.
   reviewed_by: ''
   reviewed_on: null
 - gdpr: Art24

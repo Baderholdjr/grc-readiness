@@ -22,12 +22,13 @@ terms:
   applicability_title: GDPR Applicability Statement
   applicability_short: Applicability
   applicability_intro: "Every conditional GDPR obligation and whether it applies to {client}, with the reason when it doesn't; and the duties of roles or situations outside the scope of this engagement (controller or processor, DPO, representative, transfers, special categories, children). Obligations in scope are not optional and are not listed."
-  internal_audit_ref: Art32(1)(d)
-  corrective_ref: Art32(1)(d)
-  review_ref: Art32(1)(d)
-  record_control_ref: Art32(1)(d)
-  scope_ref: Art30(1)
-  objectives_ref: Art24
+  # A list: the first id in the record's scope is used (controller ids first, then processor, then core).
+  internal_audit_ref: [Art5(2), Art28(3)(h), Art32(1)(d)]
+  corrective_ref: [Art24, Art28(3)(h), Art32(1)(d)]
+  review_ref: [Art24, Art28(3)(h), Art32(1)(d)]
+  record_control_ref: [Art5(2), Art28(3)(h), Art32(1)(d)]
+  scope_ref: [Art30(1), Art30(2)]
+  objectives_ref: [Art24, Art32(2)]
   risk_ref: Art32(2)
   review_required: "no"
   applicability_id_header: Article
@@ -49,10 +50,10 @@ glossary:
     plain: "A data protection impact assessment: a structured look at a risky new use of personal data before it starts."
     tech: "Art. 35."
   - term: Data subject rights
-    plain: "People's rights to see, correct, delete, move or object to the use of their data. Requests must be answered within a month."
+    plain: "People's rights to see, correct, delete, move or object to the use of their data. Requests must be answered within a month, or three months for complex ones if the person is told within the first month."
     tech: "Art. 12-22."
   - term: Personal data breach
-    plain: "Personal data lost, stolen, destroyed, changed or seen by the wrong people. Serious ones are reported to the regulator within 72 hours."
+    plain: "Personal data lost, stolen, destroyed, changed or seen by the wrong people. It is reported to the regulator within 72 hours unless it is unlikely to put anyone at risk, and the people affected are told when the risk to them is high."
     tech: "Art. 4(12), 33, 34."
   - term: International transfer
     plain: "Sending personal data, or giving access to it, outside the European Economic Area. It needs a legal mechanism such as standard contractual clauses."
@@ -89,7 +90,9 @@ phases:
     objective: "Scope & roles"
     deliverables:
       - Kickoff and owner alignment
+      - "Territorial scope (Art. 3): EU establishment, or offering to or monitoring people in the EU; decides the representative and the lead authority"
       - Decide controller and processor roles per processing activity
+      - "National law that adds to the GDPR in each Member State concerned: employment data (Art. 88), age of digital consent (Art. 8), DPO designation (Art. 37(4)), health and genetic data (Art. 9(4)), restrictions (Art. 23)"
       - "Data mapping: systems, data categories, flows and transfers"
       - Validate gap-analysis claims and evidence
   - id: governance
@@ -169,7 +172,7 @@ documents:
     - {id: DOC-GDPR-DPIA, title: "Data Protection Impact Assessment Procedure", kind: procedure, template: dpia.md,
        satisfies: ["Art35", "Art36"], sections: [Purpose, Screening, Carrying out a DPIA, Prior consultation, Review]}
     - {id: DOC-GDPR-PROCESSOR, title: "Processor Obligations Procedure", kind: procedure, template: processor-duties.md,
-       satisfies: ["Art28(2)", "Art28(3)(a)", "Art28(3)(e)", "Art28(3)(f)", "Art28(3)(g)", "Art28(3)(h)", "Art28(4)", "Art29", "Art30(2)", "Art33(2)"], sections: [Purpose, Customer instructions, Sub-processors, Assisting customers, Breach notification to customers, Deletion or return, Audits and information, Processing records, Review]}
+       satisfies: ["Art28(2)", "Art28(3)(a)", "Art28(3)(b)", "Art28(3)(e)", "Art28(3)(f)", "Art28(3)(g)", "Art28(3)(h)", "Art28(4)", "Art29", "Art30(2)", "Art33(2)"], sections: [Purpose, Customer instructions, Sub-processors, Assisting customers, Breach notification to customers, Deletion or return, Audits and information, Processing records, Review]}
     - {id: DOC-GDPR-DPO, title: "Data Protection Officer Charter", kind: policy, template: dpo.md,
        satisfies: ["Art37", "Art38", "Art39"], sections: [Purpose, Designation, Independence and resources, Tasks, Contact details, Review]}
     - {id: DOC-GDPR-REPRESENTATIVE, title: "EU Representative Arrangement", kind: procedure, template: representative.md,

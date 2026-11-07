@@ -14,7 +14,7 @@ Requests can arrive by any channel. Whoever receives one sends it to [[TODO: the
 
 ## Access
 
-The person gets confirmation, a copy of their data and the Art. 15(1)-(2) information. Other people's data is redacted (Art. 15(4)).
+The person gets confirmation, a copy of their data and the Art. 15(1)-(2) information. Information about other people is withheld or redacted where giving it would adversely affect their rights and freedoms (Art. 15(4)).
 
 ## Rectification
 
@@ -38,7 +38,7 @@ Processing based on public task or legitimate interests stops unless {{client}} 
 
 ## Automated decisions
 
-A person subject to an Art. 22 decision can get human review, give their view and contest it.
+Decisions based solely on automated processing with legal or similarly significant effects are made only under an Art. 22(2) exception. Where the exception is a contract or explicit consent, the person can get human intervention, give their view and contest the decision (Art. 22(3)). Such decisions don't use special category data unless Art. 9(2)(a) or (g) applies and safeguards are in place (Art. 22(4)).
 
 ## Telling recipients
 

@@ -12,8 +12,8 @@
 #                      situation doesn't arise.
 # category: core is always in scope (security of processing, cooperation with the supervisory authority).
 #   Choose the client's role: controller, processor, or both (W113 until one is chosen). Add dpo (a data
-#   protection officer is required or appointed), representative (established outside the EU but subject to
-#   the GDPR, Art. 3(2)), transfers (personal data leaves the EEA), special_categories (health, biometric,
+#   protection officer is required or appointed), representative (established outside the EU, subject to the
+#   GDPR under Art. 3(2), and the Art. 27(2) exception does not apply), transfers (personal data leaves the EEA), special_categories (health, biometric,
 #   criminal-offence and other Art. 9/10 data) and children (online services offered to children).
 framework:
   id: gdpr
@@ -70,7 +70,7 @@ requirements:
      intent: "The controller is responsible for, and must be able to demonstrate, compliance with the principles.",
      evidence_examples: ["Privacy program documentation", "Compliance reviews and their results"]}
   - {id: "Art6", kind: obligation, category: controller, group: PRN, title: "Lawful basis for processing",
-     intent: "Every processing purpose rests on one of the six lawful bases in Art. 6(1) (consent, contract, legal obligation, vital interests, public task, legitimate interests). Accountability (Art. 5(2)) and regulator guidance make it good practice to identify and record the basis before processing, and to document the balancing test for legitimate interests.",
+     intent: "Every processing purpose rests on one of the six lawful bases in Art. 6(1) (consent, contract, legal obligation, vital interests, public task, legitimate interests). The basis has to be identified before processing starts, because people must be told it at collection (Art. 13(1)(c), 14(1)(c)) and it can't be swapped later; recording it, and documenting the legitimate interests balancing test, is how accountability (Art. 5(2)) is shown.",
      evidence_examples: ["Lawful basis per purpose in the records of processing", "Legitimate interests assessments"]}
   - {id: "Art7", kind: conditional, category: controller, group: PRN, title: "Conditions for consent",
      intent: "Where consent is the lawful basis, the controller can show it was given freely, specifically, informed and unambiguous, separately from other matters, and that it is as easy to withdraw as to give.",
@@ -81,18 +81,18 @@ requirements:
   - {id: "Art9", kind: obligation, category: special_categories, group: PRN, title: "Special categories of personal data",
      intent: "Health, biometric (for identification), genetic, racial or ethnic, political, religious, trade union, sex life and sexual orientation data is processed only under one of the Art. 9(2) conditions, identified alongside the Art. 6 basis.",
      evidence_examples: ["Art. 9 condition recorded per purpose", "Extra safeguards for special category data"]}
-  - {id: "Art10", kind: obligation, category: special_categories, group: PRN, title: "Criminal convictions and offences data",
+  - {id: "Art10", kind: conditional, category: special_categories, group: PRN, title: "Criminal convictions and offences data",
      intent: "Criminal-offence data is processed only under official authority or where Union or Member State law authorises it with safeguards (for example background checks permitted by national law).",
      evidence_examples: ["Legal basis for background checks", "Access restrictions on the results"]}
   # ---------------------------------------------------------------- rights of the data subject
   - {id: "Art12", kind: obligation, category: controller, group: RTS, title: "Transparent communication and handling of requests",
-     intent: "Information and communications are concise, clear and free of charge; requests are answered without undue delay and within one month (extendable by two months for complex requests, with notice); the requester's identity can be verified.",
+     intent: "Information and communications are concise, clear and free of charge; requests are answered without undue delay and within one month (extendable by two months for complex or numerous requests, with notice and reasons within the first month); a request is refused only if the person can't be identified (Art. 11(2), 12(2)) or it is manifestly unfounded or excessive (Art. 12(5)); the requester's identity can be verified where there is reasonable doubt.",
      evidence_examples: ["Request log with received and answered dates", "Identity verification steps"]}
   - {id: "Art13", kind: obligation, category: controller, group: RTS, title: "Information when data is collected from the person",
-     intent: "At collection, people are told the controller's identity and contact details (and its representative's), the DPO's contact details where applicable, purposes and lawful bases, legitimate interests, recipients, transfers, retention, their rights, the right to withdraw consent, the right to complain, whether providing data is required, and any automated decision-making.",
+     intent: "At collection, people are told the controller's identity and contact details (and its representative's), the DPO's contact details where applicable, purposes and lawful bases, legitimate interests, recipients, transfers, retention, their rights, the right to withdraw consent, the right to complain, whether providing data is required, and any automated decision-making; before data is used for a new purpose, people are told about it (Art. 13(3)).",
      evidence_examples: ["Privacy notice", "Collection points showing the notice"]}
   - {id: "Art14", kind: obligation, category: controller, group: RTS, title: "Information when data is obtained elsewhere",
-     intent: "When data comes from another source, people get the Art. 13 information plus the categories of data and the source, within a month or at first contact or disclosure, unless an Art. 14(5) exception applies.",
+     intent: "When data comes from another source, people get the Art. 13 information plus the categories of data and the source, within a month or at first contact or disclosure, unless an Art. 14(5) exception applies; a new purpose is notified first (Art. 14(4)).",
      evidence_examples: ["Notice for indirectly collected data", "Record of any Art. 14(5) exception relied on"]}
   - {id: "Art15", kind: obligation, category: controller, group: RTS, title: "Right of access",
      intent: "People can get confirmation that their data is processed, a copy of it, and the information about the processing.",
@@ -113,10 +113,10 @@ requirements:
      intent: "Where processing rests on consent or contract and is automated, people can receive the data they provided in a structured, commonly used, machine-readable format and have it sent to another controller.",
      evidence_examples: ["Export format and procedure"]}
   - {id: "Art21", kind: obligation, category: controller, group: RTS, title: "Right to object",
-     intent: "People can object to processing based on public task or legitimate interests, and processing stops unless compelling grounds override; objection to direct marketing is absolute; the right is presented clearly and separately at first communication.",
+     intent: "People can object to processing based on public task or legitimate interests, and processing stops unless compelling grounds override; objection to direct marketing is absolute; the right is presented clearly and separately at first communication. It applies wherever public task or legitimate interests are relied on, which is almost every controller, so it is an obligation, not conditional.",
      evidence_examples: ["Opt-out handling for marketing", "Objection requests handled"]}
   - {id: "Art22", kind: conditional, category: controller, group: RTS, title: "Automated individual decision-making",
-     intent: "Decisions based solely on automated processing with legal or similarly significant effects are made only under an Art. 22(2) exception, with the right to human intervention, to express a view and to contest the decision.",
+     intent: "Decisions based solely on automated processing with legal or similarly significant effects are made only under an Art. 22(2) exception (contract, Union or Member State law, explicit consent). Under the contract and explicit-consent exceptions the person can obtain human intervention, express a view and contest the decision (Art. 22(3)); special category data is used only under Art. 9(2)(a) or (g) with safeguards (Art. 22(4)).",
      evidence_examples: ["Inventory of automated decisions", "Human review process"]}
   # ---------------------------------------------------------------- accountability, records and processors
   - {id: "Art24", kind: obligation, category: controller, group: ACC, title: "Responsibility of the controller",
@@ -135,7 +135,7 @@ requirements:
      intent: "Each processor is bound by a contract setting out the subject matter, duration, nature and purpose, types of data and categories of people, and the Art. 28(3)(a)-(h) terms (instructions, confidentiality, security, sub-processors, assistance, deletion or return, audits).",
      evidence_examples: ["Signed data processing agreements", "DPA clause checklist"]}
   - {id: "Art30(1)", kind: obligation, category: controller, group: ACC, title: "Records of processing activities (controller)",
-     intent: "A written record of processing activities is kept: the controller's name and contact details (and of any joint controller, representative and DPO), purposes, categories of people and data, recipients, transfers (with safeguards documented for transfers under the second subparagraph of Art. 49(1)), retention periods where possible, and a general description of security measures where possible. Organisations under 250 staff are exempt only if the processing is not likely to result in a risk to people, is occasional, and excludes Art. 9 and Art. 10 data (Art. 30(5)).",
+     intent: "A written record of processing activities is kept: the controller's name and contact details (and of any joint controller, representative and DPO), purposes, categories of people and data, recipients, transfers (with safeguards documented for transfers under the second subparagraph of Art. 49(1)), retention periods where possible, and a general description of security measures where possible. The record is in writing (electronic is fine) and made available to the supervisory authority on request (Art. 30(3)-(4)). Organisations under 250 staff are exempt only if the processing is not likely to result in a risk to people, is occasional, and excludes Art. 9 and Art. 10 data (Art. 30(5)).",
      evidence_examples: ["Record of processing activities (ROPA)", "ROPA review dates"]}
   - {id: "Art31", kind: obligation, category: core, group: ACC, title: "Cooperation with the supervisory authority",
      intent: "The controller and processor (and their representatives) cooperate with the supervisory authority on request.",
@@ -147,8 +147,11 @@ requirements:
      intent: "Sub-processors are bound by the same data protection obligations by contract; the processor stays fully liable to the controller for them.",
      evidence_examples: ["Sub-processor agreements with equivalent terms"]}
   - {id: "Art28(3)(a)", kind: obligation, category: processor, group: ACC, title: "Processing only on documented instructions",
-     intent: "The processor processes personal data only on the controller's documented instructions (including on transfers), unless Union or Member State law requires otherwise; under the last subparagraph of Art. 28(3) it immediately tells the controller if it thinks an instruction infringes data protection law.",
+     intent: "A contract (Art. 28(3)) with each controller is in place, and the processor processes personal data only on the controller's documented instructions (including on transfers), unless Union or Member State law requires otherwise; under the last subparagraph of Art. 28(3) it immediately tells the controller if it thinks an instruction infringes data protection law.",
      evidence_examples: ["Customer DPAs and instructions", "Procedure for unlawful instructions"]}
+  - {id: "Art28(3)(b)", kind: obligation, category: processor, group: ACC, title: "Confidentiality of people processing the data",
+     intent: "Everyone the processor authorises to process the personal data has committed to confidentiality or is under a statutory obligation of confidentiality.",
+     evidence_examples: ["Signed confidentiality agreements", "Contractor terms with confidentiality clauses"]}
   - {id: "Art28(3)(e)", kind: obligation, category: processor, group: ACC, title: "Assisting the controller with rights requests",
      intent: "The processor, by appropriate technical and organisational measures and as far as possible, helps the controller answer requests from people exercising their rights.",
      evidence_examples: ["Procedure for forwarding and supporting rights requests", "Self-service export and deletion features"]}
@@ -165,10 +168,10 @@ requirements:
      intent: "The processor and anyone acting under it with access to personal data process it only on the controller's instructions.",
      evidence_examples: ["Staff confidentiality agreements", "Access limited to instructed purposes"]}
   - {id: "Art30(2)", kind: obligation, category: processor, group: ACC, title: "Records of processing activities (processor)",
-     intent: "The processor keeps a record of processing carried out for each controller: controller and processor details, categories of processing, transfers and safeguards, and a general description of security measures.",
+     intent: "The processor keeps a record of processing carried out for each controller: controller and processor details, categories of processing, transfers and safeguards, and a general description of security measures; in writing, and available to the supervisory authority on request (Art. 30(3)-(4)).",
      evidence_examples: ["Processor ROPA per customer or service"]}
   - {id: "Art27", kind: obligation, category: representative, group: ACC, title: "EU representative",
-     intent: "A controller or processor not established in the EU but subject to the GDPR under Art. 3(2) designates in writing a representative in a Member State where the people are, unless the Art. 27(2) exception applies.",
+     intent: "A controller or processor not established in the EU but subject to the GDPR under Art. 3(2) designates in writing a representative in a Member State where the people are. Choose this category only when the Art. 27(2) exception (occasional, low-risk processing without large-scale Art. 9/10 data, or a public authority) does not apply.",
      evidence_examples: ["Representative appointment letter", "Representative named in the privacy notice"]}
   # ---------------------------------------------------------------- security and breaches
   - {id: "Art32(1)(a)", kind: obligation, category: core, group: SEC, title: "Pseudonymisation and encryption",
@@ -190,7 +193,7 @@ requirements:
      intent: "Anyone with access to personal data acting under the authority of the controller or processor processes it only on instructions.",
      evidence_examples: ["Confidentiality clauses", "Data protection training records"]}
   - {id: "Art33", kind: obligation, category: controller, group: SEC, title: "Notifying the supervisory authority of a breach",
-     intent: "A personal data breach is notified to the competent supervisory authority without undue delay and, where feasible, within 72 hours of becoming aware of it, unless it is unlikely to result in a risk to people; late notifications give reasons; information may be given in phases.",
+     intent: "A personal data breach is notified to the competent supervisory authority without undue delay and, where feasible, within 72 hours of becoming aware of it, unless it is unlikely to result in a risk to people. The notification describes the breach, categories and approximate numbers of people and records, the DPO or contact point, likely consequences and measures taken (Art. 33(3)); late notifications give reasons; information may be given in phases (Art. 33(4)).",
      evidence_examples: ["Breach procedure with the 72-hour clock", "Notifications made"]}
   - {id: "Art33(5)", kind: obligation, category: controller, group: SEC, title: "Documenting every breach",
      intent: "Every personal data breach is documented, including the facts, its effects and the remedial action, whether or not it was notified.",
@@ -203,13 +206,13 @@ requirements:
      evidence_examples: ["Customer breach notification procedure", "Contracted notification time"]}
   # ---------------------------------------------------------------- impact assessments and the DPO
   - {id: "Art35", kind: obligation, category: controller, group: DPA, title: "Data protection impact assessment",
-     intent: "Before processing likely to result in a high risk (including systematic and extensive profiling with legal or similarly significant effects, large-scale special category or criminal-offence data, systematic monitoring of a publicly accessible area on a large scale, and the supervisory authority's list), a DPIA describes the processing, assesses necessity, proportionality and risks, and sets the measures; the DPO's advice is sought. Recording the screening when no DPIA is needed is good practice that shows accountability (Art. 5(2)).",
+     intent: "Before processing likely to result in a high risk (including systematic and extensive profiling with legal or similarly significant effects, large-scale special category or criminal-offence data, systematic monitoring of a publicly accessible area on a large scale, and the supervisory authority's list), a DPIA describes the processing, assesses necessity, proportionality and risks, and sets the measures. Art. 35(1) implies judging whether processing is likely to be high-risk, so the screening is recorded even when no DPIA follows (accountability, Art. 5(2)). Where a DPO is designated, their advice is sought (Art. 35(2)).",
      evidence_examples: ["DPIA screening records", "Completed DPIAs"]}
   - {id: "Art36", kind: conditional, category: controller, group: DPA, title: "Prior consultation",
      intent: "Where a DPIA shows a high risk the controller can't mitigate, the supervisory authority is consulted before processing starts.",
      evidence_examples: ["Prior consultation correspondence"]}
   - {id: "Art37", kind: obligation, category: dpo, group: DPA, title: "Designating a data protection officer",
-     intent: "A DPO is designated where required (public authority, large-scale regular and systematic monitoring, or large-scale special category or criminal data as a core activity, or national law), with contact details published and given to the supervisory authority.",
+     intent: "A DPO is designated where required (a public authority; core activities consisting of large-scale regular and systematic monitoring; core activities consisting of large-scale special category or criminal-offence data; or national law, Art. 37(4)), with contact details published and given to the supervisory authority.",
      evidence_examples: ["DPO appointment", "DPO registration with the authority"]}
   - {id: "Art38", kind: obligation, category: dpo, group: DPA, title: "Position of the DPO",
      intent: "The DPO is involved properly and in time, has the resources needed, receives no instructions on their tasks, isn't penalised for performing them, reports to the highest management level, and has no conflicting tasks.",
@@ -219,7 +222,7 @@ requirements:
      evidence_examples: ["DPO reports to management", "DPO monitoring plan"]}
   # ---------------------------------------------------------------- transfers
   - {id: "Art44", kind: obligation, category: transfers, group: TRF, title: "General principle for transfers",
-     intent: "Personal data is transferred outside the EEA (including onward transfers and remote access) only when Chapter V conditions are met, so the level of protection isn't undermined; every transfer is mapped.",
+     intent: "Personal data is transferred outside the EEA (including onward transfers, and remote access by another entity such as a group company or vendor) only when Chapter V conditions are met, so the level of protection isn't undermined; every transfer is mapped.",
      evidence_examples: ["Transfer map (destinations, recipients, mechanisms)"]}
   - {id: "Art45", kind: conditional, category: transfers, group: TRF, title: "Transfers on an adequacy decision",
      intent: "Transfers to a country, territory or sector with a Commission adequacy decision (for example the EU-US Data Privacy Framework for certified recipients) rely on that decision, checked to still be in force.",
@@ -228,5 +231,5 @@ requirements:
      intent: "Without adequacy, transfers use appropriate safeguards (standard contractual clauses, binding corporate rules) with enforceable rights, supported by a transfer impact assessment and supplementary measures where the destination's law requires them.",
      evidence_examples: ["Executed standard contractual clauses", "Transfer impact assessments"]}
   - {id: "Art49", kind: conditional, category: transfers, group: TRF, title: "Derogations for specific situations",
-     intent: "Derogations (explicit consent, contract performance, legal claims and the others in Art. 49) are used only for occasional, non-repetitive transfers when no adequacy or safeguards apply, and documented.",
+     intent: "When no adequacy decision or Art. 46 safeguard applies, a transfer may rely on an Art. 49(1) derogation, read strictly: explicit consent after being told the risks; contract necessity (occasional transfers only); public interest; legal claims; vital interests; a public register. As a last resort, compelling legitimate interests cover only a non-repetitive transfer about a limited number of people, with safeguards, notice to the supervisory authority and to the person. Each use is documented.",
      evidence_examples: ["Documented derogation assessments"]}

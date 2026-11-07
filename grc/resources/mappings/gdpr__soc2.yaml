@@ -85,10 +85,10 @@ mappings:
   note: Breach notification to affected individuals.
   reviewed_by: ''
   reviewed_on: null
-- gdpr: Art28(3)
+- gdpr: Art33(2)
   soc2: P6.5
   relationship: related
-  note: Contracts that require processors to report breaches to the controller (Art. 28(3)(f), Art. 33(2)).
+  note: 'The counterpart: the controller obtains vendor commitments to report breaches (P6.5); the processor must report them (Art. 33(2)).'
   reviewed_by: ''
   reviewed_on: null
 - gdpr: Art5(1)(d)

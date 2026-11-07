@@ -9,7 +9,7 @@ This procedure sets how {{client}} processes special category data (Art. 9) and 
 Special category data is data revealing racial or ethnic origin, political opinions, religious or philosophical beliefs or trade union membership, and genetic data, biometric data used to identify a person, health data, and data on sex life or sexual orientation. Processing it is prohibited unless an Art. 9(2) condition applies, in addition to the Art. 6 lawful basis. The conditions include:
 
 - (a) explicit consent;
-- (b) obligations and rights in employment and social security law, as authorised by law;
+- (b) obligations and rights in employment, social security and social protection law, as authorised by law or a collective agreement providing appropriate safeguards;
 - (c) vital interests where the person cannot consent;
 - (d) activities of a not-for-profit body, for its members;
 - (e) data the person has manifestly made public;

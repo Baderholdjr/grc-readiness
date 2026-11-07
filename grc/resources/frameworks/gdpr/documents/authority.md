@@ -8,7 +8,7 @@ This procedure sets how {{client}} and, where it has one, its EU representative 
 
 {{client}}'s main establishment in the EU is [[TODO: main establishment, or "none"]]. For cross-border processing, its lead supervisory authority under the one-stop-shop (Art. 56) is [[TODO: the lead supervisory authority]]. If {{client}} has no establishment in the EU, there is no lead authority, and {{client}} deals with the authority of each Member State concerned.
 
-The legal owner records the reasoning behind this choice and revisits it when the main establishment or the place of central decisions on processing changes.
+The lead authority follows from where the main establishment is (Art. 4(16)); it is not chosen. The legal owner records the reasoning behind this determination and revisits it when the main establishment or the place of central decisions on processing changes.
 
 ## Handling requests from an authority
 

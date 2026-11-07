@@ -30,7 +30,7 @@ Findings are tracked to closure with an owner and a due date.
 
 ## People with access
 
-Everyone with access to personal data, including staff, contractors and processors acting under {{client}}'s authority, processes it only on {{client}}'s instructions unless Union or Member State law requires otherwise (Art. 32(4)). They are bound by confidentiality, trained on data protection when they join and [[TODO: frequency]] after, and given only the access their role needs.
+Every natural person with access to personal data acting under {{client}}'s authority, including staff and contractors, processes it only on {{client}}'s instructions unless Union or Member State law requires otherwise (Art. 32(4)). They are bound by confidentiality, trained on data protection when they join and [[TODO: frequency]] after, and given only the access their role needs.
 
 ## Review
 

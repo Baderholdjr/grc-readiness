@@ -36,12 +36,12 @@ def test_catalog_shape():
     cat = yaml.safe_load((FW / "catalog.yaml").read_text())
     reqs = cat["requirements"]
     ids = [r["id"] for r in reqs]
-    assert len(ids) == len(set(ids)) == 59 and all(re.fullmatch(r"Art\d{1,2}(\(\d+\))?(\([a-z]\))?", i) for i in ids)
+    assert len(ids) == len(set(ids)) == 60 and all(re.fullmatch(r"Art\d{1,2}(\(\d+\))?(\([a-z]\))?", i) for i in ids)
     assert collections.Counter(r["category"] for r in reqs) == {
-        "controller": 31, "processor": 10, "core": 7, "transfers": 4, "dpo": 3, "special_categories": 2,
+        "controller": 31, "processor": 11, "core": 7, "transfers": 4, "dpo": 3, "special_categories": 2,
         "children": 1, "representative": 1}
     assert {r["id"] for r in reqs if r["kind"] == "conditional"} == {
-        "Art7", "Art20", "Art22", "Art26", "Art36", "Art45", "Art46", "Art49"}
+        "Art7", "Art10", "Art20", "Art22", "Art26", "Art36", "Art45", "Art46", "Art49"}
     assert cat["choose_at_least_one"] == ["controller", "processor"]
     assert all(r["intent"] and r["evidence_examples"] for r in reqs)
 
@@ -59,22 +59,29 @@ def test_documents_cover_each_requirement_once_in_one_category():
         assert re.findall(r"^## (.+)$", text, re.M) == e["sections"], e["id"]
         assert not OTHER_WORDS.search(text), e["template"]
         assert "{{doc_review_days}}" in text
-    for key in ("internal_audit_ref", "corrective_ref", "review_ref", "record_control_ref", "scope_ref",
-                "objectives_ref", "risk_ref"):
-        assert pb["terms"][key] in cat, key
-    # the refs the engine leans on (audit, records collector) are in the core, so every client has them
-    assert all(cat[pb["terms"][k]] == "core" for k in ("internal_audit_ref", "record_control_ref", "risk_ref"))
+    refs = ("internal_audit_ref", "corrective_ref", "review_ref", "record_control_ref", "scope_ref", "objectives_ref", "risk_ref")
+    for key in refs:
+        ids = pb["terms"][key] if isinstance(pb["terms"][key], list) else [pb["terms"][key]]
+        assert set(ids) <= set(cat), key
+        # a controller-only and a processor-only record each find one in scope
+        for role in ("controller", "processor"):
+            assert any(cat[i] in (role, "core") for i in ids), (key, role)
 
 
 def test_roles_decide_scope(tmp_path):
     m = load(_new(tmp_path / "none", categories=None), today=TODAY)
     assert m.categories_in_scope == {"core"} and len(m.controls) == 7 and "W113" in codes(m)
-    m = load(_new(tmp_path / "proc", categories="processor"), today=TODAY)
-    assert len(m.controls) == 17 and m.is_applicable("Art28(3)(a)") and not m.is_applicable("Art15")
+    pe = _new(tmp_path / "proc", categories="processor")
+    m = load(pe, today=TODAY)
+    assert len(m.controls) == 18 and m.is_applicable("Art28(3)(a)") and not m.is_applicable("Art15")
+    # references resolve to the processor's own duties, at creation and afterwards
+    assert m.term("internal_audit_ref") == "Art28(3)(h)" and m.term("scope_ref") == "Art30(2)"
+    assert '"Art28(3)(h):' in (pe / "collectors.yaml").read_text()
+    assert load(_new(tmp_path / "ctl"), today=TODAY).term("internal_audit_ref") == "Art5(2)"
     assert "W113" not in codes(m)
     e = _new(tmp_path / "both", categories="controller,processor,transfers,dpo")
     m = load(e, today=TODAY)
-    assert len(m.controls) == 55 and m.is_applicable("Art46") and not m.is_applicable("Art8")
+    assert len(m.controls) == 56 and m.is_applicable("Art46") and not m.is_applicable("Art8")
     assert [f for f in validate(m) if f.severity == "error"] == []
     documents.new(m, "all", mode="templates")
     drafted = sorted(p.stem for p in (e / "documents").glob("DOC-GDPR-*.md"))
