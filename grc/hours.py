@@ -276,6 +276,7 @@ NOTE_REF = re.compile(r"\b(GAP-\d+|NC-\d{3}|OFI-\d{3}|IA-\d{3,}|DOC-[A-Z0-9-]+|M
 HIPAA_REF = re.compile(r"\b164\.\d{3}(?:\([A-Za-z0-9]+\))*")
 GDPR_REF = re.compile(r"\bArt\d{1,2}(?:\([0-9a-z]+\))*")                 # GDPR: Art32(1)(a)
 NIST_REF = re.compile(r"\b[A-Z]{2}-\d{1,2}(?:\(\d{1,2}\))?")      # TX-RAMP / NIST SP 800-53: AC-2, AC-2(3)
+FEDRAMP_REF = re.compile(r"\b[A-Z]{3}-[A-Z]{3}-[A-Z]{3}\b")       # FedRAMP 20x: KSI-IAM-ELP, VDR-TFR-PDD
 
 
 def known_refs(model: Engagement) -> set[str]:
@@ -348,6 +349,7 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
             found |= set(HIPAA_REF.findall(f"{r['refs']} {r['tags']} {r['note']}"))
             found |= set(NIST_REF.findall(f"{r['refs']} {r['tags']} {r['note']}"))
             found |= set(GDPR_REF.findall(f"{r['refs']} {r['tags']} {r['note']}"))
+            found |= set(FEDRAMP_REF.findall(f"{r['refs']} {r['tags']} {r['note']}"))
             refs = sorted(x for x in found if x in known)
             e = {"id": eid, "date": r["date"].isoformat(), "person": who, "hours": round(r["hours"], 2),
                  "activity": classify(model, r["task"], r["tags"], r["note"])}
