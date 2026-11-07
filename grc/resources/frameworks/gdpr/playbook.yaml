@@ -1,0 +1,216 @@
+# Framework playbook: reusable engagement content for GDPR readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+#
+# There is no GDPR certificate in common use (Art. 42 schemes exist but are rare), so the goal is
+# demonstrable compliance (accountability, Art. 5(2)). In the engagement record the two dates mean:
+# dates.stage1 = the readiness assessment; dates.stage2 = the independent assessment (an external privacy
+# audit, a customer or partner audit, or the deadline the client is working towards).
+
+title_suffix: GDPR Readiness Brief
+tldr_template: "Help {client} show that it handles personal data as the GDPR requires, with the records, notices and controls to prove it."
+usage_heading: Personal Data and Processing in Scope
+requirements_heading: GDPR Readiness Requirements
+
+terms:
+  goal: demonstrable GDPR compliance
+  audit_body: Independent privacy assessor
+  focus: GDPR readiness and accountability
+  stage1: Readiness assessment
+  stage2: Independent assessment
+  countdown: independent assessment
+  system: personal data processing
+  applicability_title: GDPR Applicability Statement
+  applicability_short: Applicability
+  applicability_intro: "Every conditional GDPR obligation and whether it applies to {client}, with the reason when it doesn't; and the duties of roles or situations outside the scope of this engagement (controller or processor, DPO, representative, transfers, special categories, children). Obligations in scope are not optional and are not listed."
+  # A list: the first id in the record's scope is used (controller ids first, then processor, then core).
+  internal_audit_ref: [Art5(2), Art28(3)(h), Art32(1)(d)]
+  corrective_ref: [Art24, Art28(3)(h), Art32(1)(d)]
+  review_ref: [Art24, Art28(3)(h), Art32(1)(d)]
+  record_control_ref: [Art5(2), Art28(3)(h), Art32(1)(d)]
+  scope_ref: [Art30(1), Art30(2)]
+  objectives_ref: [Art24, Art32(2)]
+  risk_ref: Art32(2)
+  review_required: "no"
+  applicability_id_header: Article
+
+glossary:
+  - term: Personal data
+    plain: "Any information about an identifiable person: a name, an email address, an IP address, a customer ID, a voice recording."
+    tech: "Art. 4(1). Pseudonymised data is still personal data."
+  - term: Controller and processor
+    plain: "The controller decides why and how personal data is used. A processor handles it on the controller's instructions, like a cloud or SaaS provider handling its customers' data."
+    tech: "Art. 4(7)-(8), Art. 24-29. One company can be a controller for its own staff and marketing data and a processor for its customers' data."
+  - term: Lawful basis
+    plain: "The legal reason for using personal data: consent, a contract, a legal obligation, vital interests, a public task, or legitimate interests."
+    tech: "Art. 6(1); special category data also needs an Art. 9(2) condition."
+  - term: Record of processing activities (ROPA)
+    plain: "The written list of what personal data the company uses, why, who receives it, where it goes and how long it is kept."
+    tech: "Art. 30."
+  - term: DPIA
+    plain: "A data protection impact assessment: a structured look at a risky new use of personal data before it starts."
+    tech: "Art. 35."
+  - term: Data subject rights
+    plain: "People's rights to see, correct, delete, move or object to the use of their data. Requests must be answered within a month, or three months for complex ones if the person is told within the first month."
+    tech: "Art. 12-22."
+  - term: Personal data breach
+    plain: "Personal data lost, stolen, destroyed, changed or seen by the wrong people. It is reported to the regulator within 72 hours unless it is unlikely to put anyone at risk, and the people affected are told when the risk to them is high."
+    tech: "Art. 4(12), 33, 34."
+  - term: International transfer
+    plain: "Sending personal data, or giving access to it, outside the European Economic Area. It needs a legal mechanism such as standard contractual clauses."
+    tech: "Chapter V, Art. 44-49."
+
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the obligation met by an approved policy, procedure, notice, contract or record?
+  - key: implemented
+    label: Implemented
+    question: Is it in place for every processing activity and system in scope?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing it operated (requests answered, breaches logged, contracts signed)?
+  - key: tested
+    label: Tested
+    question: Does a test, done the way an assessor or regulator would, show it works?
+
+gap_callout: Treat client statements as hypotheses until evidence shows the obligation is documented, applied to every processing activity in scope, leaves records, and passes a test.
+
+working_rule: If an obligation is described but you cannot trace it to an owner, an article, and records, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The record of processing activities covers every processing activity, with lawful basis, retention and recipients.
+  - Privacy notices match what the records of processing say actually happens.
+  - Data subject requests are logged and answered within one month, with identity checks.
+  - Breaches are logged and the 72-hour notification can be met.
+  - Every processor is under a contract with the Art. 28 terms, and every transfer has a mechanism.
+  - High-risk processing has a DPIA; security measures are tested regularly.
+
+phases:
+  - id: validate
+    objective: "Scope & roles"
+    deliverables:
+      - Kickoff and owner alignment
+      - "Territorial scope (Art. 3): EU establishment, or offering to or monitoring people in the EU; decides the representative and the lead authority"
+      - Decide controller and processor roles per processing activity
+      - "National law that adds to the GDPR in each Member State concerned: employment data (Art. 88), age of digital consent (Art. 8), DPO designation (Art. 37(4)), health and genetic data (Art. 9(4)), restrictions (Art. 23)"
+      - "Data mapping: systems, data categories, flows and transfers"
+      - Validate gap-analysis claims and evidence
+  - id: governance
+    objective: "Records & policies"
+    deliverables:
+      - Record of processing activities with lawful basis and retention
+      - Data protection policy, notices and procedures
+      - DPO decision (designate or document why not)
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Rights request and breach procedures in operation
+      - Processor contracts and transfer mechanisms in place
+      - DPIA screening for high-risk processing
+  - id: test
+    objective: "Test"
+    deliverables:
+      - Test each obligation against its evidence
+      - Test a rights request and a breach end to end
+      - Compliance review and corrective actions
+  - id: stage1
+    objective: "Readiness assessment"
+    deliverables:
+      - Readiness assessment against every obligation in scope
+      - Close or plan remaining gaps
+  - id: stage2
+    objective: "Independent assessment"
+    deliverables:
+      - Support the independent assessment
+      - Hand over the ongoing privacy program
+
+needs:
+  - Maintain the control matrix, data map, evidence index, gap register, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test for every processing activity in scope.
+  - Draft and revise policies, notices and procedures for lead review - do not invent processing activities.
+  - Track recurring obligations (ROPA review, request handling times, breach log, processor reviews, training).
+  - Flag legal questions (lawful basis choices, transfer assessments, DPO requirement) for the client's counsel.
+
+default_guardrails:
+  - "{client} owns its processing decisions and evidence; our team structures, reviews, tests, and challenges."
+  - We are not giving legal advice. Lawful basis, transfer and DPO decisions are confirmed by the client's counsel.
+  - No personal data in this repository or in our working files. Evidence is pointed to where it lives.
+  - Escalate unsupported claims and unclear controller or processor roles to the engagement lead.
+
+default_risks:
+  - Privacy notices that promise more than the processing does, or describe processing that has changed.
+  - A ROPA built once and never updated as systems and vendors change.
+  - Processors and sub-processors without Art. 28 contracts, or transfers with no mechanism.
+  - Rights requests handled ad hoc with no log, so the one-month deadline can't be shown.
+
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`). Every requirement is covered by exactly one document, and each
+# document belongs to one category, so a processor-only client never gets the controller documents.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-GDPR-SECURITY, title: "Security of Processing Standard", kind: standard, template: security.md,
+       satisfies: ["Art32(1)(a)", "Art32(1)(b)", "Art32(1)(c)", "Art32(1)(d)", "Art32(2)", "Art32(4)"], sections: [Purpose, Risk-based security, Encryption and pseudonymisation, Resilience and restore, Testing, People with access, Review]}
+    - {id: DOC-GDPR-AUTHORITY, title: "Supervisory Authority Cooperation Procedure", kind: procedure, template: authority.md,
+       satisfies: ["Art31"], sections: [Purpose, Lead supervisory authority, Handling requests from an authority, Records, Review]}
+    - {id: DOC-GDPR-POLICY, title: "Data Protection Policy", kind: policy, template: policy.md,
+       satisfies: ["Art5(1)(a)", "Art5(1)(b)", "Art5(1)(c)", "Art5(1)(d)", "Art5(1)(e)", "Art5(1)(f)", "Art5(2)", "Art24", "Art25"], sections: [Purpose, Scope, Principles, Accountability, Data protection by design and by default, Roles, Review]}
+    - {id: DOC-GDPR-LAWFUL, title: "Lawful Basis and Consent Procedure", kind: procedure, template: lawful-basis.md,
+       satisfies: ["Art6", "Art7"], sections: [Purpose, Choosing a lawful basis, Legitimate interests assessments, Consent, Review]}
+    - {id: DOC-GDPR-NOTICES, title: "Privacy Notice Procedure", kind: procedure, template: notices.md,
+       satisfies: ["Art13", "Art14"], sections: [Purpose, Notices we publish, What every notice contains, Data from other sources, Keeping notices accurate, Review]}
+    - {id: DOC-GDPR-RIGHTS, title: "Data Subject Rights Procedure", kind: procedure, template: rights.md,
+       satisfies: ["Art12", "Art15", "Art16", "Art17", "Art18", "Art19", "Art20", "Art21", "Art22"], sections: [Purpose, Receiving and verifying requests, Deadlines, Access, Rectification, Erasure, Restriction, Portability, Objection, Automated decisions, Telling recipients, Request log, Review]}
+    - {id: DOC-GDPR-ROPA, title: "Records of Processing Procedure", kind: procedure, template: ropa.md,
+       satisfies: ["Art30(1)"], sections: [Purpose, What the record contains, Keeping it current, Review]}
+    - {id: DOC-GDPR-PROCESSORS, title: "Processor and Joint Controller Management", kind: procedure, template: processors.md,
+       satisfies: ["Art26", "Art28(1)", "Art28(3)"], sections: [Purpose, Choosing processors, Processor contracts, Monitoring processors, Joint controllers, Review]}
+    - {id: DOC-GDPR-BREACH, title: "Personal Data Breach Procedure", kind: procedure, template: breach.md,
+       satisfies: ["Art33", "Art33(5)", "Art34"], sections: [Purpose, Recognising a breach, Assessing the risk, Notifying the supervisory authority, Telling the people affected, Breach register, Review]}
+    - {id: DOC-GDPR-DPIA, title: "Data Protection Impact Assessment Procedure", kind: procedure, template: dpia.md,
+       satisfies: ["Art35", "Art36"], sections: [Purpose, Screening, Carrying out a DPIA, Prior consultation, Review]}
+    - {id: DOC-GDPR-PROCESSOR, title: "Processor Obligations Procedure", kind: procedure, template: processor-duties.md,
+       satisfies: ["Art28(2)", "Art28(3)(a)", "Art28(3)(b)", "Art28(3)(e)", "Art28(3)(f)", "Art28(3)(g)", "Art28(3)(h)", "Art28(4)", "Art29", "Art30(2)", "Art33(2)"], sections: [Purpose, Customer instructions, Sub-processors, Assisting customers, Breach notification to customers, Deletion or return, Audits and information, Processing records, Review]}
+    - {id: DOC-GDPR-DPO, title: "Data Protection Officer Charter", kind: policy, template: dpo.md,
+       satisfies: ["Art37", "Art38", "Art39"], sections: [Purpose, Designation, Independence and resources, Tasks, Contact details, Review]}
+    - {id: DOC-GDPR-REPRESENTATIVE, title: "EU Representative Arrangement", kind: procedure, template: representative.md,
+       satisfies: ["Art27"], sections: [Purpose, Designation, Mandate and records, Review]}
+    - {id: DOC-GDPR-TRANSFERS, title: "International Transfers Procedure", kind: procedure, template: transfers.md,
+       satisfies: ["Art44", "Art45", "Art46", "Art49"], sections: [Purpose, Mapping transfers, Adequacy, Standard contractual clauses and transfer impact assessments, Derogations, Review]}
+    - {id: DOC-GDPR-SPECIAL, title: "Special Category and Criminal Offence Data Procedure", kind: procedure, template: special-categories.md,
+       satisfies: ["Art9", "Art10"], sections: [Purpose, Conditions for special category data, Criminal offence data, Extra safeguards, Review]}
+    - {id: DOC-GDPR-CHILDREN, title: "Children's Data Procedure", kind: procedure, template: children.md,
+       satisfies: ["Art8"], sections: [Purpose, Ages and parental consent, Verification, Notices for children, Review]}
+
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: processing_changes, content: context_changes, title: "Changes to processing activities, systems, processors and laws"}
+    - {id: performance, content: performance, title: "Rights requests handled and on time, ROPA currency, training and test results"}
+    - {id: risks, content: risks_and_impacts, title: "Results of DPIAs and security risk assessments"}
+    - {id: processors, content: suppliers, title: "Processors, sub-processors and transfers"}
+    - {id: breaches, content: incidents, title: "Personal data breaches and complaints"}
+    - {id: resources, title: "Adequacy of resources for the privacy program"}
+    - {id: improvement, title: "Opportunities for improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.2, governance: 0.25, implement: 0.25, test: 0.15, stage1: 0.1, stage2: 0.05}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and data mapping", keywords: [kickoff, kick-off, scoping, scope, data map, mapping, ropa, inventory]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, notices and procedures", keywords: [policy, procedure, notice, document, drafting]}
+    - {id: risk_impact, title: "DPIAs, processors and transfers", keywords: [dpia, risk, processor, vendor, transfer, scc, tia]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, sample, request]}
+    - {id: internal_audit, title: "Compliance review", keywords: [compliance review, internal audit, audit, workpaper]}
+    - {id: management_review, title: "Leadership review", keywords: [management review, board, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: certification, title: "Independent assessment", keywords: [assessment, assessor, external audit]}
+    - {id: other, title: "Other", keywords: []}

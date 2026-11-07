@@ -322,8 +322,13 @@ class Engagement:
         return not reqs or any(self.in_category_scope(r) for r in reqs)
 
     def term(self, key: str) -> str:
-        """Framework wording (playbook `terms:`), e.g. what the two audit milestones are called."""
-        return str((self.playbook.get("terms") or {}).get(key) or TERM_DEFAULTS[key])
+        """Framework wording (playbook `terms:`), e.g. what the two audit milestones are called. A reference may be
+        a list of requirement ids: the first one in scope is used (GDPR: a controller id, else a processor id)."""
+        v = (self.playbook.get("terms") or {}).get(key) or TERM_DEFAULTS[key]
+        if isinstance(v, list):
+            return str(next((x for x in v if str(x) in self.requirement_index and self.in_category_scope(str(x))),
+                            v[0]))
+        return str(v)
 
     def is_applicable(self, req_id: str) -> bool:
         if not self.in_category_scope(req_id):
@@ -469,6 +474,19 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
 
 
 RECORD_NAME = re.compile(r"^engagement(-[a-z0-9]+)?$")
+
+
+def first_in_scope(value, catalog: dict, categories: list[str]):
+    """Resolve a playbook reference that lists several ids, before a record exists (new-engagement)."""
+    if not isinstance(value, list):
+        return value
+    cats = {str(c.get("id")): c for c in catalog.get("categories") or [] if isinstance(c, dict)}
+    where = {str(r["id"]): str(r.get("category") or "") for r in catalog.get("requirements") or []}
+    for x in value:
+        cat = where.get(str(x))
+        if cat is not None and (not cat or cats.get(cat, {}).get("required") or cat in categories):
+            return str(x)
+    return str(value[0])
 
 
 def discover(root: str | Path = ".") -> list[Path]:

@@ -125,6 +125,9 @@ def reset(engagement_dir: Path, intake_dir: Path, client: str, start: dt.date, s
                              + (f" (choose from: {', '.join(known)})" if known else " (this framework has no optional categories)"))
     from .model import TERM_DEFAULTS, load_yaml as _ly0, resource as _res0
     _terms = {**TERM_DEFAULTS, **((_ly0(_res0(engagement_dir.parent, "frameworks", framework, "playbook.yaml")) or {}).get("terms") or {})}
+    from .model import first_in_scope
+    _cat = _ly0(_res0(engagement_dir.parent, "frameworks", framework, "catalog.yaml")) or {}
+    _terms = {k: first_in_scope(v, _cat, list(categories or [])) for k, v in _terms.items()}
     if engagement_dir.exists():
         shutil.rmtree(engagement_dir)
         log.append(f"removed {engagement_dir}")

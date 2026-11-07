@@ -8,6 +8,7 @@
 | `iso27001` | ISO/IEC 27001:2022 (information security, ISMS) | 25 clauses + 93 Annex A controls | 20 documents | No impact assessments; risk treatment and the Statement of Applicability drive Annex A |
 | `soc2` | SOC 2 (AICPA Trust Services Criteria, 2017, revised points of focus 2022) | 33 common criteria (Security) + 28 in optional categories | 18 documents (fewer if categories are left out) | An attestation, not a certification; the client chooses categories; see [SOC 2](#soc-2) |
 | `hipaa` | HIPAA Security Rule and Breach Notification Rule (45 CFR Part 164, Subparts C and D) | 64 core + 4 covered entity + 3 business associate + 4 for clearinghouses, group health plans and government entities | 19 documents (15 for most clients) | No certification; required and addressable specifications; see [HIPAA](#hipaa) |
+| `gdpr` | General Data Protection Regulation (Regulation (EU) 2016/679) | 7 core + 31 controller + 11 processor + 11 for a DPO, a representative, transfers, special categories and children | 16 documents | No certificate: demonstrable compliance; see [GDPR](#gdpr) |
 | `txramp` | TX-RAMP Security Controls Baselines 2.0 (Texas DIR) | 117 Level 1 controls + 106 more at Level 2 (NIST SP 800-53 Rev. 5) | 17 documents, one per control family | Certification by DIR; see [TX-RAMP](#tx-ramp) |
 
 Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria. The HIPAA regulations are US Government works; the catalog still restates them in plain words, and the eCFR text is the authority. TX-RAMP's controls are NIST SP 800-53 controls, also a US Government work, so the catalog uses NIST's titles and statements; TX-RAMP's own parameter values stay in the client's copy of DIR's Security Plan workbook.
@@ -43,6 +44,30 @@ Choose at least one role (`--categories business_associate`, or both); until the
 **References.** The internal audit evidences 164.308(a)(8), corrective actions 164.308(a)(1)(ii)(B), and the leadership review 164.306(e). HIPAA doesn't require a management review, so a missing one is never a warning.
 
 **Mappings.** `mappings/hipaa__iso27001.yaml` proposes 6 equivalent, 5 subset and 33 related pairs; `mappings/hipaa__soc2.yaml` 24 related pairs. Before approving an `equivalent`, confirm the ISMS scope covers the whole ePHI environment; if it doesn't, downgrade the pair to `related`. In YAML, quote a citation with no parentheses (`'164.410'`): unquoted, it is read as the number 164.41, and validation says so. In the program layer, controls can map to `hipaa` and to NIST SP 800-53 together; NIST SP 800-66 Rev. 2 maps the Security Rule to 800-53.
+
+## GDPR
+
+The catalog is the GDPR as in force: 60 obligations cited by article, such as `Art32(1)(a)`, restated in plain words. The Commission's Digital Omnibus proposal (COM(2025) 837) would change several articles (the personal-data definition, Art. 9, 12, 13, 22, 30, 33 and 35). It is still under negotiation, so it isn't reflected; update the catalog if it is adopted.
+
+**Roles.** The core is always in scope: security of processing (Art. 32) and cooperation with the supervisory authority (Art. 31). Choose `controller` and/or `processor` (W113 until one is chosen). A SaaS company is usually both: a controller for its own staff and marketing data, and a processor for its customers' data. Add these categories when they apply:
+
+| Category | When | Adds |
+|---|---|---|
+| `dpo` | A DPO is required (Art. 37(1)) or appointed | Art. 37-39 |
+| `representative` | Established outside the EU but subject to the GDPR (Art. 3(2)) | Art. 27 |
+| `transfers` | Personal data leaves the EEA, including remote access | Art. 44, 45, 46, 49 |
+| `special_categories` | Health, biometric, criminal-offence and other Art. 9/10 data | Art. 9, 10 |
+| `children` | Online services offered directly to children | Art. 8 |
+
+**Obligations and conditional obligations.** An obligation in scope can't be excluded (E004). Nine are conditional: consent (Art. 7), criminal-offence data (Art. 10), portability (Art. 20), automated decisions (Art. 22), joint controllers (Art. 26), prior consultation (Art. 36), and the three transfer mechanisms. Each can be marked not applicable with a justification that says why the situation doesn't arise. The *GDPR Applicability Statement* lists them.
+
+**Documents.** 16 policies and procedures, each in one category, so a processor-only client never gets the controller documents.
+
+**References.** References are role-aware: the internal audit evidences Art. 5(2) (accountability) for a controller, Art. 28(3)(h) (demonstrating compliance) for a processor-only client; risk work evidences Art. 32(2). There is no management review requirement. The validate phase covers territorial scope (Art. 3) and the national laws that add to the GDPR (employment data, the age of digital consent, DPO designation, health and genetic data).
+
+**Mappings.** `mappings/gdpr__iso27001.yaml` (24 pairs) and `gdpr__soc2.yaml` (22 pairs) are all `related`. A GDPR obligation is about personal data and people's rights, so ISO or SOC 2 evidence points to it but never proves it alone.
+
+**Not legal advice.** Lawful basis choices, DPO designation and transfer assessments are decisions for the client's counsel; the playbook's guardrails say so.
 
 ## TX-RAMP
 

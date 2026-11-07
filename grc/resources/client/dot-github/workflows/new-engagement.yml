@@ -15,10 +15,10 @@ on:
       framework:
         description: "Framework"
         type: choice
-        options: [iso42001, iso27001, soc2, hipaa, txramp]
+        options: [iso42001, iso27001, soc2, hipaa, txramp, gdpr]
         default: iso42001
       engagement: {description: "Record folder: engagement (main) or engagement-27001, engagement-soc2, engagement-hipaa etc. for another framework", required: false, default: engagement}
-      categories: {description: "Optional categories, comma-separated. SOC 2: availability,confidentiality,processing_integrity,privacy. HIPAA: covered_entity,business_associate,clearinghouse,group_health_plan,government. TX-RAMP: level_2", required: false}
+      categories: {description: "Optional categories, comma-separated. SOC 2: availability,confidentiality,processing_integrity,privacy. HIPAA: covered_entity,business_associate,clearinghouse,group_health_plan,government. TX-RAMP: level_2. GDPR: controller and/or processor, plus dpo,representative,transfers,special_categories,children", required: false}
 
 permissions:
   contents: write

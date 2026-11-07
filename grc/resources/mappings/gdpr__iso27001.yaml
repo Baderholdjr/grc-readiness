@@ -1,0 +1,159 @@
+# PROPOSED mappings between the GDPR and ISO/IEC 27001:2022 (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against both frameworks and the client's actual controls, and fill reviewed_by
+# and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count for both records (cited
+# as "<framework>:<id>"). The rest are pointers. `subset`: the GDPR requirement (first framework) is narrower;
+# `superset`: wider. Our own judgement; no standard's text is reproduced.
+#
+# None is `equivalent`: a GDPR obligation is about personal data and people's rights; an ISO 27001 control is about
+# information security. Evidence for one is a strong pointer for the other, never proof on its own.
+
+frameworks:
+- gdpr
+- iso27001
+mappings:
+- gdpr: Art5(1)(e)
+  iso27001: A.8.10
+  relationship: related
+  note: Deleting information when no longer needed supports storage limitation; GDPR also needs the retention period per purpose.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(1)(f)
+  iso27001: A.8.24
+  relationship: related
+  note: Cryptography is one of the measures that keep personal data confidential and intact.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(2)
+  iso27001: A.5.34
+  relationship: related
+  note: Identifying and meeting privacy and PII protection requirements supports demonstrating compliance.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art24
+  iso27001: A.5.1
+  relationship: related
+  note: Policies approved and reviewed; GDPR asks for data protection policies specifically.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art25
+  iso27001: A.8.25
+  relationship: related
+  note: Secure development lifecycle is where privacy by design reviews usually sit.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art28(1)
+  iso27001: A.5.19
+  relationship: related
+  note: Supplier relationships; GDPR asks for guarantees about personal data specifically.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art28(3)
+  iso27001: A.5.20
+  relationship: related
+  note: Security in supplier agreements; Art. 28(3) lists terms ISO doesn't require.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art28(2)
+  iso27001: A.5.21
+  relationship: related
+  note: Managing the ICT supply chain covers sub-processor oversight in part.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art29
+  iso27001: A.6.6
+  relationship: related
+  note: Confidentiality agreements bind people acting under authority.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art30(1)
+  iso27001: A.5.34
+  relationship: related
+  note: An ISO PII register can feed the record of processing; Art. 30 sets its contents.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art31
+  iso27001: A.5.5
+  relationship: related
+  note: Contact with authorities.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(a)
+  iso27001: A.8.24
+  relationship: related
+  note: Use of cryptography.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(b)
+  iso27001: A.5.15
+  relationship: related
+  note: Access control protects confidentiality.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(b)
+  iso27001: A.8.14
+  relationship: related
+  note: Redundancy supports availability and resilience.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(c)
+  iso27001: A.8.13
+  relationship: related
+  note: Backups make restoring availability possible.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(c)
+  iso27001: A.5.30
+  relationship: related
+  note: ICT readiness for business continuity.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(d)
+  iso27001: A.5.35
+  relationship: related
+  note: Independent review of information security.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(d)
+  iso27001: '9.2'
+  relationship: related
+  note: Internal audit tests the measures' effectiveness.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(2)
+  iso27001: 6.1.2
+  relationship: related
+  note: Information security risk assessment; GDPR focuses on risks to people.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(4)
+  iso27001: A.6.3
+  relationship: related
+  note: Awareness and training.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art33
+  iso27001: A.5.26
+  relationship: related
+  note: Response to incidents; the 72-hour authority notification is GDPR's own.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art33(5)
+  iso27001: A.5.27
+  relationship: related
+  note: Learning from incidents relies on the same incident records.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art34
+  iso27001: A.5.26
+  relationship: related
+  note: Response to incidents includes communication.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art44
+  iso27001: A.5.14
+  relationship: related
+  note: Information transfer rules; Chapter V adds legal mechanisms for leaving the EEA.
+  reviewed_by: ''
+  reviewed_on: null
