@@ -103,11 +103,28 @@ def artifacts(r: dict, classes: list[str], default: list[str]) -> list[str]:
     return (found or default)[:5]
 
 
+def class_a_lists(d: dict) -> tuple[set[str], set[str]]:
+    """Class A is defined by lists: FRC-CLA-MFR names the rules and indicators it must address, FRC-CLA-RFR the
+    ones it should. Other indicators don't apply to Class A, and these rules apply to it even where their own
+    subset is written for Class B and C."""
+    found = {}
+    for subs in d["FRR"]["FRC"]["data"].values():
+        for rs in subs.values():
+            for rid in ("FRC-CLA-MFR", "FRC-CLA-RFR"):
+                if rid in rs:
+                    found[rid] = {m.group(0) for x in rs[rid].get("following_information") or []
+                                  for m in [re.search(r"\b[A-Z]{3}-[A-Z]{3}-[A-Z]{3}\b", x)] if m}
+    return found.get("FRC-CLA-MFR", set()), found.get("FRC-CLA-RFR", set())
+
+
 def generate(d: dict) -> dict:
+    must_a, should_a = class_a_lists(d)
     default = d["info"]["default_artifacts"]
     frr_default = [clean(x) for x in default["FRR"]]
     ksi_default = [clean(x) for x in default["KSI"]]
     reqs, groups = [], []
+    if not must_a:
+        raise SystemExit("FRC-CLA-MFR not found: the dataset's Class A rules have changed; review the generator")
     for pk, p in d["FRR"].items():
         if pk in SKIP:
             continue
@@ -133,6 +150,9 @@ def generate(d: dict) -> dict:
                             per[c] = (v.get("force") or r.get("force"), text({**r, **v, "note": v.get("note") or r.get("note")}))
                         elif c in sub_classes and r.get("statement"):
                             per[c] = (r.get("force"), text(r))
+                    if rid in must_a and per.get("a", (None,))[0] not in ("MUST", "MUST NOT"):
+                        base = next((per[c] for c in ("b", "c") if c in per), None) or (r.get("force"), text(r))
+                        per["a"] = ("MUST", base[1])
                     must = [c for c in CLASSES if c in per and per[c][0] in ("MUST", "MUST NOT")]
                     should = [c for c in CLASSES if c in per and per[c][0] in ("SHOULD", "SHOULD NOT")]
                     if must:
@@ -157,7 +177,7 @@ def generate(d: dict) -> dict:
             for c in CLASSES:
                 v = (i.get("varies_by_class") or {}).get(c)
                 s = clean(v.get("statement")) if v is not None else clean(i.get("statement"))
-                if s and not s.startswith("Optional:"):
+                if s and not s.startswith("Optional:") and (c != "a" or kid in must_a | should_a):
                     per[c] = s
             scope = [c for c in CLASSES if c in per]
             reqs.append({"id": kid, "kind": "indicator", "category": CATEGORY[tuple(scope)], "group": f"KSI-{tk}",

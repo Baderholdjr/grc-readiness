@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This standard sets how {{client}} logs, monitors and audits activity in its cloud service offering, and how it evaluates configuration. It covers five Key Security Indicators. All apply to every class except KSI-MLA-ALA, which is required for Class C and optional for Class B.
+This standard sets how {{client}} logs, monitors and audits activity in its cloud service offering, and how it evaluates configuration. It covers five Key Security Indicators. Class B and C must show all of them except KSI-MLA-ALA, which is required for Class C and optional for Class B. They are not in FedRAMP's mandatory Class A list (FRC-CLA-MFR), so Class A need not show them.
 
 Each indicator is shown with measures and their objectives, run persistently on a known cycle, with machine-readable evidence produced automatically where practical. The measures are summarized in the security decision record (see DOC-FR-PACKAGE).
 

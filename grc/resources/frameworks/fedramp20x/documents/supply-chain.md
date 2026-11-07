@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This standard sets how {{client}} identifies, reviews, mitigates and monitors supply chain risk for its cloud service offering, covering suppliers, third-party services, and third-party software. It covers two Key Security Indicators that apply to every class.
+This standard sets how {{client}} identifies, reviews, mitigates and monitors supply chain risk for its cloud service offering, covering suppliers, third-party services, and third-party software. It covers two Key Security Indicators that Class B and C must show. They are not in FedRAMP's mandatory Class A list (FRC-CLA-MFR), so Class A need not show them.
 
 Each indicator is shown with measures and their objectives, run persistently on a known cycle, with machine-readable evidence produced automatically where practical. The measures are summarized in the security decision record (see DOC-FR-PACKAGE).
 

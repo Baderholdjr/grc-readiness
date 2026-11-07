@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This standard sets how {{client}} designs and reviews the cloud-native architecture of its cloud service offering. It covers eight Key Security Indicators. All apply to every class except KSI-CNA-EIS, which is required for Class C and optional for Class B. For Class A, FedRAMP's mandatory Class A list names KSI-CNA-RNT (FRC-CLA-MFR).
+This standard sets how {{client}} designs and reviews the cloud-native architecture of its cloud service offering. It covers eight Key Security Indicators. Class B and C must show all of them except KSI-CNA-EIS, which is required for Class C and optional for Class B. Class A must show only KSI-CNA-RNT, the one FedRAMP's mandatory Class A list names (FRC-CLA-MFR).
 
 Each indicator is shown with measures and their objectives, run persistently on a known cycle, with machine-readable evidence produced automatically where practical. The measures are summarized in the security decision record (see DOC-FR-PACKAGE).
 

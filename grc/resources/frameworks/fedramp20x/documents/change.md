@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This standard sets how {{client}} makes, records and validates changes to its cloud service offering. It covers four Key Security Indicators that apply to every class; for Class A, FedRAMP's mandatory Class A list names KSI-CMT-LMC (FRC-CLA-MFR).
+This standard sets how {{client}} makes, records and validates changes to its cloud service offering. It covers four Key Security Indicators that Class B and C must show. Class A must show only KSI-CMT-LMC, the one FedRAMP's mandatory Class A list names (FRC-CLA-MFR).
 
 Each indicator is shown with measures and their objectives, run persistently on a known cycle, with machine-readable evidence produced automatically where practical. The measures are summarized in the security decision record (see DOC-FR-PACKAGE).
 

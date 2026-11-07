@@ -81,17 +81,17 @@ FedRAMP 20x is the US government's newer path to certify cloud services for fede
 
 | Class | Categories | Requirements |
 |---|---|---|
-| A (pilot) | `class_a` | 57 for every class + 4 Class A rules = 61 |
-| B (Low) | `class_b` | 57 + 116 = 173 |
-| C (Moderate) | `class_b,class_c` | 57 + 116 + 10 = 183 |
+| A (pilot) | `class_a` | 35 for every class + 4 Class A rules = 39 |
+| B (Low) | `class_b` | 35 + 138 = 173 |
+| C (Moderate) | `class_b,class_c` | 35 + 138 + 10 = 183 |
 
-Class C adds to Class B, so `class_c` alone, or Class A with another class, is W115. Class D (High) is on the Rev5 path, not 20x. Where a rule's text or timeframe differs by class, the intent gives each (for example, drift detection every 3 months for Class A, monthly for Class B, every 14 days for Class C).
+Class C adds to Class B, so `class_c` alone, or Class A with another class, is W115. Class A is defined by FedRAMP's lists in FRC-CLA-MFR (rules and the 7 indicators it must address) and FRC-CLA-RFR (rules it should address); the generator reads them, so a rule on the mandatory list is in every class even where its own subset is written for Class B and C. Class D (High) is on the Rev5 path, not 20x. Where a rule's text or timeframe differs by class, the intent gives each (for example, drift detection every 3 months for Class A, monthly for Class B, every 14 days for Class C).
 
 **Kinds.** A Key Security Indicator and a MUST rule can't be excluded (E004). A SHOULD rule (`recommendation`) can be marked `applicable: false`; its justification records the reason and the resulting risk to customers, as FedRAMP's default artifacts ask, and the *FedRAMP 20x Applicability Statement* lists it. FedRAMP also lets a provider explain why an indicator or MUST rule isn't met, if a senior official accepts the risk: record that as an accepted risk in the gap register, not by excluding the requirement.
 
 **Documents.** 18: one per Key Security Indicator theme and one per process area (certification package, Minimum Assessment Scope, communications, trust center, continuous monitoring reports, significant changes, incidents, vulnerabilities, secure configuration). A document is needed when any requirement it covers is in scope, so a Class A record gets 12.
 
-**Dates and references.** `dates.stage1` is the independent assessment; `dates.stage2` the FedRAMP certification decision. The internal readiness review and corrective actions evidence KSI-SVC-EIS (evaluating and improving security), the leadership review KSI-PIY-RES (executive support), the repository's branch protection KSI-CMT-LMC (logging changes), and the scope document MAS-CSO-IIR (Class B and C) or FRC-CSO-PKG (Class A). No management review is required.
+**Dates and references.** `dates.stage1` is the independent assessment; `dates.stage2` the FedRAMP certification decision. The internal readiness review and corrective actions evidence KSI-SVC-EIS (evaluating and improving security), the leadership review KSI-PIY-RES (executive support), the repository's branch protection KSI-CMT-LMC (logging changes), and the scope document MAS-CSO-IIR. A Class A record, which has neither indicator, uses FRC-CSO-MRA (maintain responsibility and accountability) for the reviews. No management review is required.
 
 **Program controls.** Map program controls to the KSI and rule ids themselves (`maps: {fedramp20x: [KSI-IAM-ELP]}`). A KSI maps to dozens of NIST controls, so a control mapped to one NIST control is not counted for the KSI automatically.
 

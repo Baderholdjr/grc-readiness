@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This standard sets how {{client}} provides cybersecurity education for people who work on its cloud service offering and how it persistently reviews whether that training works. It meets the Key Security Indicator KSI-CED-RAT, which applies to every class, including Class A (FRC-CLA-MFR).
+This standard sets how {{client}} provides cybersecurity education for people who work on its cloud service offering and how it persistently reviews whether that training works. It meets the Key Security Indicator KSI-CED-RAT, which every class must show; for Class A it is in FedRAMP's mandatory Class A list (FRC-CLA-MFR).
 
 Key Security Indicator: the effectiveness of relevant cybersecurity education and training is persistently reviewed, including at least general training for all employees, role-specific training for employees in high-risk roles, training for development and engineering staff on secure software delivery, and training for staff involved with incident response or disaster recovery (KSI-CED-RAT).
 

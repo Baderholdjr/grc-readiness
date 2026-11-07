@@ -41,9 +41,12 @@ def test_catalog_shape():
     ids = [r["id"] for r in reqs]
     assert len(ids) == len(set(ids)) == 187 and all(ID.fullmatch(i) for i in ids)
     assert collections.Counter(r["kind"] for r in reqs) == {"rule": 96, "indicator": 46, "recommendation": 45}
-    assert collections.Counter(r["category"] for r in reqs) == {"class_b": 116, "core": 57, "class_c": 10, "class_a": 4}
+    assert collections.Counter(r["category"] for r in reqs) == {"class_b": 138, "core": 35, "class_c": 10, "class_a": 4}
     ksi = [r for r in reqs if r["id"].startswith("KSI-")]
     assert len(ksi) == 46 and {r["kind"] for r in ksi} == {"indicator"}
+    # Class A addresses only the indicators FRC-CLA-MFR names
+    assert {r["id"] for r in ksi if r["category"] == "core"} == {
+        "KSI-CED-RAT", "KSI-CMT-LMC", "KSI-CNA-RNT", "KSI-IAM-AAM", "KSI-IAM-APM", "KSI-INR-RIR", "KSI-SVC-SIN"}
     assert {r["id"] for r in ksi if r["category"] == "class_c"} == {
         "KSI-CNA-EIS", "KSI-MLA-ALA", "KSI-SVC-PRR", "KSI-SVC-RUD", "KSI-SVC-VCM"}
     assert all(r["intent"] and r["evidence_examples"] and "**" not in r["intent"] for r in reqs)
@@ -57,6 +60,9 @@ def test_catalog_shape():
     assert "Class C:" in by["VDR-TFR-PDD"]["intent"] and "every 14 days" in by["VDR-TFR-PDD"]["intent"]
     assert "N5: 2 days (internet-reachable and likely exploitable)" in by["VDR-TFR-PVR"]["intent"]
     assert by["IEC-CSO-FIR"]["intent"].startswith("Classes A and B: Providers MUST")
+    # rules FRC-CLA-MFR makes mandatory for Class A are in every class; the ones it recommends keep Class A's SHOULD
+    assert by["MAS-CSO-IIR"]["category"] == by["VDR-CSO-DET"]["category"] == "core"
+    assert by["IEC-CSO-IIR"]["category"] == "class_b" and by["IEC-CSO-IIR"]["intent"].startswith("Class A: Providers SHOULD")
 
 
 def test_generator_reproduces_the_catalog(tmp_path):
@@ -66,7 +72,12 @@ def test_generator_reproduces_the_catalog(tmp_path):
     gen = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gen)
     d = {"info": {"version": "x", "default_artifacts": {"FRR": ["Explain"], "KSI": ["Measures"]}},
-         "FRR": {"ABC": {"info": {"name": "Alpha", "subsets": {"CSO": {}}}, "data": {"all": {"CSO": {
+         "FRR": {"FRC": {"info": {"name": "Cert", "subsets": {"CLA": {"applicability": {"classes": ["A"]}}}}, "data": {"all": {"CLA": {
+             "FRC-CLA-MFR": {"name": "Mandatory", "statement": "Class A MUST address:", "force": "MUST", "affects": ["Providers"],
+                             "following_information": ["Alpha: ABC-CSO-ONE (One)", "Key Security Indicators: KSI-XYZ-ONE (Ind)"]},
+             "FRC-CLA-RFR": {"name": "Recommended", "statement": "Class A SHOULD address:", "force": "SHOULD",
+                             "affects": ["Providers"], "following_information": []}}}}},
+                 "ABC": {"info": {"name": "Alpha", "subsets": {"CSO": {}}}, "data": {"all": {"CSO": {
              "ABC-CSO-ONE": {"name": "One", "statement": "Providers MUST do **one**.", "force": "MUST", "affects": ["Providers"],
                              "controls": ["ac-2.3"]},
              "ABC-CSO-TWO": {"name": "Two", "affects": ["Providers"], "varies_by_class": {
@@ -75,16 +86,19 @@ def test_generator_reproduces_the_catalog(tmp_path):
                  "c": {"statement": "Providers with Class C Certifications MUST do two.", "force": "MUST"}}},
              "ABC-CSO-AGY": {"name": "Agencies", "statement": "Agencies MUST x.", "force": "MUST", "affects": ["Agencies"]}}}}},
              "AGU": {"info": {"name": "skip"}, "data": {}}},
-         "KSI": {"XYZ": {"name": "Theme", "indicators": {"KSI-XYZ-ONE": {"name": "Ind", "statement": "It is done.",
-                                                                          "varies_by_class": {"a": {"statement": "Optional: x"}}}}}}}
+         "KSI": {"XYZ": {"name": "Theme", "indicators": {
+             "KSI-XYZ-ONE": {"name": "Ind", "statement": "It is done."},
+             "KSI-XYZ-TWO": {"name": "Two", "statement": "It is done.", "varies_by_class": {"b": {"statement": "Optional: x"}}}}}}}
     g = gen.generate(d)
     by = {r["id"]: r for r in g["reqs"]}
-    assert set(by) == {"ABC-CSO-ONE", "ABC-CSO-TWO", "KSI-XYZ-ONE"}
+    assert set(by) == {"FRC-CLA-MFR", "FRC-CLA-RFR", "ABC-CSO-ONE", "ABC-CSO-TWO", "KSI-XYZ-ONE", "KSI-XYZ-TWO"}
+    assert by["FRC-CLA-MFR"]["category"] == "class_a" and by["FRC-CLA-RFR"]["kind"] == "recommendation"
     assert by["ABC-CSO-ONE"] == {"id": "ABC-CSO-ONE", "kind": "rule", "category": "core", "group": "ABC", "title": "One",
                                       "intent": "Providers MUST do one.", "evidence_examples": ["Explain"], "nist80053": ["AC-2(3)"]}
     assert by["ABC-CSO-TWO"]["kind"] == "rule" and by["ABC-CSO-TWO"]["category"] == "class_c"
     assert by["ABC-CSO-TWO"]["intent"] == "Class B: Providers SHOULD do two. Class C: Providers MUST do two."
-    assert by["KSI-XYZ-ONE"]["category"] == "class_b" and by["KSI-XYZ-ONE"]["evidence_examples"] == ["Measures"]
+    assert by["KSI-XYZ-ONE"]["category"] == "core" and by["KSI-XYZ-ONE"]["evidence_examples"] == ["Measures"]
+    assert by["KSI-XYZ-TWO"]["category"] == "class_c"     # not named for Class A; optional for Class B
 
 
 def test_documents_cover_each_requirement_once():
@@ -107,12 +121,12 @@ def test_documents_cover_each_requirement_once():
 
 def test_class_decides_scope(tmp_path):
     m = load(_new(tmp_path / "none", categories=None), today=TODAY)
-    assert m.categories_in_scope == {"core"} and len(m.controls) == 57 and "W113" in codes(m)
+    assert m.categories_in_scope == {"core"} and len(m.controls) == 35 and "W113" in codes(m)
     m = load(_new(tmp_path / "a", categories="class_a"), today=TODAY)
-    assert len(m.controls) == 61 and m.is_applicable("FRC-CLA-MFR") and not m.is_applicable("VDR-CSO-DET")
-    assert m.term("scope_ref") == "FRC-CSO-PKG"
+    assert len(m.controls) == 39 and m.is_applicable("FRC-CLA-MFR") and m.is_applicable("VDR-CSO-DET")
+    assert not m.is_applicable("KSI-IAM-ELP") and m.term("internal_audit_ref") == "FRC-CSO-MRA"
     m = load(_new(tmp_path / "b", categories="class_b"), today=TODAY)
-    assert len(m.controls) == 173 and not m.is_applicable("KSI-CNA-EIS") and m.term("scope_ref") == "MAS-CSO-IIR"
+    assert len(m.controls) == 173 and not m.is_applicable("KSI-CNA-EIS") and m.term("internal_audit_ref") == "KSI-SVC-EIS"
     e = _new(tmp_path / "c")
     m = load(e, today=TODAY)
     assert len(m.controls) == 183 and m.is_applicable("KSI-CNA-EIS")
@@ -121,7 +135,7 @@ def test_class_decides_scope(tmp_path):
     documents.new(m, "all", mode="templates")
     assert len(list((e / "documents").glob("DOC-FR-*.md"))) == 18
     a = load(_new(tmp_path / "a2", categories="class_a"), today=TODAY)
-    assert len(documents.library(a)) == 12 and "DOC-FR-TRUST" not in documents.library(a)
+    assert len(documents.library(a)) == 12 and "DOC-FR-SCN" not in documents.library(a)
 
 
 def test_class_combinations_are_warned(tmp_path):

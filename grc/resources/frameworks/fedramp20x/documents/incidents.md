@@ -6,7 +6,7 @@ This procedure sets how {{client}} evaluates incidents affecting its cloud servi
 
 An incident is an occurrence that actually or imminently jeopardizes, without lawful authority, the integrity, confidentiality or availability of information or an information system, or that violates or imminently threatens to violate law, security policies, security procedures or acceptable use policies (44 USC 3552).
 
-Applicability: IEC-CSO-EFR and IEC-CSO-FIR apply to every class (EFR through FedRAMP's mandatory Class A list, FRC-CLA-MFR). IEC-CSO-IIR and IEC-CSO-OIR are MUST for Class B and C and SHOULD for Class A. The remaining IEC rules apply to Class B and C. The three Key Security Indicators apply to every class.
+Applicability: IEC-CSO-EFR and IEC-CSO-FIR apply to every class (EFR through FedRAMP's mandatory Class A list, FRC-CLA-MFR). IEC-CSO-IIR and IEC-CSO-OIR are MUST for Class B and C and SHOULD for Class A. The remaining IEC rules apply to Class B and C. Class B and C must show the three Key Security Indicators; Class A must show only KSI-INR-RIR, the one in FedRAMP's mandatory Class A list.
 
 ## Evaluating reportability
 

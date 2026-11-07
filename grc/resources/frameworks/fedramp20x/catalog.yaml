@@ -112,7 +112,7 @@ groups:
 requirements:
 - id: AFC-CSO-INB
   kind: rule
-  category: class_b
+  category: core
   group: AFC
   title: Maintain a FedRAMP Security Inbox
   intent: Providers MUST establish and maintain an email address to receive messages from FedRAMP; this inbox is a FedRAMP Security
@@ -142,7 +142,7 @@ requirements:
   - Automated validation to check FSI mailbox configuration
 - id: AFC-CSO-RCV
   kind: rule
-  category: class_b
+  category: core
   group: AFC
   title: Receive Email Without Disruption
   intent: 'Providers MUST receive and react to email messages from FedRAMP without disruption and without requiring additional actions
@@ -158,7 +158,7 @@ requirements:
   - Independent validation.
 - id: AFC-CSO-CRA
   kind: rule
-  category: class_b
+  category: core
   group: AFC
   title: Complete Required Actions
   intent: 'Providers MUST complete the required actions in Emergency or Emergency Test designated messages sent by FedRAMP within the
@@ -213,7 +213,7 @@ requirements:
   - Independent validation.
 - id: CCM-OCR-AVL
   kind: rule
-  category: class_b
+  category: core
   group: CCM
   title: Report Availability
   intent: 'Providers MUST supply an Ongoing Certification Report to all necessary parties every 3 months, covering the entire period
@@ -231,7 +231,7 @@ requirements:
   - CA-7
 - id: CCM-OCR-NRD
   kind: rule
-  category: class_b
+  category: core
   group: CCM
   title: Next Report Date
   intent: Providers MUST supply the target date for their next Ongoing Certification Report with other public FedRAMP Certification
@@ -414,7 +414,7 @@ requirements:
   - Independent validation.
 - id: CDS-CSO-PUB
   kind: rule
-  category: class_b
+  category: core
   group: CDS
   title: Public Information
   intent: 'Providers MUST publicly share up-to-date information about the cloud service offering in both human-readable and JSON formats,
@@ -495,7 +495,7 @@ requirements:
   - Independent validation.
 - id: CDS-CSO-UTC
   kind: rule
-  category: class_b
+  category: core
   group: CDS
   title: Use Trust Centers
   intent: 'Providers MUST use a FedRAMP-compatible trust center to store and share FedRAMP Certification Data with all necessary parties.
@@ -633,7 +633,7 @@ requirements:
   - URL or explanation how to access documentation of these features and capabilities.
 - id: CDS-UTC-AAD
   kind: rule
-  category: class_b
+  category: core
   group: CDS
   title: Agency Access Denial
   intent: Providers MUST notify FedRAMP within 5 business days of denying an agency access request for FedRAMP Certification Data.
@@ -1082,7 +1082,7 @@ requirements:
   - Independent validation.
 - id: IEC-CSO-EFR
   kind: rule
-  category: class_b
+  category: core
   group: IEC
   title: Evaluate FedRAMP Reportability
   intent: Providers MUST promptly evaluate incidents to determine if they affect confidentiality or integrity of federal customer data
@@ -1339,7 +1339,7 @@ requirements:
   - Independent validation.
 - id: MAS-CSO-IIR
   kind: rule
-  category: class_b
+  category: core
   group: MAS
   title: Identify Information Resources
   intent: Providers MUST identify a set of information resources to assess for FedRAMP Certification that includes all information resources
@@ -1688,7 +1688,7 @@ requirements:
   - Independent validation.
 - id: SDR-CSX-KSI
   kind: rule
-  category: class_b
+  category: core
   group: SDR
   title: Key Security Indicators
   intent: 'Providers MUST also include short and simple high-level summaries of at least the following for each applicable Key Security
@@ -1731,7 +1731,7 @@ requirements:
   - Independent validation.
 - id: VDR-CSO-DET
   kind: rule
-  category: class_b
+  category: core
   group: VDR
   title: Vulnerability Detection
   intent: Providers MUST systematically, persistently, and promptly discover and identify vulnerabilities within their cloud service
@@ -2367,7 +2367,7 @@ requirements:
   - CM-8(3)
 - id: KSI-CMT-RMV
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CMT
   title: Redeploying vs Modifying
   intent: Changes to machine-based information resources are executed through the redeployment of version controlled resources rather
@@ -2383,7 +2383,7 @@ requirements:
   - SI-3
 - id: KSI-CMT-RVP
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CMT
   title: Reviewing Change Procedures
   intent: The effectiveness of documented change management procedures is persistently reviewed.
@@ -2397,7 +2397,7 @@ requirements:
   - CM-9
 - id: KSI-CMT-VTD
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CMT
   title: Validating Throughout Deployment
   intent: Persistent testing and validation of changes throughout deployment is automated.
@@ -2411,7 +2411,7 @@ requirements:
   - SI-2
 - id: KSI-CNA-DFP
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CNA
   title: Defining Functionality and Privileges
   intent: The functionality and privileges for infrastructure and services are strictly defined.
@@ -2445,7 +2445,7 @@ requirements:
   - SI-7(7)
 - id: KSI-CNA-IBP
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CNA
   title: Implementing Best Practices
   intent: The use and configuration of third-party machine-based information resources is persistently compared against the original
@@ -2458,7 +2458,7 @@ requirements:
   - SC-7(18)
 - id: KSI-CNA-MAT
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CNA
   title: Minimizing Attack Surface
   intent: Machine-based information resources are persistently reviewed to ensure they have a minimal attack surface and that lateral
@@ -2482,7 +2482,7 @@ requirements:
   - SI-16
 - id: KSI-CNA-OFA
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CNA
   title: Optimizing for Availability
   intent: Machine-based information resources are persistently reviewed to ensure they are appropriately optimized for high availability
@@ -2515,7 +2515,7 @@ requirements:
   - SI-8
 - id: KSI-CNA-RVP
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CNA
   title: Reviewing Protections
   intent: The effectiveness of protection against denial of service attacks and other unwanted activity for machine-based information
@@ -2529,7 +2529,7 @@ requirements:
   - SI-8(2)
 - id: KSI-CNA-ULN
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-CNA
   title: Using Logical Networking
   intent: Logical networking and related capabilities are used and persistently reviewed to enforce traffic flow controls.
@@ -2593,7 +2593,7 @@ requirements:
   - SC-23
 - id: KSI-IAM-ELP
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-IAM
   title: Ensuring Least Privilege
   intent: Identity and access management measures are used and persistently reviewed to ensure each user or device can only access the
@@ -2654,7 +2654,7 @@ requirements:
   - SI-4(19)
 - id: KSI-IAM-JIT
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-IAM
   title: Authorizing Just-in-Time
   intent: A least-privileged, role and attribute-based, and just-in-time security authorization model is used and persistently reviewed
@@ -2714,7 +2714,7 @@ requirements:
   - SC-39
 - id: KSI-IAM-SNU
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-IAM
   title: Securing Non-User Authentication
   intent: Appropriately secure authentication methods are used and persistently reviewed for non-user accounts and services.
@@ -2732,7 +2732,7 @@ requirements:
   - RA-5(5)
 - id: KSI-IAM-SUS
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-IAM
   title: Responding to Suspicious Activity
   intent: Accounts with privileged access are disabled or otherwise secured in response to suspicious activity.
@@ -2760,7 +2760,7 @@ requirements:
   - SI-4(4)
 - id: KSI-INR-AAR
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-INR
   title: Generating After Action Reports
   intent: Incident after action reports are generated and lessons learned are persistently incorporated.
@@ -2794,7 +2794,7 @@ requirements:
   - SI-4(5)
 - id: KSI-INR-RPI
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-INR
   title: Reviewing Past Incidents
   intent: Past incidents are persistently reviewed for patterns or vulnerabilities that were not previously apparent or identified.
@@ -2823,7 +2823,7 @@ requirements:
   - SI-11
 - id: KSI-MLA-EVC
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-MLA
   title: Evaluating Configurations
   intent: The configuration of machine-based information resources, especially infrastructure as code, is persistently evaluated and
@@ -2839,7 +2839,7 @@ requirements:
   - SI-7(7)
 - id: KSI-MLA-LET
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-MLA
   title: Logging Event Types
   intent: A list of information resources and event types that will be logged, monitored, and audited is maintained and persistently
@@ -2864,7 +2864,7 @@ requirements:
   - SI-7(7)
 - id: KSI-MLA-OSM
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-MLA
   title: Operating SIEM Capability
   intent: A Security Information and Event Management (SIEM) or similar system(s) is used and persistently reviewed for centralized,
@@ -2895,7 +2895,7 @@ requirements:
   - SI-4(4)
 - id: KSI-MLA-RVL
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-MLA
   title: Reviewing Logs
   intent: Logs are persistently reviewed and audited.
@@ -2913,7 +2913,7 @@ requirements:
   - SI-4(4)
 - id: KSI-PIY-GIV
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-PIY
   title: Generating Inventories
   intent: Authoritative sources are used to automatically generate real-time inventories of all information resources when needed.
@@ -2930,14 +2930,14 @@ requirements:
   - CP-2(8)
 - id: KSI-PIY-RES
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-PIY
   title: Reviewing Executive Support
   intent: Executive support for achieving the provider's security goals is persistently reviewed and demonstrated.
   evidence_examples: *id001
 - id: KSI-PIY-RIS
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-PIY
   title: Reviewing Investments in Security
   intent: The effectiveness of the provider's investments in achieving security goals is persistently reviewed.
@@ -2956,7 +2956,7 @@ requirements:
   - SR-2(1)
 - id: KSI-PIY-RSD
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-PIY
   title: Reviewing Security in the SDLC
   intent: The effectiveness of building security and privacy considerations into the Software Development Lifecycle and aligning with
@@ -2979,7 +2979,7 @@ requirements:
   - SI-16
 - id: KSI-PIY-RVD
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-PIY
   title: Reviewing Vulnerability Disclosures
   intent: The effectiveness of the provider's vulnerability disclosure program is persistently reviewed.
@@ -2988,7 +2988,7 @@ requirements:
   - RA-5(11)
 - id: KSI-RPL-ABO
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-RPL
   title: Aligning Backups with Objectives
   intent: The alignment of machine-based information resource backups with defined recovery objectives is persistently reviewed.
@@ -3001,7 +3001,7 @@ requirements:
   - CP-10(2)
 - id: KSI-RPL-ARP
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-RPL
   title: Aligning Recovery Plan
   intent: The alignment of recovery plans with defined recovery objectives is persistently reviewed.
@@ -3025,7 +3025,7 @@ requirements:
   - CP-10(2)
 - id: KSI-RPL-RRO
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-RPL
   title: Reviewing Recovery Objectives
   intent: The desired Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO) are defined and persistently reviewed for alignment
@@ -3036,7 +3036,7 @@ requirements:
   - CP-10
 - id: KSI-RPL-TRC
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-RPL
   title: Testing Recovery Capabilities
   intent: The capability to recover from incidents and contingencies aligned with defined recovery objectives is persistently tested.
@@ -3056,7 +3056,7 @@ requirements:
   - SC-12(1)
 - id: KSI-SCR-MIT
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-SCR
   title: Mitigating Supply Chain Risk
   intent: Potential supply chain risks are persistently identified, reviewed, and mitigated.
@@ -3095,7 +3095,7 @@ requirements:
   - SR-6
 - id: KSI-SCR-MON
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-SCR
   title: Monitoring Supply Chain Risk
   intent: Third party software information resources are automatically monitored for upstream vulnerabilities using mechanisms that
@@ -3118,7 +3118,7 @@ requirements:
   - SR-8
 - id: KSI-SVC-ACM
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-SVC
   title: Automating Configuration Management
   intent: The configuration of machine-based information resources is managed using automation and persistently reviewed for drift.
@@ -3141,7 +3141,7 @@ requirements:
   - SR-10
 - id: KSI-SVC-ASM
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-SVC
   title: Automating Secret Management
   intent: Management, protection, and regular rotation of digital keys, certificates, and other secrets is automated and persistently
@@ -3156,7 +3156,7 @@ requirements:
   - SC-17
 - id: KSI-SVC-EIS
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-SVC
   title: Evaluating and Improving Security
   intent: Information resources are persistently evaluated for opportunities to improve security and those improvements are persistently
@@ -3250,7 +3250,7 @@ requirements:
   - SI-7(1)
 - id: KSI-SVC-VRI
   kind: indicator
-  category: core
+  category: class_b
   group: KSI-SVC
   title: Validating Resource Integrity
   intent: Use cryptographic methods to validate the integrity of machine-based information resources.

@@ -23,13 +23,14 @@ terms:
   applicability_title: FedRAMP 20x Applicability Statement
   applicability_short: Applicability
   applicability_intro: "Every FedRAMP rule written as SHOULD and whether {client} follows it, with the reason and the resulting risk to customers when it doesn't; and the rules and indicators of other certification classes. Key Security Indicators and MUST rules for the class in scope are not optional and are not listed."
-  internal_audit_ref: KSI-SVC-EIS
-  corrective_ref: KSI-SVC-EIS
-  review_ref: KSI-PIY-RES
+  # A list: the first id in the record's scope is used (Class A has only 7 of the indicators).
+  internal_audit_ref: [KSI-SVC-EIS, FRC-CSO-MRA]
+  corrective_ref: [KSI-SVC-EIS, FRC-CSO-MRA]
+  review_ref: [KSI-PIY-RES, FRC-CSO-MRA]
   record_control_ref: KSI-CMT-LMC
-  scope_ref: [MAS-CSO-IIR, FRC-CSO-PKG]
-  objectives_ref: KSI-PIY-RES
-  risk_ref: KSI-SVC-EIS
+  scope_ref: MAS-CSO-IIR
+  objectives_ref: [KSI-PIY-RES, FRC-CSO-MRA]
+  risk_ref: [KSI-SVC-EIS, FRC-CSO-MRA]
   review_required: "no"
   applicability_id_header: Rule
 
@@ -151,7 +152,7 @@ impact_assessment:
   required_for_kinds: []
 
 # Policy and procedure library (`grc docs new`). Every requirement is covered by exactly one document. A document
-# is needed when any requirement it covers is in scope, so a Class A record skips the Class B process documents.
+# is needed when any requirement it covers is in scope, so a Class A record skips documents it has no requirement in.
 documents:
   review_every_days: 365
   library:

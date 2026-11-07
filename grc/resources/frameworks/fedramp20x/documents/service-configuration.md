@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This standard sets how {{client}} manages configuration, secrets, encryption, integrity and residual data in its cloud service offering, and how it keeps improving security. It covers eight Key Security Indicators. KSI-SVC-PRR, KSI-SVC-RUD and KSI-SVC-VCM are required for Class C and optional for Class B; the others apply to every class. For Class A, FedRAMP's mandatory Class A list names KSI-SVC-SIN (FRC-CLA-MFR).
+This standard sets how {{client}} manages configuration, secrets, encryption, integrity and residual data in its cloud service offering, and how it keeps improving security. It covers eight Key Security Indicators. KSI-SVC-PRR, KSI-SVC-RUD and KSI-SVC-VCM are required for Class C and optional for Class B; Class B and C must show the others. Class A must show only KSI-SVC-SIN, the one FedRAMP's mandatory Class A list names (FRC-CLA-MFR).
 
 Each indicator is shown with measures and their objectives, run persistently on a known cycle, with machine-readable evidence produced automatically where practical. The measures are summarized in the security decision record (see DOC-FR-PACKAGE).
 

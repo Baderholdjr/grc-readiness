@@ -473,7 +473,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 > **For GRC practitioners:**
 > - **Catalog:** generated from FedRAMP's Consolidated Rules dataset: 46 Key Security Indicators and 141 process rules (96 MUST, 45 SHOULD), ids such as `KSI-IAM-ELP` and `VDR-TFR-PDD`, with FedRAMP's own statements, per-class timeframes and NIST SP 800-53 mappings.
-> - **Classes:** `class_a` (61 requirements), `class_b` (173), or `class_b,class_c` (183). W113 until a class is chosen; W115 for `class_c` without `class_b`, or Class A combined with another class.
+> - **Classes:** `class_a` (39 requirements: the rules and 7 indicators FedRAMP lists for Class A), `class_b` (173), or `class_b,class_c` (183). W113 until a class is chosen; W115 for `class_c` without `class_b`, or Class A combined with another class.
 > - **Kinds:** indicators and MUST rules can't be excluded; a SHOULD rule can be, with the reason and the risk to customers. A senior official's acceptance of an unmet indicator or rule is an accepted risk in the gap register.
 > - **Dates:** `stage1` is the independent assessment; `stage2` the certification decision.
 
@@ -483,7 +483,7 @@ The seven frameworks side by side:
 
 | | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR | FedRAMP 20x |
 |---|---|---|---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 11 processor + 11 situational | 57 for every class + 4 Class A, 116 Class B and C, 10 Class C only |
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 11 processor + 11 situational | 35 for every class + 4 Class A, 138 Class B and C, 10 Class C only |
 | Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents | 18 documents (12 for Class A) |
 | Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog | No |
 | Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance | FedRAMP certification (Class A, B or C) |
