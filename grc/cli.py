@@ -137,6 +137,21 @@ def cmd_collect(args) -> int:
 
 def cmd_ingest(args) -> int:
     from . import ingest
+    if getattr(args, "all", False):
+        # every record in the repository, reading a document once when several records have it
+        from .model import discover
+        root = Path(args.engagement).parent if Path(args.engagement).name.startswith("engagement") else Path(".")
+        pairs = []
+        for e in discover(root):
+            ns = argparse.Namespace(engagement=str(e), intake=None)
+            pairs.append((str(e), intake_for(ns)))
+        reports = ingest.run_many(pairs, mode=args.mode, force=args.force)
+        out = Path(args.report_dir or ".")
+        out.mkdir(parents=True, exist_ok=True)
+        for e, rep in reports.items():
+            (out / f"report-{Path(e).name}.md").write_text(rep, encoding="utf-8")
+            print(f"{Path(e).name}: {rep.splitlines()[0] if rep else ''}")
+        return 0
     report = ingest.run(args.engagement, intake_for(args), mode=args.mode, force=args.force)
     print(report)
     if args.report:
@@ -551,6 +566,9 @@ def main(argv=None) -> int:
     g.add_argument("--mode", choices=["auto", "templates", "ai"], default="auto")
     g.add_argument("--force", action="store_true", help="re-process files already in the ledger")
     g.add_argument("--report", help="write the Markdown report here (PR comment)")
+    g.add_argument("--all", action="store_true", help="every record in the repository; a document several records "
+                   "share is read once (reports in --report-dir as report-<record>.md)")
+    g.add_argument("--report-dir", help="with --all: folder for the reports (default .)")
     g.set_defaults(fn=cmd_ingest)
 
     n = sub.add_parser("new-engagement", help="reset engagement/ and intake/ for a new client")

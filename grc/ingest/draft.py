@@ -53,3 +53,9 @@ OUTPUT_SCHEMA = _obj({
                                                "source": SRC})},
     "open_questions": {"type": "array", "items": S, "description": "ambiguities or contradictions an analyst must resolve"},
 })
+
+
+# One read for several records: scope statements per framework instead of one.
+MULTI_SCHEMA = {**OUTPUT_SCHEMA, "properties": {**{k: v for k, v in OUTPUT_SCHEMA["properties"].items() if k != "scope_statement"},
+                "scope_statements": {"type": "array", "items": _obj({"framework": S, "statement": S})}}}
+MULTI_SCHEMA["required"] = list(MULTI_SCHEMA["properties"])
