@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import subprocess
 from pathlib import Path
 
@@ -33,6 +34,38 @@ def rows(path: Path) -> list[list[str]] | None:
                 return data
         return []
     return None
+
+
+def _cell(c) -> str:
+    """A spreadsheet cell as written: 8.10 formatted with two decimals stays "8.10", not 8.1."""
+    v = c.value
+    if v is None:
+        return ""
+    if isinstance(v, float):
+        m = re.search(r"\.(0+)(?![0-9#])", str(c.number_format or ""))
+        if m:
+            return f"{v:.{len(m.group(1))}f}"
+        return f"{v:g}"
+    return str(v).strip()
+
+
+def tables(path: Path) -> list[tuple[str, list[list[str]]]]:
+    """Every sheet of a workbook (one table for a CSV), blank rows kept so row numbers match the file."""
+    ext = path.suffix.lower()
+    if ext == ".csv":
+        return [("", rows(path) or [])]
+    if ext == ".xlsx":
+        from openpyxl import load_workbook
+        wb = load_workbook(path, data_only=True)
+        out = []
+        for ws in wb.worksheets:
+            data = [[_cell(c) for c in r] for r in ws.iter_rows()]
+            while data and not any(data[-1]):
+                data.pop()
+            if data:
+                out.append((ws.title, data))
+        return out
+    return []
 
 
 def text(path: Path) -> str:

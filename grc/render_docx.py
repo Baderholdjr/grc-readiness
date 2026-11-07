@@ -317,7 +317,7 @@ def _md_blocks(body: str):
         elif s.startswith("|"):
             rows = []
             while i < len(lines) and lines[i].strip().startswith("|"):
-                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                cells = [c.strip().replace("\\|", "|") for c in re.split(r"(?<!\\)\|", lines[i].strip().strip("|"))]
                 if not all(set(c) <= set("-: ") for c in cells):
                     rows.append(cells)
                 i += 1

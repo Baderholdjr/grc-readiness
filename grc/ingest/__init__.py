@@ -1,6 +1,7 @@
 """Ingest client documents from intake/ into the engagement record.
 
   CSV/XLSX in the intake template format -> imported deterministically
+  CSV/XLSX control register (GRC tool export or own sheet) -> imported deterministically (register.py)
   Anything else (docx, pdf, xlsx, md, txt) -> drafted by Claude (if enabled)
 
 Processed files are recorded with their sha256 in intake/.processed.yaml so
@@ -15,7 +16,7 @@ from pathlib import Path
 import yaml
 
 from ..model import Engagement, load
-from . import ai, apply, draft, extract, templates
+from . import ai, apply, draft, extract, register, templates
 
 LEDGER = ".processed.yaml"
 SKIP = {"README.md", LEDGER, ".gitkeep"}
@@ -72,6 +73,7 @@ class _Record:
         self.settings = self.model.engagement.get("ingest", {}) or {}
         self.mode = mode
         self.combined, self.notes, self.for_ai, self.ledger_updates = draft.empty(), [], [], {}
+        self.register_rows: dict[str, list[dict]] = {}
         ai_allowed = mode in ("auto", "ai") and self.settings.get("ai_drafting", False)
         for p in self.todo:
             rel = str(p.relative_to(self.intake)) if p.is_relative_to(self.intake) else p.name
@@ -80,12 +82,27 @@ class _Record:
                 continue
             table = extract.rows(p)
             kind = templates.detect(table[0]) if table else None
+            reg = None if kind or mode not in ("auto", "templates") else \
+                next(((sheet, t) for sheet, t in extract.tables(p) if register.detect(t)), None)
             if kind and mode in ("auto", "templates"):
                 _, d, problems = templates.to_draft(table, rel)
                 self.combined = draft.merge(self.combined, d)
                 self.notes.append(f"`{rel}`: imported as **{kind}** template")
                 self.notes += [f"`{rel}`: {x}" for x in problems]
                 self.ledger_updates[rel] = {"sha256": _sha(p), "mode": f"template:{kind}"}
+            elif reg:
+                sheet, t = reg
+                known = {str(r["id"]) for r in self.catalog()}
+                name = register.register_name(rel)
+                d, rows, problems = register.to_draft(t, rel + (f" sheet {sheet}" if sheet and p.suffix.lower() == ".xlsx" else ""),
+                                                      self.framework, known, self.model.catalog["framework"]["short_name"], name)
+                self.combined = draft.merge(self.combined, d)
+                self.register_rows[name] = self.register_rows.get(name, []) + rows
+                mapped = sum(1 for r in rows if r["maps"])
+                self.notes.append(f"`{rel}`: imported as a **control register** ({len(rows)} controls, {mapped} mapped to "
+                                  f"{self.model.catalog['framework']['short_name']})")
+                self.notes += [f"`{rel}`: {x}" for x in problems]
+                self.ledger_updates[rel] = {"sha256": _sha(p), "mode": "register"}
             elif ai_allowed:
                 self.for_ai.append((rel, extract.text(p), p))
             else:
@@ -118,6 +135,13 @@ class _Record:
             return f"No new or changed files in {self.intake.name}/.\n"
         label = ", ".join(sorted(self.ledger_updates)) or "intake"
         report = apply.apply(self.model, self.combined, label, files=sorted(self.ledger_updates))
+        if self.register_rows:
+            register.save(self.model.engagement_dir, self.register_rows)
+            stale = register.stale_gaps(load(self.model.engagement_dir).gaps, self.register_rows)
+            if stale:
+                report += ("\n### Gaps the re-imported register no longer supports\n"
+                           "Not closed automatically: confirm with evidence, then close (closure_evidence).\n\n"
+                           + "\n".join(f"- {s}" for s in stale) + "\n")
         if self.ledger_updates:
             lp = self.intake / LEDGER
             ledger = (yaml.safe_load(lp.read_text()) if lp.exists() else {}) or {}

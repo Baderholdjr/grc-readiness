@@ -39,7 +39,15 @@ Rules:
    the documents you were given is the record of it (the report, export, log or sign-off), record the claim
    AND raise a gap with area "Unevidenced claim: <topic>", severity medium, saying which record would prove
    it. Other files in the same upload are listed by name; if one of them is plainly that record, don't raise
-   the gap."""
+   the gap.
+10. A prior audit or assessment (a SOC 2 report, an ISO certificate or Statement of Applicability, a penetration
+   test, a regulator's or customer's assessment, an earlier gap analysis) is a third party's statement about a
+   past period, not proof for this engagement. Record the report itself in `evidence` (type "test", with its
+   date or period and who issued it). Each exception, deviation, nonconformity, finding or qualified opinion it
+   reports becomes a gap (severity high for a qualified or adverse opinion or a major nonconformity, else medium)
+   citing the report. Controls it describes as operating become claims on the `tested` leg only when the report
+   says it tested them; otherwise on `implemented`. Put the period it covers, and any carve-out or scope
+   limitation, in `open_questions` when it differs from this engagement's scope."""
 
 MULTI_RULES = """
 This client keeps several records, one per framework: {frameworks}. Read the documents once for all of them.

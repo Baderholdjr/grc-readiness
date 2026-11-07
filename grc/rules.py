@@ -128,6 +128,17 @@ def check_schemas(model: Engagement) -> list[Finding]:
         run("hours", {**model.hours_meta, "entries": model.hours}, edir / "hours.yaml")
     if (edir / "inventory.yaml").exists():
         run("inventory", {"items": model.inventory}, edir / "inventory.yaml")
+    if (edir / "existing-controls.yaml").exists():
+        from .model import load_yaml
+        raw = load_yaml(edir / "existing-controls.yaml")
+        run("existing-controls", raw, edir / "existing-controls.yaml")
+        known = set(model.requirement_index)
+        for r in model.existing_controls:
+            bad = [x for x in (r.get("maps") or []) if x not in known] if isinstance(r, dict) and isinstance(r.get("maps"), list) else []
+            if bad:
+                out.append(Finding("warning", "W116", f"existing-controls.yaml: '{r.get('name')}' maps to {', '.join(bad)}, "
+                                   f"not in the {model.catalog['framework']['short_name']} catalog.",
+                                   _rel(model, edir / "existing-controls.yaml"), str(r.get("ref") or r.get("name"))))
     for cid, data in model.controls.items():
         run("control", data, model.control_files[cid], cid)
     return out
