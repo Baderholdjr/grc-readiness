@@ -1,0 +1,250 @@
+# Framework playbook: reusable engagement content for FedRAMP 20x readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+#
+# FedRAMP 20x certifies a cloud service offering against Key Security Indicators and FedRAMP's process rules,
+# shown with machine-readable evidence and validated by a FedRAMP-recognized independent assessor. In the
+# engagement record the two dates mean: dates.stage1 = the independent assessment; dates.stage2 = the
+# FedRAMP certification decision (or the date the client means to apply, for a first package).
+# Choose the class in scope.categories: class_a, class_b, or class_b,class_c for Class C. Class D is not covered yet.
+
+title_suffix: FedRAMP 20x Readiness Brief
+tldr_template: "Help {client} earn and keep a FedRAMP 20x certification: Key Security Indicators shown with automated evidence, FedRAMP's process rules in operation, and a certification package an assessor can validate."
+usage_heading: Cloud Service Offering in Scope
+requirements_heading: FedRAMP 20x Readiness Requirements
+
+terms:
+  goal: FedRAMP 20x certification
+  audit_body: FedRAMP-recognized independent assessor
+  focus: FedRAMP 20x readiness and continuous monitoring
+  stage1: Independent assessment
+  stage2: FedRAMP certification decision
+  countdown: independent assessment is
+  system: cloud service offering
+  applicability_title: FedRAMP 20x Applicability Statement
+  applicability_short: Applicability
+  applicability_intro: "Every FedRAMP rule written as SHOULD and whether {client} follows it, with the reason and the resulting risk to customers when it doesn't; and the rules and indicators of other certification classes. Key Security Indicators and MUST rules for the class in scope can't be set aside here and are not listed; an unmet one is recorded with its risk to customers and a senior official's acceptance."
+  # A list: the first id in the record's scope is used (Class A has only 7 of the indicators).
+  internal_audit_ref: [KSI-SVC-EIS, FRC-CSO-MRA]
+  corrective_ref: [KSI-SVC-EIS, FRC-CSO-MRA]
+  review_ref: [KSI-PIY-RES, FRC-CSO-MRA]
+  record_control_ref: KSI-CMT-LMC
+  scope_ref: MAS-CSO-IIR
+  objectives_ref: [KSI-PIY-RES, FRC-CSO-MRA]
+  risk_ref: [KSI-SVC-EIS, FRC-CSO-MRA]
+  review_required: "no"
+  applicability_id_header: Rule
+
+glossary:
+  - term: FedRAMP 20x
+    plain: "The US government's newer way to certify cloud services for federal agencies: the provider shows its security with automated, machine-readable evidence instead of long written plans."
+    tech: "FedRAMP Consolidated Rules for 2026 (CR26), github.com/FedRAMP/rules. Required for new 20x certifications since 4 July 2026 and for existing ones by 1 January 2027 (at the next assessment); the vulnerability rules (VDR, VER) from 7 December 2026."
+  - term: Certification class
+    plain: "How much assurance the certification gives agencies, from minimal (Class A) to significant (Class D). Class A builds on a recent SOC 2 Type II, GovRAMP or FedRAMP Rev5 assessment; Class C asks more than Class B."
+    tech: "FRD Certification Class; Class A prerequisites in FRC-CLA-ASF. This catalog covers Classes A to C; FedRAMP has not yet set all of the 20x Class D specifics."
+  - term: Key Security Indicator (KSI)
+    plain: "A security outcome the provider must show, such as least-privilege access or tested recovery, with measures that show it is met, automated where practical."
+    tech: "KSI-* ids, grouped in 10 themes, each mapped by FedRAMP to NIST SP 800-53 controls."
+  - term: Persistently
+    plain: "Done steadily over time, on a known cycle, with the status always known. Most indicators and rules ask for this."
+    tech: "FRD definition. The cycle is documented and its evidence kept."
+  - term: Minimum Assessment Scope (MAS)
+    plain: "The boundary of the offering: everything that is assessed and certified. Anything outside it is a third-party resource."
+    tech: "MAS-CSO-* rules."
+  - term: Potential Agency Impact N-rating (PAIN)
+    plain: "A rating of how badly a vulnerability or incident could affect the agencies using the service. Vulnerabilities are rated N0 to N5, incidents N1 to N5. It sets reporting and fix deadlines."
+    tech: "VER-EVA-EPA, IEC-CSO-EFI; incidents default to N5 when not rated (IEC-CSO-DPR)."
+  - term: Trust center
+    plain: "The secure place where the provider shares its certification data with agencies and FedRAMP, for people and machines to read."
+    tech: "CDS-* rules."
+  - term: Ongoing Certification Report and Quarterly Review
+    plain: "Regular reports to agency customers on the offering's security, and a live meeting every three months (required for Class C, recommended for Class B) to go through them."
+    tech: "CCM-OCR-*, CCM-QTR-*."
+  - term: Significant change
+    plain: "A change likely to substantively affect the offering's security. It must be evaluated, and agencies told before and after."
+    tech: "NIST SP 800-37 Rev. 2 definition; SCN-* rules."
+  - term: Accepted vulnerability
+    plain: "A vulnerability the provider won't fully fix, or hasn't fixed within FedRAMP's longest allowed time. It is reported as such."
+    tech: "FRD definition; VER-RPT-AVI, VER-TFR-MAV."
+
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is there an explanation of how the indicator or rule is met (the measures, their objectives and their cycle)?
+  - key: implemented
+    label: Implemented
+    question: Is it in place across the whole Minimum Assessment Scope?
+  - key: evidenced
+    label: Evidence exists
+    question: Does {client} produce machine-readable evidence that it operates, automated where practical, on the stated cycle?
+  - key: tested
+    label: Tested
+    question: Has it been verified and validated the way a FedRAMP-recognized assessor would (sampling documented)?
+
+gap_callout: Treat client statements as hypotheses until machine-readable evidence shows the indicator or rule is explained, in place across the Minimum Assessment Scope, operating on its cycle, and validated.
+
+working_rule: If an indicator or rule is described but you cannot trace it to an owner, a measure with a cycle, and evidence, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The Minimum Assessment Scope lists every information resource, information flow and third-party resource.
+  - Every Key Security Indicator for the class has measures with a stated cycle and machine-readable evidence, automated where practical.
+  - Vulnerabilities are detected, rated (PAIN) and remediated within FedRAMP's timeframes, and reported each month.
+  - Incidents are evaluated for FedRAMP reportability and reported within the timeframes for their rating.
+  - Significant changes are evaluated and notified; the FedRAMP security inbox is monitored.
+  - The certification package is complete, current and shared through a trust center.
+
+phases:
+  - id: validate
+    objective: "Class & scope"
+    deliverables:
+      - Kickoff and owner alignment
+      - "Choose the certification class (A, B or C; Class A needs a SOC 2 Type II, GovRAMP or FedRAMP Rev5 assessment from the past 12 months) and confirm the 20x path suits the offering and its agency customers"
+      - "Minimum Assessment Scope: information resources, flows, third-party resources"
+      - Validate gap-analysis claims and evidence
+  - id: governance
+    objective: "Measures & procedures"
+    deliverables:
+      - "Measures and cycles for each Key Security Indicator, and how each is automated"
+      - Vulnerability, incident, change and communication procedures written to FedRAMP's rules and timeframes
+      - Security decision records for SHOULD rules not followed
+  - id: implement
+    objective: "Automate & evidence"
+    deliverables:
+      - "Machine-readable evidence pipeline for indicators and rules"
+      - "Trust center, security inbox and availability reporting in operation (availability reporting: recommended for Class A)"
+      - Monthly vulnerability reporting and Ongoing Certification Reports started
+  - id: test
+    objective: "Test"
+    deliverables:
+      - Validate each indicator's measures and each rule against its evidence
+      - Test an incident report and a significant change notification end to end
+      - Internal readiness review and corrective actions
+  - id: stage1
+    objective: "Independent assessment"
+    deliverables:
+      - Support the FedRAMP-recognized assessor's verification and validation
+      - Assemble the certification package with the assessment results
+  - id: stage2
+    objective: "Certification"
+    deliverables:
+      - Apply for FedRAMP certification and answer FedRAMP's questions
+      - Hand over continuous monitoring (reports, quarterly reviews, annual assessment)
+
+needs:
+  - Maintain the control matrix, scope inventory, evidence index, gap register, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test across the Minimum Assessment Scope.
+  - Draft and revise procedures and security decision records for lead review - do not invent measures or results.
+  - Track recurring obligations (monthly vulnerability reports, Ongoing Certification Reports, quarterly reviews, annual assessment).
+  - Flag decisions that need a senior official (SHOULD rules not followed, accepted risks) and questions for FedRAMP.
+
+default_guardrails:
+  - "{client} owns its offering, its measures and its evidence; our team structures, reviews, tests, and challenges."
+  - We are not the independent assessor and do not certify. FedRAMP makes the certification decision.
+  - No federal customer data, secrets or vulnerability details beyond what the work needs in this repository. Evidence is pointed to where it lives.
+  - Escalate unsupported claims, unclear scope and SHOULD rules not followed to the engagement lead.
+
+default_risks:
+  - Measures that exist on paper but have no automated, machine-readable evidence on a known cycle.
+  - A Minimum Assessment Scope that leaves out supporting services or third-party resources.
+  - Vulnerability and incident timeframes missed because ratings (PAIN) aren't assigned promptly.
+  - Rules that change between consolidated releases; the catalog must be regenerated from FedRAMP's dataset.
+
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`). Every requirement is covered by exactly one document. A document
+# is needed when any requirement it covers is in scope, so a Class A record skips documents it has no requirement in.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-FR-PACKAGE, title: "FedRAMP Certification Package Plan", kind: plan, template: package.md,
+       satisfies: [FRC-CSO-FCP, FRC-CSO-PKG, FRC-CSO-JSN, FRC-CSO-MRA, FRC-CSO-POP, FRC-CLA-ASF, FRC-CLA-EAM, FRC-CLA-MFR, FRC-CLA-RFR,
+                   FRC-APP-MLF, FRC-APP-AFC, FRC-APP-FCP, FRC-APP-FIA, FRC-APP-NTP, FRC-CSX-VVK, FRC-CSX-VVR, FRC-CSX-MAS,
+                   CPO-CSO-OVR, CPO-CSO-MTD, CPO-CSO-OSA, CPO-CSX-CPM, SDR-CSO-FRR, SDR-CSO-MTD, SDR-CSX-KSI, SDR-CSX-KMT,
+                   IVV-CSO-FIA, IVV-CSO-SEI, IVV-CSO-SEE, IVV-CSO-ICP, IVV-CSO-DUS, IVV-CSO-STE, IVV-CSX-AIA],
+       sections: [Purpose, Certification class and path, The certification package, Security decision records, Independent assessment, Automated validation, Applying and maintaining, Review]}
+    - {id: DOC-FR-SCOPE, title: "Minimum Assessment Scope", kind: record, template: scope.md,
+       satisfies: [MAS-CSO-IIR, MAS-CSO-FLO, MAS-CSO-TPR, MAS-CSO-MDI],
+       sections: [Purpose, Information resources, Information flows and security categories, Third-party information resources, Metadata, Review]}
+    - {id: DOC-FR-COMMS, title: "FedRAMP Communications Procedure", kind: procedure, template: communications.md,
+       satisfies: [AFC-CSO-INB, AFC-CSO-NOC, AFC-CSO-TFG, AFC-CSO-RCV, AFC-CSO-CRA, AFC-CSO-EMR, AFC-CSO-IMA, AFC-CSO-ACK],
+       sections: [Purpose, FedRAMP security inbox, Receiving messages, Emergency and important messages, Required actions, Review]}
+    - {id: DOC-FR-TRUST, title: "Trust Center and Certification Data Sharing Procedure", kind: procedure, template: trust-center.md,
+       satisfies: [CDS-CSO-PUB, CDS-CSO-SVC, CDS-CSO-FID, CDS-CSO-FRC, CDS-CSO-AVR, CDS-CSO-UTC, CDS-CSO-CBF, CDS-CSO-RIS, CDS-CSO-IRP,
+                   CDS-CSO-HAD, CDS-TRC-USH, CDS-TRC-PAC, CDS-TRC-AAI, CDS-TRC-ACL, CDS-TRC-HMR, CDS-TRC-SSM, CDS-UTC-AAD, CDS-UTC-AGA],
+       sections: [Purpose, Public information, Trust center, Agency access, Availability reporting, Historical data, Review]}
+    - {id: DOC-FR-CONMON, title: "Ongoing Certification Reports and Quarterly Reviews", kind: procedure, template: continuous-monitoring.md,
+       satisfies: [CCM-OCR-AVL, CCM-OCR-NRD, CCM-OCR-FBM, CCM-OCR-AFS, CCM-OCR-LSI, CCM-OCR-SOR, CCM-QTR-MTG, CCM-QTR-REG, CCM-QTR-NRD,
+                   CCM-QTR-NID, CCM-QTR-SAR, CCM-QTR-ACT, CCM-QTR-RTR, CCM-QTR-RTP],
+       sections: [Purpose, Ongoing Certification Reports, Agency feedback, Quarterly Reviews, Sensitive information, Review]}
+    - {id: DOC-FR-SCN, title: "Significant Change Notification Procedure", kind: procedure, template: significant-change.md,
+       satisfies: [SCN-CSO-EVA, SCN-CSO-MAR, SCN-CSO-INF, SCN-CSO-HIS, SCN-CSO-HRM, SCN-ADP-NTF, SCN-RTR-NNR, SCN-TRF-NIP, SCN-TRF-NFP,
+                   SCN-TRF-NAF, SCN-TRF-NAV, SCN-TRF-UPD, SCN-TRF-TPR],
+       sections: [Purpose, Evaluating changes, Routine recurring changes, Adaptive changes, Transformative changes, Records and history, Review]}
+    - {id: DOC-FR-INCIDENT, title: "Incident Response and FedRAMP Incident Reporting Procedure", kind: procedure, template: incidents.md,
+       satisfies: [IEC-CSO-EFR, IEC-CSO-DPR, IEC-CSO-IIR, IEC-CSO-OIR, IEC-CSO-FIR, IEC-CSO-EFI, IEC-CSO-AIR, KSI-INR-AAR, KSI-INR-RIR, KSI-INR-RPI],
+       sections: [Purpose, Evaluating reportability, Rating the impact, Initial Ongoing and Final Incident Reports, After action reports, Reviewing procedures and past incidents, Review]}
+    - {id: DOC-FR-VULN, title: "Vulnerability Detection, Evaluation and Reporting Procedure", kind: procedure, template: vulnerabilities.md,
+       satisfies: [VDR-CSO-DET, VDR-CSO-RES, VDR-CSO-FAV, VDR-CSO-DFR, VDR-CSO-ADT, VDR-CSO-DAC, VDR-CSO-MSP, VDR-CSO-AKE, VDR-TFR-NMV,
+                   VDR-TFR-PDD, VDR-TFR-PCD, VDR-TFR-PVR, VDR-TFR-RMN, VDR-TFR-KEV, VDR-TFR-PSD, VDR-TFR-MVX,
+                   VER-EVA-ELX, VER-EVA-EIR, VER-EVA-EPA, VER-EVA-AIA, VER-EVA-GRV, VER-EVA-EFP, VER-EVA-EFA, VER-RPT-PER, VER-RPT-VDT,
+                   VER-RPT-AVI, VER-RPT-NID, VER-RPT-HLO, VER-TFR-MHR, VER-TFR-MAV, VER-TFR-MRH, VER-TFR-EVU, VER-TFR-IRI],
+       sections: [Purpose, Detection, Evaluation, Potential Agency Impact rating, Mitigation and remediation timeframes, Known exploited vulnerabilities, Accepted vulnerabilities, Reporting, Review]}
+    - {id: DOC-FR-SCG, title: "Secure Configuration Guide and Cryptographic Modules", kind: standard, template: secure-configuration.md,
+       satisfies: [SCG-CSO-RSC, SCG-CSO-AUP, SCG-CSO-PUB, SCG-CSO-SDF, SCG-ENH-CMP, SCG-ENH-EXP, SCG-ENH-API, SCG-ENH-MRG, SCG-ENH-VRH,
+                   CMU-CSO-CMD, CMU-CSO-UVM, CMU-CSO-CAT],
+       sections: [Purpose, Secure configuration guide for customers, Secure defaults, Guide capabilities, Cryptographic modules, Review]}
+    - {id: DOC-FR-TRAINING, title: "Cybersecurity Education Standard", kind: standard, template: training.md,
+       satisfies: [KSI-CED-RAT], sections: [Purpose, Training by role, Measuring effectiveness, Review]}
+    - {id: DOC-FR-CHANGE, title: "Change Management Standard", kind: standard, template: change.md,
+       satisfies: [KSI-CMT-LMC, KSI-CMT-RMV, KSI-CMT-RVP, KSI-CMT-VTD], sections: [Purpose, Logging changes, Immutable redeployment, Validation in the pipeline, Reviewing change procedures, Review]}
+    - {id: DOC-FR-ARCH, title: "Cloud Native Architecture Standard", kind: standard, template: architecture.md,
+       satisfies: [KSI-CNA-DFP, KSI-CNA-EIS, KSI-CNA-IBP, KSI-CNA-MAT, KSI-CNA-OFA, KSI-CNA-RNT, KSI-CNA-RVP, KSI-CNA-ULN],
+       sections: [Purpose, Functionality and privileges, Network traffic and logical networking, Attack surface, Availability, Intended state, Reviewing protections, Review]}
+    - {id: DOC-FR-IAM, title: "Identity and Access Management Standard", kind: standard, template: identity.md,
+       satisfies: [KSI-IAM-AAM, KSI-IAM-APM, KSI-IAM-ELP, KSI-IAM-JIT, KSI-IAM-SNU, KSI-IAM-SUS],
+       sections: [Purpose, Phishing-resistant and passwordless authentication, Non-user authentication, Account lifecycle automation, Least privilege and just-in-time access, Suspicious activity, Review]}
+    - {id: DOC-FR-LOGGING, title: "Monitoring, Logging and Auditing Standard", kind: standard, template: logging.md,
+       satisfies: [KSI-MLA-ALA, KSI-MLA-EVC, KSI-MLA-LET, KSI-MLA-OSM, KSI-MLA-RVL],
+       sections: [Purpose, Event types, SIEM, Reviewing logs, Evaluating configurations, Log access, Review]}
+    - {id: DOC-FR-GOVERNANCE, title: "Security Governance, Policy and Inventory Standard", kind: policy, template: governance.md,
+       satisfies: [KSI-PIY-GIV, KSI-PIY-RES, KSI-PIY-RIS, KSI-PIY-RSD, KSI-PIY-RVD],
+       sections: [Purpose, Inventories, Executive support, Security investment, Security in the development lifecycle, Vulnerability disclosure, Review]}
+    - {id: DOC-FR-RECOVERY, title: "Recovery Planning Standard", kind: plan, template: recovery.md,
+       satisfies: [KSI-RPL-ABO, KSI-RPL-ARP, KSI-RPL-RRO, KSI-RPL-TRC],
+       sections: [Purpose, Recovery objectives, Recovery plan, Backups, Testing recovery, Review]}
+    - {id: DOC-FR-SUPPLY, title: "Supply Chain Risk Standard", kind: standard, template: supply-chain.md,
+       satisfies: [KSI-SCR-MIT, KSI-SCR-MON], sections: [Purpose, Assessing and mitigating supply chain risk, Monitoring, Review]}
+    - {id: DOC-FR-SERVICE, title: "Service Configuration and Security Improvement Standard", kind: standard, template: service-configuration.md,
+       satisfies: [KSI-SVC-ACM, KSI-SVC-ASM, KSI-SVC-EIS, KSI-SVC-PRR, KSI-SVC-RUD, KSI-SVC-SIN, KSI-SVC-VCM, KSI-SVC-VRI],
+       sections: [Purpose, Configuration management, Secrets, Securing information, Communications and resource integrity, Residual risk and unwanted data, Evaluating and improving security, Review]}
+
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: changes, content: context_changes, title: "Significant changes, scope changes and new FedRAMP rules"}
+    - {id: performance, content: performance, title: "Indicator measures, vulnerability timeframes met, reports delivered on time"}
+    - {id: risks, content: risks_and_impacts, title: "Accepted vulnerabilities and SHOULD rules not followed"}
+    - {id: suppliers, content: suppliers, title: "Third-party information resources and supply chain risk"}
+    - {id: incidents, content: incidents, title: "Incidents and agency feedback"}
+    - {id: resources, title: "Executive support and investment in security"}
+    - {id: improvement, title: "Opportunities for improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.15, governance: 0.2, implement: 0.3, test: 0.15, stage1: 0.15, stage2: 0.05}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and scoping", keywords: [kickoff, kick-off, scoping, scope, boundary, mas, inventory]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Procedures and decision records", keywords: [policy, procedure, document, drafting, sdr, decision record]}
+    - {id: automation, title: "Evidence automation", keywords: [automation, pipeline, collector, machine-readable, json, ksi]}
+    - {id: evidence_review, title: "Evidence review and validation", keywords: [evidence, review, testing, sample, validation, request]}
+    - {id: internal_audit, title: "Readiness review", keywords: [readiness review, internal audit, audit, workpaper]}
+    - {id: management_review, title: "Leadership review", keywords: [management review, board, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective, vulnerability]}
+    - {id: certification, title: "Independent assessment and certification", keywords: [assessment, assessor, 3pao, certification, package, fedramp]}
+    - {id: other, title: "Other", keywords: []}

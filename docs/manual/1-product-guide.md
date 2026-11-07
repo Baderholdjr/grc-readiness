@@ -377,7 +377,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 ## 18. Frameworks
 
-> **In plain terms:** ISO 42001 (AI), ISO 27001 (information security) and SOC 2 are built in. A client working towards more than one gets one workspace with a record per framework, and sees each on the client site as its own tab. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
+> **In plain terms:** Seven frameworks are built in: ISO 42001 (AI), ISO 27001 (information security), SOC 2, HIPAA, TX-RAMP, GDPR and FedRAMP 20x. A client working towards more than one gets one workspace with a record per framework, and sees each on the client site as its own tab. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
 
 > **For GRC practitioners:** Each standard keeps its own record:
 > - its own Statement of Applicability, gaps and policies
@@ -467,16 +467,28 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 > **Under the hood:** start a record with `new-engagement --framework gdpr --categories controller,processor,transfers`. Catalog, playbook and 16 templates are in `frameworks/gdpr/`; mappings in `mappings/gdpr__iso27001.yaml` and `gdpr__soc2.yaml`.
 
-The six frameworks side by side:
+### FedRAMP 20x
 
-| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR |
-|---|---|---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 11 processor + 11 situational |
-| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents |
-| Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog |
-| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance |
-| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision | Readiness assessment, independent assessment |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count | To ISO 27001: 24 related; to SOC 2: 22 related |
+> **In plain terms:** Federal agencies can only use cloud services FedRAMP has certified. Under FedRAMP 20x, the company proves its security mostly with automated, machine-readable evidence rather than long written plans: it shows a set of Key Security Indicators (least-privilege access, tested recovery, logging and so on), follows FedRAMP's rules for fixing vulnerabilities, reporting incidents and announcing changes within set times, and has an independent assessor check it. Classes A to D give agencies increasing assurance: Class A builds on a recent SOC 2 Type II, GovRAMP or FedRAMP Rev5 assessment and asks the least; Class C asks more than Class B.
+
+> **For GRC practitioners:**
+> - **Catalog:** generated from FedRAMP's Consolidated Rules dataset: 46 Key Security Indicators and 141 process rules (96 MUST, 45 SHOULD; 8 of the MUST rules are a SHOULD for a lower class), ids such as `KSI-IAM-ELP` and `VDR-TFR-PDD`, with FedRAMP's own statements, per-class timeframes and NIST SP 800-53 mappings.
+> - **Classes:** `class_a` (44 requirements: the rules and 7 indicators FedRAMP lists for Class A), `class_b` (176), or `class_b,class_c` (183). Class D isn't covered yet. W113 until a class is chosen; W115 for `class_c` without `class_b`, or Class A combined with another class.
+> - **Kinds:** indicators and MUST rules can't be excluded; a SHOULD rule can be, with the reason and the risk to customers. A senior official's acceptance of an unmet indicator or rule is an accepted risk in the gap register.
+> - **Dates:** `stage1` is the independent assessment; `stage2` the certification decision.
+
+> **Under the hood:** start a record with `new-engagement --framework fedramp20x --categories class_b,class_c`. Catalog, playbook and 18 templates are in `frameworks/fedramp20x/`; regenerate the catalog with `tools/fedramp20x.py` when FedRAMP updates its rules.
+
+The seven frameworks side by side:
+
+| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR | FedRAMP 20x |
+|---|---|---|---|---|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 11 processor + 11 situational | 40 for every class + 4 Class A, 136 Class B and C, 7 Class C only |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents | 18 documents (12 for Class A) |
+| Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog | No |
+| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance | FedRAMP certification (Class A, B or C; D not covered yet) |
+| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision | Readiness assessment, independent assessment | Independent assessment, certification decision |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count | To ISO 27001: 24 related; to SOC 2: 22 related | None yet; FedRAMP's own NIST SP 800-53 mappings are in the catalog |
 
 ## 19. The compliance program: common controls, calendar and certification
 
@@ -618,8 +630,9 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W108 / W109 | warning | A collector check is failing / ran but errored |
 | W110 / W111 | warning | Client claim with no owner / owner not in owners.yaml |
 | W112 | warning | SOC 2: an open gap whose requirements are all in categories taken out of scope; it is no longer chased (no request, issue closed) |
-| W113 | warning | HIPAA: no role chosen; add `covered_entity` and/or `business_associate` to `scope.categories` |
+| W113 | warning | No role or class chosen: HIPAA `covered_entity` and/or `business_associate`; GDPR `controller` and/or `processor`; FedRAMP 20x `class_a` or `class_b` |
 | W114 | warning | HIPAA: work has started on an addressable specification but its `decision` isn't recorded |
+| W115 | warning | A chosen category needs another one too (FedRAMP 20x `class_c` adds to `class_b`), or can't be combined with one chosen (Class A with Class B) |
 | W120–W123 | warning | Finding past due; 9.2 verified while no audit has reached reporting or closed; audit overrunning; in-scope requirement without a workpaper |
 | W124 / W125 | warning | Audit scope or exclude entry matches no requirement / a workpaper cited on a different requirement from the one it tested |
 | W130–W133 | warning | AI system without an assessment; not yet approved; past review; residual above inherent |

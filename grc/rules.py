@@ -209,6 +209,19 @@ def check_applicability(model: Engagement) -> list[Finding]:
     if one_of and not set(one_of) & {str(c) for c in chosen}:
         out.append(Finding("warning", "W113", f"scope.categories: choose at least one of {', '.join(one_of)}; until then the "
                            "duties that depend on it are left out.", _rel(model, model.engagement_dir / "engagement.yaml")))
+    # W115 categories that need, or rule out, another (FedRAMP 20x: Class C adds to Class B; Class A stands alone)
+    picked = {str(c) for c in chosen}
+    for c in sorted(picked & set(model.category_index)):
+        cat = model.category_index[c]
+        missing = [str(r) for r in cat.get("requires") or [] if str(r) not in picked]
+        clash = [str(x) for x in cat.get("excludes") or [] if str(x) in picked]
+        if missing:
+            out.append(Finding("warning", "W115", f"scope.categories: '{c}' adds to {', '.join(missing)}; choose "
+                               f"{' and '.join(missing)} as well, or its requirements are left out.",
+                               _rel(model, model.engagement_dir / "engagement.yaml")))
+        if clash:
+            out.append(Finding("warning", "W115", f"scope.categories: '{c}' can't be combined with {', '.join(clash)}; "
+                               "choose one.", _rel(model, model.engagement_dir / "engagement.yaml")))
     return out
 
 

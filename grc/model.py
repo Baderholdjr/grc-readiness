@@ -290,15 +290,23 @@ class Engagement:
         cat = self.category_index.get(str(req.get("category") or ""))
         if cat and len(self.catalog.get("kinds") or {}) < 2:
             return str(cat.get("short") or cat.get("title"))
-        info = self.kind(req.get("kind"))
+        info = self.kind(self.effective_kind(req))
         return str(info.get("short") or info.get("label"))
+
+    def effective_kind(self, req: dict) -> str:
+        """A requirement whose force depends on the categories chosen (FedRAMP 20x: a MUST for Class B and C that
+        is a SHOULD for Class A) names them in `mandatory_in`; outside them it is its `kind_otherwise`."""
+        only = [str(c) for c in req.get("mandatory_in") or []]
+        if only and req.get("kind_otherwise") and not set(only) & self.categories_in_scope:
+            return str(req["kind_otherwise"])
+        return str(req.get("kind") or "")
 
     def needs_decision(self, req_id: str) -> bool:
         """A kind that stays in scope but records how it is met (HIPAA addressable: as written, or an alternative)."""
-        return bool(self.kind(self.requirement_index.get(req_id, {}).get("kind")).get("decision"))
+        return bool(self.kind(self.effective_kind(self.requirement_index.get(req_id, {}))).get("decision"))
 
     def is_mandatory(self, req_id: str) -> bool:
-        return bool(self.kind(self.requirement_index.get(req_id, {}).get("kind")).get("mandatory"))
+        return bool(self.kind(self.effective_kind(self.requirement_index.get(req_id, {}))).get("mandatory"))
 
     @property
     def category_index(self) -> dict[str, dict]:
