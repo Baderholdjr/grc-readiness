@@ -108,6 +108,7 @@ class Engagement:
     gaps: list[dict] = field(default_factory=list)
     evidence: list[dict] = field(default_factory=list)
     inventory: list[dict] = field(default_factory=list)
+    existing_controls: list[dict] = field(default_factory=list)   # the client's own register (existing-controls.yaml)
     owners: list[dict] = field(default_factory=list)
     human_evidence_count: int = 0
     audits: list[dict] = field(default_factory=list)          # engagement/audit/program.yaml
@@ -410,6 +411,13 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
     inv = edir / "inventory.yaml"
     if inv.exists():
         model.inventory = load_yaml(inv).get("items", []) or []
+    exc = edir / "existing-controls.yaml"
+    if exc.exists():
+        rows = (load_yaml(exc) or {}).get("controls") or []
+        model.existing_controls = rows if isinstance(rows, list) else []
+        for r in model.existing_controls:
+            if isinstance(r, dict) and isinstance(r.get("maps"), list):
+                r["maps"] = [str(x) for x in r["maps"]]
     prog = edir / "audit" / "program.yaml"
     if prog.exists():
         model.audits = load_yaml(prog).get("audits", []) or []

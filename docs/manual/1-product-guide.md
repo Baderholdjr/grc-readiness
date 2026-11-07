@@ -167,6 +167,17 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 >
 > Timesheets under `intake/timesheets/` are never sent to AI drafting.
 
+### A client's existing GRC setup: the gap assessment
+
+> **In plain terms:** Most clients already have something: a GRC tool, a spreadsheet of controls, policies, last year's SOC 2 report or pen test. Upload whatever they have. The tool works out how far it already goes towards the framework and produces a gap assessment the client can read: what's covered, what's partly there, what's missing, and a plan to close the gaps.
+
+> **For GRC practitioners:**
+> - **Control registers** (a GRC tool's controls export, or the client's own spreadsheet) are recognized by their columns: a control name plus a framework-mapping or requirements column. No AI is involved. Requirement IDs are read the way tools write them (`SOC 2: CC6.2`, `ISO 27001: Annex A 8.8`, `Art. 32(1)(b)`, `164.308(a)(1)(ii)(A)`, `AC-2 (3)`), and a piece of a cell that names another framework is skipped. A row in place becomes *documented* and *implemented* claims; partly in place, a *documented* claim and a medium gap; not in place or failing, a high gap; no status, a *documented* claim. Every row, mapped or not, is kept in `existing-controls.yaml`, where an analyst can correct `maps` (W116 if one names an ID the catalog doesn't have).
+> - **Prior audit reports** (SOC 2 reports, ISO certificates and SoAs, pen tests, earlier assessments) go to Claude like any document. Each exception, deviation or nonconformity becomes a gap; the report itself becomes evidence for its period; controls it says it tested become claims on the *tested* leg, others on *implemented*; a different period or scope becomes an open question.
+> - **The gap assessment** (`gap-assessment.md` and `.docx`, in every build) gives each requirement in scope one state: Verified, Reported in place, Partly in place, Gap, or No existing control. It shows coverage by area, the gaps to close by severity, requirements nothing covers, the client's controls that map to nothing, a roadmap of gaps by phase, and the files reviewed. It has no hours, budget or analyst notes, so it can go to the client.
+
+> **Under the hood:** `grc/ingest/register.py` (column synonyms, status words, ID patterns per framework) and `grc/gap_assessment.py`. Statuses are read from words such as Implemented, Passing, In progress, Draft, Not implemented, Failing, Needs remediation.
+
 ## 7. Collecting evidence automatically
 
 > **In plain terms:** Instead of asking the client for screenshots every month, the tool checks their systems directly every day, read-only. For example, it checks that code changes are reviewed, cloud logs are kept, policies are approved, and AI incidents are handled on time. When a check fails, everyone sees it straight away.
@@ -644,6 +655,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W112 | warning | SOC 2: an open gap whose requirements are all in categories taken out of scope; it is no longer chased (no request, issue closed) |
 | W113 | warning | No role or class chosen: HIPAA `covered_entity` and/or `business_associate`; GDPR `controller` and/or `processor`; FedRAMP 20x `class_a` or `class_b`; Global CBPR `cbpr` and/or `prp` |
 | W114 | warning | HIPAA: work has started on an addressable specification but its `decision` isn't recorded |
+| W116 | warning | `existing-controls.yaml` maps a client control to a requirement ID the catalog doesn't have |
 | W115 | warning | A chosen category needs another one too (FedRAMP 20x `class_c` adds to `class_b`), or can't be combined with one chosen (Class A with Class B) |
 | W120–W123 | warning | Finding past due; 9.2 verified while no audit has reached reporting or closed; audit overrunning; in-scope requirement without a workpaper |
 | W124 / W125 | warning | Audit scope or exclude entry matches no requirement / a workpaper cited on a different requirement from the one it tested |

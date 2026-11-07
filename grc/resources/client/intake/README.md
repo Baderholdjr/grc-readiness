@@ -5,7 +5,9 @@ Drop client documents here, in a pull request, to draft the engagement record au
 **How:** On GitHub choose **Add file → Upload files**, select the documents, and choose
 *Create a new branch … and start a pull request*. The **Ingest** workflow:
 
-1. Imports any file that matches an intake template (see `templates/intake/`) exactly as written.
+1. Imports any file that matches an intake template (see `templates/intake/`) exactly as written, and any
+   **control register** (your GRC tool's controls export, or your own controls spreadsheet with a column of
+   framework mappings) into `existing-controls.yaml`, with claims and gaps from each control's status.
 2. Sends every other document (Word, PDF, Excel, Markdown, text) to Claude to draft:
    client profile, AI usage, what's in place, AI inventory, gaps, evidence pointers, and
    client *claims* against the four-part evidence test. Every item cites its source.

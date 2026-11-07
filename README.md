@@ -7,7 +7,7 @@
 The engagement record lives in this repo as YAML. Git history is the audit trail, pull requests are approvals, and CI enforces the evidence rules. The analyst brief, control matrix, Statement of Applicability, gap register, evidence index and an **Excel workbook** of the whole record are **generated** from it and never edited by hand.
 
 ```
- client documents ──upload to intake/──▶ INGEST (templates + Claude drafting) ──┐
+ client documents ──upload to intake/──▶ INGEST (templates/registers, Claude) ──┐
  GitHub · Drata · AWS/Azure/GCP · Jira · SharePoint/Google Drive · SageMaker/MLflow
                              ──daily──▶ COLLECT (evidence snapshots) ─────────┤  both open PRs
                                                                                  ▼
