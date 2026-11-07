@@ -248,3 +248,79 @@ def test_later_batches_see_the_gaps_earlier_batches_drafted(tmp_path):
         return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps({"gaps": [gap]})}]}
     ingest.run(edir, intake, transport=transport)
     assert len(prompts) == 2 and "Finding from call 1" not in prompts[0] and "Finding from call 1" in prompts[1]
+
+
+def _record(root, name, framework):
+    from grc.cli import main
+    e, i = root / name, root / ("intake" + name[len("engagement"):])
+    assert main(["--engagement", str(e), "new-engagement", "--client", "Larch & Finch", "--start", "2026-11-02",
+                 "--stage1", "2027-02-01", "--stage2", "2027-05-01", "--framework", framework, "--intake", str(i),
+                 "--confirm-reset"]) == 0
+    (e / "engagement.yaml").write_text((e / "engagement.yaml").read_text() + "\ningest:\n  ai_drafting: true\n")
+    return e, i
+
+
+def test_one_read_serves_several_records(tmp_path):
+    e1, i1 = _record(tmp_path, "engagement", "iso27001")
+    e2, i2 = _record(tmp_path, "engagement-soc2", "soc2")
+    for i in (i1, i2):                                       # the same policy in both intake folders
+        (i / "02-Policies").mkdir()
+        _doc(i / "02-Policies" / "Access.docx", "Access is reviewed every quarter. Annual penetration test.")
+    _doc(i2 / "Only-soc2.docx", "Uptime commitment 99.9%.")
+    bodies = []
+
+    def transport(body):
+        bodies.append(body)
+        out = {"client_overview": [], "ai_usage": [], "in_place": [], "inventory": [], "evidence": [], "open_questions": [],
+               "scope_statements": [{"framework": "iso27001", "statement": "ISMS scope."},
+                                    {"framework": "soc2", "statement": "System boundary."}],
+               "gaps": [{"area": "Access reviews", "finding": "No record of quarterly reviews.", "owner": "", "severity": "high",
+                         "requirements": ["iso27001:A.5.18", "soc2:CC6.2"], "source": "02-Policies/Access.docx: 'every quarter'"},
+                        {"area": "Unevidenced claim: penetration test", "finding": "No report provided.", "owner": "",
+                         "severity": "medium", "requirements": ["iso27001:A.8.8"], "source": "02-Policies/Access.docx: 'Annual'"},
+                        {"area": "Availability", "finding": "No uptime monitoring record.", "owner": "", "severity": "medium",
+                         "requirements": ["soc2:A1.1"], "source": "Only-soc2.docx: 'Uptime commitment'"}],
+               "claims": [{"requirement": "iso27001:A.5.18", "leg": "implemented", "statement": "Reviewed quarterly.",
+                           "owner": "", "source": "02-Policies/Access.docx: 'every quarter'"},
+                          {"requirement": "soc2:CC6.2", "leg": "implemented", "statement": "Reviewed quarterly.",
+                           "owner": "", "source": "02-Policies/Access.docx: 'every quarter'"}]}
+        return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps(out)}]}
+    reports = ingest.run_many([(e1, i1), (e2, i2)], transport=transport)
+    # one call: the shared policy is sent once, with both catalogs and the multi-record rules
+    assert len(bodies) == 1
+    prompt = bodies[0]["messages"][0]["content"]
+    assert prompt.count('<document name="02-Policies/Access.docx">') == 1 and "Only-soc2.docx" in prompt
+    assert "iso27001:A.5.18\t" in prompt and "soc2:CC6.2\t" in prompt
+    assert "several records" in bodies[0]["system"] and "scope_statements" in json.dumps(bodies[0]["output_config"])
+    assert "Unevidenced claim" in bodies[0]["system"]
+    g1 = {g["area"]: g for g in yaml.safe_load((e1 / "gaps.yaml").read_text())["gaps"]}
+    g2 = {g["area"]: g for g in yaml.safe_load((e2 / "gaps.yaml").read_text())["gaps"]}
+    assert g1["Access reviews"]["requirements"] == ["A.5.18"] and g2["Access reviews"]["requirements"] == ["CC6.2"]
+    assert "Unevidenced claim: penetration test" in g1 and "Unevidenced claim: penetration test" not in g2
+    assert "Availability" in g2 and "Availability" not in g1               # the SOC 2-only document
+    c1 = yaml.safe_load((e1 / "controls" / "A.5.18.yaml").read_text())
+    c2 = yaml.safe_load((e2 / "controls" / "CC6.2.yaml").read_text())
+    assert c1["test"]["implemented"]["status"] == c2["test"]["implemented"]["status"] == "claimed"
+    assert "read once for this and 1 other record(s)" in reports[str(e1)]
+    for i in (i1, i2):
+        assert "02-Policies/Access.docx" in yaml.safe_load((i / ".processed.yaml").read_text())
+    # nothing new: no call
+    bodies.clear()
+    reports = ingest.run_many([(e1, i1), (e2, i2)], transport=transport)
+    assert bodies == [] and reports[str(e1)].startswith("No new or changed files")
+
+
+def test_other_files_in_the_upload_are_named_to_each_batch(tmp_path):
+    edir, intake = setup(tmp_path, ai=True)
+    for i in range(5):
+        _doc(intake / f"doc{i}.docx", f"Procedure {i}.")
+    _doc(intake / "Pen-Test-Report-2026.docx", "Findings: none critical.")
+    prompts = []
+
+    def transport(body):
+        prompts.append(body["messages"][0]["content"])
+        return {"stop_reason": "end_turn", "content": [{"type": "text", "text": json.dumps({})}]}
+    ingest.run(edir, intake, transport=transport)
+    assert len(prompts) == 2 and "<other_files_in_this_upload>" in prompts[0]
+    listed = [p.split("<other_files_in_this_upload>")[1].split("</other_files_in_this_upload>")[0] for p in prompts]
+    assert ("Pen-Test-Report-2026.docx" in listed[0]) != ("Pen-Test-Report-2026.docx" in listed[1])

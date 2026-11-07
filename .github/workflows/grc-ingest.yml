@@ -49,8 +49,13 @@ jobs:
         run: |
           engs=$(python -m grc engagements) || exit 1
           : > ingest-report.md
+          # Engines from 0.20 read a document once for every record that has it (--all); older ones go record by record.
+          if python -m grc ingest --help | grep -q -- "--all"; then
+            python -m grc ingest --all --report-dir .
+          else
+            for e in $engs; do python -m grc --engagement "$e" ingest --report "report-$e.md"; done
+          fi
           for e in $engs; do
-            python -m grc --engagement "$e" ingest --report "report-$e.md"
             # only records whose folder had new or changed files get a section
             if ! grep -q "^No new or changed files" "report-$e.md"; then
               { [ "$e" = engagement ] || printf '## Record %s/\n\n' "$e"; cat "report-$e.md"; echo; } >> ingest-report.md

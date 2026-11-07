@@ -159,6 +159,12 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - A leg moves `not_started` → `claimed` and never further.
 > - Processed files and their hashes are recorded in `intake/.processed.yaml`.
 >
+> Documents go to Claude at most four at a time, and a batch whose answer is cut off is split and sent again. Each batch is told the names of the other files in the upload. Later batches see the gaps earlier ones drafted.
+>
+> **A claim with no record** (an annual penetration test, log retention, MDM, restore tests, a tabletop) is recorded as a claim and also raised as a gap whose area starts `Unevidenced claim:`, saying which record would prove it, unless another file in the upload is plainly that record. Close it when the record arrives.
+>
+> **Several records** (`engagement/`, `engagement-27001/`, …): the workflow ingests them together (`ingest --all`). A document that sits in more than one intake folder is sent to Claude once, with every record's catalog. Each finding comes back with the IDs of every framework it applies to, and each record receives only its own share. Before 0.20 the same file was read once per record, so three records paid three times.
+>
 > Timesheets under `intake/timesheets/` are never sent to AI drafting.
 
 ## 7. Collecting evidence automatically
@@ -519,7 +525,7 @@ Run from a client repository (or the engine repo) with the engine installed. Two
 | `python -m grc init` | Create a control file for any catalog requirement without one |
 | `python -m grc sync-issues [--apply]` | Mirror gaps to Issues and milestones (dry run by default) |
 | `python -m grc collect [--only EV-…] [--dry-run]` | Run evidence collectors |
-| `python -m grc ingest` | Draft the record from new files in its intake folder (`intake/`, or `intake-27001/` for `engagement-27001/`) |
+| `python -m grc ingest` | Draft the record from new files in its intake folder (`intake/`, or `intake-27001/` for `engagement-27001/`); `--all` does every record and reads a shared document once |
 | `python -m grc new-engagement --client … --start … --stage1 … --stage2 … --confirm-reset` | Reset the record for a new client |
 | `python -m grc codeowners` | Write control owners into CODEOWNERS |
 | `python -m grc bootstrap --dir DIR --engine-repo OWNER/REPO` | Write a new thin client repository |
