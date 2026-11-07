@@ -11,8 +11,10 @@ test:
     evidence:
     - EV-020
   implemented:
-    status: claimed
-    evidence: []
+    status: partial
+    evidence:
+    - EV-101
+    note: 'Auto: collector evidence EV-101 passing. Analyst to confirm before ''verified''.'
   evidenced:
     status: not_started
     evidence: []
