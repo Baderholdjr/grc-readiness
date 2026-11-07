@@ -58,17 +58,17 @@ HINT_RE = {k: re.compile(v, re.I) for k, v in HINTS.items()}
 PIECES = re.compile(r"[;\n|]+|,(?=\s*(?:iso|soc|hipaa|gdpr|nist|tx-?ramp|fedramp|cbpr|prp|ksi|45\s*cfr|aicpa)\b)", re.I)
 
 NOT_APPLICABLE = re.compile(r"^(n/?a|not applicable|not relevant|out of scope|excluded|exclude|retired|deprecated|"
-                            r"disabled|inactive|no longer used|not in scope)$", re.I)
+                            r"no longer used|not in scope)$", re.I)
 IN_PLACE = re.compile(r"^(implemented|fully implemented|in place|operating|operating effectively|effective|compliant|"
                       r"passing|passed|pass|ok|okay|healthy|complete|completed|done|yes|y|active|met|fully met|green|"
                       r"monitored|ready|configured|enabled|in use|true|1|x)$", re.I)
 ACCEPTED = re.compile(r"\b(accepted risk|risk accepted|risk acceptance)\b", re.I)
 NOT_IN_PLACE = re.compile(r"\b(not implemented|not in place|missing|gaps?|fail|failing|failed|non-?compliant|no|n|false|"
                           r"0|not met|ineffective|overdue|needs attention|needs remediation|at risk|red|not operating|"
-                          r"deficien\w*|not configured|not enabled)\b", re.I)
+                          r"deficien\w*|not configured|not enabled|not yet implemented|disabled|inactive)\b", re.I)
 PLANNED = re.compile(r"\b(planned|scheduled|not started|to ?do|backlog|deferred|future|roadmap|proposed)\b", re.I)
 PARTIAL = re.compile(r"\b(partial\w*|in progress|in-progress|draft|started|amber|yellow|needs review|pending|due soon|"
-                     r"exception|deviation|some|limited)\b", re.I)
+                     r"exceptions?|deviations?|some|limited)\b", re.I)
 
 STATES = ("in_place", "partial", "planned", "not_in_place", "not_applicable", "unknown")
 
@@ -132,6 +132,8 @@ def state_of(status: str, applicable: str = "") -> str:
         return "not_applicable"
     if IN_PLACE.match(s):
         return "in_place"
+    if re.search(r"\bnot yet implemented\b|\bdisabled\b|\binactive\b", s, re.I):
+        return "not_in_place"
     if ACCEPTED.search(s):
         return "not_in_place"
     if PLANNED.search(s):
@@ -187,7 +189,7 @@ def ids_in(text: str, fw: str, known: set[str], hinted: bool = False, annex: boo
         rest = re.sub(r"(?:annex\s*)?\bA\s*\.?\s*\d{1,2}(?:\.\d{1,2}){1,2}\b", " ", t, flags=re.I)
         rest = re.sub(r"\b(?:iso|iec)\s*/?\s*(?:iec\s*)?\d{4,5}(?::\d{4})?|\b(?:27001|42001)(?::\d{4})?", " ", rest, flags=re.I)
         if hinted or annex or re.search(r"clause", t, re.I):
-            for m in re.finditer(r"(?:clause\s*)?\b(\d{1,2}(?:\.\d{1,2}){1,2})\b(?!\s*(?:hours?|hrs|days?|%|mb|gb))", rest, re.I):
+            for m in re.finditer(r"(?<!version )(?<!version)(?<!\bv)(?<!\bv )(?:clause\s*)?\b(\d{1,2}(?:\.\d{1,2}){1,2})\b(?!\s*(?:hours?|hrs|days?|%|mb|gb))", rest, re.I):
                 n = m.group(1)
                 if annex or not ISO_CLAUSE.match(n):
                     add([f"A.{n}"], m.group(0))
@@ -301,7 +303,7 @@ def to_draft(table: list[list[str]], source: str, fw: str, known: set[str], labe
         if not ids:
             unmapped += 1
             continue
-        ctl = f"{row['ref'] + ' ' if row['ref'] else ''}{name}"
+        ctl = f"{row['ref'] + ' ' if row['ref'] and row['ref'] != name else ''}{name}"
         said = f"listed in the client's control register as '{status}'" if status else "listed in the client's control register"
         what = f"{ctl}: {said}" + (f". {row['description'][:200]}" if row["description"] else "")
         if state in ("in_place", "unknown", "partial"):

@@ -172,6 +172,7 @@ def test_status_words():
         "in_place", "planned", "not_applicable", "not_applicable", "not_applicable", "partial", "not_in_place",
         "planned", "unknown", "not_applicable", "not_in_place", "unknown"]
     assert s("Yes", applicable="No") == "not_applicable"
+    assert [s(x) for x in ("Not yet implemented", "Implemented (with exceptions)", "Disabled")] == ["not_in_place", "partial", "not_in_place"]
     d, rows, _ = register.to_draft([["Control", "Status", "SOC 2"], ["Risk accepted for legacy VPN", "Accepted risk", "CC6.6"],
                                     ["Fax policy", "N/A", "CC6.7"]], "r.csv", "soc2", {"CC6.6", "CC6.7"})
     assert [(g["severity"], g["requirements"]) for g in d["gaps"]] == [("medium", ["CC6.6"])] and not d["claims"]
@@ -184,6 +185,7 @@ def test_iso_annex_numbers_and_prose():
     assert register.mapped_ids([("ISO 27001 clauses", "5.2, 8.1")], "iso27001", k)[0] == ["5.2", "8.1"]
     assert register.mapped_ids([("References", "Review takes 7.5 hours; version 6.2, section 8.1")], "iso27001", k)[0] == []
     assert register.mapped_ids([("Frameworks", "ISO 42001 9.2, ISO 27001 A.5.1")], "iso27001", k)[0] == ["A.5.1"]
+    assert register.mapped_ids([("ISO 27001 clause", "Version 6.2 of handbook; v 7.1; clause 9.2")], "iso27001", k)[0] == ["9.2"]
     assert register.mapped_ids([("Frameworks", "ISO 42001 9.2, ISO 27001 A.5.1")], "iso42001", {"9.2", "A.5.1"})[0] == ["9.2"]
     assert register.ids_in("PR 12 merged", "cbpr", {"PR12"})[0] == [] and register.ids_in("PR 12", "cbpr", {"PR12"}, hinted=True)[0] == ["PR12"]
     # a parent reference means all of it

@@ -179,7 +179,8 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > | Implemented, Passing, Configured | *documented* and *implemented* claims |
 > | In progress, Draft, Exception | a *documented* claim and a medium gap |
 > | Planned, Not started, Deferred | a medium gap |
-> | Not implemented, Failing; Accepted risk | a high gap; a medium one |
+> | Not implemented, Failing, Disabled | a high gap |
+> | Accepted risk | a medium gap (deliberately: the risk is accepted, but the requirement still isn't met) |
 > | N/A, Out of scope, Retired | nothing (listed as not applicable) |
 > | blank or unreadable | a *documented* claim |
 >
