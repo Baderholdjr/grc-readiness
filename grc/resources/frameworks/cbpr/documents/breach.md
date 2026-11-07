@@ -24,7 +24,7 @@ The outcome, the reasons and the decision to notify or not are recorded. {{clien
 
 ## Notifying individuals
 
-When a breach is likely to cause significant harm, {{client}} tells the people affected without unreasonable delay (PR5). The target is [[TODO: notification target, e.g. within 72 hours of the harm decision]]. Any delay, such as one requested by law enforcement, is recorded with its reason.
+When a breach is likely to cause significant harm, {{client}} tells the people affected without unreasonable delay (PR5). The target is [[TODO: notification target, e.g. a set number of days after the harm decision]]. Any delay, such as one requested by law enforcement, is recorded with its reason.
 
 The notice is written in plain language and says (PR5):
 
