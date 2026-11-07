@@ -8,7 +8,7 @@
 | `iso27001` | ISO/IEC 27001:2022 (information security, ISMS) | 25 clauses + 93 Annex A controls | 20 documents | No impact assessments; risk treatment and the Statement of Applicability drive Annex A |
 | `soc2` | SOC 2 (AICPA Trust Services Criteria, 2017, revised points of focus 2022) | 33 common criteria (Security) + 28 in optional categories | 18 documents (fewer if categories are left out) | An attestation, not a certification; the client chooses categories; see [SOC 2](#soc-2) |
 | `hipaa` | HIPAA Security Rule and Breach Notification Rule (45 CFR Part 164, Subparts C and D) | 64 core + 4 covered entity + 3 business associate + 4 for clearinghouses, group health plans and government entities | 19 documents (15 for most clients) | No certification; required and addressable specifications; see [HIPAA](#hipaa) |
-| `gdpr` | General Data Protection Regulation (Regulation (EU) 2016/679) | 7 core + 31 controller + 9 processor + 11 for a DPO, a representative, transfers, special categories and children | 16 documents | No certificate: demonstrable compliance; see [GDPR](#gdpr) |
+| `gdpr` | General Data Protection Regulation (Regulation (EU) 2016/679) | 7 core + 31 controller + 10 processor + 11 for a DPO, a representative, transfers, special categories and children | 16 documents | No certificate: demonstrable compliance; see [GDPR](#gdpr) |
 | `txramp` | TX-RAMP Security Controls Baselines 2.0 (Texas DIR) | 117 Level 1 controls + 106 more at Level 2 (NIST SP 800-53 Rev. 5) | 17 documents, one per control family | Certification by DIR; see [TX-RAMP](#tx-ramp) |
 
 Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria. The HIPAA regulations are US Government works; the catalog still restates them in plain words, and the eCFR text is the authority. TX-RAMP's controls are NIST SP 800-53 controls, also a US Government work, so the catalog uses NIST's titles and statements; TX-RAMP's own parameter values stay in the client's copy of DIR's Security Plan workbook.
@@ -47,7 +47,7 @@ Choose at least one role (`--categories business_associate`, or both); until the
 
 ## GDPR
 
-The catalog is the GDPR as in force: 58 obligations cited by article, such as `Art32(1)(a)`, restated in plain words. The Commission's Digital Omnibus proposal (COM(2025) 837) would change several articles (the personal-data definition, Art. 9, 12, 13, 22, 30, 33 and 35). It is still under negotiation, so it isn't reflected; update the catalog if it is adopted.
+The catalog is the GDPR as in force: 59 obligations cited by article, such as `Art32(1)(a)`, restated in plain words. The Commission's Digital Omnibus proposal (COM(2025) 837) would change several articles (the personal-data definition, Art. 9, 12, 13, 22, 30, 33 and 35). It is still under negotiation, so it isn't reflected; update the catalog if it is adopted.
 
 **Roles.** The core is always in scope: security of processing (Art. 32) and cooperation with the supervisory authority (Art. 31). Choose `controller` and/or `processor` (W113 until one is chosen). A SaaS company is usually both: a controller for its own staff and marketing data, and a processor for its customers' data. Add these categories when they apply:
 

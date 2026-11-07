@@ -90,7 +90,7 @@ phases:
     deliverables:
       - Kickoff and owner alignment
       - Decide controller and processor roles per processing activity
-      - Data mapping: systems, data categories, flows and transfers
+      - "Data mapping: systems, data categories, flows and transfers"
       - Validate gap-analysis claims and evidence
   - id: governance
     objective: "Records & policies"
@@ -169,7 +169,7 @@ documents:
     - {id: DOC-GDPR-DPIA, title: "Data Protection Impact Assessment Procedure", kind: procedure, template: dpia.md,
        satisfies: ["Art35", "Art36"], sections: [Purpose, Screening, Carrying out a DPIA, Prior consultation, Review]}
     - {id: DOC-GDPR-PROCESSOR, title: "Processor Obligations Procedure", kind: procedure, template: processor-duties.md,
-       satisfies: ["Art28(2)", "Art28(3)(a)", "Art28(3)(f)", "Art28(3)(g)", "Art28(3)(h)", "Art28(4)", "Art29", "Art30(2)", "Art33(2)"], sections: [Purpose, Customer instructions, Sub-processors, Assisting customers, Breach notification to customers, Deletion or return, Audits and information, Processing records, Review]}
+       satisfies: ["Art28(2)", "Art28(3)(a)", "Art28(3)(e)", "Art28(3)(f)", "Art28(3)(g)", "Art28(3)(h)", "Art28(4)", "Art29", "Art30(2)", "Art33(2)"], sections: [Purpose, Customer instructions, Sub-processors, Assisting customers, Breach notification to customers, Deletion or return, Audits and information, Processing records, Review]}
     - {id: DOC-GDPR-DPO, title: "Data Protection Officer Charter", kind: policy, template: dpo.md,
        satisfies: ["Art37", "Art38", "Art39"], sections: [Purpose, Designation, Independence and resources, Tasks, Contact details, Review]}
     - {id: DOC-GDPR-REPRESENTATIVE, title: "EU Representative Arrangement", kind: procedure, template: representative.md,

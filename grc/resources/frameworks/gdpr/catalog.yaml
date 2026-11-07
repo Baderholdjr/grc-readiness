@@ -70,7 +70,7 @@ requirements:
      intent: "The controller is responsible for, and must be able to demonstrate, compliance with the principles.",
      evidence_examples: ["Privacy program documentation", "Compliance reviews and their results"]}
   - {id: "Art6", kind: obligation, category: controller, group: PRN, title: "Lawful basis for processing",
-     intent: "Every processing purpose rests on one of the six lawful bases (consent, contract, legal obligation, vital interests, public task, legitimate interests), identified and recorded before processing; legitimate interests need a documented balancing test.",
+     intent: "Every processing purpose rests on one of the six lawful bases in Art. 6(1) (consent, contract, legal obligation, vital interests, public task, legitimate interests). Accountability (Art. 5(2)) and regulator guidance make it good practice to identify and record the basis before processing, and to document the balancing test for legitimate interests.",
      evidence_examples: ["Lawful basis per purpose in the records of processing", "Legitimate interests assessments"]}
   - {id: "Art7", kind: conditional, category: controller, group: PRN, title: "Conditions for consent",
      intent: "Where consent is the lawful basis, the controller can show it was given freely, specifically, informed and unambiguous, separately from other matters, and that it is as easy to withdraw as to give.",
@@ -89,7 +89,7 @@ requirements:
      intent: "Information and communications are concise, clear and free of charge; requests are answered without undue delay and within one month (extendable by two months for complex requests, with notice); the requester's identity can be verified.",
      evidence_examples: ["Request log with received and answered dates", "Identity verification steps"]}
   - {id: "Art13", kind: obligation, category: controller, group: RTS, title: "Information when data is collected from the person",
-     intent: "At collection, people are told who the controller is, contact details of the DPO, purposes and lawful bases, legitimate interests, recipients, transfers, retention, their rights, the right to complain, whether providing data is required, and any automated decision-making.",
+     intent: "At collection, people are told the controller's identity and contact details (and its representative's), the DPO's contact details where applicable, purposes and lawful bases, legitimate interests, recipients, transfers, retention, their rights, the right to withdraw consent, the right to complain, whether providing data is required, and any automated decision-making.",
      evidence_examples: ["Privacy notice", "Collection points showing the notice"]}
   - {id: "Art14", kind: obligation, category: controller, group: RTS, title: "Information when data is obtained elsewhere",
      intent: "When data comes from another source, people get the Art. 13 information plus the categories of data and the source, within a month or at first contact or disclosure, unless an Art. 14(5) exception applies.",
@@ -101,10 +101,10 @@ requirements:
      intent: "Inaccurate data is corrected, and incomplete data completed, without undue delay on request.",
      evidence_examples: ["Rectification requests handled"]}
   - {id: "Art17", kind: obligation, category: controller, group: RTS, title: "Right to erasure",
-     intent: "Data is erased without undue delay when an Art. 17(1) ground applies (no longer needed, consent withdrawn, objection upheld, unlawful processing, legal obligation), unless an Art. 17(3) exception applies; published data triggers reasonable steps to inform other controllers.",
+     intent: "Data is erased without undue delay when an Art. 17(1) ground applies (no longer needed, consent withdrawn, objection upheld, unlawful processing, legal obligation, data collected from a child for an online service), unless an Art. 17(3) exception applies; published data triggers reasonable steps to inform other controllers.",
      evidence_examples: ["Erasure procedure covering backups and processors", "Completed erasure requests"]}
   - {id: "Art18", kind: obligation, category: controller, group: RTS, title: "Right to restriction of processing",
-     intent: "Processing is restricted (stored, not otherwise used) while accuracy or an objection is checked, or when the person asks instead of erasure.",
+     intent: "Processing is restricted (stored, not otherwise used) while accuracy or an objection is checked, when processing is unlawful and the person asks for restriction instead of erasure, or when the controller no longer needs the data but the person needs it for legal claims.",
      evidence_examples: ["Restriction flag or procedure in systems"]}
   - {id: "Art19", kind: obligation, category: controller, group: RTS, title: "Telling recipients about rectification, erasure or restriction",
      intent: "Each recipient of the data is told of any rectification, erasure or restriction unless impossible or disproportionate; the person is told who the recipients are on request.",
@@ -135,7 +135,7 @@ requirements:
      intent: "Each processor is bound by a contract setting out the subject matter, duration, nature and purpose, types of data and categories of people, and the Art. 28(3)(a)-(h) terms (instructions, confidentiality, security, sub-processors, assistance, deletion or return, audits).",
      evidence_examples: ["Signed data processing agreements", "DPA clause checklist"]}
   - {id: "Art30(1)", kind: obligation, category: controller, group: ACC, title: "Records of processing activities (controller)",
-     intent: "A written record of processing activities is kept: purposes, categories of people and data, recipients, transfers and safeguards, retention periods and a general description of security measures. Organisations under 250 staff are exempt only if processing is occasional, low-risk and excludes Art. 9/10 data.",
+     intent: "A written record of processing activities is kept: the controller's name and contact details (and of any joint controller, representative and DPO), purposes, categories of people and data, recipients, transfers (with safeguards documented for transfers under the second subparagraph of Art. 49(1)), retention periods where possible, and a general description of security measures where possible. Organisations under 250 staff are exempt only if the processing is not likely to result in a risk to people, is occasional, and excludes Art. 9 and Art. 10 data (Art. 30(5)).",
      evidence_examples: ["Record of processing activities (ROPA)", "ROPA review dates"]}
   - {id: "Art31", kind: obligation, category: core, group: ACC, title: "Cooperation with the supervisory authority",
      intent: "The controller and processor (and their representatives) cooperate with the supervisory authority on request.",
@@ -147,11 +147,14 @@ requirements:
      intent: "Sub-processors are bound by the same data protection obligations by contract; the processor stays fully liable to the controller for them.",
      evidence_examples: ["Sub-processor agreements with equivalent terms"]}
   - {id: "Art28(3)(a)", kind: obligation, category: processor, group: ACC, title: "Processing only on documented instructions",
-     intent: "The processor processes personal data only on the controller's documented instructions (including on transfers), unless law requires otherwise, and tells the controller if an instruction would infringe data protection law.",
+     intent: "The processor processes personal data only on the controller's documented instructions (including on transfers), unless Union or Member State law requires otherwise; under the last subparagraph of Art. 28(3) it immediately tells the controller if it thinks an instruction infringes data protection law.",
      evidence_examples: ["Customer DPAs and instructions", "Procedure for unlawful instructions"]}
-  - {id: "Art28(3)(f)", kind: obligation, category: processor, group: ACC, title: "Assisting the controller",
-     intent: "The processor helps the controller meet its obligations: answering rights requests, security, breach notification, impact assessments and prior consultation.",
-     evidence_examples: ["Customer support procedure for rights requests", "DPIA assistance records"]}
+  - {id: "Art28(3)(e)", kind: obligation, category: processor, group: ACC, title: "Assisting the controller with rights requests",
+     intent: "The processor, by appropriate technical and organisational measures and as far as possible, helps the controller answer requests from people exercising their rights.",
+     evidence_examples: ["Procedure for forwarding and supporting rights requests", "Self-service export and deletion features"]}
+  - {id: "Art28(3)(f)", kind: obligation, category: processor, group: ACC, title: "Assisting the controller with security, breaches and DPIAs",
+     intent: "The processor helps the controller meet its Art. 32-36 obligations (security, breach notification and communication, impact assessments, prior consultation), taking into account the nature of processing and the information available to it.",
+     evidence_examples: ["Security documentation shared with customers", "DPIA assistance records"]}
   - {id: "Art28(3)(g)", kind: obligation, category: processor, group: ACC, title: "Deletion or return at the end of the service",
      intent: "At the end of the service the processor deletes or returns all personal data, at the controller's choice, and deletes existing copies unless law requires storage.",
      evidence_examples: ["Offboarding deletion procedure", "Deletion certificates"]}
@@ -200,7 +203,7 @@ requirements:
      evidence_examples: ["Customer breach notification procedure", "Contracted notification time"]}
   # ---------------------------------------------------------------- impact assessments and the DPO
   - {id: "Art35", kind: obligation, category: controller, group: DPA, title: "Data protection impact assessment",
-     intent: "Before processing likely to result in a high risk (including large-scale special category data, systematic monitoring of public areas, profiling with significant effects, and the supervisory authority's list), a DPIA describes the processing, assesses necessity and risks, and sets the measures; the DPO is consulted. Screening is recorded even when no DPIA is needed.",
+     intent: "Before processing likely to result in a high risk (including systematic and extensive profiling with legal or similarly significant effects, large-scale special category or criminal-offence data, systematic monitoring of a publicly accessible area on a large scale, and the supervisory authority's list), a DPIA describes the processing, assesses necessity, proportionality and risks, and sets the measures; the DPO's advice is sought. Recording the screening when no DPIA is needed is good practice that shows accountability (Art. 5(2)).",
      evidence_examples: ["DPIA screening records", "Completed DPIAs"]}
   - {id: "Art36", kind: conditional, category: controller, group: DPA, title: "Prior consultation",
      intent: "Where a DPIA shows a high risk the controller can't mitigate, the supervisory authority is consulted before processing starts.",

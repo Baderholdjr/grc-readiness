@@ -36,9 +36,9 @@ def test_catalog_shape():
     cat = yaml.safe_load((FW / "catalog.yaml").read_text())
     reqs = cat["requirements"]
     ids = [r["id"] for r in reqs]
-    assert len(ids) == len(set(ids)) == 58 and all(re.fullmatch(r"Art\d{1,2}(\(\d+\))?(\([a-z]\))?", i) for i in ids)
+    assert len(ids) == len(set(ids)) == 59 and all(re.fullmatch(r"Art\d{1,2}(\(\d+\))?(\([a-z]\))?", i) for i in ids)
     assert collections.Counter(r["category"] for r in reqs) == {
-        "controller": 31, "processor": 9, "core": 7, "transfers": 4, "dpo": 3, "special_categories": 2,
+        "controller": 31, "processor": 10, "core": 7, "transfers": 4, "dpo": 3, "special_categories": 2,
         "children": 1, "representative": 1}
     assert {r["id"] for r in reqs if r["kind"] == "conditional"} == {
         "Art7", "Art20", "Art22", "Art26", "Art36", "Art45", "Art46", "Art49"}
@@ -70,11 +70,11 @@ def test_roles_decide_scope(tmp_path):
     m = load(_new(tmp_path / "none", categories=None), today=TODAY)
     assert m.categories_in_scope == {"core"} and len(m.controls) == 7 and "W113" in codes(m)
     m = load(_new(tmp_path / "proc", categories="processor"), today=TODAY)
-    assert len(m.controls) == 16 and m.is_applicable("Art28(3)(a)") and not m.is_applicable("Art15")
+    assert len(m.controls) == 17 and m.is_applicable("Art28(3)(a)") and not m.is_applicable("Art15")
     assert "W113" not in codes(m)
     e = _new(tmp_path / "both", categories="controller,processor,transfers,dpo")
     m = load(e, today=TODAY)
-    assert len(m.controls) == 54 and m.is_applicable("Art46") and not m.is_applicable("Art8")
+    assert len(m.controls) == 55 and m.is_applicable("Art46") and not m.is_applicable("Art8")
     assert [f for f in validate(m) if f.severity == "error"] == []
     documents.new(m, "all", mode="templates")
     drafted = sorted(p.stem for p in (e / "documents").glob("DOC-GDPR-*.md"))

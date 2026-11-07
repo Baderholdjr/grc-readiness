@@ -460,7 +460,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > **In plain terms:** The GDPR is the EU's law on personal data. There is no certificate: the company has to be able to show it follows the rules. That means knowing what personal data it holds and why, telling people about it, answering their requests within a month, protecting the data, reporting serious breaches within 72 hours, and having contracts with every supplier that touches the data.
 
 > **For GRC practitioners:**
-> - **Catalog:** 58 obligations, cited by article (`Art32(1)(a)`), as in force; the Digital Omnibus proposal isn't adopted and isn't reflected.
+> - **Catalog:** 59 obligations, cited by article (`Art32(1)(a)`), as in force; the Digital Omnibus proposal isn't adopted and isn't reflected.
 > - **Roles:** the core (Art. 31, 32) always; then `controller` and/or `processor` (W113 until chosen). Add `dpo`, `representative`, `transfers`, `special_categories` or `children` when they apply.
 > - **Conditional obligations:** eight (consent, portability, automated decisions, joint controllers, prior consultation, the transfer mechanisms) can be marked not applicable with a reason; the rest can't be excluded.
 > - **Not legal advice:** lawful basis, DPO and transfer decisions are confirmed by the client's counsel.
@@ -471,7 +471,7 @@ The six frameworks side by side:
 
 | | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR |
 |---|---|---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 9 processor + 11 situational |
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 10 processor + 11 situational |
 | Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents |
 | Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog |
 | Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance |
