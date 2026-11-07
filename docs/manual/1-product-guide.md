@@ -172,7 +172,18 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > **In plain terms:** Most clients already have something: a GRC tool, a spreadsheet of controls, policies, last year's SOC 2 report or pen test. Upload whatever they have. The tool works out how far it already goes towards the framework and produces a gap assessment the client can read: what's covered, what's partly there, what's missing, and a plan to close the gaps.
 
 > **For GRC practitioners:**
-> - **Control registers** (a GRC tool's controls export, or the client's own spreadsheet) are recognized by their columns: a control name plus a framework-mapping or requirements column. No AI is involved. Requirement IDs are read the way tools write them (`SOC 2: CC6.2`, `ISO 27001: Annex A 8.8`, `Art. 32(1)(b)`, `164.308(a)(1)(ii)(A)`, `AC-2 (3)`), and a piece of a cell that names another framework is skipped. A row in place becomes *documented* and *implemented* claims; partly in place, a *documented* claim and a medium gap; not in place or failing, a high gap; no status, a *documented* claim. Every row, mapped or not, is kept in `existing-controls.yaml`, where an analyst can correct `maps` (W116 if one names an ID the catalog doesn't have).
+> - **Control registers** (a GRC tool's controls export, or the client's own spreadsheet) are recognized by their columns: a control name plus a framework-mapping or requirements column. No AI is involved. Requirement IDs are read the way tools write them (`SOC 2: CC6.2`, `ISO 27001: Annex A 8.8`, `Art. 32(1)(b)`, `164.308(a)(1)(ii)(A)`, `AC-2 (3)`), and a piece of a cell that names another framework is skipped. Any sheet of a workbook is checked, and a Statement of Applicability works too (its *Applicable* and *Implemented* columns are read). A citation of a whole article or section ("Article 32", "164.308(a)(1)") maps to its parts in the catalog; bare ISO numbers are read only in a column or cell that names ISO, and as Annex A when it says so. Statuses:
+
+> | Register says | Becomes |
+> |---|---|
+> | Implemented, Passing, Configured | *documented* and *implemented* claims |
+> | In progress, Draft, Exception | a *documented* claim and a medium gap |
+> | Planned, Not started, Deferred | a medium gap |
+> | Not implemented, Failing; Accepted risk | a high gap; a medium one |
+> | N/A, Out of scope, Retired | nothing (listed as not applicable) |
+> | blank or unreadable | a *documented* claim |
+>
+> Every row, mapped or not, is kept in `existing-controls.yaml`, where an analyst can correct `maps` (W116 if one names an ID the catalog doesn't have). A register is known by its file name without dates, versions or copy markers, so next month's export (`controls-2026-12-01.csv`) replaces this month's rows. Its gaps carry `register: <register>/<control>`: re-importing finds them instead of adding more, and a gap the new export no longer supports (now in place, not applicable, or gone) is listed in the ingest report for an analyst to close with evidence. Nothing is closed automatically.
 > - **Prior audit reports** (SOC 2 reports, ISO certificates and SoAs, pen tests, earlier assessments) go to Claude like any document. Each exception, deviation or nonconformity becomes a gap; the report itself becomes evidence for its period; controls it says it tested become claims on the *tested* leg, others on *implemented*; a different period or scope becomes an open question.
 > - **The gap assessment** (`gap-assessment.md` and `.docx`, in every build) gives each requirement in scope one state: Verified, Reported in place, Partly in place, Gap, or No existing control. It shows coverage by area, the gaps to close by severity, requirements nothing covers, the client's controls that map to nothing, a roadmap of gaps by phase, and the files reviewed. It has no hours, budget or analyst notes, so it can go to the client.
 

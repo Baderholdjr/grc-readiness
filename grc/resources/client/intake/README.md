@@ -8,6 +8,7 @@ Drop client documents here, in a pull request, to draft the engagement record au
 1. Imports any file that matches an intake template (see `templates/intake/`) exactly as written, and any
    **control register** (your GRC tool's controls export, or your own controls spreadsheet with a column of
    framework mappings) into `existing-controls.yaml`, with claims and gaps from each control's status.
+   (A file whose first row matches an intake template is imported as that template instead.)
 2. Sends every other document (Word, PDF, Excel, Markdown, text) to Claude to draft:
    client profile, AI usage, what's in place, AI inventory, gaps, evidence pointers, and
    client *claims* against the four-part evidence test. Every item cites its source.

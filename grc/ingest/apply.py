@@ -142,12 +142,21 @@ def apply(model: Engagement, d: dict, label: str, files: list[str] | None = None
     # --------------------------------------------------------------- gaps
     used_gap = {g["id"] for g in model.gaps}
     existing = [g["finding"] for g in model.gaps]
+    registered: set[str] = set()
     new_gaps = []
     for g in d.get("gaps", []):
         if not g.get("source") or not g.get("finding"):
             rep["dropped"].append(f"gap without source: {g.get('finding', '')[:80]}")
             continue
-        if any(_similar(g["finding"], f, 0.75) for f in existing):
+        reg = str(g.get("register") or "")
+        if reg:     # a register gap is found again by its register and control, never by its wording
+            same = next((x for x in model.gaps if isinstance(x, dict) and x.get("register") == reg
+                         and x.get("status") in ("open", "in_progress")), None)
+            if same or reg in registered:
+                rep["kept"].append(f"gap already tracked{' as ' + str(same.get('id')) if same else ''}: {g['finding'][:90]}")
+                continue
+            registered.add(reg)
+        elif any(_similar(g["finding"], f, 0.75) for f in existing):
             rep["kept"].append(f"gap already tracked: {g['finding'][:90]}")
             continue
         reqs = reqs_ok(g.get("requirements", []), f"gap '{g['area']}'")
@@ -164,6 +173,8 @@ def apply(model: Engagement, d: dict, label: str, files: list[str] | None = None
             item["phase"] = g["phase"]
         item["severity"] = g.get("severity") if g.get("severity") in ("high", "medium", "low") else "medium"
         item["status"] = "open"
+        if reg:
+            item["register"] = reg
         new_gaps.append((item, g["source"]))
         existing.append(g["finding"])
         rep["added_gaps"].append(f"{item['id']} {item['area']}: {item['finding']} _(source: {g['source'][:120]})_")

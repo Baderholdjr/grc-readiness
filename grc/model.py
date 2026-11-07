@@ -413,9 +413,12 @@ def load(engagement_dir: str | Path = "engagement", today: dt.date | None = None
         model.inventory = load_yaml(inv).get("items", []) or []
     exc = edir / "existing-controls.yaml"
     if exc.exists():
-        rows = (load_yaml(exc) or {}).get("controls") or []
+        data = load_yaml(exc)
+        rows = data.get("controls") if isinstance(data, dict) else data   # a bare list is reported by the schema check
         model.existing_controls = rows if isinstance(rows, list) else []
         for r in model.existing_controls:
+            if isinstance(r, dict) and isinstance(r.get("maps"), (str, int, float)):
+                r["maps"] = [str(r["maps"])]
             if isinstance(r, dict) and isinstance(r.get("maps"), list):
                 r["maps"] = [str(x) for x in r["maps"]]
     prog = edir / "audit" / "program.yaml"

@@ -26,7 +26,7 @@ SEV_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
 def _esc(s) -> str:
-    return str(s if s is not None else "").replace("|", "\\|").replace("\n", " ")
+    return str(s if s is not None else "").replace("|", "/").replace("\n", " ")
 
 
 def _table(headers, rows) -> str:
@@ -47,8 +47,8 @@ def coverage(model: Engagement) -> dict[str, str]:
                 open_gaps[str(r)].append(g)
     reg = collections.defaultdict(set)
     for row in model.existing_controls:
-        if isinstance(row, dict):
-            for r in row.get("maps") or []:
+        if isinstance(row, dict) and isinstance(row.get("maps"), list):
+            for r in row["maps"]:
                 reg[str(r)].add(str(row.get("state") or "unknown"))
     out = {}
     for req in model.requirements:
@@ -63,9 +63,11 @@ def coverage(model: Engagement) -> dict[str, str]:
             continue
         c = model.controls.get(rid) or {}
         legs = {k: leg_effective(model, (c.get("test") or {}).get(k) or {}) for k in LEGS}
-        if "in_place" in reg[rid] or legs["implemented"] != "not_started":
+        if reg[rid] & {"not_in_place", "planned"} and "in_place" not in reg[rid]:
+            out[rid] = "Gap"        # the register says it isn't in place, even if an older claim said it was
+        elif "in_place" in reg[rid] or legs["implemented"] != "not_started":
             out[rid] = "Reported in place"
-        elif reg[rid] or any(v != "not_started" for v in legs.values()):
+        elif reg[rid] - {"not_applicable"} or any(v != "not_started" for v in legs.values()):
             out[rid] = "Partly in place"
         else:
             out[rid] = "No existing control"
@@ -135,25 +137,31 @@ def markdown(model: Engagement) -> str:
           "evidence that one already exists.\n" if none else "",
           _table(["Requirement", "Title", "Area"], [[r, idx[r].get("title"), groups.get(str(idx[r].get("group") or ""), "")] for r in none]), ""]
     # 5. the client's own controls
-    rows = [r for r in model.existing_controls if isinstance(r, dict)]
+    rows = [{**r, "maps": r["maps"] if isinstance(r.get("maps"), list) else []}
+            for r in model.existing_controls if isinstance(r, dict)]
     if rows:
         st = collections.Counter(str(r.get("state") or "unknown") for r in rows)
-        unmapped = [r for r in rows if not r.get("maps")]
-        notin = [r for r in rows if r.get("state") in ("not_in_place", "partial") and r.get("maps")]
+        unmapped = [r for r in rows if not r.get("maps") and r.get("state") != "not_applicable"]
+        notin = [r for r in rows if r.get("state") in ("not_in_place", "partial", "planned") and r.get("maps")]
+        na = [r for r in rows if r.get("state") == "not_applicable"]
         L += [f"## 5. {model.client}'s existing controls\n",
               f"{len(rows)} controls were imported from {model.client}'s control register: {st['in_place']} reported in place, "
-              f"{st['partial']} partly, {st['not_in_place']} not in place, {st['unknown']} with no status. "
-              f"{len(rows) - len(unmapped)} map to {fw} requirements.\n",
+              f"{st['partial']} partly, {st['planned']} planned, {st['not_in_place']} not in place, "
+              f"{st['not_applicable']} marked not applicable, {st['unknown']} with no status we could read. "
+              f"{sum(1 for r in rows if r.get('maps'))} map to {fw} requirements.\n",
               "### Reported as not fully in place\n",
               _table(["Control", "Status", "Requirements", "Owner"],
                      [[f"{r.get('ref') + ' ' if r.get('ref') else ''}{r.get('name')}", r.get("status") or "", ", ".join(r.get("maps") or []),
                        r.get("owner") or ""] for r in notin]),
               f"### Not mapped to {fw}\n",
-              (f"These controls name no {fw} requirement. Some may support it (an analyst maps them by editing "
-               "`maps` in `existing-controls.yaml`); others belong to other frameworks or none.\n" if unmapped else ""),
+              (f"These controls name no {fw} requirement. Some may still support it, and we will map them with you; "
+               "others belong to other frameworks or none.\n" if unmapped else ""),
               _table(["Control", "Status", "Other references"],
                      [[f"{r.get('ref') + ' ' if r.get('ref') else ''}{r.get('name')}", r.get("status") or "",
-                       ", ".join(r.get("unrecognized") or [])] for r in unmapped]), ""]
+                       ", ".join(r.get("unrecognized") or [])] for r in unmapped]),
+              *(["### Marked not applicable in the register\n",
+                 _table(["Control", "Status"], [[f"{r.get('ref') + ' ' if r.get('ref') else ''}{r.get('name')}",
+                                                  r.get("status") or r.get("applicable") or ""] for r in na])] if na else []), ""]
     else:
         L += [f"## 5. {model.client}'s existing controls\n",
               "No control register has been imported. To include one, upload the export from your GRC tool or your control "

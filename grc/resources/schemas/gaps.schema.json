@@ -80,6 +80,10 @@
           "in_brief": {
             "type": "boolean",
             "default": true
+          },
+          "register": {
+            "type": "string",
+            "description": "Set by ingest for a gap drafted from a client control register: <register>/<control>. Re-importing the register finds the gap by it."
           }
         }
       }
