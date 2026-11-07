@@ -63,7 +63,7 @@ jobs:
       - name: Build the client site
         shell: bash   # -o pipefail: a failed build fails the step, even through tee
         run: python -m grc portal --out _portal | tee -a "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: client-site-${{ github.sha }}
           path: _portal/
