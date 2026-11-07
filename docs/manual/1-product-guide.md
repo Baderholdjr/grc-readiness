@@ -455,16 +455,28 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - Start a record with `new-engagement --framework txramp --categories level_2` (or the *categories* input of New engagement).
 > - Catalog and playbook: `frameworks/txramp/`.
 
-The five frameworks side by side:
+### GDPR
 
-| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP |
-|---|---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 |
-| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) |
-| Impact assessments | Yes (AI systems) | No | No | No | No |
-| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR |
-| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count |
+> **In plain terms:** The GDPR is the EU's law on personal data. There is no certificate: the company has to be able to show it follows the rules. That means knowing what personal data it holds and why, telling people about it, answering their requests within a month, protecting the data, reporting serious breaches within 72 hours, and having contracts with every supplier that touches the data.
+
+> **For GRC practitioners:**
+> - **Catalog:** 58 obligations, cited by article (`Art32(1)(a)`), as in force; the Digital Omnibus proposal isn't adopted and isn't reflected.
+> - **Roles:** the core (Art. 31, 32) always; then `controller` and/or `processor` (W113 until chosen). Add `dpo`, `representative`, `transfers`, `special_categories` or `children` when they apply.
+> - **Conditional obligations:** eight (consent, portability, automated decisions, joint controllers, prior consultation, the transfer mechanisms) can be marked not applicable with a reason; the rest can't be excluded.
+> - **Not legal advice:** lawful basis, DPO and transfer decisions are confirmed by the client's counsel.
+
+> **Under the hood:** start a record with `new-engagement --framework gdpr --categories controller,processor,transfers`. Catalog, playbook and 16 templates are in `frameworks/gdpr/`; mappings in `mappings/gdpr__iso27001.yaml` and `gdpr__soc2.yaml`.
+
+The six frameworks side by side:
+
+| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR |
+|---|---|---|---|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 9 processor + 11 situational |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents |
+| Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog |
+| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance |
+| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision | Readiness assessment, independent assessment |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count | To ISO 27001: 23 related; to SOC 2: 22 related |
 
 ## 19. The compliance program: common controls, calendar and certification
 

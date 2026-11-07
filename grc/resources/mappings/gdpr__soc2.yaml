@@ -1,0 +1,147 @@
+# PROPOSED mappings between the GDPR and SOC 2 (Trust Services Criteria) (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against both frameworks and the client's actual controls, and fill reviewed_by
+# and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count for both records (cited
+# as "<framework>:<id>"). The rest are pointers. `subset`: the GDPR requirement (first framework) is narrower;
+# `superset`: wider. Our own judgement; no standard's text is reproduced.
+#
+# None is `equivalent`: a GDPR obligation is about personal data and people's rights; a SOC 2 control is about
+# the service's controls. Evidence for one is a strong pointer for the other, never proof on its own.
+
+frameworks:
+- gdpr
+- soc2
+mappings:
+- gdpr: Art13
+  soc2: P1.1
+  relationship: related
+  note: Privacy notice.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art7
+  soc2: P2.1
+  relationship: related
+  note: Choice and consent.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(1)(c)
+  soc2: P3.1
+  relationship: related
+  note: Collection limited to the purpose.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art9
+  soc2: P3.2
+  relationship: related
+  note: Explicit consent is one Art. 9(2) condition.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(1)(b)
+  soc2: P4.1
+  relationship: related
+  note: Use limited to the purpose.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(1)(e)
+  soc2: P4.2
+  relationship: related
+  note: Retention.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art17
+  soc2: P4.3
+  relationship: related
+  note: Secure disposal supports erasure; Art. 17 is a right with its own grounds and exceptions.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art15
+  soc2: P5.1
+  relationship: related
+  note: Access by data subjects.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art16
+  soc2: P5.2
+  relationship: related
+  note: Correction.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art28(3)
+  soc2: P6.4
+  relationship: related
+  note: Third-party privacy commitments in contracts.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art33(5)
+  soc2: P6.3
+  relationship: related
+  note: Record of unauthorized disclosures.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art34
+  soc2: P6.6
+  relationship: related
+  note: Breach notification to affected individuals.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art28(3)
+  soc2: P6.5
+  relationship: related
+  note: Contracts that require processors to report breaches to the controller (Art. 28(3)(f), Art. 33(2)).
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art5(1)(d)
+  soc2: P7.1
+  relationship: related
+  note: Data quality.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art12
+  soc2: P8.1
+  relationship: related
+  note: Inquiries and complaints.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(a)
+  soc2: CC6.1
+  relationship: related
+  note: Logical access security including encryption.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(a)
+  soc2: CC6.7
+  relationship: related
+  note: Protecting data in transit.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(c)
+  soc2: A1.2
+  relationship: related
+  note: Backup and recovery infrastructure.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(c)
+  soc2: A1.3
+  relationship: related
+  note: Recovery testing.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art32(1)(d)
+  soc2: CC4.1
+  relationship: related
+  note: Ongoing and separate evaluations.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art28(1)
+  soc2: CC9.2
+  relationship: related
+  note: Vendor risk management.
+  reviewed_by: ''
+  reviewed_on: null
+- gdpr: Art33
+  soc2: CC7.4
+  relationship: related
+  note: Incident response; the 72-hour authority notification is GDPR's own.
+  reviewed_by: ''
+  reviewed_on: null
