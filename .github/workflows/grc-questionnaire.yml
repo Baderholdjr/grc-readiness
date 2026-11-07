@@ -102,7 +102,7 @@ jobs:
           python -m grc questionnaire validate --format github || true
       - name: Keep the filled workbook or answer sheet
         if: inputs.action == 'fill'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: questionnaire-${{ inputs.name }}${{ inputs.draft && '-DRAFT' || '' }}
           path: out/*
