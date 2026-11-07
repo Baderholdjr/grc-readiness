@@ -69,7 +69,7 @@ jobs:
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
       - name: Azure sign-in (OIDC, Reader)
         if: ${{ vars.AZURE_CLIENT_ID != '' }}
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
