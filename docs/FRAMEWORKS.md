@@ -11,6 +11,7 @@
 | `gdpr` | General Data Protection Regulation (Regulation (EU) 2016/679) | 7 core + 31 controller + 11 processor + 11 for a DPO, a representative, transfers, special categories and children | 16 documents | No certificate: demonstrable compliance; see [GDPR](#gdpr) |
 | `txramp` | TX-RAMP Security Controls Baselines 2.0 (Texas DIR) | 117 Level 1 controls + 106 more at Level 2 (NIST SP 800-53 Rev. 5) | 17 documents, one per control family | Certification by DIR; see [TX-RAMP](#tx-ramp) |
 | `fedramp20x` | FedRAMP 20x (FedRAMP Consolidated Rules for 2026) | 46 Key Security Indicators + 141 process rules (96 MUST, 45 SHOULD), by certification class | 18 documents (12 for Class A) | FedRAMP certification for federal agencies; see [FedRAMP 20x](#fedramp-20x) |
+| `cbpr` | Global CBPR (controllers) and Global PRP (processors), Global CBPR Forum | 57 CBPR program requirements (September 2025 update) + 18 PRP | 16 documents (13 CBPR, 3 PRP) | Certification by a Forum-recognized Accountability Agent; see [Global CBPR](#global-cbpr) |
 
 Catalogs hold identifiers, short titles and **our own paraphrase** of each requirement's intent. They never reproduce the standards' or criteria's text. Work from licensed copies of the ISO standards and the AICPA's published criteria. The HIPAA regulations are US Government works; the catalog still restates them in plain words, and the eCFR text is the authority. TX-RAMP's controls are NIST SP 800-53 controls, also a US Government work, so the catalog uses NIST's titles and statements; TX-RAMP's own parameter values stay in the client's copy of DIR's Security Plan workbook.
  FedRAMP's rules are also a US Government work: the FedRAMP 20x catalog is generated from FedRAMP's machine-readable dataset and keeps FedRAMP's own statements.
@@ -70,6 +71,20 @@ The catalog is the GDPR as in force: 60 obligations cited by article, such as `A
 **Mappings.** `mappings/gdpr__iso27001.yaml` (24 pairs) and `gdpr__soc2.yaml` (22 pairs) are all `related`. A GDPR obligation is about personal data and people's rights, so ISO or SOC 2 evidence points to it but never proves it alone.
 
 **Not legal advice.** Lawful basis choices, DPO designation and transfer assessments are decisions for the client's counsel; the playbook's guardrails say so.
+
+## Global CBPR
+
+The Global Cross-Border Privacy Rules (CBPR) System certifies a company's privacy program as a controller; the Global Privacy Recognition for Processors (PRP) System recognizes a processor's. Both are run by the Global CBPR Forum (members include Australia, Canada, Chinese Taipei, Japan, Korea, Mexico, the Philippines, Singapore, the United States and the DIFC) and certified, then recertified every year, by a Forum-recognized Accountability Agent. The APEC CBPR and PRP requirements are identical to the Global ones until 31 March 2027, and a company may take part in both.
+
+**Version.** The catalog follows the September 2025 update of the Global CBPR Program Requirements: 57 requirements (the earlier version has 50), which apply to first certifications and recertifications from 1 April 2027. New in the update: sensitive information (PR1), children's information (PR2, PR3), risk assessment (PR4), breach notice to individuals (PR5), direct marketing opt-out (PR22) and withdrawing consent (PR27). Updated: recording choices (PR26), records of processing added to the compliance measures (PR46), and a *qualified* responsible person (PR47). A client certifying before April 2027 answers the 50-question intake questionnaire, whose numbers differ (PR47 was question 40): cross-walk the ids with the Forum's mark-up. Its program is then ready for the next recertification. Ids are our short form of the Forum's numbers (`PR44`, `PRP7`); titles and intents are our paraphrase, so work from the Forum's published requirements and intake questionnaire.
+
+**Certifications.** Choose `cbpr` (57), `prp` (18) or both in `scope.categories` (W113 until one is chosen). A company that decides why personal information is used gets CBPR; one that processes it for customers gets PRP; many SaaS companies need both.
+
+**Requirements and Qualifications.** A program requirement can't be excluded (E004). Where the Forum allows a Qualification (Notice and Choice: obviousness, publicly available information, emergencies and others; Access and Correction: a disproportionate burden, confidentiality, another person's privacy), the control's implementation records which one and why, for the Accountability Agent to verify. 23 requirements are conditional on an activity (children's information, direct marketing, disclosures, processors, sub-processors) and can be marked not applicable with the reason; the *Global CBPR Applicability Statement* lists them.
+
+**Dates and references.** `dates.stage1` is submission of the intake questionnaire to the Accountability Agent; `dates.stage2` the certification decision. References use CBPR ids when CBPR is in scope and PRP ids for a PRP-only record: the internal review evidences PR46 (compliance measures) or PRP11, the leadership review PR47 (responsible person) or PRP12, risk work PR4 or PRP2. No management review is required.
+
+**Mappings.** `mappings/cbpr__gdpr.yaml` (46 pairs) and `cbpr__iso27001.yaml` (27 pairs), all `related`.
 
 ## FedRAMP 20x
 

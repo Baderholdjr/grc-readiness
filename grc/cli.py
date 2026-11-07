@@ -583,7 +583,7 @@ def main(argv=None) -> int:
                    "(SOC 2: availability,confidentiality,processing_integrity,privacy, Security always included; "
                    "HIPAA: covered_entity and/or business_associate, plus clearinghouse,group_health_plan,government if they apply; "
                    "TX-RAMP: level_2; GDPR: controller and/or processor, plus dpo,representative,transfers,special_categories,children; "
-                   "FedRAMP 20x: class_a, class_b, or class_b,class_c for Class C)")
+                   "FedRAMP 20x: class_a, class_b, or class_b,class_c for Class C; Global CBPR: cbpr and/or prp)")
     n.add_argument("--intake", help="default: intake/ for engagement/, intake-<name>/ for engagement-<name>/")
     n.add_argument("--confirm-reset", action="store_true")
     n.set_defaults(fn=cmd_new)

@@ -1,0 +1,288 @@
+# Global CBPR / Global PRP requirement catalog.
+#
+# The Global Cross-Border Privacy Rules (CBPR) System certifies a company's privacy program, as a controller,
+# against the Global CBPR Privacy Framework; the Global Privacy Recognition for Processors (PRP) System recognizes a
+# processor's. Both are run by the Global CBPR Forum and certified by a Forum-recognized Accountability Agent.
+# The APEC CBPR and PRP requirements are identical to the Global ones until 31 March 2027, and a company may take part in both.
+#
+# Version: the Global CBPR Program Requirements as updated in September 2025 (57 requirements), which apply to
+# first certifications and recertifications from 1 April 2027 (the earlier version has 50). PRP: the Global PRP
+# Program Requirements (18). Ids are our own short form of the Forum's numbers: PR1 is program requirement 1.
+# Titles and intents are OUR OWN PARAPHRASE; work from the Forum's published requirements and the intake
+# questionnaire (https://www.globalcbpr.org/documents/), which are the authority.
+#
+# kind: requirement -> must be met; where the Forum allows a "Qualification" (Notice and Choice: obviousness,
+#                      publicly available information, emergencies and the like; Access: disproportionate burden,
+#                      confidentiality, another person's privacy), record it and its justification in the control's
+#                      implementation, for the Accountability Agent to verify.
+#       conditional -> applies only when the company does the activity (children's data, direct marketing,
+#                      disclosures, processors, sub-processors); mark it not applicable with the reason otherwise.
+# category: cbpr = the controller certification; prp = the processor recognition. Choose one or both.
+
+framework:
+  id: cbpr
+  name: Global Cross-Border Privacy Rules (CBPR) and Privacy Recognition for Processors (PRP)
+  short_name: Global CBPR
+  management_system: Privacy program for personal information
+  source: https://www.globalcbpr.org/documents/
+  version: "Global CBPR Program Requirements, September 2025 update (effective 1 April 2027); Global PRP Program Requirements"
+
+kinds:
+  requirement: {label: "Program requirement", short: "Requirement", mandatory: true}
+  conditional: {label: "Conditional requirement", short: "Conditional", mandatory: false}
+
+choose_at_least_one: [cbpr, prp]
+
+categories:
+  - {id: cbpr, title: "Global CBPR certification (controller)", short: "CBPR"}
+  - {id: prp, title: "Global PRP recognition (processor)", short: "PRP"}
+
+groups:
+  - {id: HARM, title: "Preventing harm"}
+  - {id: NOTICE, title: "Notice"}
+  - {id: COLLECT, title: "Collection limitation"}
+  - {id: USE, title: "Uses of personal information"}
+  - {id: CHOICE, title: "Choice"}
+  - {id: INTEGRITY, title: "Integrity of personal information"}
+  - {id: SECURITY, title: "Security safeguards"}
+  - {id: ACCESS, title: "Access and correction"}
+  - {id: ACCOUNT, title: "Accountability"}
+  - {id: PRP-SEC, title: "PRP security safeguards"}
+  - {id: PRP-ACC, title: "PRP accountability measures"}
+
+requirements:
+  # ---------------------------------------------------------------- preventing harm (added in the 2025 update)
+  - {id: PR1, kind: conditional, category: cbpr, group: HARM, title: "Sensitive information",
+     intent: "Information that law treats as sensitive or specially protected, or that a sending organization has flagged as such, is identified and handled with extra safeguards. Applies when the company processes such information.",
+     evidence_examples: ["Written policy defining sensitive information and the extra safeguards", "Data inventory marking sensitive data"]}
+  - {id: PR2, kind: requirement, category: cbpr, group: HARM, title: "Assessing children's information",
+     intent: "There is a written procedure to work out whether the company collects or processes children's information as the governing law defines it.",
+     evidence_examples: ["Children's data assessment procedure", "Completed assessment"]}
+  - {id: PR3, kind: conditional, category: cbpr, group: HARM, title: "Parental consent or other basis for children's information",
+     intent: "Where children's information is collected or processed, parental consent or another legal basis is verified, by a described mechanism.",
+     evidence_examples: ["Description of the consent or age-verification mechanism", "Records of verification"]}
+  - {id: PR4, kind: requirement, category: cbpr, group: HARM, title: "Risk of misuse and harm",
+     intent: "Procedures identify and assess the risk that personal information is misused and causes harm, and mitigate it in proportion to the likelihood and severity of the harm; the assessments are documented and acted on.",
+     evidence_examples: ["Privacy risk assessment procedure", "Completed risk assessments with mitigations"]}
+  - {id: PR5, kind: requirement, category: cbpr, group: HARM, title: "Notifying individuals of breaches",
+     intent: "A written process tells affected individuals, without unreasonable delay, of a breach likely to cause them significant harm: what happened, what information is involved, steps they can take, what the company is doing, and whom to contact.",
+     evidence_examples: ["Breach notification policy", "Notice template", "Breach log"]}
+  # ---------------------------------------------------------------- notice
+  - {id: PR6, kind: requirement, category: cbpr, group: NOTICE, title: "Privacy statement",
+     intent: "A clear, easy-to-find privacy statement with an effective date covers information collected online and offline and says: what is collected and from where (6a); why (6b); whether and why it is shared with third parties, and with whom by category (6c); the company's name, location and a working privacy contact (6d); how it is used and disclosed (6e); and whether and how people can access and correct it, with typical response times (6f). A Qualification (such as publicly available information) must be justified.",
+     evidence_examples: ["Published privacy statement with its effective date", "Map of the statement against 6a-6f"]}
+  - {id: PR7, kind: requirement, category: cbpr, group: NOTICE, title: "Notice at collection",
+     intent: "When information is collected, directly or by others for the company, people are told it is being collected, or as soon as practicable afterwards, subject to a justified Qualification.",
+     evidence_examples: ["Collection points with their notices (forms, apps, calls)"]}
+  - {id: PR8, kind: requirement, category: cbpr, group: NOTICE, title: "Purposes stated at collection",
+     intent: "When information is collected, the purposes are explained, orally or in writing, subject to a justified Qualification.",
+     evidence_examples: ["Notices at collection showing purposes"]}
+  - {id: PR9, kind: conditional, category: cbpr, group: NOTICE, title: "Third-party sharing stated at collection",
+     intent: "When information is collected, people are told it will or may be shared with third parties and why. Applies when information is shared with third parties.",
+     evidence_examples: ["Notices at collection mentioning sharing and its purposes"]}
+  # ---------------------------------------------------------------- collection limitation
+  - {id: PR10, kind: requirement, category: cbpr, group: COLLECT, title: "Sources of personal information",
+     intent: "The company identifies how it obtains personal information: directly from people, from third parties collecting for it, or from other sources, and the practices for each.",
+     evidence_examples: ["Data inventory with sources", "Third-party collection agreements"]}
+  - {id: PR11, kind: requirement, category: cbpr, group: COLLECT, title: "Collection limited to relevant information",
+     intent: "Only information relevant to the stated purposes, or compatible or related ones, is collected; each type of information is tied to its purposes and uses, with the reason each use is compatible.",
+     evidence_examples: ["Data inventory linking each data type to purposes and uses", "Collection reviews"]}
+  - {id: PR12, kind: requirement, category: cbpr, group: COLLECT, title: "Lawful and fair collection",
+     intent: "Information is collected lawfully and fairly, without deception, under the law of the governing jurisdiction, including by third parties collecting for the company.",
+     evidence_examples: ["Legal review of collection practices", "Certification of compliance with governing law"]}
+  # ---------------------------------------------------------------- uses
+  - {id: PR13, kind: requirement, category: cbpr, group: USE, title: "Use limited to stated purposes",
+     intent: "Written policies keep each use of personal information to the purposes stated in the privacy statement or at collection, or compatible or related ones.",
+     evidence_examples: ["Use limitation policy", "Reviews of new uses against stated purposes"]}
+  - {id: PR14, kind: conditional, category: cbpr, group: USE, title: "Unrelated uses",
+     intent: "Information is used for an unrelated purpose only with the person's express consent (obtained as the Choice requirements describe) or when the law requires it. Applies when the company uses information for unrelated purposes.",
+     evidence_examples: ["Consent records for unrelated uses", "Legal requirement relied on"]}
+  - {id: PR15, kind: conditional, category: cbpr, group: USE, title: "Disclosures to other controllers",
+     intent: "Disclosures to other controllers serve the original or a compatible purpose, or rest on express consent needed to provide a requested product or service, or on legal compulsion; each data type disclosed, its purpose and how the disclosure fulfils it are identified. Applies when the company discloses to other controllers.",
+     evidence_examples: ["Register of disclosures with data types and purposes", "Data sharing agreements"]}
+  - {id: PR16, kind: conditional, category: cbpr, group: USE, title: "Transfers to processors",
+     intent: "Transfers to processors serve the original or a compatible purpose, on the same terms as disclosures to controllers. Applies when the company uses processors.",
+     evidence_examples: ["Register of processors with data types and purposes"]}
+  - {id: PR17, kind: conditional, category: cbpr, group: USE, title: "Purpose of disclosures and transfers",
+     intent: "Each disclosure or transfer is made to fulfil the original purpose of collection or a compatible or related one, and the company can describe how. Applies when the company discloses or transfers information.",
+     evidence_examples: ["Disclosure and transfer register with purposes"]}
+  - {id: PR18, kind: conditional, category: cbpr, group: USE, title: "Disclosures for other purposes",
+     intent: "A disclosure or transfer for any other purpose happens only with express consent, when necessary to provide a product or service the person asked for, or when the law compels it (the law named and shown to apply). Applies when the company makes such disclosures.",
+     evidence_examples: ["Consent records", "Necessity analysis", "Legal basis for compelled disclosures"]}
+  # ---------------------------------------------------------------- choice
+  - {id: PR19, kind: requirement, category: cbpr, group: CHOICE, title: "Choice about collection",
+     intent: "Where appropriate, people can choose whether their information is collected, through a working mechanism with the purpose clearly stated; otherwise a justified Qualification applies.",
+     evidence_examples: ["Choice mechanisms at collection (forms, preference pages)", "Qualifications relied on and why"]}
+  - {id: PR20, kind: requirement, category: cbpr, group: CHOICE, title: "Choice about use",
+     intent: "Where appropriate, people can choose how their information is used, offered at collection or at least before an unrelated use or a disclosure to a third party other than a service provider; otherwise a justified Qualification applies.",
+     evidence_examples: ["Use preferences and when they are offered"]}
+  - {id: PR21, kind: requirement, category: cbpr, group: CHOICE, title: "Choice about disclosure",
+     intent: "Where appropriate, people can choose whether their information is disclosed, offered at collection or at least before a disclosure to a third party other than a service provider for an unrelated purpose; otherwise a justified Qualification applies.",
+     evidence_examples: ["Disclosure preferences and when they are offered"]}
+  - {id: PR22, kind: conditional, category: cbpr, group: CHOICE, title: "Opting out of direct marketing",
+     intent: "People can stop direct marketing at any time through a working mechanism. Applies when the company does direct marketing.",
+     evidence_examples: ["Unsubscribe and opt-out mechanisms", "Suppression list"]}
+  - {id: PR23, kind: requirement, category: cbpr, group: CHOICE, title: "Choice is clear and conspicuous",
+     intent: "Choice mechanisms are displayed clearly and conspicuously.",
+     evidence_examples: ["Screenshots of choice mechanisms"]}
+  - {id: PR24, kind: requirement, category: cbpr, group: CHOICE, title: "Choice is clearly worded",
+     intent: "Choice mechanisms are worded clearly and are easy to understand.",
+     evidence_examples: ["Wording of choice mechanisms", "Plain-language review"]}
+  - {id: PR25, kind: requirement, category: cbpr, group: CHOICE, title: "Choice is accessible and affordable",
+     intent: "Choice mechanisms are easy to reach and free or affordable to use.",
+     evidence_examples: ["Channels for exercising choice", "Cost, if any"]}
+  - {id: PR26, kind: requirement, category: cbpr, group: CHOICE, title: "Choices recorded and honoured",
+     intent: "A policy or procedure records the preferences people express and honours them effectively and promptly; otherwise a justified Qualification applies.",
+     evidence_examples: ["Preference records", "Procedure for applying preferences across systems", "Tests that preferences are honoured"]}
+  - {id: PR27, kind: requirement, category: cbpr, group: CHOICE, title: "Withdrawing consent",
+     intent: "People can withdraw consent, or ask that use and disclosure stop once the information is no longer needed for its purposes, subject to legal or contractual retention duties; the mechanism and the response procedure work.",
+     evidence_examples: ["Withdrawal mechanism", "Request log with outcomes"]}
+  # ---------------------------------------------------------------- integrity
+  - {id: PR28, kind: requirement, category: cbpr, group: INTEGRITY, title: "Accurate, complete and current information",
+     intent: "Reasonable procedures keep personal information accurate, complete and up to date, as far as its purposes need.",
+     evidence_examples: ["Data quality procedures", "Results of data quality checks"]}
+  - {id: PR29, kind: requirement, category: cbpr, group: INTEGRITY, title: "Correcting information",
+     intent: "People can challenge the accuracy of their information and have it corrected through a working process.",
+     evidence_examples: ["Correction request channel and procedure", "Request log"]}
+  - {id: PR30, kind: conditional, category: cbpr, group: INTEGRITY, title: "Corrections passed to processors",
+     intent: "When a correction that matters to the purposes is made after information was transferred, it is passed to the processors, agents or service providers holding it, and they apply it. Applies when the company uses processors.",
+     evidence_examples: ["Procedure for propagating corrections", "Examples"]}
+  - {id: PR31, kind: conditional, category: cbpr, group: INTEGRITY, title: "Corrections passed to third parties",
+     intent: "When such a correction is made after information was disclosed, the third parties that received it are told. Applies when the company discloses to third parties.",
+     evidence_examples: ["Procedure for notifying recipients of corrections"]}
+  - {id: PR32, kind: conditional, category: cbpr, group: INTEGRITY, title: "Processors report inaccurate information",
+     intent: "Processors, agents and service providers must tell the company when they learn information is inaccurate, incomplete or out of date, and the company acts on it. Applies when the company uses processors.",
+     evidence_examples: ["Contract clause", "Procedure for receiving and acting on reports"]}
+  # ---------------------------------------------------------------- security safeguards
+  - {id: PR33, kind: requirement, category: cbpr, group: SECURITY, title: "Information security policy",
+     intent: "A written information security policy is in place.",
+     evidence_examples: ["Approved information security policy"]}
+  - {id: PR34, kind: requirement, category: cbpr, group: SECURITY, title: "Physical, technical and administrative safeguards",
+     intent: "Safeguards such as access control, encryption, boundary protection, audit logging and monitoring protect personal information against loss, unauthorized access and other misuse; they suit the company's size, complexity, activities and the sensitivity of the information, and are reviewed periodically. Processors and service providers are required to protect the information too.",
+     evidence_examples: ["Description of safeguards", "Periodic review records"]}
+  - {id: PR35, kind: requirement, category: cbpr, group: SECURITY, title: "Safeguards proportionate to risk",
+     intent: "Safeguards are proportionate to the likelihood and severity of harm, the sensitivity of the information and the context in which it is held.",
+     evidence_examples: ["Security risk assessment linking risks to safeguards"]}
+  - {id: PR36, kind: requirement, category: cbpr, group: SECURITY, title: "Employee security awareness",
+     intent: "Employees know the importance of security and their obligations, through regular training and oversight.",
+     evidence_examples: ["Training records", "Signed policies"]}
+  - {id: PR37, kind: requirement, category: cbpr, group: SECURITY, title: "Safeguards in four areas",
+     intent: "Proportionate safeguards cover: employee training and management (37a); information systems, including network and software design and how information is processed, stored, transmitted and disposed of (37b); detecting, preventing and responding to attacks and other security failures (37c); and physical security (37d). Encryption or similar means protect personal information.",
+     evidence_examples: ["Safeguards mapped to the four areas", "Encryption standard"]}
+  - {id: PR38, kind: requirement, category: cbpr, group: SECURITY, title: "Secure disposal",
+     intent: "A secure disposal policy is in place and followed.",
+     evidence_examples: ["Disposal policy", "Disposal records or certificates"]}
+  - {id: PR39, kind: requirement, category: cbpr, group: SECURITY, title: "Detecting and responding to attacks",
+     intent: "Measures detect, prevent and respond to attacks, intrusions and other security failures.",
+     evidence_examples: ["Monitoring and alerting", "Incident response procedure and records"]}
+  - {id: PR40, kind: requirement, category: cbpr, group: SECURITY, title: "Testing safeguards",
+     intent: "Safeguards are tested at appropriate intervals, and adjusted based on the results.",
+     evidence_examples: ["Test plan and results (vulnerability scans, penetration tests, control tests)", "Remediation records"]}
+  - {id: PR41, kind: conditional, category: cbpr, group: SECURITY, title: "Third-party certifications and assessments",
+     intent: "Where the company uses third-party certifications or other assessments, such as privacy compliance audits, they happen at appropriate intervals and their recommendations are acted on.",
+     evidence_examples: ["Certificates or audit reports", "Tracking of recommendations"]}
+  - {id: PR42, kind: conditional, category: cbpr, group: SECURITY, title: "Processors' security obligations",
+     intent: "Processors, agents, contractors and service providers are required, by contract or other reasonable means, to keep a security program proportionate to the information (42a), notify the company promptly of a breach (42b), and fix the cause at once (42c); the company reviews this periodically. Applies when the company uses processors.",
+     evidence_examples: ["Contract security clauses", "Supplier security reviews"]}
+  # ---------------------------------------------------------------- access and correction
+  - {id: PR43, kind: requirement, category: cbpr, group: ACCESS, title: "Confirming whether information is held",
+     intent: "On request, the company confirms whether it holds personal information about the person, under written procedures, subject to a justified Qualification.",
+     evidence_examples: ["Request procedure", "Request log"]}
+  - {id: PR44, kind: requirement, category: cbpr, group: ACCESS, title: "Access to information",
+     intent: "On request, people get access to their information: identity is confirmed (44a), access is given within a reasonable time (44b), in an understandable form (44c), in a way that fits how they usually deal with the company (44d), and for no fee or a fee that isn't excessive (44e). A refusal says why and how to challenge it. Qualifications: a disproportionate burden, confidentiality or legal restrictions, or another person's privacy (redacting where possible).",
+     evidence_examples: ["Access procedure covering 44a-44e", "Request log with response times", "Refusal letters"]}
+  - {id: PR45, kind: requirement, category: cbpr, group: ACCESS, title: "Challenging and correcting information",
+     intent: "People can challenge their information and have it corrected, completed, amended or deleted: the mechanisms are clear and conspicuous (45a), corrections are made where appropriate (45b) within a reasonable time (45c), the person gets the corrected copy or a confirmation (45d), and a refusal says why and whom to contact (45e).",
+     evidence_examples: ["Correction procedure covering 45a-45e", "Request log"]}
+  # ---------------------------------------------------------------- accountability
+  - {id: PR46, kind: requirement, category: cbpr, group: ACCOUNT, title: "Compliance measures and records of processing",
+     intent: "The company has measures to meet the Privacy Principles (internal policies, contracts, sector law, codes of conduct or others) and keeps records of its processing activities that it can provide on request.",
+     evidence_examples: ["Privacy program description", "Records of processing activities"]}
+  - {id: PR47, kind: requirement, category: cbpr, group: ACCOUNT, title: "Qualified person responsible",
+     intent: "A person with qualifications suited to the company's processing is appointed responsible for overall compliance with the Privacy Principles.",
+     evidence_examples: ["Appointment record", "Role description and qualifications"]}
+  - {id: PR48, kind: requirement, category: cbpr, group: ACCOUNT, title: "Complaint procedures",
+     intent: "Procedures receive, investigate and respond to privacy complaints, for example a published channel, a designated person and a resolution process.",
+     evidence_examples: ["Complaint procedure", "Complaint log"]}
+  - {id: PR49, kind: requirement, category: cbpr, group: ACCOUNT, title: "Timely complaint responses",
+     intent: "Procedures make sure complainants get a timely response.",
+     evidence_examples: ["Response time targets", "Complaint log with response times"]}
+  - {id: PR50, kind: requirement, category: cbpr, group: ACCOUNT, title: "Remedial action explained",
+     intent: "Responses to complaints explain the remedial action the company takes or considers.",
+     evidence_examples: ["Sample complaint responses"]}
+  - {id: PR51, kind: requirement, category: cbpr, group: ACCOUNT, title: "Privacy training",
+     intent: "Employees are trained on the company's privacy policies and on handling privacy complaints.",
+     evidence_examples: ["Training material", "Completion records"]}
+  - {id: PR52, kind: requirement, category: cbpr, group: ACCOUNT, title: "Legal requests for information",
+     intent: "Procedures, with staff training, govern responses to subpoenas, warrants, court orders and similar requests for personal information.",
+     evidence_examples: ["Law enforcement and legal request procedure", "Request log", "Training records"]}
+  - {id: PR53, kind: conditional, category: cbpr, group: ACCOUNT, title: "Mechanisms with processors",
+     intent: "Mechanisms such as contracts, internal policies, sector law or codes of conduct make sure processors, agents, contractors and service providers meet the company's obligations. Applies when the company uses processors.",
+     evidence_examples: ["Processor contracts", "Processor register"]}
+  - {id: PR54, kind: conditional, category: cbpr, group: ACCOUNT, title: "Processor agreement terms",
+     intent: "Agreements require processors and service providers, as appropriate, to follow the company's privacy policies or substantially similar practices, follow its instructions, not subcontract without consent, be Global CBPR-certified by a Forum-recognized Accountability Agent in their jurisdiction, and report breaches. Applies when the company uses processors.",
+     evidence_examples: ["Data processing agreement template", "Signed agreements"]}
+  - {id: PR55, kind: conditional, category: cbpr, group: ACCOUNT, title: "Processor self-assessments",
+     intent: "Processors and service providers are required to submit self-assessments of their compliance with the company's instructions and agreements. Applies when the company uses processors.",
+     evidence_examples: ["Self-assessment questionnaires returned"]}
+  - {id: PR56, kind: conditional, category: cbpr, group: ACCOUNT, title: "Monitoring processors",
+     intent: "Processors and service providers are spot-checked or monitored regularly, or the company explains why it relies on other mechanisms. Applies when the company uses processors.",
+     evidence_examples: ["Monitoring schedule and results"]}
+  - {id: PR57, kind: conditional, category: cbpr, group: ACCOUNT, title: "Disclosures where due diligence is impractical",
+     intent: "When the company discloses to recipients where due diligence is impractical or impossible, it explains why and how the information is otherwise protected, including any consent relied on. Applies when such disclosures are made; disclosures required by domestic law are exempt.",
+     evidence_examples: ["Explanation of the disclosures and protections", "Consent records"]}
+  # ---------------------------------------------------------------- Global PRP (processors)
+  - {id: PRP1, kind: requirement, category: prp, group: PRP-SEC, title: "Information security policy (processor)",
+     intent: "A written information security policy covers the personal information processed for controllers.",
+     evidence_examples: ["Approved information security policy"]}
+  - {id: PRP2, kind: requirement, category: prp, group: PRP-SEC, title: "Safeguards (processor)",
+     intent: "Physical, technical and administrative safeguards, such as access control, encryption, boundary protection, audit logging and monitoring, support the policy and are reviewed periodically.",
+     evidence_examples: ["Description of safeguards", "Periodic review records"]}
+  - {id: PRP3, kind: requirement, category: prp, group: PRP-SEC, title: "Employee security awareness (processor)",
+     intent: "Employees know the importance of security through ongoing training and oversight.",
+     evidence_examples: ["Training records", "Signed policies"]}
+  - {id: PRP4, kind: requirement, category: prp, group: PRP-SEC, title: "Detecting and responding to attacks (processor)",
+     intent: "Measures detect, prevent and respond to attacks, intrusions and other security failures.",
+     evidence_examples: ["Monitoring and alerting", "Incident response records"]}
+  - {id: PRP5, kind: requirement, category: prp, group: PRP-SEC, title: "Testing safeguards (processor)",
+     intent: "Safeguards are tested at appropriate intervals and adjusted based on the results.",
+     evidence_examples: ["Test results", "Remediation records"]}
+  - {id: PRP6, kind: requirement, category: prp, group: PRP-SEC, title: "Notifying controllers of breaches",
+     intent: "A process tells the controller of a privacy or security breach affecting its information.",
+     evidence_examples: ["Breach notification procedure", "Contract notice terms"]}
+  - {id: PRP7, kind: requirement, category: prp, group: PRP-SEC, title: "Disposal or return",
+     intent: "Personal information is securely disposed of or returned on the controller's instruction or when the relationship ends.",
+     evidence_examples: ["Disposal and return procedure", "Disposal certificates"]}
+  - {id: PRP8, kind: conditional, category: prp, group: PRP-SEC, title: "Third-party certifications and assessments (processor)",
+     intent: "Where third-party certifications or risk assessments are used, they happen at appropriate intervals, safeguards are adjusted and recommendations acted on.",
+     evidence_examples: ["Certificates or audit reports", "Tracking of recommendations"]}
+  - {id: PRP9, kind: requirement, category: prp, group: PRP-ACC, title: "Processing limited to the controller's purposes",
+     intent: "Policies keep processing to the purposes the controller specifies.",
+     evidence_examples: ["Processing policy", "Controller instructions on file"]}
+  - {id: PRP10, kind: requirement, category: prp, group: PRP-ACC, title: "Deleting, updating and correcting on request",
+     intent: "Procedures delete, update and correct information when the controller asks, where necessary and appropriate.",
+     evidence_examples: ["Procedure", "Request log"]}
+  - {id: PRP11, kind: requirement, category: prp, group: PRP-ACC, title: "Following controller instructions",
+     intent: "The processor can describe the measures that make sure it follows each controller's processing instructions.",
+     evidence_examples: ["Description of measures", "Instruction register"]}
+  - {id: PRP12, kind: requirement, category: prp, group: PRP-ACC, title: "Person responsible (processor)",
+     intent: "A designated employee is responsible for overall compliance with the PRP requirements.",
+     evidence_examples: ["Appointment record"]}
+  - {id: PRP13, kind: requirement, category: prp, group: PRP-ACC, title: "Privacy requests and complaints",
+     intent: "Procedures forward privacy requests and complaints to the controller, or handle them only as the controller instructs.",
+     evidence_examples: ["Request forwarding procedure", "Log"]}
+  - {id: PRP14, kind: requirement, category: prp, group: PRP-ACC, title: "Legal requests: telling the controller",
+     intent: "The controller is told of subpoenas, warrants or orders requiring disclosure of its information, unless the law forbids it; employees are trained on the procedure.",
+     evidence_examples: ["Legal request procedure", "Training records"]}
+  - {id: PRP15, kind: conditional, category: prp, group: PRP-ACC, title: "Telling controllers about sub-processors",
+     intent: "A procedure tells the controller when sub-processors are engaged. Applies when the processor uses sub-processors.",
+     evidence_examples: ["Sub-processor notification procedure", "Published sub-processor list"]}
+  - {id: PRP16, kind: conditional, category: prp, group: PRP-ACC, title: "Mechanisms with sub-processors",
+     intent: "Mechanisms make sure sub-processors process information in line with the processor's PRP obligations. Applies when the processor uses sub-processors.",
+     evidence_examples: ["Sub-processor contracts"]}
+  - {id: PRP17, kind: conditional, category: prp, group: PRP-ACC, title: "Sub-processor terms",
+     intent: "Those mechanisms require sub-processors, as appropriate, to follow instructions, limit further sub-processing, hold PRP recognition, provide self-assessments or other evidence, and accept spot checks. Applies when the processor uses sub-processors.",
+     evidence_examples: ["Sub-processor agreement terms", "Self-assessments and spot-check results"]}
+  - {id: PRP18, kind: requirement, category: prp, group: PRP-ACC, title: "Training on policies and instructions",
+     intent: "Employees are trained on the processor's privacy policies and on following controllers' instructions.",
+     evidence_examples: ["Training material", "Completion records"]}

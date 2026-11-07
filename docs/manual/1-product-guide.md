@@ -377,7 +377,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 ## 18. Frameworks
 
-> **In plain terms:** Seven frameworks are built in: ISO 42001 (AI), ISO 27001 (information security), SOC 2, HIPAA, TX-RAMP, GDPR and FedRAMP 20x. A client working towards more than one gets one workspace with a record per framework, and sees each on the client site as its own tab. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
+> **In plain terms:** Eight frameworks are built in: ISO 42001 (AI), ISO 27001 (information security), SOC 2, HIPAA, TX-RAMP, GDPR, FedRAMP 20x and Global CBPR. A client working towards more than one gets one workspace with a record per framework, and sees each on the client site as its own tab. Where one process serves both standards (for example document control), the evidence is collected once and counts for both, but only after a person has signed off that the two requirements really match.
 
 > **For GRC practitioners:** Each standard keeps its own record:
 > - its own Statement of Applicability, gaps and policies
@@ -479,16 +479,28 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 > **Under the hood:** start a record with `new-engagement --framework fedramp20x --categories class_b,class_c`. Catalog, playbook and 18 templates are in `frameworks/fedramp20x/`; regenerate the catalog with `tools/fedramp20x.py` when FedRAMP updates its rules.
 
-The seven frameworks side by side:
+### Global CBPR
 
-| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR | FedRAMP 20x |
-|---|---|---|---|---|---|---|---|
-| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 11 processor + 11 situational | 40 for every class + 4 Class A, 136 Class B and C, 7 Class C only |
-| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents | 18 documents (12 for Class A) |
-| Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog | No |
-| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance | FedRAMP certification (Class A, B or C; D not covered yet) |
-| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision | Readiness assessment, independent assessment | Independent assessment, certification decision |
-| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count | To ISO 27001: 24 related; to SOC 2: 22 related | None yet; FedRAMP's own NIST SP 800-53 mappings are in the catalog |
+> **In plain terms:** Global CBPR is a privacy certification recognized by governments in the Asia-Pacific region and beyond, including the United States, Japan, Korea, Singapore and Canada. An independent Accountability Agent checks the company's answers to a long questionnaire: does it tell people what it collects and why, give them choices, let them see and correct their information, protect it, and hold its suppliers to the same standard. A company that only processes data for its customers gets the processor version, PRP. Both are renewed every year.
+
+> **For GRC practitioners:**
+> - **Catalog:** the Global CBPR Program Requirements as updated in September 2025 (57, for certifications and recertifications from 1 April 2027) and the Global PRP Program Requirements (18); ids `PR1`-`PR57`, `PRP1`-`PRP18`; our paraphrase.
+> - **Certifications:** `cbpr` and/or `prp` (W113 until one is chosen).
+> - **Qualifications:** recorded in the control with their justification; the requirement stays in scope. 23 conditional requirements (children's information, direct marketing, disclosures, processors) can be set aside with a reason.
+> - **Dates:** `stage1` is the intake questionnaire submission; `stage2` the certification decision.
+
+> **Under the hood:** start a record with `new-engagement --framework cbpr --categories cbpr,prp`. Catalog, playbook and 16 templates are in `frameworks/cbpr/`; mappings in `mappings/cbpr__gdpr.yaml` and `cbpr__iso27001.yaml`.
+
+The eight frameworks side by side:
+
+| | ISO 42001 | ISO 27001 | SOC 2 | HIPAA | TX-RAMP | GDPR | FedRAMP 20x | Global CBPR |
+|---|---|---|---|---|---|---|---|---|
+| Requirements | 27 clauses + 38 Annex A controls | 25 clauses + 93 Annex A controls | 33 common criteria + up to 28 optional | 64 core + 4 covered entity + 3 business associate + 4 for special organizations | 117 Level 1 + 106 Level 2 | 7 core + 31 controller + 11 processor + 11 situational | 40 for every class + 4 Class A, 136 Class B and C, 7 Class C only | 57 CBPR + 18 PRP |
+| Policy and procedure library | 17 documents | 20 documents | 18 documents (fewer without optional categories) | 19 documents (15 for most clients) | 17 documents (one per family) | 16 documents | 18 documents (12 for Class A) | 16 documents (13 CBPR, 3 PRP) |
+| Impact assessments | Yes (AI systems) | No | No | No | No | DPIAs (Art. 35), in the catalog | No | Privacy risk assessment (PR4), in the catalog |
+| Outcome | Certificate | Certificate | Attestation report (Type 1 or Type 2) | No certificate: demonstrable compliance | Certification by Texas DIR | No certificate: demonstrable compliance | FedRAMP certification (Class A, B or C; D not covered yet) | Certification by an Accountability Agent, renewed yearly |
+| Audit milestones | Stage 1, Stage 2 | Stage 1, Stage 2 | Observation period start, end | Readiness assessment, independent assessment | Assessment submission, certification decision | Readiness assessment, independent assessment | Independent assessment, certification decision | Questionnaire submission, certification decision |
+| Proposed mappings | to ISO 27001: 4 equivalent, 35 related | to 42001 (left); to SOC 2: 4 equivalent, 2 subset, 1 superset, 42 related | to ISO 27001 (left) | to ISO 27001: 6 equivalent, 5 subset, 33 related; to SOC 2: 24 related | Same IDs as NIST SP 800-53: program `nist80053` mappings count | To ISO 27001: 24 related; to SOC 2: 22 related | None yet; FedRAMP's own NIST SP 800-53 mappings are in the catalog | To GDPR: 46 related; to ISO 27001: 27 related |
 
 ## 19. The compliance program: common controls, calendar and certification
 
@@ -630,7 +642,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version.
 | W108 / W109 | warning | A collector check is failing / ran but errored |
 | W110 / W111 | warning | Client claim with no owner / owner not in owners.yaml |
 | W112 | warning | SOC 2: an open gap whose requirements are all in categories taken out of scope; it is no longer chased (no request, issue closed) |
-| W113 | warning | No role or class chosen: HIPAA `covered_entity` and/or `business_associate`; GDPR `controller` and/or `processor`; FedRAMP 20x `class_a` or `class_b` |
+| W113 | warning | No role or class chosen: HIPAA `covered_entity` and/or `business_associate`; GDPR `controller` and/or `processor`; FedRAMP 20x `class_a` or `class_b`; Global CBPR `cbpr` and/or `prp` |
 | W114 | warning | HIPAA: work has started on an addressable specification but its `decision` isn't recorded |
 | W115 | warning | A chosen category needs another one too (FedRAMP 20x `class_c` adds to `class_b`), or can't be combined with one chosen (Class A with Class B) |
 | W120–W123 | warning | Finding past due; 9.2 verified while no audit has reached reporting or closed; audit overrunning; in-scope requirement without a workpaper |

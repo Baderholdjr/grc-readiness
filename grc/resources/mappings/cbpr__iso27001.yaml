@@ -1,0 +1,176 @@
+# PROPOSED mappings between Global CBPR / PRP and ISO/IEC 27001:2022 (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against both frameworks and the client's actual controls, and fill reviewed_by
+# and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count for both records (cited
+# as "<framework>:<id>"). The rest are pointers. `subset`: the CBPR requirement (first framework) is narrower;
+# `superset`: wider. Our own judgement; no standard's text is reproduced.
+#
+# None is `equivalent`: a CBPR requirement is about personal information and its owners; an ISO 27001 control is about information security. Evidence for one is a strong pointer for the other, never proof on its own.
+
+frameworks:
+- cbpr
+- iso27001
+mappings:
+- cbpr: PR33
+  iso27001: A.5.1
+  relationship: related
+  note: An approved information security policy.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR34
+  iso27001: A.8.24
+  relationship: related
+  note: Encryption among the safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR34
+  iso27001: A.5.15
+  relationship: related
+  note: Access control among the safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR35
+  iso27001: 6.1.2
+  relationship: related
+  note: Assessing security risk, the basis for proportionate safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR36
+  iso27001: A.6.3
+  relationship: related
+  note: Security awareness and training.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR37
+  iso27001: A.8.20
+  relationship: related
+  note: Network security, part of information systems safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR37
+  iso27001: A.7.1
+  relationship: related
+  note: Physical security.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR38
+  iso27001: A.7.14
+  relationship: related
+  note: Secure disposal of equipment.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR38
+  iso27001: A.8.10
+  relationship: related
+  note: Deleting information.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR39
+  iso27001: A.8.16
+  relationship: related
+  note: Monitoring to detect attacks.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR39
+  iso27001: A.5.26
+  relationship: related
+  note: Responding to incidents.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR40
+  iso27001: A.8.8
+  relationship: related
+  note: Vulnerability management as testing of safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR41
+  iso27001: A.5.35
+  relationship: related
+  note: Independent review of security.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR42
+  iso27001: A.5.20
+  relationship: related
+  note: Security terms in supplier agreements.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR56
+  iso27001: A.5.22
+  relationship: related
+  note: Monitoring supplier services.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR47
+  iso27001: A.5.2
+  relationship: related
+  note: A person responsible for the program.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR46
+  iso27001: A.5.34
+  relationship: related
+  note: Privacy and protection of personal information.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP1
+  iso27001: A.5.1
+  relationship: related
+  note: An approved information security policy.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP2
+  iso27001: A.5.15
+  relationship: related
+  note: Access control among the safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP3
+  iso27001: A.6.3
+  relationship: related
+  note: Security awareness and training.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP4
+  iso27001: A.8.16
+  relationship: related
+  note: Monitoring to detect attacks.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP5
+  iso27001: A.8.8
+  relationship: related
+  note: Testing safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP6
+  iso27001: A.5.24
+  relationship: related
+  note: Incident management, including telling the controller.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP7
+  iso27001: A.8.10
+  relationship: related
+  note: Deleting information.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP8
+  iso27001: A.5.35
+  relationship: related
+  note: Independent review of security.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP16
+  iso27001: A.5.19
+  relationship: related
+  note: Security in supplier (sub-processor) relationships.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP17
+  iso27001: A.5.20
+  relationship: related
+  note: Terms in sub-processor agreements.
+  reviewed_by: ''
+  reviewed_on: null

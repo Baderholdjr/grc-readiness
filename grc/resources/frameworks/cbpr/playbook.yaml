@@ -1,0 +1,210 @@
+# Framework playbook: reusable engagement content for Global CBPR / Global PRP readiness.
+# Engagement files may override any of these keys (see engagement/engagement.yaml).
+#
+# The company completes the Forum's intake questionnaire and sends it, with supporting documents, to a
+# Forum-recognized Accountability Agent, which verifies each answer, asks for changes, certifies, and then
+# recertifies every year. In the engagement record the two dates mean: dates.stage1 = submission of the intake
+# questionnaire to the Accountability Agent; dates.stage2 = the certification decision.
+# Choose the certification in scope.categories: cbpr (controller), prp (processor), or both.
+
+title_suffix: Global CBPR Readiness Brief
+tldr_template: "Help {client} earn Global CBPR certification (and Global PRP recognition, if it processes data for others): a privacy program that meets every program requirement, with the records an Accountability Agent will ask to see."
+usage_heading: Personal Information and Processing in Scope
+requirements_heading: Global CBPR Readiness Requirements
+
+terms:
+  goal: Global CBPR certification
+  audit_body: Forum-recognized Accountability Agent
+  focus: Global CBPR and PRP readiness
+  stage1: Intake questionnaire submission
+  stage2: Certification decision
+  countdown: intake questionnaire submission is
+  system: personal information processing
+  applicability_title: Global CBPR Applicability Statement
+  applicability_short: Applicability
+  applicability_intro: "Every conditional requirement and whether it applies to {client}, with the reason when it doesn't (no children's data, no direct marketing, no processors or sub-processors, and the like); and the requirements of a certification outside this engagement. Program requirements in scope are not optional and are not listed; a Qualification claimed against one is recorded in its control."
+  # A list: the first id in the record's scope is used (CBPR first, then PRP).
+  internal_audit_ref: [PR46, PRP11]
+  corrective_ref: [PR46, PRP11]
+  review_ref: [PR47, PRP12]
+  record_control_ref: [PR46, PRP11]
+  scope_ref: [PR46, PRP9]
+  objectives_ref: [PR46, PRP12]
+  risk_ref: [PR4, PRP2]
+  review_required: "no"
+  applicability_id_header: Requirement
+
+glossary:
+  - term: Global CBPR and Global PRP
+    plain: "Two privacy certifications run by the Global CBPR Forum: CBPR for a company handling personal information for its own purposes, PRP for a company processing it for others. Customers and regulators in member economies recognize them."
+    tech: "Members include Australia, Canada, Chinese Taipei, Japan, Korea, Mexico, the Philippines, Singapore, the United States and the DIFC. The APEC CBPR and PRP requirements are identical to the Global ones until 31 March 2027, and a company may take part in both."
+  - term: Program requirements
+    plain: "The questions the company must answer, and an Accountability Agent must verify, to be certified: 57 for CBPR from April 2027, 18 for PRP."
+    tech: "Global CBPR Program Requirements (September 2025 update, effective 1 April 2027) and the matching intake questionnaire."
+  - term: Accountability Agent
+    plain: "The organization recognized by the Forum that reviews the company's answers and evidence, certifies it, and checks it every year."
+    tech: "Forum-recognized; also handles complaints about certified companies."
+  - term: Qualification
+    plain: "An allowed exception, for example no notice is needed for publicly available information or in an emergency. It must be explained and the Accountability Agent must accept it."
+    tech: "Notice, Choice and Access and Correction each list their own."
+  - term: Controller and processor
+    plain: "A controller decides why and how personal information is used. A processor handles it on a controller's instructions."
+    tech: "CBPR certifies controllers; PRP recognizes processors."
+  - term: Records of processing
+    plain: "The written list of what personal information the company uses, why, where it comes from and who receives it."
+    tech: "PR46; the 2025 update added keeping these records."
+
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the requirement met by an approved policy, procedure, notice, contract or record?
+  - key: implemented
+    label: Implemented
+    question: Is it in place for all personal information and channels in scope?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing it operated (requests answered, choices honoured, complaints resolved)?
+  - key: tested
+    label: Tested
+    question: Does a test, done the way an Accountability Agent would, show it works?
+
+gap_callout: Treat client statements as hypotheses until evidence shows the requirement is documented, applied to all personal information in scope, leaves records, and passes a test.
+
+working_rule: If a requirement is answered Yes but you cannot trace it to an owner, a written procedure and records, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The privacy statement covers every item the requirements list, and notices at collection match it.
+  - Records of processing tie each type of personal information to its sources, purposes, uses and recipients.
+  - Choice, access, correction and complaint mechanisms work, and their logs show timely responses.
+  - The information security policy and safeguards are in place, proportionate and tested.
+  - Every processor and sub-processor is under an agreement with the required terms, and monitored.
+  - Every Qualification and every conditional requirement set aside has a written justification.
+
+phases:
+  - id: validate
+    objective: "Scope & roles"
+    deliverables:
+      - Kickoff and owner alignment
+      - "Choose CBPR, PRP or both, and the Accountability Agent; confirm the economies where certification matters"
+      - "Data mapping: personal information, sources, purposes, recipients and processors"
+      - Validate gap-analysis claims and evidence
+  - id: governance
+    objective: "Policies & notices"
+    deliverables:
+      - Privacy statement and notices at collection
+      - Privacy, security and processor policies; responsible person appointed
+      - Records of processing activities
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Choice, access, correction and complaint mechanisms in operation with logs
+      - Processor agreements with the required terms
+      - Privacy risk assessments and breach notification process
+  - id: test
+    objective: "Test"
+    deliverables:
+      - Test each requirement against its evidence
+      - Test an access request, a correction, an opt-out and a complaint end to end
+      - Draft intake questionnaire answers and supporting documents
+  - id: stage1
+    objective: "Submission"
+    deliverables:
+      - Submit the intake questionnaire to the Accountability Agent
+      - Answer the Accountability Agent's questions and make the changes it asks for
+  - id: stage2
+    objective: "Certification"
+    deliverables:
+      - Certification and listing in the compliance directory
+      - Hand over the annual recertification cycle
+
+needs:
+  - Maintain the control matrix, data map, evidence index, gap register, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test for all personal information in scope.
+  - Draft and revise policies, notices and procedures for lead review - do not invent processing activities.
+  - Track recurring obligations (annual recertification, records of processing review, request and complaint handling times, processor reviews, training).
+  - Flag legal questions (governing law, children's data, compelled disclosures) for the client's counsel.
+
+default_guardrails:
+  - "{client} owns its privacy decisions and evidence; our team structures, reviews, tests, and challenges."
+  - We are not the Accountability Agent and do not certify. We are not giving legal advice.
+  - No personal information in this repository or in our working files. Evidence is pointed to where it lives.
+  - Escalate unsupported claims and unjustified Qualifications to the engagement lead.
+
+default_risks:
+  - A privacy statement that doesn't match what the company actually does.
+  - Qualifications claimed without a justification the Accountability Agent will accept.
+  - Processor agreements missing required terms, or processors never monitored.
+  - Requirements added in the 2025 update (sensitive and children's information, risk assessment, breach notice to individuals, records of processing) not in place by the April 2027 recertification.
+
+impact_assessment:
+  required_for_kinds: []
+
+# Policy and procedure library (`grc docs new`). Every requirement is covered by exactly one document, and each
+# document belongs to one certification, so a PRP-only client never gets the CBPR documents.
+documents:
+  review_every_days: 365
+  library:
+    - {id: DOC-CBPR-POLICY, title: "Privacy Program Policy", kind: policy, template: policy.md,
+       satisfies: [PR46, PR47, PR51], sections: [Purpose, Scope, Privacy principles, Responsible person, Records of processing, Training, Review]}
+    - {id: DOC-CBPR-HARM, title: "Sensitive Information, Children's Information and Privacy Risk Procedure", kind: procedure, template: harm.md,
+       satisfies: [PR1, PR2, PR3, PR4], sections: [Purpose, Sensitive information, Children's information, Assessing and mitigating risk, Review]}
+    - {id: DOC-CBPR-BREACH, title: "Breach Notification Procedure", kind: procedure, template: breach.md,
+       satisfies: [PR5], sections: [Purpose, Recognising a breach, Assessing significant harm, Notifying individuals, Breach log, Review]}
+    - {id: DOC-CBPR-NOTICE, title: "Privacy Statement and Notice Procedure", kind: procedure, template: notice.md,
+       satisfies: [PR6, PR7, PR8, PR9], sections: [Purpose, The privacy statement, Notice at collection, Qualifications, Keeping notices accurate, Review]}
+    - {id: DOC-CBPR-COLLECTION, title: "Collection and Use Limitation Procedure", kind: procedure, template: collection.md,
+       satisfies: [PR10, PR11, PR12, PR13, PR14], sections: [Purpose, Sources of personal information, Collecting only what is relevant, Lawful and fair collection, Using information for its purposes, Unrelated uses, Review]}
+    - {id: DOC-CBPR-DISCLOSURE, title: "Disclosure and Transfer Procedure", kind: procedure, template: disclosure.md,
+       satisfies: [PR15, PR16, PR17, PR18, PR57], sections: [Purpose, Disclosures to controllers, Transfers to processors, Disclosures for other purposes, Where due diligence is impractical, Review]}
+    - {id: DOC-CBPR-CHOICE, title: "Choice and Consent Procedure", kind: procedure, template: choice.md,
+       satisfies: [PR19, PR20, PR21, PR22, PR23, PR24, PR25, PR26, PR27], sections: [Purpose, When choice is offered, Direct marketing, How choice is presented, Recording and honouring choices, Withdrawing consent, Qualifications, Review]}
+    - {id: DOC-CBPR-INTEGRITY, title: "Data Quality and Correction Procedure", kind: procedure, template: integrity.md,
+       satisfies: [PR28, PR29, PR30, PR31, PR32], sections: [Purpose, Keeping information accurate, Correction requests, Passing on corrections, Reports from processors, Review]}
+    - {id: DOC-CBPR-SECURITY, title: "Information Security Policy", kind: policy, template: security.md,
+       satisfies: [PR33, PR34, PR35, PR36, PR37, PR38, PR39, PR40, PR41], sections: [Purpose, Scope, Proportionate safeguards, People, Systems and encryption, Detecting and responding to attacks, Physical security, Secure disposal, Testing and assessments, Review]}
+    - {id: DOC-CBPR-PROCESSORS, title: "Processor Management Procedure", kind: procedure, template: processors.md,
+       satisfies: [PR42, PR53, PR54, PR55, PR56], sections: [Purpose, Choosing processors, Agreement terms, Security obligations, Self-assessments and monitoring, Review]}
+    - {id: DOC-CBPR-ACCESS, title: "Access and Correction Request Procedure", kind: procedure, template: access.md,
+       satisfies: [PR43, PR44, PR45], sections: [Purpose, Receiving and verifying requests, Confirming and giving access, Correction and deletion, Refusals and Qualifications, Request log, Review]}
+    - {id: DOC-CBPR-COMPLAINTS, title: "Privacy Complaint Procedure", kind: procedure, template: complaints.md,
+       satisfies: [PR48, PR49, PR50], sections: [Purpose, Receiving complaints, Investigating, Responding and remedial action, Complaint log, Review]}
+    - {id: DOC-CBPR-LEGAL, title: "Legal and Government Request Procedure", kind: procedure, template: legal-requests.md,
+       satisfies: [PR52], sections: [Purpose, Receiving a request, Reviewing and responding, Records and training, Review]}
+    - {id: DOC-PRP-SECURITY, title: "Information Security Policy (Processor)", kind: policy, template: prp-security.md,
+       satisfies: [PRP1, PRP2, PRP3, PRP4, PRP5, PRP6, PRP7, PRP8], sections: [Purpose, Scope, Safeguards, People, Detecting and responding to attacks, Notifying controllers of breaches, Disposal or return, Testing and assessments, Review]}
+    - {id: DOC-PRP-PROCESSING, title: "Processing on Behalf of Controllers Procedure", kind: procedure, template: prp-processing.md,
+       satisfies: [PRP9, PRP10, PRP11, PRP12, PRP13, PRP14, PRP18], sections: [Purpose, Controller instructions, Deletion and correction on request, Responsible person, Requests and complaints, Legal requests, Training, Review]}
+    - {id: DOC-PRP-SUBPROCESSORS, title: "Sub-processor Management Procedure", kind: procedure, template: prp-subprocessors.md,
+       satisfies: [PRP15, PRP16, PRP17], sections: [Purpose, Telling controllers, Sub-processor agreements, Monitoring sub-processors, Review]}
+
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: processing_changes, content: context_changes, title: "Changes to processing, processors, laws and the program requirements"}
+    - {id: performance, content: performance, title: "Requests, choices and complaints handled and on time; training and test results"}
+    - {id: risks, content: risks_and_impacts, title: "Privacy risk assessments and security risks"}
+    - {id: processors, content: suppliers, title: "Processors, sub-processors and their monitoring"}
+    - {id: breaches, content: incidents, title: "Breaches and complaints"}
+    - {id: resources, title: "Adequacy of resources for the privacy program"}
+    - {id: improvement, title: "Opportunities for improvement and Accountability Agent findings"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.2, governance: 0.25, implement: 0.25, test: 0.15, stage1: 0.1, stage2: 0.05}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, project management, weekly]}
+    - {id: kickoff, title: "Kickoff and data mapping", keywords: [kickoff, kick-off, scoping, scope, data map, mapping, inventory]}
+    - {id: interviews, title: "Interviews and walkthroughs", keywords: [interview, walkthrough, workshop, meeting]}
+    - {id: documentation, title: "Policies, notices and procedures", keywords: [policy, procedure, notice, statement, document, drafting]}
+    - {id: processors, title: "Processors and risk", keywords: [processor, vendor, sub-processor, risk, dpa]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, sample, request]}
+    - {id: questionnaire, title: "Intake questionnaire", keywords: [intake, questionnaire, accountability agent]}
+    - {id: internal_audit, title: "Compliance review", keywords: [compliance review, internal audit, audit, workpaper]}
+    - {id: management_review, title: "Leadership review", keywords: [management review, board, mr-]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: certification, title: "Certification", keywords: [certification, recertification]}
+    - {id: other, title: "Other", keywords: []}
