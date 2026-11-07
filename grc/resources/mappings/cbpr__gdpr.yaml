@@ -1,0 +1,278 @@
+# PROPOSED mappings between Global CBPR / PRP and GDPR (engine default).
+#
+# Nothing here counts until a person reviews it: copy this file to mappings/ at the root of the client
+# repository, check each line against both frameworks and the client's actual controls, and fill reviewed_by
+# and reviewed_on. Only reviewed `equivalent` mappings let one piece of evidence count for both records (cited
+# as "<framework>:<id>"). The rest are pointers. `subset`: the CBPR requirement (first framework) is narrower;
+# `superset`: wider. Our own judgement; no standard's text is reproduced.
+#
+# None is `equivalent`: the two rest on different legal tests (CBPR's purpose, notice and choice model; the GDPR's lawful bases and rights). Evidence for one is a strong pointer for the other, never proof on its own.
+
+frameworks:
+- cbpr
+- gdpr
+mappings:
+- cbpr: PR1
+  gdpr: Art9
+  relationship: related
+  note: Both ask for extra care with sensitive information; the categories and conditions differ.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR2
+  gdpr: Art8
+  relationship: related
+  note: Both turn on whether children's information is involved; the GDPR sets an age of digital consent.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR3
+  gdpr: Art8
+  relationship: related
+  note: Parental consent for children's information.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR4
+  gdpr: Art35
+  relationship: related
+  note: Assessing and mitigating the risk of harm from processing; the GDPR requires a formal DPIA for high-risk processing only.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR5
+  gdpr: Art34
+  relationship: related
+  note: Telling people about a breach that puts them at risk; thresholds and contents differ.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR6
+  gdpr: Art13
+  relationship: related
+  note: Both require a privacy notice with purposes, recipients and contact details.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR6
+  gdpr: Art14
+  relationship: related
+  note: Notice when information comes from other sources.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR7
+  gdpr: Art13
+  relationship: related
+  note: Notice at the time of collection.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR8
+  gdpr: Art13
+  relationship: related
+  note: Purposes stated at collection.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR9
+  gdpr: Art13
+  relationship: related
+  note: Recipients stated at collection.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR11
+  gdpr: Art5(1)(c)
+  relationship: related
+  note: Collecting only what the purposes need.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR12
+  gdpr: Art5(1)(a)
+  relationship: related
+  note: Lawful and fair collection; the GDPR also needs a lawful basis (Art. 6).
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR13
+  gdpr: Art5(1)(b)
+  relationship: related
+  note: Use limited to the stated or compatible purposes.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR14
+  gdpr: Art6
+  relationship: related
+  note: Unrelated uses need consent or a legal requirement under CBPR; the GDPR allows other lawful bases.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR16
+  gdpr: Art28(1)
+  relationship: related
+  note: Using processors.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR19
+  gdpr: Art7
+  relationship: related
+  note: Consent and choice; the GDPR's consent conditions are stricter.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR22
+  gdpr: Art21
+  relationship: related
+  note: Objecting to direct marketing at any time.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR26
+  gdpr: Art7
+  relationship: related
+  note: Recording and honouring choices and consent.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR27
+  gdpr: Art7
+  relationship: related
+  note: Withdrawing consent.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR28
+  gdpr: Art5(1)(d)
+  relationship: related
+  note: Keeping information accurate and up to date.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR29
+  gdpr: Art16
+  relationship: related
+  note: Correcting inaccurate information.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR31
+  gdpr: Art19
+  relationship: related
+  note: Telling recipients about corrections.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR34
+  gdpr: Art32(1)(b)
+  relationship: related
+  note: Security safeguards appropriate to the risk.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR35
+  gdpr: Art32(2)
+  relationship: related
+  note: Safeguards proportionate to the risk.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR37
+  gdpr: Art32(1)(a)
+  relationship: related
+  note: Encryption among the safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR40
+  gdpr: Art32(1)(d)
+  relationship: related
+  note: Testing safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR42
+  gdpr: Art28(3)
+  relationship: related
+  note: Security and breach terms for processors.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR43
+  gdpr: Art15
+  relationship: related
+  note: Confirming whether information is held and giving access.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR44
+  gdpr: Art15
+  relationship: related
+  note: Access to one's information.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR45
+  gdpr: Art16
+  relationship: related
+  note: Correction; CBPR includes deletion where appropriate (compare Art. 17).
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR46
+  gdpr: Art30(1)
+  relationship: related
+  note: Records of processing activities.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR46
+  gdpr: Art5(2)
+  relationship: related
+  note: Measures to show compliance.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR53
+  gdpr: Art28(1)
+  relationship: related
+  note: Mechanisms that make processors meet the company's obligations.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR54
+  gdpr: Art28(3)
+  relationship: related
+  note: Processor agreement terms.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP6
+  gdpr: Art33(2)
+  relationship: related
+  note: Processor tells the controller of a breach.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP7
+  gdpr: Art28(3)(g)
+  relationship: related
+  note: Deletion or return at the end of the service.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP9
+  gdpr: Art28(3)(a)
+  relationship: related
+  note: Processing only on the controller's instructions.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP11
+  gdpr: Art29
+  relationship: related
+  note: Following the controller's instructions.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP13
+  gdpr: Art28(3)(e)
+  relationship: related
+  note: Helping the controller with people's requests.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP15
+  gdpr: Art28(2)
+  relationship: related
+  note: Sub-processors and the controller's knowledge or authorisation.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP16
+  gdpr: Art28(4)
+  relationship: related
+  note: Flowing obligations down to sub-processors.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP17
+  gdpr: Art28(4)
+  relationship: related
+  note: Sub-processor terms.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP2
+  gdpr: Art32(1)(b)
+  relationship: related
+  note: Processor safeguards.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PRP5
+  gdpr: Art32(1)(d)
+  relationship: related
+  note: Testing safeguards.
+  reviewed_by: ''
+  reviewed_on: null
