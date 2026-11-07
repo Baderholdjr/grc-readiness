@@ -13,7 +13,7 @@ It applies when {{client}} uses processors. If it does not, PR42, PR53, PR54, PR
 Before a processor receives personal information:
 
 - the business owner records the data types, purpose and transfer in the disclosure and transfer register;
-- [[TODO: privacy or security lead]] reviews the processor's privacy and security practices, including any CBPR or PRP certification it holds, proportionate to the information involved;
+- [[TODO: privacy or security lead]] reviews the processor's privacy and security practices, including any Global CBPR or PRP certification it holds, proportionate to the information involved;
 - an agreement with the terms below is signed.
 
 Processors in use:
@@ -27,7 +27,7 @@ Agreements with processors and service providers require them, as appropriate to
 - to follow {{client}}'s privacy policies, or practices substantially similar to them;
 - to process personal information only on {{client}}'s instructions;
 - not to subcontract the processing without {{client}}'s consent;
-- to hold CBPR or PRP certification from a Forum-recognized Accountability Agent in their jurisdiction, where {{client}} requires it: [[TODO: when certification is required]];
+- to be Global CBPR-certified by a Forum-recognized Accountability Agent in their jurisdiction, where {{client}} requires it: [[TODO: when certification is required]];
 - to notify {{client}} of a breach involving its information;
 - [[TODO: any other terms, e.g. return or deletion at end of contract, applying corrections]].
 

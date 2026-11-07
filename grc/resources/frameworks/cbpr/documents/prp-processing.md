@@ -14,7 +14,7 @@ To make sure instructions are followed (PRP11):
 - staff with access are told which instructions apply, and access is limited to the controllers and systems their role needs;
 - systems are configured to keep each controller's information separate and to the agreed processing;
 - a new type of processing for a controller starts only after [[TODO: account owner or privacy lead]] confirms it is within the instructions;
-- if {{client}} believes an instruction cannot be followed or would breach the law, it tells the controller promptly and does not act on it until resolved;
+- good practice (not a Forum requirement): if {{client}} believes an instruction cannot be followed or would breach the law, it tells the controller promptly and does not act on it until resolved;
 - compliance with instructions is checked at least [[TODO: frequency]], and gaps are fixed.
 
 {{client}} does not use a controller's information for its own purposes.

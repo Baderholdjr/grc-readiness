@@ -18,7 +18,7 @@ The request is logged with the date, the requester, the legal instrument and the
 - confirm the request is valid and that the law compels {{client}} to respond, naming the law;
 - check the scope and disclose only the information the request requires;
 - push back on, or seek to narrow, a request that is too broad or lacks proper authority, taking advice from [[TODO: external counsel, if used]];
-- decide whether the person concerned can be told, and tell them unless the law or the request forbids it.
+- good practice (not a Forum requirement): decide whether the person concerned can be told, and tell them unless the law or the request forbids it.
 
 Disclosure is approved by [[TODO: approver]] and sent securely.
 

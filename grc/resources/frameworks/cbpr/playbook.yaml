@@ -37,7 +37,7 @@ terms:
 glossary:
   - term: Global CBPR and Global PRP
     plain: "Two privacy certifications run by the Global CBPR Forum: CBPR for a company handling personal information for its own purposes, PRP for a company processing it for others. Customers and regulators in member economies recognize them."
-    tech: "Members include Australia, Canada, Chinese Taipei, Japan, Korea, Mexico, the Philippines, Singapore, the United States and the DIFC. APEC CBPR and PRP run in parallel with the same requirements until 31 March 2027."
+    tech: "Members include Australia, Canada, Chinese Taipei, Japan, Korea, Mexico, the Philippines, Singapore, the United States and the DIFC. The APEC CBPR and PRP requirements are identical to the Global ones until 31 March 2027, and a company may take part in both."
   - term: Program requirements
     plain: "The questions the company must answer, and an Accountability Agent must verify, to be certified: 57 for CBPR from April 2027, 18 for PRP."
     tech: "Global CBPR Program Requirements (September 2025 update, effective 1 April 2027) and the matching intake questionnaire."
@@ -52,7 +52,7 @@ glossary:
     tech: "CBPR certifies controllers; PRP recognizes processors."
   - term: Records of processing
     plain: "The written list of what personal information the company uses, why, where it comes from and who receives it."
-    tech: "PR46, new in the 2025 update."
+    tech: "PR46; the 2025 update added keeping these records."
 
 evidence_test:
   - key: documented

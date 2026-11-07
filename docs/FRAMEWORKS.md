@@ -74,9 +74,9 @@ The catalog is the GDPR as in force: 60 obligations cited by article, such as `A
 
 ## Global CBPR
 
-The Global Cross-Border Privacy Rules (CBPR) System certifies a company's privacy program as a controller; the Global Privacy Recognition for Processors (PRP) System recognizes a processor's. Both are run by the Global CBPR Forum (members include Australia, Canada, Chinese Taipei, Japan, Korea, Mexico, the Philippines, Singapore, the United States and the DIFC) and certified, then recertified every year, by a Forum-recognized Accountability Agent. APEC CBPR and APEC PRP run in parallel with the same requirements until 31 March 2027.
+The Global Cross-Border Privacy Rules (CBPR) System certifies a company's privacy program as a controller; the Global Privacy Recognition for Processors (PRP) System recognizes a processor's. Both are run by the Global CBPR Forum (members include Australia, Canada, Chinese Taipei, Japan, Korea, Mexico, the Philippines, Singapore, the United States and the DIFC) and certified, then recertified every year, by a Forum-recognized Accountability Agent. The APEC CBPR and PRP requirements are identical to the Global ones until 31 March 2027, and a company may take part in both.
 
-**Version.** The catalog follows the September 2025 update of the Global CBPR Program Requirements: 57 requirements (the earlier version has 50), which apply to first certifications and recertifications from 1 April 2027. New in the update: sensitive information (PR1), children's information (PR2, PR3), risk assessment (PR4), breach notice to individuals (PR5), direct marketing opt-out (PR22), recording choices (PR26), withdrawing consent (PR27), records of processing (PR46) and a qualified responsible person (PR47). A client certifying before April 2027 under the 50-requirement version is still ready for the next recertification. Ids are our short form of the Forum's numbers (`PR44`, `PRP7`); titles and intents are our paraphrase, so work from the Forum's published requirements and intake questionnaire.
+**Version.** The catalog follows the September 2025 update of the Global CBPR Program Requirements: 57 requirements (the earlier version has 50), which apply to first certifications and recertifications from 1 April 2027. New in the update: sensitive information (PR1), children's information (PR2, PR3), risk assessment (PR4), breach notice to individuals (PR5), direct marketing opt-out (PR22) and withdrawing consent (PR27). Updated: recording choices (PR26), records of processing added to the compliance measures (PR46), and a *qualified* responsible person (PR47). A client certifying before April 2027 answers the 50-question intake questionnaire, whose numbers differ (PR47 was question 40): cross-walk the ids with the Forum's mark-up. Its program is then ready for the next recertification. Ids are our short form of the Forum's numbers (`PR44`, `PRP7`); titles and intents are our paraphrase, so work from the Forum's published requirements and intake questionnaire.
 
 **Certifications.** Choose `cbpr` (57), `prp` (18) or both in `scope.categories` (W113 until one is chosen). A company that decides why personal information is used gets CBPR; one that processes it for customers gets PRP; many SaaS companies need both.
 
@@ -84,7 +84,7 @@ The Global Cross-Border Privacy Rules (CBPR) System certifies a company's privac
 
 **Dates and references.** `dates.stage1` is submission of the intake questionnaire to the Accountability Agent; `dates.stage2` the certification decision. References use CBPR ids when CBPR is in scope and PRP ids for a PRP-only record: the internal review evidences PR46 (compliance measures) or PRP11, the leadership review PR47 (responsible person) or PRP12, risk work PR4 or PRP2. No management review is required.
 
-**Mappings.** `mappings/cbpr__gdpr.yaml` (44 pairs) and `cbpr__iso27001.yaml` (28 pairs), all `related`.
+**Mappings.** `mappings/cbpr__gdpr.yaml` (46 pairs) and `cbpr__iso27001.yaml` (27 pairs), all `related`.
 
 ## FedRAMP 20x
 

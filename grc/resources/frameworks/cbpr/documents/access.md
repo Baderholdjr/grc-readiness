@@ -10,7 +10,7 @@ Requests can be made through [[TODO: channels, e.g. privacy email, web form, cus
 
 Before giving access or making changes, {{client}} confirms the person's identity (PR44a), asking only for what is needed: [[TODO: verification method]]. Where someone acts for another person, their authority is checked.
 
-The procedure and the privacy statement are available, and understandable, in the language of the main economies {{client}} targets (PR45).
+Good practice (not a Forum requirement): the procedure and the privacy statement are available, and understandable, in the language of the main economies {{client}} targets.
 
 ## Confirming and giving access
 

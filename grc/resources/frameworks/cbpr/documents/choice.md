@@ -54,7 +54,7 @@ When a request arrives:
 
 ## Qualifications
 
-Choice may not be required in limited cases. Each Qualification relied on is recorded with the collection, use or disclosure it covers and its justification, for the Accountability Agent to verify (PR19, PR20, PR21, PR22, PR26):
+Choice may not be required in limited cases. Each Qualification relied on is recorded with the collection, use or disclosure it covers and its justification, for the Accountability Agent to verify (PR19, PR20, PR21, PR26). No Qualification applies to the direct marketing opt-out (PR22):
 
 - obviousness: the person's own action makes the purpose plain;
 - publicly available information;

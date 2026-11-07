@@ -276,3 +276,15 @@ mappings:
   note: Testing safeguards.
   reviewed_by: ''
   reviewed_on: null
+- cbpr: PR47
+  gdpr: Art37
+  relationship: related
+  note: A responsible person for the privacy program; CBPR asks for qualifications suited to the processing, not a DPO as such.
+  reviewed_by: ''
+  reviewed_on: null
+- cbpr: PR51
+  gdpr: Art39
+  relationship: related
+  note: Privacy training of staff, one of the DPO tasks.
+  reviewed_by: ''
+  reviewed_on: null

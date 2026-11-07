@@ -34,7 +34,7 @@ The notice is written in plain language and says (PR5):
 - what {{client}} has done and is doing in response;
 - whom to contact for more information: [[TODO: contact point]].
 
-Notices are sent by [[TODO: channel, e.g. email or post]], using the template at [[TODO: template location]]. Where individual notice is not possible, a public notice is used instead. Follow-up notices give new information as it becomes known.
+Notices are sent by [[TODO: channel, e.g. email or post]], using the template at [[TODO: template location]]. Good practice (not a Forum requirement): where individual notice is not possible, a public notice is used instead. Follow-up notices give new information as it becomes known.
 
 ## Breach log
 

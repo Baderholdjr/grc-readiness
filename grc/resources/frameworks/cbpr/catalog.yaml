@@ -3,7 +3,7 @@
 # The Global Cross-Border Privacy Rules (CBPR) System certifies a company's privacy program, as a controller,
 # against the Global CBPR Privacy Framework; the Global Privacy Recognition for Processors (PRP) System recognizes a
 # processor's. Both are run by the Global CBPR Forum and certified by a Forum-recognized Accountability Agent.
-# APEC CBPR and APEC PRP run in parallel with the same requirements until 31 March 2027.
+# The APEC CBPR and PRP requirements are identical to the Global ones until 31 March 2027, and a company may take part in both.
 #
 # Version: the Global CBPR Program Requirements as updated in September 2025 (57 requirements), which apply to
 # first certifications and recertifications from 1 April 2027 (the earlier version has 50). PRP: the Global PRP
@@ -51,7 +51,7 @@ groups:
   - {id: PRP-ACC, title: "PRP accountability measures"}
 
 requirements:
-  # ---------------------------------------------------------------- preventing harm (new in the 2025 update)
+  # ---------------------------------------------------------------- preventing harm (added in the 2025 update)
   - {id: PR1, kind: conditional, category: cbpr, group: HARM, title: "Sensitive information",
      intent: "Information that law treats as sensitive or specially protected, or that a sending organization has flagged as such, is identified and handled with extra safeguards. Applies when the company processes such information.",
      evidence_examples: ["Written policy defining sensitive information and the extra safeguards", "Data inventory marking sensitive data"]}
@@ -220,7 +220,7 @@ requirements:
      intent: "Mechanisms such as contracts, internal policies, sector law or codes of conduct make sure processors, agents, contractors and service providers meet the company's obligations. Applies when the company uses processors.",
      evidence_examples: ["Processor contracts", "Processor register"]}
   - {id: PR54, kind: conditional, category: cbpr, group: ACCOUNT, title: "Processor agreement terms",
-     intent: "Agreements require processors and service providers, as appropriate, to follow the company's privacy policies or substantially similar practices, follow its instructions, not subcontract without consent, hold CBPR or PRP certification, and report breaches. Applies when the company uses processors.",
+     intent: "Agreements require processors and service providers, as appropriate, to follow the company's privacy policies or substantially similar practices, follow its instructions, not subcontract without consent, be Global CBPR-certified by a Forum-recognized Accountability Agent in their jurisdiction, and report breaches. Applies when the company uses processors.",
      evidence_examples: ["Data processing agreement template", "Signed agreements"]}
   - {id: PR55, kind: conditional, category: cbpr, group: ACCOUNT, title: "Processor self-assessments",
      intent: "Processors and service providers are required to submit self-assessments of their compliance with the company's instructions and agreements. Applies when the company uses processors.",
@@ -269,7 +269,7 @@ requirements:
      intent: "A designated employee is responsible for overall compliance with the PRP requirements.",
      evidence_examples: ["Appointment record"]}
   - {id: PRP13, kind: requirement, category: prp, group: PRP-ACC, title: "Privacy requests and complaints",
-     intent: "Procedures handle privacy requests and complaints, or forward them to the controller.",
+     intent: "Procedures forward privacy requests and complaints to the controller, or handle them only as the controller instructs.",
      evidence_examples: ["Request forwarding procedure", "Log"]}
   - {id: PRP14, kind: requirement, category: prp, group: PRP-ACC, title: "Legal requests: telling the controller",
      intent: "The controller is told of subpoenas, warrants or orders requiring disclosure of its information, unless the law forbids it; employees are trained on the procedure.",
