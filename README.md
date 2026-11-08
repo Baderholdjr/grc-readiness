@@ -3,7 +3,7 @@
 
 <!-- Published automatically from the main branch. Do not edit this branch. -->
 
-**As of 2026-11-07.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
+**As of 2026-11-08.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
 
 | Report | What it shows |
 |---|---|
@@ -28,7 +28,7 @@
 
 - **Policies and procedures:** 0 of 17 approved and current
 
-- **Expired evidence:** 1 · **Failing collector checks:** 1
+- **Expired evidence:** 4 · **Failing collector checks:** 1
 - **Budget:** 18 / 200 hours
 
 | Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |
