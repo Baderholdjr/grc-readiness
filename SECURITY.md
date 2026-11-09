@@ -21,7 +21,8 @@ The [threat model](docs/THREAT-MODEL.md) lists what we protect, the trust bounda
 - Every change is a reviewed pull request; nothing automated marks evidence verified or an answer approved.
 - The **Security** workflow runs on every pull request, on `main` and weekly:
   - bandit (code), pip-audit (known vulnerabilities in every locked dependency), and zizmor (workflow security);
-  - it also checks that the hash-locked dependency files match `pyproject.toml`.
+  - it also checks that the hash-locked dependency files match `pyproject.toml`. Run it by hand with
+    **upgrade** to re-resolve the locks to the latest versions; it prints the new files to commit.
 - Third-party actions are pinned to commits; dependencies install from hash-locked files.
 - Workflows declare least-privilege permissions; cloud access uses OIDC, never stored keys.
 - Uploaded client files and the text inside them are treated as untrusted (`grc/safety.py`).

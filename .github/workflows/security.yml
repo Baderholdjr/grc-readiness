@@ -10,6 +10,11 @@ on:
   schedule:
     - cron: "17 14 * * 1"
   workflow_dispatch:
+    inputs:
+      upgrade:
+        description: "Re-resolve every lock to the latest versions (prints the new files to commit)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,11 +35,21 @@ jobs:
         with:
           python-version: "3.12"
       - name: Regenerate the locks
+        env:
+          UPGRADE: ${{ github.event_name == 'workflow_dispatch' && inputs.upgrade || false }}
         run: |
-          # pip-tools only generates and compares here; nothing it resolves is installed or run.
-          pip install -q pip-tools
+          # pip-tools comes from the security lock (bootstrap: if that lock is missing, from PyPI unpinned).
+          if [ -f grc/resources/locks/security.txt ] && grep -q '^pip-tools==' grc/resources/locks/security.txt; then
+            pip install -q --require-hashes -r grc/resources/locks/security.txt
+          else
+            pip install -q pip-tools
+          fi
           mkdir -p fresh
+          # Start from the committed locks so pins only move when pyproject.toml changes, or on an upgrade run;
+          # new upstream releases alone don't turn this check red.
+          cp grc/resources/locks/*.txt fresh/ 2>/dev/null || true
           C="pip-compile -q --generate-hashes --allow-unsafe --strip-extras --no-header --no-emit-index-url --resolver=backtracking"
+          if [ "$UPGRADE" = "true" ]; then C="$C --upgrade"; fi
           $C -o fresh/engine.txt pyproject.toml
           $C --extra aws --extra gcp -o fresh/collectors.txt pyproject.toml
           $C -o fresh/dev.txt pyproject.toml tools/locks/dev.in

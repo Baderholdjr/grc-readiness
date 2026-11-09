@@ -52,7 +52,6 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-          cache: pip
       - name: Install the GRC engine
         if: steps.found.outputs.yes == 'true'
         env:
@@ -66,33 +65,39 @@ jobs:
             # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
             # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
-              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+              export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/"
             fi
             # The engine first, without its dependencies; then its dependencies from the engine's own hash-locked
             # file; then anything else the client's requirements.txt lists.
             grep -E '^grc-readiness' requirements.txt > "$RUNNER_TEMP/engine-pin.txt"
             pip install -q --no-deps -r "$RUNNER_TEMP/engine-pin.txt"
-            if LOCK=$(python -m grc.locks engine 2>/dev/null); then
+            if LOCK=$(python -I -m grc.locks engine 2>/dev/null); then
               pip install -q --require-hashes -r "$LOCK"
             else
-              echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
+              if python -I -c "import grc,sys; sys.exit(0 if tuple(map(int, grc.__version__.split('.')[:2])) < (0, 25) else 1)"; then
+                echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
+                pip install -q -r "$RUNNER_TEMP/engine-pin.txt"     # its dependencies, resolved the old way
+              else
+                echo "::error::The engine's lock file is missing; refusing to install unchecked dependencies."; exit 1
+              fi
             fi
-            pip install -q -r requirements.txt
-            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+            unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GRC_ENGINE_TOKEN   # not needed past here
+            grep -vE '^grc-readiness' requirements.txt > "$RUNNER_TEMP/other-requirements.txt" || true
+            pip install -q -r "$RUNNER_TEMP/other-requirements.txt"
           fi
-          python -c "import grc; print('GRC engine', grc.__version__)"
+          python -I -c "import grc; print('GRC engine', grc.__version__)"
       - name: Obligation issues
         if: steps.found.outputs.yes == 'true' && env.ACTION == 'issues'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python -m grc program issues --apply | tee -a "$GITHUB_STEP_SUMMARY"
+        run: python -I -m grc program issues --apply | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Open owner certifications
         if: steps.found.outputs.yes == 'true' && env.ACTION == 'certify'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          python -m grc program certify ${PERIOD:+--period "$PERIOD"} > created.txt
+          python -I -m grc program certify ${PERIOD:+--period "$PERIOD"} > created.txt
           [ -s created.txt ] || { echo "No new certifications (every owner already has one)." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -104,7 +109,7 @@ jobs:
               continue
             fi
             owner=$(python -c "import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))['owner'])" "$f")
-            users=$(python -c "import sys; from grc import program as P; p=P.load_program('.'); print(','.join(p.github_users(sys.argv[1])))" "$owner")
+            users=$(python -I -c "import sys; from grc import program as P; p=P.load_program('.'); print(','.join(p.github_users(sys.argv[1])))" "$owner")
             git checkout -q -B "$branch" "$GITHUB_SHA"
             git add "$f"
             git commit -q -m "Owner certification $period: $owner"

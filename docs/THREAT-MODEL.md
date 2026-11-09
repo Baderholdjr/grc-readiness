@@ -31,16 +31,21 @@ the review is the approval record. Nothing automated sets a requirement leg to `
 `approved` (enforced in `ingest/apply.py` and `questionnaire.py`, tested). Drafted items carry their source.
 
 **2. Uploaded files are untrusted** (`grc/safety.py`, tested in `tests/test_security.py`):
-- Symlinks are never followed, and a file must resolve inside the folder it was uploaded to: a symlink can't make
-  ingest read a runner file and send it to Claude or into a report.
+- Symlinks are never followed, and a file must resolve inside the folder (or repository) it was uploaded to: a
+  symlink can't make ingest, the questionnaire import or the timesheet import read a runner file and send it to
+  Claude or into a report.
 - Size limits per file; Office files are checked for unpacked size, compression ratio, member count and paths
   outside the package before parsing (zip bombs fail fast).
-- XML with a DTD is refused; ElementTree never fetches external entities. PDFs are read to a page limit.
+- The questionnaire reader parses workbook XML itself and refuses any DTD or entity declaration, in any encoding
+  (an expat pass before parsing). Ingest reads Office files through openpyxl and python-docx, whose parsers don't
+  resolve entities or fetch external ones. PDFs are read to a page limit.
 - A damaged or hostile file is reported in the ingest PR comment, never a crash.
 
 **3. Text inside documents is untrusted** (prompt injection). Claude is told the documents are data and to ignore
 instructions in them; its output is a draft in a PR, schema-checked; claims only move a leg from `not_started` to
 `claimed`. A document that says "mark everything verified" can at worst add a wrong claim, which a reviewer sees.
+Everything drafted or taken from a file name is made inert before it goes into the ingest PR comment: no links
+or images (so nothing can leak through an image URL), no @mentions, no HTML (no hidden comments).
 
 **4. Outputs people open.** Text from records that would start a spreadsheet formula (`=`, `+`, `-`, `@`) stays
 text in every workbook and CSV the engine writes. The client site builds its page with DOM text nodes (no
@@ -49,22 +54,34 @@ no-frame and HSTS headers.
 
 **5. Credentials.**
 - Cloud collectors sign in with OIDC federation to read-only roles: no long-lived cloud keys exist.
-- Secrets live only in GitHub secrets. Secret scanning and push protection are on.
+- Secrets live only in GitHub secrets. Secret scanning and push protection are on in the engine repository.
 - The GitHub token is sent only to the GitHub API, whatever a pagination link says; collectors call `https://`
   endpoints only.
-- `GRC_ENGINE_TOKEN` is used only to fetch the engine and removed from git's config straight after.
-- No workflow uses `pull_request_target`, so a PR's code never runs with secrets it didn't already have.
+- `GRC_ENGINE_TOKEN` lives only in the install step's environment while the engine is fetched (never in git's
+  config on disk), and is unset before anything else the client's `requirements.txt` lists is installed.
+- The ingest and questionnaire jobs parse files from outside with the write token kept off disk
+  (`persist-credentials: false`); the token is used for the one `git push` that commits the draft.
+- No workflow uses `pull_request_target`, so a pull request from a fork never runs with the repository's secrets.
+  **Anyone with write access to a client repository can reach that repository's secrets** through a pull request
+  of their own (as on any GitHub repository). So keep write access to people who need it, make
+  `GRC_ENGINE_TOKEN` a fine-grained, read-only token for the engine repository alone, and give each client its own
+  Anthropic key with a spend limit.
 - Each reusable workflow declares the secrets it uses, and callers pass exactly those by name (never
   `secrets: inherit`): the ingest workflow can't see the Cloudflare token, the site workflow can't see the Anthropic key.
 
 **6. Workflows run with the least privilege.** Each reusable workflow declares the most it may use; a caller can
 only grant less. Workflow inputs and event data reach shell scripts through environment variables, never by
-`${{ }}` expansion inside a script. Both rules are tested and scanned (zizmor).
+`${{ }}` expansion inside a script. Each reusable workflow declares the secrets it uses and callers pass exactly
+those. The engine runs as `python -I`, so a `grc/` folder in a client repository can't stand in for it. No job
+shares a pip cache. These rules are tested and scanned (zizmor).
 
 **7. Supply chain.**
 - Every third-party action is pinned to a commit SHA (Dependabot proposes updates, with the version in a comment).
-- Python dependencies are installed from hash-locked files (`grc/resources/locks/`); a changed or substituted
-  package fails the install. The Security workflow fails when a lock is out of date.
+- The engine's Python dependencies are installed from hash-locked files (`grc/resources/locks/`); a changed or
+  substituted package fails the install. The Security workflow fails when a lock no longer matches
+  `pyproject.toml`. Not hash-checked: the engine itself (fetched at its release tag), `setuptools` fetched by pip
+  to build it, anything else a client adds to `requirements.txt`, and every dependency of an engine older than
+  0.25.0 (its workflows warn).
 - pip-audit checks every locked dependency for known vulnerabilities on every PR and weekly; bandit scans the code.
 - Clients pin the engine to a release tag and call its reusable workflows at a major-version tag
   (`engine-v0`). That tag is a deliberate trust in the engine's maintainer; protect it (below).
@@ -78,6 +95,8 @@ only grant less. Workflow inputs and event data reach shell scripts through envi
 | `engine-v0` is a moving tag that clients trust | Lets clients receive fixes without a PR per release | Tag protection rules on `engine-v*`; clients that want more pin a SHA |
 | The Anthropic API receives client document text | Needed for AI drafting; off by default (`ingest.ai_drafting`) | Keep it opt-in per engagement; record it in the client's data-processing terms |
 | Scanner tools change between runs | They are hash-locked like everything else, but new rules can fail a PR | Expected: fix or justify the finding |
+| Build tooling and the engine itself aren't hash-checked | pip fetches `setuptools` to build the engine; the engine comes from a git tag | Publish built wheels with hashes, or pin the engine to a commit |
+| Locks age | They move only on an upgrade run of the Security workflow; pip-audit flags known vulnerabilities weekly | Run the upgrade monthly, or when pip-audit fails |
 | Prompt injection can still produce a misleading draft | Drafts are reviewed by a person; nothing is verified automatically | Reviewer training; the source on every drafted item |
 
 ## Reporting a vulnerability

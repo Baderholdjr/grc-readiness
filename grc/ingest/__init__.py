@@ -83,16 +83,16 @@ class _Record:
         for p in self.todo:
             rel = str(p.relative_to(self.intake)) if p.is_relative_to(self.intake) else p.name
             if p.suffix.lower() not in extract.SUPPORTED:
-                self.notes.append(f"`{rel}`: unsupported file type, skipped")
+                self.notes.append(f"{safety.md_code(rel)}: unsupported file type, skipped")
                 continue
             try:
                 safety.check_upload(p, self.intake)
                 table = extract.rows(p)
             except safety.UnsafeFile as exc:
-                self.notes.append(f"`{rel}`: **not processed**, because {exc}")
+                self.notes.append(f"{safety.md_code(rel)}: **not processed**, because {safety.md_text(exc)}")
                 continue
             except Exception as exc:  # a damaged or hostile file is reported, never a crash
-                self.notes.append(f"`{rel}`: **not processed**, it could not be read ({type(exc).__name__})")
+                self.notes.append(f"{safety.md_code(rel)}: **not processed**, it could not be read ({type(exc).__name__})")
                 continue
             kind = templates.detect(table[0]) if table else None
             try:
@@ -103,8 +103,8 @@ class _Record:
             if kind and mode in ("auto", "templates"):
                 _, d, problems = templates.to_draft(table, rel)
                 self.combined = draft.merge(self.combined, d)
-                self.notes.append(f"`{rel}`: imported as **{kind}** template")
-                self.notes += [f"`{rel}`: {x}" for x in problems]
+                self.notes.append(f"{safety.md_code(rel)}: imported as **{kind}** template")
+                self.notes += [f"{safety.md_code(rel)}: {safety.md_text(x)}" for x in problems]
                 self.ledger_updates[rel] = {"sha256": _sha(p), "mode": f"template:{kind}"}
             elif reg:
                 sheet, t = reg
@@ -115,19 +115,19 @@ class _Record:
                 self.combined = draft.merge(self.combined, d)
                 self.register_rows[name] = self.register_rows.get(name, []) + rows
                 mapped = sum(1 for r in rows if r["maps"])
-                self.notes.append(f"`{rel}`: imported as a **control register** ({len(rows)} controls, {mapped} mapped to "
+                self.notes.append(f"{safety.md_code(rel)}: imported as a **control register** ({len(rows)} controls, {mapped} mapped to "
                                   f"{self.model.catalog['framework']['short_name']})")
-                self.notes += [f"`{rel}`: {x}" for x in problems]
+                self.notes += [f"{safety.md_code(rel)}: {safety.md_text(x)}" for x in problems]
                 self.ledger_updates[rel] = {"sha256": _sha(p), "mode": "register"}
             elif ai_allowed:
                 try:
                     self.for_ai.append((rel, extract.text(p), p))
                 except Exception as exc:
-                    self.notes.append(f"`{rel}`: **not processed**, its text could not be read ({type(exc).__name__})")
+                    self.notes.append(f"{safety.md_code(rel)}: **not processed**, its text could not be read ({type(exc).__name__})")
             else:
                 reason = "AI drafting is disabled (set `ingest: {ai_drafting: true}` in engagement.yaml)" \
                     if mode != "templates" else "not an intake template"
-                self.notes.append(f"`{rel}`: not processed — {reason}")
+                self.notes.append(f"{safety.md_code(rel)}: not processed — {safety.md_text(reason)}")
 
     @property
     def framework(self) -> str:
@@ -139,14 +139,14 @@ class _Record:
     def drafted(self, names: list[str], how: str):
         from .. import sandbox
         for n, _, p in [x for x in self.for_ai if x[0] in names]:
-            self.notes.append(f"`{n}`: " + ("sandbox AI draft (canned, sandbox/ai_draft.json)" if sandbox.active() else how))
+            self.notes.append(f"{safety.md_code(n)}: " + ("sandbox AI draft (canned, sandbox/ai_draft.json)" if sandbox.active() else how))
             self.ledger_updates[n] = {"sha256": _sha(p), "mode": "ai"}
 
     def failed(self, failures: list[tuple[str, str]]):
         if failures:
-            self.notes.insert(0, f"**{len(failures)} document(s) not read: {failures[0][1]}.** Spreadsheets in the "
+            self.notes.insert(0, f"**{len(failures)} document(s) not read: {safety.md_text(failures[0][1])}.** Spreadsheets in the "
                                  "intake template format are imported regardless; the rest are read on the next run.")
-            self.notes += [f"`{n}`: not processed ({why})" for n, why in failures]
+            self.notes += [f"{safety.md_code(n)}: not processed ({safety.md_text(why)})" for n, why in failures]
 
     def finish(self) -> str:
         from .. import sandbox
@@ -160,7 +160,7 @@ class _Record:
             if stale:
                 report += ("\n### Gaps the re-imported register no longer supports\n"
                            "Not closed automatically: confirm with evidence, then close (closure_evidence).\n\n"
-                           + "\n".join(f"- {s}" for s in stale) + "\n")
+                           + "\n".join(f"- {safety.md_text(s)}" for s in stale) + "\n")
         if self.ledger_updates:
             lp = self.intake / LEDGER
             ledger = (yaml.safe_load(lp.read_text()) if lp.exists() else {}) or {}
@@ -172,7 +172,7 @@ class _Record:
         if sandbox.active():
             report = ("> ⚠️ **SANDBOX MODE.** AI drafting returned canned test output from `sandbox/ai_draft.json`; "
                       "no document was sent to the Anthropic API.\n\n") + report
-        return report + "\n### Files\n" + "\n".join(f"- {n}" for n in self.notes) + "\n"
+        return report + "\n### Files\n" + "\n".join(f"- {n}" for n in self.notes) + "\n"   # names via md_code, text via md_text
 
 
 def _read_batches(items: list[tuple], call, on_result) -> list[tuple[str, str]]:

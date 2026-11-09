@@ -350,6 +350,9 @@ def import_workbook(root: Path, workbook: Path | None, name: str, definition: st
                     level: str | None = None) -> Path:
     root = Path(root)
     qdir = root / QDIR / name
+    if workbook:      # the customer's file must be a regular file inside this repository (no symlinks out of it)
+        from .safety import check_upload
+        check_upload(Path(workbook), root)
     if (qdir / "questionnaire.yaml").exists() and not force:
         raise SystemExit(f"questionnaire: {qdir.relative_to(root)}/ already exists (use --force to re-import "
                          "the workbook; answers.yaml is kept)")

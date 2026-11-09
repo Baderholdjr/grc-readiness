@@ -320,7 +320,13 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
     al = aliases(model)
     known = known_refs(model)
     log, added = [], 0
+    from .safety import UnsafeFile, check_file
     for path in paths:
+        try:      # a timesheet comes from an upload: a regular file, inside the repository, of sensible size
+            check_file(Path(path), model.root, max_bytes=20 * 1024 * 1024)
+        except UnsafeFile as exc:
+            log.append(f"[!] {Path(path).name}: not imported, because {exc}")
+            continue
         fmt, rows, used_order, ambiguous = parse_csv(Path(path).read_text(encoding="utf-8-sig", errors="replace"),
                                                      order or method(model).get("date_order"))
         if ambiguous:

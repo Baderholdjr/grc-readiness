@@ -133,7 +133,9 @@ def test_workflow_rules(path):
         assert "${{" not in run, f"{path.name}: an expression inside a run script; pass it through env"
         for line in run.splitlines():
             if re.match(r"\s*pip install\b", line) and "pip-tools" not in line:
-                assert "--require-hashes" in line or "--no-deps" in line or "requirements.txt" in line, \
+                # unlocked only: the client's own extra requirements, and the old-engine fallback (which warns)
+                assert ("--require-hashes" in line or "--no-deps" in line or "requirements.txt" in line
+                        or "resolved the old way" in line), \
                     f"{path.name}: unlocked install: {line.strip()}"
 
 
@@ -171,3 +173,40 @@ def test_lock_files():
         reqs = [ln for ln in Path(locks.path(n)).read_text().splitlines() if re.match(r"^[A-Za-z0-9]", ln)]
         assert reqs and all("==" in ln for ln in reqs), n
         assert "--hash=sha256:" in Path(locks.path(n)).read_text(), n
+
+
+# ------------------------------------------------------------------ review cases
+def test_dtd_refused_in_any_encoding_and_position():
+    body = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE l [<!ENTITY a "aa">]><l>&a;</l>'
+    with pytest.raises(safety.UnsafeFile, match="DTD"):
+        safety.xml_root(body.encode("utf-16"))
+    late = b'<?xml version="1.0"?><!--' + b"x" * 5000 + b'--><!DOCTYPE l><l/>'
+    with pytest.raises(safety.UnsafeFile, match="DTD"):
+        safety.xml_root(late)
+
+
+def test_ingest_report_text_is_inert():
+    assert safety.md_text("see ![](https://evil.example/p?d=x) @acme/security <!-- hide") == \
+        "see \\!\\[\\]\\(https://evil.example/p?d=x\\) @⁠acme/security &lt;\\!-- hide"
+    assert safety.md_code("a` @victim <!--.txt") == "`a' @victim <!--.txt`"
+    from grc.ingest.apply import render_report
+    rep = {k: [] for k in ("narrative", "added_gaps", "added_evidence", "claims", "inventory", "suggested", "kept", "dropped")}
+    rep["added_gaps"] = ["GAP-01: ![x](https://evil.example/leak) cc @someone <!--"]
+    out = render_report(rep, [], "intake")
+    assert "](https://" not in out and "@someone" not in out and "<!--" not in out
+
+
+def test_symlinked_timesheet_is_not_imported(tmp_path):
+    from grc import hours
+    from grc.model import load
+    edir, intake = _new(tmp_path)
+    secret = tmp_path / "secret.csv"
+    secret.write_text("Date,Hours,Client,Project,Notes\n2026-11-09,1,Larch & Finch,Readiness,leak\n")
+    (intake / "timesheets").mkdir(exist_ok=True)
+    (intake / "timesheets" / "t.csv").symlink_to(secret)
+    log = hours.import_files(load(edir), [intake / "timesheets" / "t.csv"])
+    assert any("not imported, because it is a symbolic link" in x for x in log)
+
+
+def test_formula_guard_ignores_leading_space_and_full_width():
+    assert safety.cell_text(" =1+1") == "' =1+1" and safety.cell_text("＝1") == "'＝1"

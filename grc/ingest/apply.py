@@ -270,8 +270,10 @@ def render_report(rep: dict, questions: list[str], label: str) -> str:
         if not items:
             return ""
         more = f"\n- … and {len(items) - limit} more" if len(items) > limit else ""
-        return f"\n### {title} ({len(items)})\n" + "\n".join(f"- {x}" for x in items[:limit]) + more + "\n"
-    out = [f"## Ingestion draft — {label}\n",
+        # every item is text from client documents or AI drafting: inert in the PR comment (safety.md_text)
+        return f"\n### {title} ({len(items)})\n" + "\n".join(f"- {md_text(x)}" for x in items[:limit]) + more + "\n"
+    from ..safety import md_text
+    out = [f"## Ingestion draft — {md_text(label)}\n",
            "> Drafted automatically from client documents. **Every item is a hypothesis until reviewed.** "
            "Nothing has been marked `verified`; client statements are recorded as `claimed`.\n"]
     out.append(section("Engagement profile fields filled", rep["narrative"]))
