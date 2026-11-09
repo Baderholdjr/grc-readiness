@@ -350,9 +350,12 @@ def import_workbook(root: Path, workbook: Path | None, name: str, definition: st
                     level: str | None = None) -> Path:
     root = Path(root)
     qdir = root / QDIR / name
-    if workbook:      # the customer's file must be a regular file inside this repository (no symlinks out of it)
-        from .safety import check_upload
-        check_upload(Path(workbook), root)
+    if workbook:
+        # The customer's file: a regular file, and one given inside this repository (the workflow's
+        # questionnaires/inbox/) must not resolve outside it through a symlinked folder. A path a person gives
+        # on the command line from elsewhere (their Downloads folder) is allowed.
+        from .safety import check_upload, within
+        check_upload(Path(workbook), within(Path(workbook), root))
     if (qdir / "questionnaire.yaml").exists() and not force:
         raise SystemExit(f"questionnaire: {qdir.relative_to(root)}/ already exists (use --force to re-import "
                          "the workbook; answers.yaml is kept)")

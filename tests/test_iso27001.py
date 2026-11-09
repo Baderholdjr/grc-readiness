@@ -139,7 +139,7 @@ def test_record_wide_workflows_loop_over_every_record_and_scripts_parse():
     wf = Path(__file__).resolve().parent.parent / ".github" / "workflows"
     for name in ("grc-validate.yml", "grc-publish-reports.yml", "grc-collect.yml", "grc-freshness.yml",
                  "grc-sync-issues.yml", "grc-release.yml", "grc-ingest.yml"):
-        assert "python -m grc engagements" in (wf / name).read_text(), name
+        assert "python -I -m grc engagements" in (wf / name).read_text(), name
     for name in ("grc-audit.yml", "grc-docs.yml", "grc-review.yml", "grc-impact.yml", "grc-new-engagement.yml"):
         text = (wf / name).read_text()
         assert "GRC_ENGAGEMENT: ${{ inputs.engagement }}" in text and "engagement(-[a-z0-9]+)?$" in text, name

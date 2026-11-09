@@ -320,10 +320,10 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
     al = aliases(model)
     known = known_refs(model)
     log, added = [], 0
-    from .safety import UnsafeFile, check_file
+    from .safety import UnsafeFile, check_file, within
     for path in paths:
-        try:      # a timesheet comes from an upload: a regular file, inside the repository, of sensible size
-            check_file(Path(path), model.root, max_bytes=20 * 1024 * 1024)
+        try:      # a timesheet from an upload: a regular file that stays inside the repository, of sensible size
+            check_file(Path(path), within(Path(path), model.root), max_bytes=20 * 1024 * 1024)
         except UnsafeFile as exc:
             log.append(f"[!] {Path(path).name}: not imported, because {exc}")
             continue

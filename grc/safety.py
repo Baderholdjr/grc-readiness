@@ -67,6 +67,15 @@ def check_zip(path: Path) -> None:
         raise UnsafeFile(f"it unpacks to {total // (1024 * 1024)} MB; the limit is {MAX_UNZIPPED_BYTES // (1024 * 1024)} MB")
 
 
+def within(path: Path, root: Path) -> Path | None:
+    """`root` when `path`, as given (before resolving links), is inside it, else None: a file in the repository
+    must not resolve out of it through a symlinked folder, while a path a person types on the command line from
+    elsewhere (their Downloads folder) is theirs to choose."""
+    import os
+    given, base = os.path.abspath(path), os.path.abspath(root)
+    return Path(root) if given == base or given.startswith(base + os.sep) else None
+
+
 def check_upload(path: Path, inside: Path | None = None) -> None:
     """Every check that fits the file's type."""
     check_file(path, inside)
