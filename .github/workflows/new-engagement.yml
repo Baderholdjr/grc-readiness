@@ -39,4 +39,5 @@ jobs:
       framework: ${{ inputs.framework }}
       engagement: ${{ inputs.engagement }}
       categories: ${{ inputs.categories }}
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

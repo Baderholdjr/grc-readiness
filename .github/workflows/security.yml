@@ -1,0 +1,125 @@
+name: Security
+
+# DevSecOps checks for the engine: code (bandit), dependencies (pip-audit), workflows (zizmor), and that the
+# hash-locked dependency files match pyproject.toml. Runs on every pull request, on main, and weekly so a newly
+# published vulnerability in a locked dependency is caught without a code change.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 14 * * 1"
+  workflow_dispatch:
+    inputs:
+      upgrade:
+        description: "Re-resolve every lock to the latest versions (prints the new files to commit)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  locks:
+    name: Dependency locks are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Regenerate the locks
+        env:
+          UPGRADE: ${{ github.event_name == 'workflow_dispatch' && inputs.upgrade || false }}
+        run: |
+          # pip-tools comes from the security lock (bootstrap: if that lock is missing, from PyPI unpinned).
+          if [ -f grc/resources/locks/security.txt ] && grep -q '^pip-tools==' grc/resources/locks/security.txt; then
+            pip install -q --require-hashes -r grc/resources/locks/security.txt
+          else
+            pip install -q pip-tools
+          fi
+          mkdir -p fresh
+          # Start from the committed locks so pins only move when pyproject.toml changes, or on an upgrade run;
+          # new upstream releases alone don't turn this check red.
+          cp grc/resources/locks/*.txt fresh/ 2>/dev/null || true
+          C="pip-compile -q --generate-hashes --allow-unsafe --strip-extras --no-header --no-emit-index-url --resolver=backtracking"
+          if [ "$UPGRADE" = "true" ]; then C="$C --upgrade"; fi
+          $C -o fresh/engine.txt pyproject.toml
+          $C --extra aws --extra gcp -o fresh/collectors.txt pyproject.toml
+          $C -o fresh/dev.txt pyproject.toml tools/locks/dev.in
+          $C -o fresh/security.txt tools/locks/security.in
+      - name: Compare
+        run: |
+          status=0
+          for f in engine collectors dev security; do
+            if ! diff -q "fresh/$f.txt" "grc/resources/locks/$f.txt" >/dev/null 2>&1; then
+              status=1
+              echo "::error file=grc/resources/locks/$f.txt::out of date - replace it with the file printed below"
+              echo "----- BEGIN grc/resources/locks/$f.txt -----"; cat "fresh/$f.txt"; echo "----- END grc/resources/locks/$f.txt -----"
+            fi
+          done
+          exit $status
+
+  code:
+    name: Code scan (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -q --require-hashes -r grc/resources/locks/security.txt
+      - name: Medium and high findings fail the check
+        run: bandit -r grc tools -c pyproject.toml --severity-level medium --confidence-level medium
+
+  dependencies:
+    name: Dependency vulnerabilities (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -q --require-hashes -r grc/resources/locks/security.txt
+      - name: Known vulnerabilities in any locked dependency fail the check
+        run: |
+          for f in engine collectors dev; do
+            echo "== $f"; pip-audit --strict --no-deps --disable-pip -r "grc/resources/locks/$f.txt"
+          done
+
+  workflows:
+    name: Workflow scan (zizmor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -q --require-hashes -r grc/resources/locks/security.txt
+      - name: Engine workflows and the client workflow templates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The client templates hold placeholders; scan them as a client would receive them.
+          mkdir -p client-scan/.github/workflows
+          for f in grc/resources/client/dot-github/workflows/*.yml; do
+            sed -e "s#__ENGINE_REPO__#$GITHUB_REPOSITORY#g" -e "s#__ENGINE_MAJOR__#0#g" "$f" > "client-scan/.github/workflows/$(basename "$f")"
+          done
+          # Clients call the engine's reusable workflows at its major-version tag on purpose (they receive fixes
+          # without a PR per release; see docs/THREAT-MODEL.md). Every other action must be pinned to a commit.
+          printf 'rules:\n  unpinned-uses:\n    config:\n      policies:\n        "%s/*": ref-pin\n        "*": hash-pin\n' \
+            "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/zizmor.yml"
+          cat "$RUNNER_TEMP/zizmor.yml"
+          zizmor --config "$RUNNER_TEMP/zizmor.yml" --min-severity medium .github/workflows client-scan/.github/workflows

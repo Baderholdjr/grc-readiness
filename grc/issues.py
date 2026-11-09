@@ -28,11 +28,13 @@ class GitHub:
 
     def call(self, method: str, path: str, body: dict | None = None):
         url = path if path.startswith("http") else f"{API}/repos/{self.repo}{path}"
+        if not url.startswith(API + "/"):   # the token goes only to the GitHub API, whatever a pagination link says
+            raise ValueError(f"refusing to send the GitHub token to {url.split('/')[2] if '://' in url else url}")
         req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body is not None else None)
         req.add_header("Authorization", f"Bearer {self.token}")
         req.add_header("Accept", "application/vnd.github+json")
         req.add_header("X-GitHub-Api-Version", "2022-11-28")
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310 - https://api.github.com only (checked above)
             raw = resp.read()
             return json.loads(raw) if raw else None
 

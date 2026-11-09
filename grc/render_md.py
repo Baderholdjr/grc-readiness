@@ -24,7 +24,7 @@ def _table(headers, rows) -> str:
 
 def _csv_safe(v):
     """Spreadsheet apps run cells starting with = + - @ as formulas; record text must stay text."""
-    if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r"):
+    if isinstance(v, str) and v.lstrip(" \n\u3000")[:1] in ("=", "+", "-", "@", "\t", "\r", "\uff1d", "\uff0b", "\uff0d", "\uff20"):
         return "'" + v
     return v
 

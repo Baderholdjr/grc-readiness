@@ -8,6 +8,9 @@ name: Compliance program (reusable)
 # Called by thin wrappers in each repo; the triggers and permissions live there.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engine:
         description: "'pinned' = install the version in the caller's requirements.txt; 'local' = install from the checkout (engine repo only)"
@@ -22,6 +25,13 @@ on:
         type: string
         default: ""
 
+# The most this workflow may use; a caller can only grant less.
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: write
+
 jobs:
   program:
     runs-on: ubuntu-latest
@@ -33,16 +43,15 @@ jobs:
         run: |
           [[ "$ACTION" =~ ^(issues|certify)$ ]] || { echo "::error::action must be issues or certify"; exit 1; }
           [[ -z "$PERIOD" || "$PERIOD" =~ ^[0-9]{4}-Q[1-4]$ ]] || { echo "::error::period must look like 2026-Q3"; exit 1; }
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: found
         run: |
           if [ -f program/controls.yaml ] || [ -f program/calendar.yaml ]; then echo "yes=true" >> "$GITHUB_OUTPUT"
           else echo "No program/ in this repository: nothing to do. See docs/PROGRAM.md." >> "$GITHUB_STEP_SUMMARY"; fi
       - if: steps.found.outputs.yes == 'true'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-          cache: pip
       - name: Install the GRC engine
         if: steps.found.outputs.yes == 'true'
         env:
@@ -50,29 +59,45 @@ jobs:
           GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
         run: |
           if [ "$ENGINE" = "local" ]; then
-            pip install -q .
+            pip install -q --require-hashes -r grc/resources/locks/engine.txt
+            pip install -q --no-deps .
           else
             # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
             # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
-              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+              export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/"
             fi
-            pip install -q -r requirements.txt
-            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+            # The engine first, without its dependencies; then its dependencies from the engine's own hash-locked
+            # file; then anything else the client's requirements.txt lists.
+            grep -E '^grc-readiness' requirements.txt > "$RUNNER_TEMP/engine-pin.txt"
+            pip install -q --no-deps -r "$RUNNER_TEMP/engine-pin.txt"
+            if LOCK=$(python -I -m grc.locks engine 2>/dev/null); then
+              pip install -q --require-hashes -r "$LOCK"
+            else
+              if python -I -c "import grc,sys; sys.exit(0 if tuple(map(int, grc.__version__.split('.')[:2])) < (0, 25) else 1)"; then
+                echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
+                pip install -q -r "$RUNNER_TEMP/engine-pin.txt"     # its dependencies, resolved the old way
+              else
+                echo "::error::The engine's lock file is missing; refusing to install unchecked dependencies."; exit 1
+              fi
+            fi
+            unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GRC_ENGINE_TOKEN   # not needed past here
+            grep -vE '^grc-readiness' requirements.txt > "$RUNNER_TEMP/other-requirements.txt" || true
+            pip install -q -r "$RUNNER_TEMP/other-requirements.txt"
           fi
-          python -c "import grc; print('GRC engine', grc.__version__)"
+          python -I -c "import grc; print('GRC engine', grc.__version__)"
       - name: Obligation issues
         if: steps.found.outputs.yes == 'true' && env.ACTION == 'issues'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python -m grc program issues --apply | tee -a "$GITHUB_STEP_SUMMARY"
+        run: python -I -m grc program issues --apply | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Open owner certifications
         if: steps.found.outputs.yes == 'true' && env.ACTION == 'certify'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          python -m grc program certify ${PERIOD:+--period "$PERIOD"} > created.txt
+          python -I -m grc program certify ${PERIOD:+--period "$PERIOD"} > created.txt
           [ -s created.txt ] || { echo "No new certifications (every owner already has one)." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -84,7 +109,7 @@ jobs:
               continue
             fi
             owner=$(python -c "import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))['owner'])" "$f")
-            users=$(python -c "import sys; from grc import program as P; p=P.load_program('.'); print(','.join(p.github_users(sys.argv[1])))" "$owner")
+            users=$(python -I -c "import sys; from grc import program as P; p=P.load_program('.'); print(','.join(p.github_users(sys.argv[1])))" "$owner")
             git checkout -q -B "$branch" "$GITHUB_SHA"
             git add "$f"
             git commit -q -m "Owner certification $period: $owner"

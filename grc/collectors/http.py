@@ -33,6 +33,8 @@ def request(method: str, url: str, headers: dict | None = None, params: dict | N
         data = urllib.parse.urlencode(form).encode()
     else:
         data = json.dumps(body).encode() if body is not None else None
+    if not url.lower().startswith("https://"):
+        raise ValueError("collectors call https:// endpoints only (credentials travel in headers)")
     for attempt in range(retries):
         req = urllib.request.Request(url, data=data, method=method)
         for k, v in (headers or {}).items():
@@ -40,7 +42,7 @@ def request(method: str, url: str, headers: dict | None = None, params: dict | N
         if data is not None:
             req.add_header("Content-Type", "application/x-www-form-urlencoded" if form is not None else "application/json")
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310 - https only (checked above)
                 raw = resp.read()
                 return json.loads(raw) if raw else None
         except urllib.error.HTTPError as exc:

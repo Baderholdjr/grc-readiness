@@ -45,4 +45,6 @@ jobs:
       from: ${{ inputs.from }}
       to: ${{ inputs.to }}
       base: ${{ inputs.base }}
-    secrets: inherit
+    secrets:
+      GH_COLLECTOR_TOKEN: ${{ secrets.GH_COLLECTOR_TOKEN }}
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

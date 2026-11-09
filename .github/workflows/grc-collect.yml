@@ -7,11 +7,27 @@ name: Collect evidence (reusable)
 # Called by thin wrappers in each repo; the triggers and permissions live there.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      DRATA_API_KEY: {required: false}
+      GH_COLLECTOR_TOKEN: {required: false}
+      GRC_ENGINE_TOKEN: {required: false}
+      JIRA_API_TOKEN: {required: false}
+      MLFLOW_TRACKING_PASSWORD: {required: false}
+      MLFLOW_TRACKING_TOKEN: {required: false}
+      MS_CLIENT_SECRET: {required: false}
     inputs:
       engine:
         description: "'pinned' = install the version in the caller's requirements.txt; 'local' = install from the checkout (engine repo only)"
         type: string
         default: pinned
+
+# The most this workflow may use; a caller can only grant less.
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  id-token: write
 
 jobs:
   # A repository made from the template has no record until *New engagement* runs:
@@ -21,7 +37,7 @@ jobs:
     outputs:
       found: ${{ steps.check.outputs.found }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: check
         run: |
           if compgen -G "engagement/engagement.yaml" >/dev/null || compgen -G "engagement-*/engagement.yaml" >/dev/null; then
@@ -37,46 +53,61 @@ jobs:
     env:
       BRANCH: auto/evidence-refresh
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-          cache: pip
       - name: Install the GRC engine
         env:
           ENGINE: ${{ inputs.engine }}
           GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
         run: |
           if [ "$ENGINE" = "local" ]; then
-            pip install -q . boto3 'google-auth[requests]'
+            pip install -q --require-hashes -r grc/resources/locks/collectors.txt
+            pip install -q --no-deps .
           else
             # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
             # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
-              git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+              export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/"
             fi
-            pip install -q -r requirements.txt boto3 'google-auth[requests]'
-            git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
+            # The engine first, without its dependencies; then its dependencies from the engine's own hash-locked
+            # file; then anything else the client's requirements.txt lists.
+            grep -E '^grc-readiness' requirements.txt > "$RUNNER_TEMP/engine-pin.txt"
+            pip install -q --no-deps -r "$RUNNER_TEMP/engine-pin.txt"
+            if LOCK=$(python -I -m grc.locks collectors 2>/dev/null); then
+              pip install -q --require-hashes -r "$LOCK"
+            else
+              if python -I -c "import grc,sys; sys.exit(0 if tuple(map(int, grc.__version__.split('.')[:2])) < (0, 25) else 1)"; then
+                echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
+                pip install -q -r "$RUNNER_TEMP/engine-pin.txt"     # its dependencies, resolved the old way
+              else
+                echo "::error::The engine's lock file is missing; refusing to install unchecked dependencies."; exit 1
+              fi
+            fi
+            unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GRC_ENGINE_TOKEN   # not needed past here
+            grep -vE '^grc-readiness' requirements.txt > "$RUNNER_TEMP/other-requirements.txt" || true
+            pip install -q -r "$RUNNER_TEMP/other-requirements.txt"
           fi
-          python -c "import grc; print('GRC engine', grc.__version__)"
+          python -I -c "import grc; print('GRC engine', grc.__version__)"
 
       # Cloud sign-in only happens when the matching repository variables exist.
       - name: AWS sign-in (OIDC, read-only role)
         if: ${{ vars.AWS_ROLE_ARN != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
       - name: Azure sign-in (OIDC, Reader)
         if: ${{ vars.AZURE_CLIENT_ID != '' }}
-        uses: azure/login@v2
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: GCP sign-in (workload identity)
         if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
@@ -99,11 +130,11 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
         run: |
           : > report.md
-          engs=$(python -m grc engagements) || exit 1
+          engs=$(python -I -m grc engagements) || exit 1
           for e in $engs; do
             [ "$e" = engagement ] || { echo; echo "## Record: $e"; } >> report.md
-            python -m grc --engagement "$e" collect --report part.md
-            python -m grc --engagement "$e" validate --summary validate.md > /dev/null 2>&1 || true
+            python -I -m grc --engagement "$e" collect --report part.md
+            python -I -m grc --engagement "$e" validate --summary validate.md > /dev/null 2>&1 || true
             { cat part.md; echo; echo "---"; cat validate.md; } >> report.md
             rm -f part.md validate.md
           done
@@ -116,7 +147,7 @@ jobs:
           git config user.name "grc-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          engs=$(python -m grc engagements) || exit 1
+          engs=$(python -I -m grc engagements) || exit 1
           for e in $engs; do git add "$e/evidence" "$e/controls"; done
           if git diff --cached --quiet; then echo "No evidence changes."; exit 0; fi
           git commit -q -m "Evidence refresh $(date -u +%F)"

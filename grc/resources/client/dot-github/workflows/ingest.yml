@@ -21,4 +21,6 @@ jobs:
     uses: __ENGINE_REPO__/.github/workflows/grc-ingest.yml@engine-v__ENGINE_MAJOR__
     with:
       engine: pinned
-    secrets: inherit
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

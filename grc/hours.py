@@ -176,7 +176,7 @@ def classify(model: Engagement, *texts: str) -> str:
 
 
 def entry_id(*parts) -> str:
-    return "H-" + hashlib.sha1("\x1f".join(str(p) for p in parts).encode("utf-8")).hexdigest()[:10]
+    return "H-" + hashlib.sha1("\x1f".join(str(p) for p in parts).encode("utf-8"), usedforsecurity=False).hexdigest()[:10]
 
 
 # ------------------------------------------------------------------ import
@@ -320,7 +320,13 @@ def import_files(model: Engagement, paths: list[Path], match: str | None = None,
     al = aliases(model)
     known = known_refs(model)
     log, added = [], 0
+    from .safety import UnsafeFile, check_file, within
     for path in paths:
+        try:      # a timesheet from an upload: a regular file that stays inside the repository, of sensible size
+            check_file(Path(path), within(Path(path), model.root), max_bytes=20 * 1024 * 1024)
+        except UnsafeFile as exc:
+            log.append(f"[!] {Path(path).name}: not imported, because {exc}")
+            continue
         fmt, rows, used_order, ambiguous = parse_csv(Path(path).read_text(encoding="utf-8-sig", errors="replace"),
                                                      order or method(model).get("date_order"))
         if ambiguous:

@@ -430,7 +430,7 @@ def cmd_questionnaire(args) -> int:
         try:
             qdir = Q.import_workbook(root, Path(args.workbook) if args.workbook else None, args.name, args.definition,
                                      args.requester or "", args.due, today=today, force=args.force, level=args.level)
-        except SystemExit as exc:
+        except (SystemExit, ValueError) as exc:     # ValueError includes safety.UnsafeFile
             print(exc, file=sys.stderr)
             return 2
         qn = Q.load_questionnaire(root, args.name)
