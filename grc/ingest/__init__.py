@@ -16,6 +16,7 @@ from pathlib import Path
 import yaml
 
 from ..model import Engagement, load
+from .. import safety
 from . import ai, apply, draft, extract, register, templates
 
 LEDGER = ".processed.yaml"
@@ -32,6 +33,10 @@ def pending(intake: Path, force: bool = False) -> list[Path]:
     ledger = ledger or {}
     files = []
     for p in sorted(intake.rglob("*")):
+        if p.is_symlink():          # never followed; listed so the report says it was refused
+            if p.name not in SKIP:
+                files.append(p)
+            continue
         if not p.is_file() or p.name in SKIP or p.name.startswith("~$"):
             continue
         if p.relative_to(intake).parts[0] in EXCLUDE_DIRS:   # handled by other commands (e.g. `grc hours`)
@@ -80,10 +85,21 @@ class _Record:
             if p.suffix.lower() not in extract.SUPPORTED:
                 self.notes.append(f"`{rel}`: unsupported file type, skipped")
                 continue
-            table = extract.rows(p)
+            try:
+                safety.check_upload(p, self.intake)
+                table = extract.rows(p)
+            except safety.UnsafeFile as exc:
+                self.notes.append(f"`{rel}`: **not processed**, because {exc}")
+                continue
+            except Exception as exc:  # a damaged or hostile file is reported, never a crash
+                self.notes.append(f"`{rel}`: **not processed**, it could not be read ({type(exc).__name__})")
+                continue
             kind = templates.detect(table[0]) if table else None
-            reg = None if kind or mode not in ("auto", "templates") else \
-                next(((sheet, t) for sheet, t in extract.tables(p) if register.detect(t)), None)
+            try:
+                reg = None if kind or mode not in ("auto", "templates") else \
+                    next(((sheet, t) for sheet, t in extract.tables(p) if register.detect(t)), None)
+            except Exception:  # damaged workbook: fall through to the other readers
+                reg = None
             if kind and mode in ("auto", "templates"):
                 _, d, problems = templates.to_draft(table, rel)
                 self.combined = draft.merge(self.combined, d)
@@ -104,7 +120,10 @@ class _Record:
                 self.notes += [f"`{rel}`: {x}" for x in problems]
                 self.ledger_updates[rel] = {"sha256": _sha(p), "mode": "register"}
             elif ai_allowed:
-                self.for_ai.append((rel, extract.text(p), p))
+                try:
+                    self.for_ai.append((rel, extract.text(p), p))
+                except Exception as exc:
+                    self.notes.append(f"`{rel}`: **not processed**, its text could not be read ({type(exc).__name__})")
             else:
                 reason = "AI drafting is disabled (set `ingest: {ai_drafting: true}` in engagement.yaml)" \
                     if mode != "templates" else "not an intake template"

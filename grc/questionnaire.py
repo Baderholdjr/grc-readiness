@@ -86,7 +86,9 @@ class Workbook:
     """The parts of an .xlsx a questionnaire needs, read straight from the package."""
 
     def __init__(self, path: Path):
+        from .safety import check_upload
         self.path = Path(path)
+        check_upload(self.path)          # a customer's workbook: size, zip-bomb and path checks before parsing
         self.zip = zipfile.ZipFile(self.path)
         self.names = set(self.zip.namelist())
         wb = self.zip.read("xl/workbook.xml").decode("utf-8")
@@ -118,15 +120,15 @@ class Workbook:
         return self.values()[sheet][ref].value
 
     def defined_names(self) -> dict[str, str]:
-        import xml.etree.ElementTree as ET
-        root = ET.fromstring(self.zip.read("xl/workbook.xml"))
+        from .safety import xml_root
+        root = xml_root(self.zip.read("xl/workbook.xml"))
         return {el.get("name"): (el.text or "").strip() for el in root.iter(f"{{{NS_MAIN}}}definedName")
                 if el.get("name") and el.get("localSheetId") is None}
 
     def validations(self, sheet: str) -> dict[str, list[str]]:
         """cell -> allowed values, from the sheet's list validations (classic and x14)."""
-        import xml.etree.ElementTree as ET
-        root = ET.fromstring(self.zip.read(self.sheets[sheet]))
+        from .safety import xml_root
+        root = xml_root(self.zip.read(self.sheets[sheet]))
         found: list[tuple[str, str]] = []                       # (formula, sqref)
         for dv in root.iter(f"{{{NS_MAIN}}}dataValidation"):     # classic
             f = dv.find(f"{{{NS_MAIN}}}formula1")
@@ -734,9 +736,10 @@ def fill_form(qn: Questionnaire, out: Path, include_proposed: bool = False, toda
     if out.suffix.lower() == ".csv":
         import csv
         with out.open("w", newline="", encoding="utf-8") as fh:
+            from .safety import cell_text
             w = csv.writer(fh)
             w.writerow(head)
-            w.writerows(rows)
+            w.writerows([[cell_text(v) for v in r] for r in rows])
     else:
         m = qn.meta
         lines = [f"# {m.get('title') or qn.definition['title']}" + (" (DRAFT, not approved)" if include_proposed else ""), "",

@@ -201,6 +201,9 @@ def workbook(prog: P.Program, path: Path) -> None:
             c.font, c.fill = bold, head_fill
         for r in rows:
             ws.append(r)
+            for c in ws[ws.max_row]:          # text that starts with '=' stays text, never a formula
+                if isinstance(c.value, str) and c.value.startswith("="):
+                    c.data_type = "s"
         for i, w in enumerate(widths, start=1):
             ws.column_dimensions[ws.cell(1, i).column_letter].width = w
         ws.freeze_panes = "A2"

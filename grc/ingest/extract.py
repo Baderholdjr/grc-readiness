@@ -103,12 +103,21 @@ def text(path: Path) -> str:
 def _pdf(path: Path) -> str:
     try:
         from pypdf import PdfReader
+
+        from ..safety import MAX_PDF_PAGES
         reader = PdfReader(str(path))
-        pages = [f"[page {i + 1}]\n{(p.extract_text() or '').strip()}" for i, p in enumerate(reader.pages)]
+        pages = []
+        for i, p in enumerate(reader.pages):
+            if i >= MAX_PDF_PAGES:
+                pages.append(f"[stopped after {MAX_PDF_PAGES} pages]")
+                break
+            pages.append(f"[page {i + 1}]\n{(p.extract_text() or '').strip()}")
         txt = "\n".join(pages)
         if txt.strip():
             return txt
     except ImportError:
         pass
-    proc = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True, text=True)
+    # fixed argument list, no shell; the path is a file the caller already checked
+    proc = subprocess.run(["pdftotext", "-l", "600", "-layout", str(path), "-"],  # nosec B603 B607
+                          capture_output=True, text=True, timeout=120, check=False)
     return proc.stdout

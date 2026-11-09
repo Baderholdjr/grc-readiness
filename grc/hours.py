@@ -176,7 +176,7 @@ def classify(model: Engagement, *texts: str) -> str:
 
 
 def entry_id(*parts) -> str:
-    return "H-" + hashlib.sha1("\x1f".join(str(p) for p in parts).encode("utf-8")).hexdigest()[:10]
+    return "H-" + hashlib.sha1("\x1f".join(str(p) for p in parts).encode("utf-8"), usedforsecurity=False).hexdigest()[:10]
 
 
 # ------------------------------------------------------------------ import
