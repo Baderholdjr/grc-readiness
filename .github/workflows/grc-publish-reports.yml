@@ -13,6 +13,10 @@ on:
         type: string
         default: pinned
 
+# The most this workflow may use; a caller can only grant less.
+permissions:
+  contents: write
+
 jobs:
   # A repository made from the template has no record until *New engagement* runs:
   # skip quietly instead of failing every scheduled run.
@@ -21,7 +25,7 @@ jobs:
     outputs:
       found: ${{ steps.check.outputs.found }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: check
         run: |
           if compgen -G "engagement/engagement.yaml" >/dev/null || compgen -G "engagement-*/engagement.yaml" >/dev/null; then
@@ -35,8 +39,8 @@ jobs:
     if: needs.record.outputs.found == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -46,12 +50,22 @@ jobs:
           GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
         run: |
           if [ "$ENGINE" = "local" ]; then
-            pip install -q .
+            pip install -q --require-hashes -r grc/resources/locks/engine.txt
+            pip install -q --no-deps .
           else
             # requirements.txt pins the engine (git+https://github.com/<owner>/grc-readiness@engine-vX.Y.Z).
             # The engine repo is private: read it with GRC_ENGINE_TOKEN, then drop the credential again.
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
               git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            # The engine first, without its dependencies; then its dependencies from the engine's own hash-locked
+            # file; then anything else the client's requirements.txt lists.
+            grep -E '^grc-readiness' requirements.txt > "$RUNNER_TEMP/engine-pin.txt"
+            pip install -q --no-deps -r "$RUNNER_TEMP/engine-pin.txt"
+            if LOCK=$(python -m grc.locks engine 2>/dev/null); then
+              pip install -q --require-hashes -r "$LOCK"
+            else
+              echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
             fi
             pip install -q -r requirements.txt
             git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true

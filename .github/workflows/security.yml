@@ -1,0 +1,105 @@
+name: Security
+
+# DevSecOps checks for the engine: code (bandit), dependencies (pip-audit), workflows (zizmor), and that the
+# hash-locked dependency files match pyproject.toml. Runs on every pull request, on main, and weekly so a newly
+# published vulnerability in a locked dependency is caught without a code change.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 14 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  locks:
+    name: Dependency locks are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Regenerate the locks
+        run: |
+          # pip-tools only generates and compares here; nothing it resolves is installed or run.
+          pip install -q pip-tools
+          mkdir -p fresh
+          C="pip-compile -q --generate-hashes --allow-unsafe --strip-extras --no-header --no-emit-index-url --resolver=backtracking"
+          $C -o fresh/engine.txt pyproject.toml
+          $C --extra aws --extra gcp -o fresh/collectors.txt pyproject.toml
+          $C -o fresh/dev.txt pyproject.toml tools/locks/dev.in
+          $C -o fresh/security.txt tools/locks/security.in
+      - name: Compare
+        run: |
+          status=0
+          for f in engine collectors dev security; do
+            if ! diff -q "fresh/$f.txt" "grc/resources/locks/$f.txt" >/dev/null 2>&1; then
+              status=1
+              echo "::error file=grc/resources/locks/$f.txt::out of date - replace it with the file printed below"
+              echo "----- BEGIN grc/resources/locks/$f.txt -----"; cat "fresh/$f.txt"; echo "----- END grc/resources/locks/$f.txt -----"
+            fi
+          done
+          exit $status
+
+  code:
+    name: Code scan (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -q --require-hashes -r grc/resources/locks/security.txt
+      - name: Medium and high findings fail the check
+        run: bandit -r grc tools -c pyproject.toml --severity-level medium --confidence-level medium
+
+  dependencies:
+    name: Dependency vulnerabilities (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -q --require-hashes -r grc/resources/locks/security.txt
+      - name: Known vulnerabilities in any locked dependency fail the check
+        run: |
+          for f in engine collectors dev; do
+            echo "== $f"; pip-audit --strict --no-deps --disable-pip -r "grc/resources/locks/$f.txt"
+          done
+
+  workflows:
+    name: Workflow scan (zizmor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -q --require-hashes -r grc/resources/locks/security.txt
+      - name: Engine workflows and the client workflow templates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The client templates hold placeholders; scan them as a client would receive them.
+          mkdir -p client-scan/.github/workflows
+          for f in grc/resources/client/dot-github/workflows/*.yml; do
+            sed -e "s#__ENGINE_REPO__#$GITHUB_REPOSITORY#g" -e "s#__ENGINE_MAJOR__#0#g" "$f" > "client-scan/.github/workflows/$(basename "$f")"
+          done
+          zizmor --min-severity medium .github/workflows client-scan/.github/workflows

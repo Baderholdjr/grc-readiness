@@ -11,6 +11,12 @@ on:
         type: string
         default: Baderholdjr/grc-readiness
 
+# The most this workflow may use; a caller can only grant less.
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
 jobs:
   upgrade:
     runs-on: ubuntu-latest
@@ -18,7 +24,7 @@ jobs:
       BRANCH: auto/engine-upgrade
       ENGINE_REPO: ${{ inputs.engine-repo }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Compare pinned and latest engine versions
         id: check
         env:

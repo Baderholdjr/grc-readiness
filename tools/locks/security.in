@@ -1,0 +1,4 @@
+# Security scanners for the Security workflow (grc/resources/locks/security.txt).
+bandit
+pip-audit
+zizmor

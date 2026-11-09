@@ -36,6 +36,12 @@ on:
         type: boolean
         default: false
 
+# The most this workflow may use; a caller can only grant less.
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
 jobs:
   questionnaire:
     runs-on: ubuntu-latest
@@ -59,8 +65,8 @@ jobs:
               echo "::error::workbook must be an .xlsx under questionnaires/inbox/ (upload it there first)"; exit 1; }
             [ -z "$DUE" ] || [[ "$DUE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "::error::due must be YYYY-MM-DD"; exit 1; }
           fi
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
           cache: pip
@@ -70,10 +76,20 @@ jobs:
           GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
         run: |
           if [ "$ENGINE" = "local" ]; then
-            pip install -q .
+            pip install -q --require-hashes -r grc/resources/locks/engine.txt
+            pip install -q --no-deps .
           else
             if [ -n "$GRC_ENGINE_TOKEN" ]; then
               git config --global url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf "https://github.com/"
+            fi
+            # The engine first, without its dependencies; then its dependencies from the engine's own hash-locked
+            # file; then anything else the client's requirements.txt lists.
+            grep -E '^grc-readiness' requirements.txt > "$RUNNER_TEMP/engine-pin.txt"
+            pip install -q --no-deps -r "$RUNNER_TEMP/engine-pin.txt"
+            if LOCK=$(python -m grc.locks engine 2>/dev/null); then
+              pip install -q --require-hashes -r "$LOCK"
+            else
+              echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
             fi
             pip install -q -r requirements.txt
             git config --global --unset-all url."https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/".insteadOf || true
@@ -102,7 +118,7 @@ jobs:
           python -m grc questionnaire validate --format github || true
       - name: Keep the filled workbook or answer sheet
         if: inputs.action == 'fill'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: questionnaire-${{ inputs.name }}${{ inputs.draft && '-DRAFT' || '' }}
           path: out/*
