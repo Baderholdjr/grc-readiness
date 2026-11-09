@@ -123,8 +123,14 @@ def _steps(path):
 def test_workflow_rules(path):
     text = path.read_text()
     d = yaml.safe_load(text)
-    # least privilege: a top-level permissions block (reusable workflows too) or one on every job
-    assert "permissions" in d or all("permissions" in j for j in d["jobs"].values()), path.name
+    on = d.get(True) or d.get("on")
+    if isinstance(on, dict) and set(on) == {"workflow_call"}:
+        # a reusable workflow takes its permissions from the caller; asking for any here would stop it starting
+        # under an older client wrapper that grants less (as 0.25.0 did with pull-requests: read)
+        assert "permissions" not in d and not any("permissions" in j for j in d["jobs"].values()), path.name
+    else:
+        # least privilege: every caller declares what it grants
+        assert "permissions" in d or all("permissions" in j for j in d["jobs"].values()), path.name
     for s in _steps(path):
         uses = s.get("uses") or ""
         if uses and not uses.startswith("./") and "__ENGINE_REPO__" not in uses:

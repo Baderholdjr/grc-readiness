@@ -38,11 +38,8 @@ on:
         type: string
         default: ""
 
-# The most this workflow may use; a caller can only grant less.
-permissions:
-  contents: write
-  pull-requests: write
-  actions: write
+# Permissions come from the caller (the wrapper in each repository), which sets the most this may use.
+# A reusable workflow that asked for more than an older wrapper grants would fail to start, so none is asked here.
 
 jobs:
   # A repository made from the template has no record until *New engagement* runs:

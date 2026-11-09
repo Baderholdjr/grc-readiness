@@ -404,7 +404,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 > **Under the hood:**
 > - **Supply chain:** every third-party action is pinned to a commit, with its version in a comment. Dependencies install from the hash-locked files in `grc/resources/locks/` (`python -m grc.locks engine` prints the path). An engine older than 0.25.0 has no locks; its workflows warn and install unlocked until the upgrade is merged.
-> - **Least privilege:** each reusable workflow declares the most it may use; inputs reach scripts through environment variables, never `${{ }}` inside a script. `tests/test_security.py` fails a PR that breaks either rule, or adds an unpinned action or an unlocked install.
+> - **Least privilege:** each wrapper declares the permissions it grants (reusable workflows ask for none, so an older client wrapper never stops them starting); inputs reach scripts through environment variables, never `${{ }}` inside a script. `tests/test_security.py` fails a PR that breaks either rule, or adds an unpinned action or an unlocked install.
 > - **Uploads:** `grc/safety.py` refuses symbolic links, oversized files, zip bombs, Office parts with paths outside the package, and XML with a DTD; PDFs are read to 600 pages. A refused or damaged file is listed in the ingest comment, never a crash.
 > - **Outputs:** text that would start a spreadsheet formula stays text in every workbook and CSV.
 > - **Credentials:** the GitHub token goes only to the GitHub API; collectors call `https://` only; cloud access is OIDC to read-only roles.
