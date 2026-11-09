@@ -16,12 +16,12 @@ ID,Requirement,Type,Owner,Documented,Implemented,Evidenced,Tested,State,Gaps,Evi
 7.2,Competence,Clause,People Operations,not_started,not_started,not_started,not_started,Not started,GAP-03,
 7.3,Awareness,Clause,People Operations,not_started,partial,not_started,not_started,In progress,GAP-03,EV-021
 7.4,Communication,Clause,VP Engineering,not_started,not_started,not_started,not_started,Not started,,
-7.5,Documented information,Clause,Security & Compliance,verified,claimed,not_started,not_started,In progress,,EV-020
+7.5,Documented information,Clause,Security & Compliance,verified,partial,not_started,not_started,In progress,,EV-020;EV-101
 8.1,Operational planning and control,Clause,Head of Platform,partial,partial,not_started,not_started,In progress,GAP-05,EV-008;EV-009
 8.2,AI risk assessment (operation),Clause,Security & Compliance,partial,verified,verified,not_started,In progress,,EV-005;EV-004
 8.3,AI risk treatment (operation),Clause,Security & Compliance,not_started,partial,not_started,not_started,In progress,,EV-004
 8.4,AI system impact assessment (operation),Clause,Head of Responsible AI,not_started,not_started,not_started,not_started,Not started,GAP-02,
-9.1,"Monitoring, measurement, analysis and evaluation",Clause,Head of Platform,not_started,partial,not_started,not_started,In progress,,EV-012
+9.1,"Monitoring, measurement, analysis and evaluation",Clause,Head of Platform,not_started,partial,not_started,not_started,In progress,,EV-012;EV-103
 9.2,Internal audit,Clause,Security & Compliance,not_started,not_started,not_started,not_started,Not started,GAP-08,
 9.3,Management review,Clause,VP Engineering,not_started,partial,not_started,not_started,In progress,GAP-09,EV-016
 10.1,Continual improvement,Clause,VP Engineering,not_started,not_started,not_started,not_started,Not started,,

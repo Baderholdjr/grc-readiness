@@ -61,7 +61,7 @@
 | Test | Verified | Partial | Claimed | Not started |
 |---|---|---|---|---|
 | Documented | 2 | 13 | 9 | 41 |
-| Implemented | 8 | 10 | 8 | 39 |
+| Implemented | 8 | 11 | 7 | 39 |
 | Evidence exists | 5 | 3 | 0 | 57 |
 | Tested | 0 | 1 | 0 | 64 |
 

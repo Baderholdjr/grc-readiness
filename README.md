@@ -28,17 +28,17 @@
 
 - **Policies and procedures:** 0 of 17 approved and current
 
-- **Expired evidence:** 4 · **Failing collector checks:** 1
+- **Expired evidence:** 1 · **Failing collector checks:** 1
 - **Budget:** 18 / 200 hours
 
 | Test | ✅ Verified | 🟡 Partial | ❔ Claimed | ⬜ Not started |
 |---|---|---|---|---|
 | Documented | 2 | 13 | 9 | 41 |
-| Implemented | 8 | 10 | 8 | 39 |
+| Implemented | 8 | 11 | 7 | 39 |
 | Evidence exists | 5 | 3 | 0 | 57 |
 | Tested | 0 | 1 | 0 | 64 |
 
-**Validation:** 0 errors · 8 warnings · 17 unverified claims
+**Validation:** 0 errors · 8 warnings · 16 unverified claims
 
 <details><summary>Warnings (8)</summary>
 
@@ -48,7 +48,7 @@
 - `W102` A.6.2.6 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.6.yaml`
 - `W102` A.6.2.8 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.8.yaml`
 - `W102` A.7.5 operates in practice but is not codified in an approved document. — `engagement/controls/A.7.5.yaml`
-- `W108` EV-102 (Engagement repo: independent review of merged changes (90 days)) collector check is failing: Baderholdjr/grc-readiness: 0/6 merged PRs independently approved (90d) | 6 of 6 merged PRs had no independent approval: #20, #19, #17, #16, #15, #14 — `engagement/evidence/collected.yaml`
+- `W108` EV-102 (Engagement repo: independent review of merged changes (90 days)) collector check is failing: Baderholdjr/grc-readiness: 0/47 merged PRs independently approved (90d) | 47 of 47 merged PRs had no independent approval: #68, #67, #66, #65, #64, #63, #62, #61, #60, #59, #58, #57, #51, #50, #49, # — `engagement/evidence/collected.yaml`
 - `W140` 17 of 17 library documents not started: DOC-SCOPE, DOC-AI-POLICY, DOC-ROLES, DOC-RISK, DOC-IMPACT, DOC-OBJECTIVES, DOC-PEOPLE, DOC-DOCINFO, DOC-RESOURCES, DOC-LIFECYCLE, DOC-DATA, DOC-COMMS, DOC-USE, DOC-THIRDPARTY, DOC-AUDIT, DOC-REVIEW, DOC-IMPROVE (`grc docs new all`). — `engagement/documents`
 
 </details>

@@ -41,7 +41,7 @@ Legend: ✅ verified · 🟡 partial · ❔ client claim, not yet evidenced · �
 | 7.2 | Competence | Clause | People Operations | ⬜ | ⬜ | ⬜ | ⬜ | Not started | GAP-03 |  |
 | 7.3 | Awareness | Clause | People Operations | ⬜ | 🟡 | ⬜ | ⬜ | In progress | GAP-03 | EV-021 |
 | 7.4 | Communication | Clause | VP Engineering | ⬜ | ⬜ | ⬜ | ⬜ | Not started |  |  |
-| 7.5 | Documented information | Clause | Security & Compliance | ✅ | ❔ | ⬜ | ⬜ | In progress |  | EV-020 |
+| 7.5 | Documented information | Clause | Security & Compliance | ✅ | 🟡 | ⬜ | ⬜ | In progress |  | EV-020, EV-101 |
 
 ## Clause 8 Operation
 
@@ -56,7 +56,7 @@ Legend: ✅ verified · 🟡 partial · ❔ client claim, not yet evidenced · �
 
 | ID | Requirement | Type | Owner | Documented | Implemented | Evidenced | Tested | State | Gaps | Evidence |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 9.1 | Monitoring, measurement, analysis and evaluation | Clause | Head of Platform | ⬜ | 🟡 | ⬜ | ⬜ | In progress |  | EV-012 |
+| 9.1 | Monitoring, measurement, analysis and evaluation | Clause | Head of Platform | ⬜ | 🟡 | ⬜ | ⬜ | In progress |  | EV-012, EV-103 |
 | 9.2 | Internal audit | Clause | Security & Compliance | ⬜ | ⬜ | ⬜ | ⬜ | Not started | GAP-08 |  |
 | 9.3 | Management review | Clause | VP Engineering | ⬜ | 🟡 | ⬜ | ⬜ | In progress | GAP-09 | EV-016 |
 

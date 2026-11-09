@@ -215,7 +215,7 @@ As of 2026-11-09. What has been done, what is coming up, and what we need from y
   - In use: what you've shown us is being reviewed — no action needed for now.
   - Records: share Risk treatment plan, Statement of Applicability, Residual risk acceptance.
 - **Requirement 7.5** Documented information
-  - In use: you've told us this is in place — show us where it runs.
+  - In use: what you've shown us is being reviewed — no action needed for now.
   - Records: share Document control procedure, Version history.
 - **Requirement 8.2** AI risk assessment (operation)
   - Documented: an approved AI Risk Management Procedure (DOC-RISK) — we will draft it with you.
