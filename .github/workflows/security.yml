@@ -102,4 +102,8 @@ jobs:
           for f in grc/resources/client/dot-github/workflows/*.yml; do
             sed -e "s#__ENGINE_REPO__#$GITHUB_REPOSITORY#g" -e "s#__ENGINE_MAJOR__#0#g" "$f" > "client-scan/.github/workflows/$(basename "$f")"
           done
-          zizmor --min-severity medium .github/workflows client-scan/.github/workflows
+          # Clients call the engine's reusable workflows at its major-version tag on purpose (they receive fixes
+          # without a PR per release; see docs/THREAT-MODEL.md). Every other action must be pinned to a commit.
+          printf 'rules:\n  unpinned-uses:\n    config:\n      policies:\n        "%s": ref-pin\n        "*": hash-pin\n' \
+            "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/zizmor.yml"
+          zizmor --config "$RUNNER_TEMP/zizmor.yml" --min-severity medium .github/workflows client-scan/.github/workflows

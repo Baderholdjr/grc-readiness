@@ -36,4 +36,5 @@ jobs:
       engine: local
       action: ${{ github.event_name == 'schedule' && (github.event.schedule == '23 15 1 1,4,7,10 *' && 'certify' || 'issues') || inputs.action }}
       period: ${{ inputs.period || '' }}
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

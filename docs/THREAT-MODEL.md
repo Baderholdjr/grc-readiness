@@ -54,6 +54,8 @@ no-frame and HSTS headers.
   endpoints only.
 - `GRC_ENGINE_TOKEN` is used only to fetch the engine and removed from git's config straight after.
 - No workflow uses `pull_request_target`, so a PR's code never runs with secrets it didn't already have.
+- Each reusable workflow declares the secrets it uses, and callers pass exactly those by name (never
+  `secrets: inherit`): the ingest workflow can't see the Cloudflare token, the site workflow can't see the Anthropic key.
 
 **6. Workflows run with the least privilege.** Each reusable workflow declares the most it may use; a caller can
 only grant less. Workflow inputs and event data reach shell scripts through environment variables, never by

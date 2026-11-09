@@ -4,6 +4,9 @@ name: Management review (reusable)
 # pack: generate (or refresh, until the review is held) its input pack (target = review id)
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engagement:
         description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"

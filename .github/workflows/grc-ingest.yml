@@ -7,6 +7,10 @@ name: Ingest client documents (reusable)
 # Called by thin wrappers in each repo; the triggers and permissions live there.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      ANTHROPIC_API_KEY: {required: false}
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engine:
         description: "'pinned' = install the version in the caller's requirements.txt; 'local' = install from the checkout (engine repo only)"

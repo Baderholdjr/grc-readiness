@@ -5,6 +5,10 @@ name: Policies and procedures (reusable)
 # approve: record an approval (approver, date, fingerprint of the text) - the PR review is the actual approval
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      ANTHROPIC_API_KEY: {required: false}
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engagement:
         description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"

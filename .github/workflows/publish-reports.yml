@@ -23,4 +23,5 @@ jobs:
     uses: ./.github/workflows/grc-publish-reports.yml
     with:
       engine: local
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

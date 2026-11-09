@@ -4,6 +4,9 @@ name: AI impact assessment (reusable)
 # in the inventory that lacks one. Opens (or updates) a PR; the assessor completes it there or in later PRs.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engagement:
         description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"

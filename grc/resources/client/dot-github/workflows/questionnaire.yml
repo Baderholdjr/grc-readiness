@@ -56,4 +56,5 @@ jobs:
       requester: ${{ inputs.requester }}
       due: ${{ inputs.due }}
       draft: ${{ inputs.draft }}
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

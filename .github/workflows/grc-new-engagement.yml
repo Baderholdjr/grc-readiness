@@ -6,6 +6,9 @@ name: New engagement (reusable)
 # Called by thin wrappers in each repo; the triggers and permissions live there.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engagement:
         description: "Record folder: engagement (the main record) or engagement-<name> (another framework, e.g. engagement-27001)"

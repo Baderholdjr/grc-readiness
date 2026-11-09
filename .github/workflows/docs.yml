@@ -30,4 +30,6 @@ jobs:
       action: ${{ inputs.action }}
       document: ${{ inputs.document }}
       approver: ${{ inputs.approver }}
-    secrets: inherit
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

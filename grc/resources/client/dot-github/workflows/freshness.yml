@@ -17,4 +17,5 @@ jobs:
     uses: __ENGINE_REPO__/.github/workflows/grc-freshness.yml@engine-v__ENGINE_MAJOR__
     with:
       engine: pinned
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

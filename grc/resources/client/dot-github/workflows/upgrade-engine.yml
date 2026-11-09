@@ -17,4 +17,5 @@ jobs:
     uses: __ENGINE_REPO__/.github/workflows/grc-upgrade-engine.yml@engine-v__ENGINE_MAJOR__
     with:
       engine-repo: __ENGINE_REPO__
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

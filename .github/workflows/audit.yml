@@ -25,4 +25,5 @@ jobs:
       engagement: ${{ inputs.engagement }}
       audit: ${{ inputs.audit }}
       action: ${{ inputs.action }}
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

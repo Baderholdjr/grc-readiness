@@ -10,6 +10,9 @@ name: Security questionnaire (reusable)
 # Nothing here approves an answer: people do, in the pull request.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engine:
         type: string

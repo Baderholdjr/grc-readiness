@@ -5,6 +5,9 @@ name: Upgrade GRC engine (reusable)
 # PR is the upgrade; validate runs on it first. Only requirements.txt changes.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engine-repo:
         description: "owner/name of the engine repository"

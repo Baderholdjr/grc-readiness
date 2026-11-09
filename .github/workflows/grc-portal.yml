@@ -10,6 +10,12 @@ name: Client site (reusable)
 #     read-only.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: {required: false}
+      CLOUDFLARE_API_TOKEN: {required: false}
+      GRC_ENGINE_TOKEN: {required: false}
+      PORTAL_GITHUB_TOKEN: {required: false}
     inputs:
       engine:
         type: string

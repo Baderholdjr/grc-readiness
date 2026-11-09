@@ -43,4 +43,5 @@ jobs:
       refs: ${{ inputs.refs }}
       person: ${{ inputs.person }}
       phase: ${{ inputs.phase }}
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

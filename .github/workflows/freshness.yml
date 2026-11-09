@@ -17,4 +17,5 @@ jobs:
     uses: ./.github/workflows/grc-freshness.yml
     with:
       engine: local
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

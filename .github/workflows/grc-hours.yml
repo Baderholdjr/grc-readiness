@@ -6,6 +6,9 @@ name: Hours (reusable)
 # log:    add one entry (who = the person running the workflow, unless given).
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engine:
         type: string

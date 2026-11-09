@@ -8,6 +8,10 @@ name: ITGC test (reusable)
 # Called by thin wrappers in each repo; the triggers and permissions live there.
 on:
   workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      GH_COLLECTOR_TOKEN: {required: false}
+      GRC_ENGINE_TOKEN: {required: false}
     inputs:
       engine:
         type: string

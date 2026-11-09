@@ -33,4 +33,5 @@ jobs:
     uses: __ENGINE_REPO__/.github/workflows/grc-sync-issues.yml@engine-v__ENGINE_MAJOR__
     with:
       engine: pinned
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

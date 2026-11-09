@@ -19,4 +19,5 @@ jobs:
       engine: local
       engagement: ${{ inputs.engagement }}
       system: ${{ inputs.system }}
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

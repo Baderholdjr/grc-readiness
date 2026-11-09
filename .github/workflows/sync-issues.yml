@@ -33,4 +33,5 @@ jobs:
     uses: ./.github/workflows/grc-sync-issues.yml
     with:
       engine: local
-    secrets: inherit
+    secrets:
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

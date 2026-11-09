@@ -142,6 +142,24 @@ def test_no_workflow_runs_untrusted_code_with_secrets():
         assert "pull_request_target" not in path.read_text(), path.name
 
 
+def test_secrets_are_passed_by_name_and_declared():
+    import re as _re
+    declared = {}
+    for path in (ROOT / ".github" / "workflows").glob("grc-*.yml"):
+        d = yaml.safe_load(path.read_text())
+        call = (d.get(True) or d.get("on"))["workflow_call"] or {}
+        declared[path.name] = set(call.get("secrets") or {})
+        used = set(_re.findall(r"secrets\.([A-Z_0-9]+)", path.read_text())) - {"GITHUB_TOKEN"}
+        assert used <= declared[path.name], (path.name, used - declared[path.name])
+    for path in WORKFLOWS:
+        d = yaml.safe_load(path.read_text())
+        for job in d["jobs"].values():
+            assert job.get("secrets") != "inherit", f"{path.name}: pass secrets by name"
+            m = _re.search(r"grc-[a-z-]+\.yml", str(job.get("uses") or ""))
+            if m and isinstance(job.get("secrets"), dict):
+                assert set(job["secrets"]) <= declared[m.group(0)], path.name
+
+
 def test_lock_files():
     assert locks.path("engine").endswith("grc/resources/locks/engine.txt")
     with pytest.raises(SystemExit):
