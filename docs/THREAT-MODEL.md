@@ -69,8 +69,9 @@ no-frame and HSTS headers.
 - Each reusable workflow declares the secrets it uses, and callers pass exactly those by name (never
   `secrets: inherit`): the ingest workflow can't see the Cloudflare token, the site workflow can't see the Anthropic key.
 
-**6. Workflows run with the least privilege.** Each reusable workflow declares the most it may use; a caller can
-only grant less. Workflow inputs and event data reach shell scripts through environment variables, never by
+**6. Workflows run with the least privilege.** Every caller (the thin wrapper in each repository) declares the
+permissions it grants, and the reusable workflow it calls can use no more. Reusable workflows don't declare their
+own: one that asked for more than an older wrapper grants would fail to start. Workflow inputs and event data reach shell scripts through environment variables, never by
 `${{ }}` expansion inside a script. Each reusable workflow declares the secrets it uses and callers pass exactly
 those. The engine runs as `python -I`, so a `grc/` folder in a client repository can't stand in for it. No job
 shares a pip cache. These rules are tested and scanned (zizmor).
