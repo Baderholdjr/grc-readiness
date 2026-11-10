@@ -6,6 +6,10 @@ name: Release GRC engine
 # Creates tag + release engine-vX.Y.Z (what client repos pin) and moves the
 # engine-v<MAJOR> tag (what client workflow wrappers call). Client repos then get
 # an "Upgrade GRC engine" PR from their weekly upgrade check.
+#
+# The release carries the engine as a wheel and a source archive with SHA256SUMS, each with a signed GitHub
+# build-provenance attestation (Sigstore), so anyone can check a file came from this workflow at this commit:
+#   gh attestation verify grc_readiness-X.Y.Z-py3-none-any.whl --repo OWNER/grc-readiness
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +18,9 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: write       # tags and the release
+  id-token: write       # sign the provenance attestations (Sigstore, keyless)
+  attestations: write   # store them with the repository
 
 concurrency:
   group: engine-release
@@ -46,6 +52,18 @@ jobs:
             echo "::error::engine-v$V already exists - bump the version first"; exit 1; fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "major=${V%%.*}" >> "$GITHUB_OUTPUT"
+      - name: Build the release files
+        env:
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          mkdir -p dist
+          pip wheel -q --no-deps . -w dist
+          git archive --format=tar.gz --prefix="grc-readiness-$V/" -o "dist/grc-readiness-$V.tar.gz" HEAD
+          (cd dist && sha256sum -- *.whl *.tar.gz > SHA256SUMS && cat SHA256SUMS)
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
       - name: Tag and release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,4 +79,7 @@ jobs:
           git push -f origin "engine-v$MAJOR"
           printf '%s\n\nPin in a client repo'"'"'s requirements.txt:\n\n```\ngrc-readiness @ git+https://github.com/%s@engine-v%s\n```\n' \
             "$NOTES" "$GITHUB_REPOSITORY" "$V" > notes.md
-          gh release create "engine-v$V" --title "GRC engine $V" --notes-file notes.md --latest=false
+          printf '\nEach file below has a signed build-provenance attestation:\n\n```\ngh attestation verify <file> --repo %s\n```\n' \
+            "$GITHUB_REPOSITORY" >> notes.md
+          gh release create "engine-v$V" --title "GRC engine $V" --notes-file notes.md --latest=false \
+            dist/*.whl dist/*.tar.gz dist/SHA256SUMS

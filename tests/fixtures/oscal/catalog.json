@@ -1,0 +1,138 @@
+{
+ "catalog": {
+  "uuid": "0b6b2f7e-4c1a-4f55-9a3e-2f7f0e9c1a01",
+  "metadata": {
+   "title": "Fictional Example Control Catalog",
+   "last-modified": "2026-11-09T00:00:00Z",
+   "version": "1.0",
+   "oscal-version": "1.2.3"
+  },
+  "groups": [
+   {
+    "id": "xa",
+    "class": "family",
+    "title": "Example Access",
+    "controls": [
+     {
+      "id": "xa-1",
+      "class": "control",
+      "title": "Access Policy",
+      "params": [
+       {
+        "id": "xa-01_odp",
+        "label": "frequency"
+       }
+      ],
+      "props": [
+       {
+        "name": "label",
+        "value": "XA-1"
+       }
+      ],
+      "parts": [
+       {
+        "id": "xa-1_smt",
+        "name": "statement",
+        "prose": "Review the access policy {{ insert: param, xa-01_odp }}."
+       }
+      ],
+      "controls": [
+       {
+        "id": "xa-1.1",
+        "class": "control",
+        "title": "Policy Approval",
+        "props": [
+         {
+          "name": "label",
+          "value": "XA-1(1)"
+         }
+        ],
+        "parts": [
+         {
+          "id": "xa-1.1_smt",
+          "name": "statement",
+          "prose": "Have the policy approved."
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "xa-2",
+      "class": "control",
+      "title": "Retired Control",
+      "props": [
+       {
+        "name": "label",
+        "value": "XA-2"
+       },
+       {
+        "name": "status",
+        "value": "withdrawn"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "xb",
+    "class": "family",
+    "title": "Example Backup",
+    "controls": [
+     {
+      "id": "xb-1",
+      "class": "control",
+      "title": "Backups",
+      "props": [
+       {
+        "name": "label",
+        "value": "XB-1"
+       }
+      ],
+      "parts": [
+       {
+        "id": "xb-1_smt",
+        "name": "statement",
+        "parts": [
+         {
+          "id": "xb-1_smt.a",
+          "name": "item",
+          "props": [
+           {
+            "name": "label",
+            "value": "a."
+           }
+          ],
+          "prose": "Back up data daily;"
+         },
+         {
+          "id": "xb-1_smt.b",
+          "name": "item",
+          "props": [
+           {
+            "name": "label",
+            "value": "b."
+           }
+          ],
+          "prose": "Test restores."
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "xb-2",
+      "class": "control",
+      "title": "Not In Baseline",
+      "props": [
+       {
+        "name": "label",
+        "value": "XB-2"
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

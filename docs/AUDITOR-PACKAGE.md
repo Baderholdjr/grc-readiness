@@ -20,6 +20,7 @@ A single, checksummed bundle of the record as of one commit, for the certificati
 | `06-internal-audit/` | Audit programme, audit reports with workpapers, corrective actions |
 | `07-management-review/` | Review records and their frozen input packs |
 | `08-source-record/` | The engagement YAML and Markdown the reports were generated from |
+| `09-oscal/` | The same record in NIST OSCAL 1.2.3 JSON: system security plan, assessment plan and results, POA&M (and the catalog and profile) |
 | `manifest.json`, `SHA256SUMS` | `manifest.json`: every file except itself and `SHA256SUMS`, with size and SHA-256, plus the engine and ReportLab versions. `SHA256SUMS`: every file, including the index and the manifest |
 
 Artifacts the client holds elsewhere (contracts, tickets, screenshots) are not copied in. The index says where each one is, so the auditor can ask to see it.

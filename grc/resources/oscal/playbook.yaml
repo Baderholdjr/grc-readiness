@@ -1,0 +1,131 @@
+# Framework playbook for a control catalog imported from OSCAL (`grc oscal import`).
+# The import writes this file next to the catalog as frameworks/<id>/playbook.yaml in the client repository.
+# It is a neutral starting point: edit the wording, phases and documents to fit the framework. `{framework}` is
+# replaced with the framework's short name when the file is written.
+
+title_suffix: "{framework} Readiness Brief"
+tldr_template: "Help {client} meet {framework} and show it with evidence."
+usage_heading: System, Boundary and Data in Scope
+requirements_heading: "{framework} Readiness Requirements"
+
+terms:
+  goal: "{framework} readiness"
+  audit_body: Assessor
+  focus: "{framework} readiness and gap closure"
+  stage1: Readiness assessment
+  stage2: Assessment
+  countdown: readiness assessment
+  system: "{framework} scoped system"
+  applicability_title: "{framework} Control Applicability"
+  applicability_short: Applicability
+  applicability_intro: "Every {framework} control in scope, with whether {client} implements it, and who is responsible for any control it does not."
+  review_required: "no"
+  applicability_id_header: Control
+
+glossary:
+  - term: OSCAL
+    plain: "A machine-readable format for security controls, plans and assessment results, published by NIST."
+    tech: "NIST Open Security Controls Assessment Language."
+  - term: POA&M
+    plain: "A plan of action and milestones: the list of controls not fully in place yet, with the fix and the date."
+    tech: "Exported as an OSCAL POA&M (`grc oscal export`)."
+
+evidence_test:
+  - key: documented
+    label: Documented
+    question: Is the control described in an approved policy or procedure?
+  - key: implemented
+    label: Implemented
+    question: Is the control in place across the whole system in scope?
+  - key: evidenced
+    label: Evidence exists
+    question: Can {client} produce records showing the control operated?
+  - key: tested
+    label: Tested
+    question: Does a test, done the way an assessor would, show the control works?
+
+gap_callout: Treat client statements as hypotheses until evidence shows the control is documented, in place, leaves records, and passes a test.
+
+working_rule: If a control is described but you cannot trace it to an owner, a requirement, and records, treat it as unresolved and escalate it to the engagement lead.
+
+readiness_criteria:
+  - The system boundary and data flows are drawn and match the system inventory.
+  - Every control in scope is implemented, inherited with a named provider, or on the POA&M with a date.
+  - Policies and procedures exist for every control family and are approved.
+  - Every control has an owner, an implementation statement and evidence.
+
+phases:
+  - id: validate
+    objective: "Scope & boundary"
+    deliverables:
+      - Kickoff and owner alignment
+      - Draw the boundary and data flow diagrams
+      - Validate gap-analysis claims and evidence
+  - id: governance
+    objective: "Policies & plan"
+    deliverables:
+      - Approve the family policies and procedures
+      - Start the POA&M
+  - id: implement
+    objective: "Implement & evidence"
+    deliverables:
+      - Close control gaps
+      - Collect evidence and turn on evidence collection
+  - id: test
+    objective: "Assess"
+    deliverables:
+      - Test every control in scope against its evidence
+      - Update the POA&M with findings
+  - id: stage1
+    objective: "Readiness assessment"
+    deliverables:
+      - Export the OSCAL system security plan, assessment results and POA&M
+  - id: stage2
+    objective: "Assessment"
+    deliverables:
+      - Support the assessor and hand over continuous monitoring
+
+needs:
+  - Maintain the control matrix, system inventory, evidence index, POA&M, owner, due date, and status.
+  - Review submitted evidence against the four-part evidence test.
+  - Draft and revise policies and procedures for lead review - do not invent operating practices.
+
+default_guardrails:
+  - "{client} owns its controls and evidence; our team structures, reviews, tests, and challenges."
+  - The assessor decides. We prepare; we don't speak for the assessor.
+  - No customer data in this repository or in our working files. Evidence is pointed to where it lives.
+
+default_risks:
+  - Implementation statements that restate the control text instead of saying how it is done.
+  - Inherited controls with no named provider.
+  - Parameter values left as placeholders.
+
+impact_assessment:
+  required_for_kinds: []
+
+documents:
+  review_every_days: 365
+  library: []
+
+management_review:
+  review_every_days: 365
+  warn_before_stage1_days: 60
+  inputs:
+    - {id: previous_actions, title: "Status of actions from previous reviews"}
+    - {id: environment_changes, content: context_changes, title: "Changes to the system and its boundary"}
+    - {id: control_performance, content: performance, title: "Control performance and the POA&M"}
+    - {id: risks, content: risks_and_impacts, title: "Results of the risk assessment and its treatment"}
+    - {id: incidents, content: incidents, title: "Security incidents"}
+    - {id: improvement, title: "Opportunities for improvement"}
+
+hours:
+  warn_at: 0.8
+  forecast_weeks: 4
+  max_per_person_day: 14
+  phase_split: {validate: 0.15, governance: 0.2, implement: 0.3, test: 0.18, stage1: 0.12, stage2: 0.05}
+  activities:
+    - {id: project_management, title: "Project management and status reporting", keywords: [status, pm, planning, weekly]}
+    - {id: documentation, title: "Policies and procedures", keywords: [policy, procedure, document, drafting, ssp]}
+    - {id: evidence_review, title: "Evidence review and testing", keywords: [evidence, review, testing, collector, sample]}
+    - {id: remediation, title: "Remediation support", keywords: [remediation, gap, fix, corrective]}
+    - {id: other, title: "Other", keywords: []}

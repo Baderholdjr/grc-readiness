@@ -526,6 +526,53 @@ def cmd_itgc(args) -> int:
     return 0
 
 
+def cmd_oscal(args) -> int:
+    from . import oscal
+    if args.action == "export":
+        model = _model(args)
+        try:
+            written = oscal.export(model, Path(args.out))
+        except oscal.OscalError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        for name, size in written:
+            print(f"wrote {Path(args.out) / name} ({size:,} bytes, valid OSCAL {oscal.OSCAL_VERSION})")
+        return 0
+    if args.action == "validate":
+        if not args.files:
+            print("error: name the OSCAL JSON files to check", file=sys.stderr)
+            return 2
+        bad = 0
+        for f in args.files:
+            try:
+                from .safety import check_file
+                check_file(Path(f), max_bytes=80 * 1024 * 1024)
+                errs = oscal.validate(json.loads(Path(f).read_text(encoding="utf-8")))
+            except (ValueError, OSError) as exc:
+                errs = [str(exc)]
+            bad += bool(errs)
+            print(f"{f}: " + ("valid OSCAL " + oscal.OSCAL_VERSION if not errs else f"{len(errs)} error(s)"))
+            for e in errs[:20]:
+                print(f"  {e}")
+        return 1 if bad else 0
+    # import
+    if not (args.catalog and args.id and args.name):
+        print("error: import needs --catalog, --id and --name (and usually --profile)", file=sys.stderr)
+        return 2
+    try:
+        cat = oscal.import_catalog(Path(args.catalog), Path(args.profile) if args.profile else None,
+                                   args.id, args.name, args.short_name)
+        written = oscal.write_framework(Path(args.root), cat, force=args.force)
+    except (oscal.OscalError, ValueError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"imported {len(cat['requirements'])} controls in {len(cat['groups'])} groups as framework '{args.id}'")
+    for w in written:
+        print(f"wrote {w}")
+    print(f"next: python -m grc new-engagement --framework {args.id} ... (or set framework: {args.id} in engagement.yaml)")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default=os.environ.get("GRC_ENGAGEMENT") or "engagement",
@@ -710,6 +757,20 @@ def main(argv=None) -> int:
     qu.add_argument("--root", default=".", help="repository root (default .)")
     qu.add_argument("--format", choices=["text", "text-verbose", "github", "json"], default="text")
     qu.set_defaults(fn=cmd_questionnaire)
+
+    os_ = sub.add_parser("oscal", help="OSCAL: export the record (SSP, assessment results, POA&M), validate, "
+                         "or import a control catalog and baseline")
+    os_.add_argument("action", choices=["export", "validate", "import"])
+    os_.add_argument("files", nargs="*", help="validate: OSCAL JSON files")
+    os_.add_argument("--out", default="out/oscal", help="export: folder (default out/oscal)")
+    os_.add_argument("--catalog", help="import: an OSCAL catalog (JSON), e.g. NIST SP 800-53 Rev. 5")
+    os_.add_argument("--profile", help="import: an OSCAL profile (baseline) choosing controls from the catalog")
+    os_.add_argument("--id", help="import: framework id to create, e.g. nist80053-moderate")
+    os_.add_argument("--name", help="import: framework name")
+    os_.add_argument("--short-name", help="import: short name for headings")
+    os_.add_argument("--root", default=".", help="import: repository root (default .)")
+    os_.add_argument("--force", action="store_true", help="import: replace an existing imported catalog")
+    os_.set_defaults(fn=cmd_oscal)
 
     args = p.parse_args(argv)
     return args.fn(args)

@@ -1,0 +1,29 @@
+{
+ "profile": {
+  "uuid": "0b6b2f7e-4c1a-4f55-9a3e-2f7f0e9c1a02",
+  "metadata": {
+   "title": "Fictional Example Baseline",
+   "last-modified": "2026-11-09T00:00:00Z",
+   "version": "1.0",
+   "oscal-version": "1.2.3"
+  },
+  "imports": [
+   {
+    "href": "catalog.json",
+    "include-controls": [
+     {
+      "with-ids": [
+       "xa-1",
+       "xa-1.1",
+       "xa-2",
+       "xb-1"
+      ]
+     }
+    ]
+   }
+  ],
+  "merge": {
+   "as-is": true
+  }
+ }
+}

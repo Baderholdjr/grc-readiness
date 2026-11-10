@@ -13,6 +13,7 @@ Produces dist/<client>-<framework>-<label>-<as-of>/ and the same as a .zip:
     06-internal-audit/              audit programme, audit reports, corrective actions
     07-management-review/           review records and frozen input packs
     08-source-record/               the engagement YAML/Markdown the reports were generated from
+    09-oscal/                       the same record in NIST OSCAL 1.2.3 JSON (SSP, assessment results, POA&M)
     manifest.json, SHA256SUMS       every file with its SHA-256
 
 The same commit always produces the same bytes (fixed timestamps; deterministic PDF, Word and zip),
@@ -209,6 +210,11 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
         items = sorted(n for n in names if n.startswith(folder + "/") and n.endswith(".pdf"))
         if items:
             L.append(f"**{title}** (`{folder}/`): " + ", ".join(f"`{n.split('/', 1)[1]}`" for n in items) + "\n\n")
+    oscal_files = sorted(n.split("/", 1)[1] for n in names if n.startswith("09-oscal/"))
+    if oscal_files:
+        L.append("**Machine-readable (NIST OSCAL 1.2.3)** (`09-oscal/`): " + ", ".join(f"`{n}`" for n in oscal_files)
+                 + ". The same record as the reports, for a GRC tool or an assessor's OSCAL tooling; it is the client's "
+                 "readiness record, not an independent assessment.\n\n")
     L.append("\n## 5. Known issues at packaging\n\n")
     if errors or warnings:
         L.append(_table(["Severity", "Code", "Finding"], [[f.severity, f.code, f.message] for f in errors + warnings]))
@@ -286,6 +292,11 @@ def build(model: Engagement, out: Path, label: str = "package", force: bool = Fa
             dest = root / "08-source-record" / "engagement" / p.relative_to(model.engagement_dir)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(p, dest)
+        from . import oscal
+        try:
+            oscal.export(model, root / "09-oscal")
+        except oscal.OscalError as exc:
+            raise ValueError(f"could not export OSCAL: {str(exc)[:400]}") from exc
         files = {p.relative_to(root).as_posix(): {"bytes": p.stat().st_size, "sha256": _sha(p)}
                  for p in sorted(root.rglob("*")) if p.is_file()}
         idx = index_markdown(model, findings, files, safe_label, sha, reportlab.Version)

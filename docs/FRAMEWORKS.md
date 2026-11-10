@@ -278,6 +278,9 @@ A requirement request that a reviewed equivalent mapping ties to an open request
 2. Make sure the document library covers every requirement exactly once. The tests check this for the built-in frameworks.
 3. Optionally, add proposed mappings in `mappings/<a>__<b>.yaml`.
 
+A framework published as an OSCAL catalog and profile can be imported instead: `grc oscal import` writes
+`catalog.yaml` and a starting `playbook.yaml` (see [OSCAL.md](OSCAL.md)).
+
 ## Reference catalogs
 
 Some frameworks are reported against through the common control catalog (`program/controls.yaml`,
