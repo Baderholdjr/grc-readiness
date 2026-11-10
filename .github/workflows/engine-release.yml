@@ -18,22 +18,27 @@ on:
         required: true
 
 permissions:
-  contents: write       # tags and the release
-  id-token: write       # sign the provenance attestations (Sigstore, keyless)
-  attestations: write   # store them with the repository
+  contents: read
 
 concurrency:
   group: engine-release
   cancel-in-progress: false
 
 jobs:
-  release:
+  test:
+    # tests and checks run third-party code, so they get a read-only token and no signing rights
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      major: ${{ steps.v.outputs.major }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
@@ -52,12 +57,30 @@ jobs:
             echo "::error::engine-v$V already exists - bump the version first"; exit 1; fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "major=${V%%.*}" >> "$GITHUB_OUTPUT"
+
+  release:
+    # builds from hash-locked build tools only, then signs, tags and publishes
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # tags and the release
+      id-token: write       # sign the provenance attestations (Sigstore, keyless)
+      attestations: write   # store them with the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
       - name: Build the release files
         env:
-          V: ${{ steps.v.outputs.version }}
+          V: ${{ needs.test.outputs.version }}
         run: |
+          # setuptools and wheel from the hash-locked security lock; no build isolation, so nothing unpinned is fetched
+          pip install -q --require-hashes -r grc/resources/locks/security.txt
           mkdir -p dist
-          pip wheel -q --no-deps . -w dist
+          pip wheel -q --no-deps --no-build-isolation . -w dist
           git archive --format=tar.gz --prefix="grc-readiness-$V/" -o "dist/grc-readiness-$V.tar.gz" HEAD
           (cd dist && sha256sum -- *.whl *.tar.gz > SHA256SUMS && cat SHA256SUMS)
       - name: Attest build provenance
@@ -67,8 +90,8 @@ jobs:
       - name: Tag and release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          V: ${{ steps.v.outputs.version }}
-          MAJOR: ${{ steps.v.outputs.major }}
+          V: ${{ needs.test.outputs.version }}
+          MAJOR: ${{ needs.test.outputs.major }}
           NOTES: ${{ inputs.notes }}
         run: |
           git config user.name "grc-bot"

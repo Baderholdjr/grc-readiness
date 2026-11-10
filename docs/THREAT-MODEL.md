@@ -41,9 +41,11 @@ the review is the approval record. Nothing automated sets a requirement leg to `
   (an expat pass before parsing). Ingest reads Office files through openpyxl and python-docx, whose parsers don't
   resolve entities or fetch external ones. PDFs are read to a page limit.
 - A damaged or hostile file is reported in the ingest PR comment, never a crash.
-- An OSCAL catalog or profile given to `grc oscal import` is JSON only (no XML parser is involved), size-limited,
-  and must pass NIST's OSCAL 1.2.3 schema before anything is read from it; its text becomes requirement wording,
-  which every report already treats as data.
+- An OSCAL catalog or profile given to `grc oscal import`, or a file given to `grc oscal validate`, is JSON only
+  (no XML parser is involved), size-limited (80 MB), refused if nested too deeply, and must pass NIST's OSCAL 1.2.3
+  schema before anything is read from it; its text becomes requirement wording, which every report already
+  treats as data. The framework id is checked (letters, digits, `-`, `_`), so it can't write outside
+  `frameworks/`, and a built-in framework can't be replaced.
 
 **3. Text inside documents is untrusted** (prompt injection). Claude is told the documents are data and to ignore
 instructions in them; its output is a draft in a PR, schema-checked; claims only move a leg from `not_started` to
@@ -55,9 +57,10 @@ or images (so nothing can leak through an image URL), no @mentions, no HTML (no 
 text in every workbook and CSV the engine writes. The client site builds its page with DOM text nodes (no
 `innerHTML`), serves a strict Content-Security-Policy (no inline or third-party script), and sends no-sniff,
 no-frame and HSTS headers. The OSCAL export (`grc oscal export`, and `09-oscal/` in the auditor package) is
-checked against NIST's schema before any file is written, and claims no more than the record: a requirement is
-`satisfied` in the assessment results only when the record shows it Ready, and the results say they are the
-client's readiness record, not an independent assessment.
+checked against NIST's schema before any file is written, refuses a record that fails validation (a forced draft
+is marked DRAFT and shows no requirement with an error as met), and claims no more than the record: a requirement
+is `satisfied` only when the record shows it Ready, and the results say they are the client's readiness record,
+not an independent assessment.
 
 **5. Credentials.**
 - Cloud collectors sign in with OIDC federation to read-only roles: no long-lived cloud keys exist.
@@ -102,7 +105,8 @@ shares a pip cache. These rules are tested and scanned (zizmor).
   (Python and the workflows, security-extended queries) scan the code.
 - Each release carries the engine as a wheel and a source archive with `SHA256SUMS`, and each file has a signed
   build-provenance attestation (Sigstore, keyless; `gh attestation verify <file> --repo <engine repo>`), which
-  ties it to the release workflow run and commit.
+  ties it to the release workflow run and commit. The tests run in a separate job with a read-only token; the
+  signing job installs only hash-locked build tools and builds without fetching anything else.
 - Clients pin the engine to a release tag and call its reusable workflows at a major-version tag
   (`engine-v0`). That tag is a deliberate trust in the engine's maintainer; protect it (below).
 

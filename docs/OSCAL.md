@@ -13,7 +13,7 @@ python -m grc --engagement engagement oscal export --out out/oscal
 
 | File | OSCAL model | What it holds |
 |---|---|---|
-| `catalog.json` | catalog | The framework's requirements (our paraphrased wording, never a standard's text). Not written for TX-RAMP, whose profile points at NIST's own SP 800-53 Rev. 5 catalog |
+| `catalog.json` | catalog | The framework's requirements as the engine holds them: our paraphrases for licensed standards (ISO/IEC, AICPA, Global CBPR), and the imported text for a catalog imported from OSCAL. Not written for TX-RAMP, whose profile points at NIST's own SP 800-53 Rev. 5 catalog (release v1.6.0 of NIST's OSCAL content) |
 | `profile.json` | profile | The requirements in this record's scope (categories, levels, classes) |
 | `ssp.json` | system security plan | Scope statement, boundary, owners as users, inventory items, and for each requirement its owner, implementation statement and status |
 | `assessment-plan.json` | assessment plan | What the readiness assessment reviews |
@@ -22,11 +22,16 @@ python -m grc --engagement engagement oscal export --out out/oscal
 
 How the record maps:
 
-- **Implementation status** comes from the requirement's state: Ready → `implemented`; In progress or an
-  unverified claim → `partial`; Not started or Missing → `planned`; Excluded → `not-applicable`.
-- **A finding is `satisfied` only when the record shows the requirement Ready** (every leg verified with current
-  evidence). Everything else is `not-satisfied`. The results say they are the client's readiness record, not an
-  independent assessment: nothing in the export claims more than the record.
+- **The record must validate.** The export refuses a record with validation errors (as `build` does). With
+  `--force` it writes a draft, marked DRAFT in every file, in which no requirement that has an error is shown as
+  implemented or satisfied.
+- **Implementation status** comes from the requirement's state: Ready → `implemented`; In progress → `partial`;
+  an unverified client claim, Not started or Missing → `planned` (a claim says so in its remarks);
+  Excluded → `not-applicable`, with the justification.
+- **A finding is `satisfied` only when the record shows the requirement Ready** (every leg verified, on a record
+  that validates). Everything else is `not-satisfied`. Each finding targets the requirement's statement
+  (`<control-id>_smt`). The results say they are the client's readiness record, not an independent assessment:
+  nothing in the export claims more than the record.
 - **Control ids** are OSCAL tokens. NIST ids take NIST's form (`AC-2(3)` → `ac-2.3`); FedRAMP 20x ids are
   lower-cased; other frameworks are prefixed (`A.5.15` → `iso27001-A.5.15`,
   `164.308(a)(1)(ii)(A)` → `hipaa-164.308.a.1.ii.A`). A catalog imported from OSCAL keeps its own ids.
@@ -37,7 +42,8 @@ How the record maps:
 The auditor package (`grc package`) includes the export in `09-oscal/`, with its checksums in the manifest.
 
 If an export would not pass the schema, nothing is written and the command fails with the schema errors (that
-is a bug: please report it).
+is a bug: please report it). An observation with no collection date in the evidence index shows the export date
+(OSCAL requires one) and says so in its remarks.
 
 ## Validate
 
@@ -58,19 +64,28 @@ python -m grc oscal import \
 ```
 
 Writes `frameworks/<id>/catalog.yaml` and a starting `frameworks/<id>/playbook.yaml` in the client repository,
-then `new-engagement --framework <id>` starts a record on it like any built-in framework. Any OSCAL catalog and
-profile work: NIST's SP 800-53 baselines (from github.com/usnistgov/oscal-content), FedRAMP Rev. 5 baselines,
-or an organisation's own.
+then `new-engagement --framework <id>` starts a record on it like any built-in framework. Tested with NIST's
+SP 800-53 Rev. 5 LOW (149 controls), MODERATE (287), HIGH (370) and PRIVACY (96) baselines from
+github.com/usnistgov/oscal-content.
 
-- The profile's `include-controls` choose the controls; withdrawn controls are left out. Without `--profile`,
-  every control in the catalog is imported.
+- **What a profile can select:** `include-all` or `include-controls` (`with-ids`, `matching` patterns,
+  `with-child-controls`), minus `exclude-controls`. Withdrawn controls are left out. Without `--profile`, every
+  control in the catalog is imported.
+- **Refused, with the reason:** a profile naming controls the catalog doesn't have (the wrong catalog), a profile
+  that imports another profile or more than one source, and one that changes parameters or text (`modify`).
+  For those, import the publisher's *resolved profile catalog* on its own, without `--profile`: NIST publishes
+  one for each baseline (`…-baseline-resolved-profile_catalog.json`), and FedRAMP publishes resolved catalogs for
+  its Rev. 5 baselines.
 - Each requirement keeps the control's label as its id (`AC-2(3)`), its title, its statement as the intent (with
-  parameters shown as `[label]`), its family as its group, and its OSCAL id (`oscal_id`) for the export.
+  parameters shown as `[label]`, and selections with their choices), its family as its group (nested groups
+  become one group titled "Parent: Child"), and its OSCAL id (`oscal_id`) for the export.
 - The playbook is a neutral starting point: phases, readiness criteria, the four-part evidence test. Edit it to
   fit; a later `--force` re-import refreshes the catalog and keeps your playbook.
 - The command refuses to overwrite a built-in framework, an existing import without `--force`, or a file that
-  isn't valid OSCAL.
-- Only import catalogs you may use: NIST's are US Government works; check the license of anyone else's.
+  isn't valid OSCAL (files over 80 MB, or nested too deeply, are refused before parsing finishes).
+- Only import catalogs you may use and share: NIST's are US Government works. The imported text goes into the
+  client repository and into `catalog.json` in exports and auditor packages, so check the license of anyone
+  else's.
 
 ## FedRAMP 20x machine-readable packages
 

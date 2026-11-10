@@ -45,7 +45,7 @@ def sagemaker_model_registry(groups: list[str], region: str | None = None, recen
         if not pkgs:
             findings.append(f"model package group '{g}' has no versions")
             continue
-        latest = pkgs[0]
+        latest = max(pkgs, key=lambda p: int(p.get("ModelPackageVersion") or 0))   # not list order: equal times tie
         if latest.get("ModelApprovalStatus") != "Approved":
             findings.append(f"'{g}' latest version {latest.get('ModelPackageVersion')} is "
                             f"{latest.get('ModelApprovalStatus')}, not Approved")

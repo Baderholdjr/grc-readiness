@@ -29,15 +29,28 @@ from .model import ENGINE, LEGS, Engagement
 
 OSCAL_VERSION = "1.2.3"
 NS = uuid.UUID("6b1e2a3c-4d5f-5a6b-8c7d-9e0f1a2b3c4d")
-NIST_CATALOG = ("https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/"
+NIST_CATALOG = ("https://raw.githubusercontent.com/usnistgov/oscal-content/v1.6.0/nist.gov/SP800-53/rev5/json/"
                 "NIST_SP-800-53_rev5_catalog.json")
 NIST_FRAMEWORKS = {"txramp"}           # requirement ids are NIST SP 800-53 control ids
-STATE = {"Ready": "implemented", "In progress": "partial", "Unverified claim": "partial",
+STATE = {"Ready": "implemented", "In progress": "partial", "Unverified claim": "planned",
          "Not started": "planned", "Missing": "planned", "Excluded": "not-applicable"}
 
 
 class OscalError(ValueError):
     pass
+
+
+# requirements whose record has a validation error, for the export in progress (keyed by id(model)): they are
+# never shown as implemented or satisfied, whatever their legs say
+_FLAGGED: dict[int, set[str]] = {}
+
+
+def _state(model: Engagement, rid: str) -> str:
+    from .rules import requirement_state
+    state = requirement_state(model, rid)
+    if state == "Ready" and rid in _FLAGGED.get(id(model), set()):
+        return "In progress"
+    return state
 
 
 # ------------------------------------------------------------------ ids, uuids, times
@@ -162,7 +175,6 @@ def _component(model: Engagement) -> str:
 
 
 def ssp_doc(model: Engagement, today: dt.date) -> dict:
-    from .rules import requirement_state
     fw = model.catalog["framework"]
     scope = model.engagement.get("scope") or {}
     statement = _text(model.fmt(str(scope.get("statement") or "")), f"The {model.system_abbrev} in scope.")
@@ -175,12 +187,15 @@ def ssp_doc(model: Engagement, today: dt.date) -> dict:
     for r in _in_scope(model):
         rid = str(r["id"])
         c = model.controls.get(rid) or {}
-        state = requirement_state(model, rid)
+        state = _state(model, rid)
         status = {"state": STATE.get(state, "planned")}
         if state == "Excluded":
             status["remarks"] = _text(c.get("justification"), "Excluded; no justification recorded.")
-        elif state in ("In progress", "Unverified claim"):
-            status["remarks"] = f"Readiness state: {state}."
+        elif state == "Unverified claim":
+            status["remarks"] = "The client says this is in place; not yet verified against evidence."
+        elif state == "In progress":
+            status["remarks"] = "Readiness state: In progress." + (
+                " The record has a validation error on this requirement." if rid in _FLAGGED.get(id(model), set()) else "")
         desc = c.get("implementation") or c.get("description") or c.get("notes")
         item = {"uuid": _uuid(model.client, fw["id"], "req", rid), "control-id": _cid(model, rid),
                 "props": [{"name": "label", "value": rid}],
@@ -221,9 +236,9 @@ def ssp_doc(model: Engagement, today: dt.date) -> dict:
     inv = [i for i in model.inventory if isinstance(i, dict) and i.get("name")]
     if inv:
         doc["system-implementation"]["inventory-items"] = [
-            {"uuid": _uuid(model.client, "inv", i.get("id") or i["name"]), "description": _text(i.get("name")),
+            {"uuid": _uuid(model.client, "inv", n, i.get("id") or i["name"]), "description": _text(i.get("name")),
              "props": [{"name": "asset-type", "value": _token_value(i.get("kind") or "other")}]}
-            for i in inv]
+            for n, i in enumerate(inv)]
     return {"system-security-plan": doc}
 
 
@@ -247,7 +262,6 @@ def _evidence_method(ev: dict) -> str:
 
 
 def assessment_results_doc(model: Engagement, today: dt.date) -> dict:
-    from .rules import requirement_state
     fw = model.catalog["framework"]
     idx = model.evidence_index
     observations, obs_of = [], {}
@@ -265,6 +279,8 @@ def assessment_results_doc(model: Engagement, today: dt.date) -> dict:
                      "props": [{"name": "label", "value": eid}],
                      "methods": [_evidence_method(ev)],
                      "collected": _when(ev.get("collected") or today)}
+                if not ev.get("collected"):    # OSCAL requires a date: say this one is the export's, not the record's
+                    o["remarks"] = "No collection date in the evidence index; the export date is shown."
                 exp = model.evidence_expiry(ev) if hasattr(model, "evidence_expiry") else None
                 if exp:
                     o["expires"] = _when(exp)
@@ -276,13 +292,13 @@ def assessment_results_doc(model: Engagement, today: dt.date) -> dict:
     for r in _in_scope(model):
         rid = str(r["id"])
         c = model.controls.get(rid) or {}
-        state = requirement_state(model, rid)
+        state = _state(model, rid)
         if state == "Excluded":
             continue
         legs = {k: str(((c.get("test") or {}).get(k) or {}).get("status") or "not_started") for k in LEGS}
         f = {"uuid": _uuid(model.client, fw["id"], "finding", rid), "title": f"{rid}: {_text(r.get('title'), rid)}",
              "description": f"Readiness state: {state}. " + "; ".join(f"{k} {v.replace('_', ' ')}" for k, v in legs.items()) + ".",
-             "target": {"type": "objective-id", "target-id": _cid(model, rid),
+             "target": {"type": "statement-id", "target-id": f"{_cid(model, rid)}_smt",
                         "status": {"state": "satisfied" if state == "Ready" else "not-satisfied"}}}
         rel = sorted({obs_of[str(e)] for k in LEGS for e in ((c.get("test") or {}).get(k) or {}).get("evidence") or []
                       if str(e) in obs_of})
@@ -343,14 +359,30 @@ def poam_doc(model: Engagement, today: dt.date) -> dict:
     return {"plan-of-action-and-milestones": doc}
 
 
-def export(model: Engagement, out: Path, today: dt.date | None = None) -> list[tuple[str, int]]:
-    """Write the OSCAL documents to out/; refuses (OscalError) if any fails NIST's schema."""
+def export(model: Engagement, out: Path, today: dt.date | None = None, force: bool = False) -> list[tuple[str, int]]:
+    """Write the OSCAL documents to out/. Refuses (OscalError) when the record has validation errors (unless
+    `force`: a draft, in which no requirement with an error shows as implemented or satisfied) or when any
+    document fails NIST's schema."""
+    from .rules import validate as validate_record
     today = today or model.today
-    docs = {"profile.json": profile_doc(model, today), "ssp.json": ssp_doc(model, today),
-            "assessment-plan.json": assessment_plan_doc(model, today),
-            "assessment-results.json": assessment_results_doc(model, today), "poam.json": poam_doc(model, today)}
-    if model.catalog["framework"]["id"] not in NIST_FRAMEWORKS:
-        docs = {"catalog.json": catalog_doc(model, today), **docs}
+    errors = [f for f in validate_record(model) if f.severity == "error"]
+    if errors and not force:
+        raise OscalError(f"the record has {len(errors)} validation error(s) (run validate); fix them, or use --force "
+                         "for a draft export in which no requirement with an error is shown as met")
+    _FLAGGED[id(model)] = {str(f.ref) for f in errors if f.ref}
+    try:
+        docs = {"profile.json": profile_doc(model, today), "ssp.json": ssp_doc(model, today),
+                "assessment-plan.json": assessment_plan_doc(model, today),
+                "assessment-results.json": assessment_results_doc(model, today), "poam.json": poam_doc(model, today)}
+        if model.catalog["framework"]["id"] not in NIST_FRAMEWORKS:
+            docs = {"catalog.json": catalog_doc(model, today), **docs}
+    finally:
+        _FLAGGED.pop(id(model), None)
+    if errors:
+        for d in docs.values():
+            meta = d[next(iter(d))]["metadata"]
+            meta["remarks"] = (f"DRAFT: exported with {len(errors)} validation error(s) in the record. "
+                               + meta["remarks"])
     problems = {name: validate(d) for name, d in docs.items()}
     bad = {k: v for k, v in problems.items() if v}
     if bad:
@@ -385,64 +417,127 @@ def _label(ctrl: dict) -> str:
     return str(ctrl["id"])
 
 
-def _walk_controls(container: dict, group: str | None = None):
+def _walk(container: dict, group: str | None = None, groups: dict | None = None, trail: str = "",
+          parent_title: str = ""):
+    """(control, group id) for every control, depth first, in catalog order. Groups may nest and their ids are
+    optional in OSCAL: a nested group is recorded (in `groups`) as one flat group titled 'Parent: Child', and a
+    group without an id gets one from its position."""
+    groups = {} if groups is None else groups
     for c in container.get("controls") or []:
         yield c, group
-        yield from _walk_controls(c, group)
-    for g in container.get("groups") or []:
-        yield from _walk_controls(g, g.get("id") or group)
+        yield from _walk({"controls": c.get("controls")}, group, groups, trail, parent_title)
+    for n, g in enumerate(container.get("groups") or [], 1):
+        gid = str(g.get("id") or f"group{trail}-{n}")
+        title = str(g.get("title") or gid)
+        groups.setdefault(gid, f"{parent_title}: {title}" if parent_title else title)
+        yield from _walk(g, gid, groups, f"{trail}-{n}", groups[gid])
+
+
+def _walk_controls(container: dict):
+    yield from _walk(container)
+
+
+def _all_params(cat: dict) -> dict:
+    params = {p["id"]: p for p in cat.get("params") or []}
+    stack = list(cat.get("groups") or []) + list(cat.get("controls") or [])
+    while stack:
+        x = stack.pop()
+        params.update({p["id"]: p for p in x.get("params") or []})
+        stack += list(x.get("groups") or []) + list(x.get("controls") or [])
+    return params
 
 
 def _params_text(text: str, params: dict) -> str:
-    """{{ insert: param, ac-01_odp.01 }} -> its label or 'organization-defined …', so statements read in English."""
+    """{{ insert: param, ac-01_odp.01 }} -> its label, or its choices, so statements read in English."""
     def sub(m):
         p = params.get(m.group(1)) or {}
-        lab = p.get("label") or (p.get("select") and "selection") or "organization-defined value"
-        return f"[{lab}]"
+        sel = p.get("select") or {}
+        if sel.get("choice"):
+            how = "one or more of" if sel.get("how-many") == "one-or-more" else "one of"
+            choices = "; ".join(" ".join(_params_text(str(ch), params).split()) for ch in sel["choice"])
+            return f"[selection ({how}): {choices}]"
+        return f"[{p.get('label') or 'organization-defined value'}]"
     return re.sub(r"\{\{\s*insert:\s*param,\s*([^\s}]+)\s*\}\}", sub, text)
+
+
+def _load(path: Path, model_name: str) -> dict:
+    from .safety import check_file
+    check_file(Path(path), max_bytes=80 * 1024 * 1024)
+    try:
+        d = json.loads(Path(path).read_text(encoding="utf-8"))
+        if not isinstance(d, dict) or model_name not in d:
+            raise OscalError(f"{path}: not an OSCAL {model_name} (no '{model_name}' at the top)")
+        errs = validate(d)
+    except RecursionError:
+        raise OscalError(f"{path}: nested too deeply to be an OSCAL file") from None
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise OscalError(f"{path}: not JSON ({exc})") from None
+    if errs:
+        raise OscalError(f"{path}: not valid OSCAL:\n  " + "\n  ".join(errs[:8]))
+    return d[model_name]
+
+
+def _matches(cid: str, pattern: str) -> bool:
+    import fnmatch
+    return fnmatch.fnmatchcase(cid, pattern)
+
+
+def _select(profile: dict, cat: dict) -> set[str]:
+    """The control ids a profile chooses from one catalog: include-all or include-controls (with-ids, matching,
+    with-child-controls), minus exclude-controls. Profiles that import other profiles, or tailor parameters and
+    parts (set-parameters, alter), are refused: import their resolved catalog instead."""
+    if any(k in (profile.get("modify") or {}) for k in ("set-parameters", "alters")):
+        raise OscalError("the profile changes parameters or control text (modify); import the resolved catalog the "
+                         "publisher provides instead, without --profile")
+    imports = profile.get("imports") or []
+    if len(imports) != 1:
+        raise OscalError("the profile imports more than one source; import the resolved catalog instead, without --profile")
+    imp = imports[0]
+    if str(imp.get("href") or "").lower().find("profile") >= 0:
+        raise OscalError("the profile imports another profile; import the resolved catalog instead, without --profile")
+    tree = {c["id"]: c for c, _ in _walk_controls(cat)}
+    children = {cid: [k["id"] for k, _ in _walk({"controls": c.get("controls")})] for cid, c in tree.items()}
+
+    def pick(selectors) -> set[str]:
+        got = set()
+        for sel in selectors or []:
+            ids = set(sel.get("with-ids") or [])
+            missing = sorted(ids - set(tree))
+            if missing:
+                raise OscalError(f"the profile names {len(missing)} control(s) the catalog doesn't have "
+                                 f"({', '.join(missing[:8])}): is this the catalog the profile imports?")
+            for m in sel.get("matching") or []:
+                ids |= {cid for cid in tree if _matches(cid, str(m.get("pattern") or ""))}
+            if sel.get("with-child-controls") == "yes":
+                ids |= {k for cid in list(ids) for k in children.get(cid, [])}
+            got |= ids
+        return got
+
+    wanted = set(tree) if imp.get("include-all") is not None else pick(imp.get("include-controls"))
+    return wanted - pick(imp.get("exclude-controls"))
 
 
 def import_catalog(catalog_path: Path, profile_path: Path | None, fw_id: str, name: str,
                    short_name: str | None = None) -> dict:
-    """An engine catalog (as a dict for catalog.yaml) from an OSCAL catalog, narrowed to a profile's
-    include-controls when one is given. Both files are checked against NIST's schema first."""
-    from .safety import check_file
+    """An engine catalog (as a dict for catalog.yaml) from an OSCAL catalog, narrowed to what a profile selects
+    when one is given. Both files are checked against NIST's schema first."""
     if not re.fullmatch(r"[a-z][a-z0-9_-]{1,40}", fw_id):
         raise OscalError("--id: lower-case letters, digits, '-' or '_', starting with a letter")
-    docs = {}
-    for label, p in (("catalog", catalog_path), ("profile", profile_path)):
-        if p is None:
-            continue
-        check_file(Path(p), max_bytes=80 * 1024 * 1024)
-        d = json.loads(Path(p).read_text(encoding="utf-8"))
-        if label not in d:
-            raise OscalError(f"{p}: not an OSCAL {label} (no '{label}' at the top)")
-        errs = validate(d)
-        if errs:
-            raise OscalError(f"{p}: not valid OSCAL:\n  " + "\n  ".join(errs[:8]))
-        docs[label] = d[label]
-    cat = docs["catalog"]
-    wanted = None
-    if "profile" in docs:
-        wanted = set()
-        for imp in docs["profile"].get("imports") or []:
-            if imp.get("include-all") is not None:
-                wanted = None
-                break
-            for sel in imp.get("include-controls") or []:
-                wanted.update(sel.get("with-ids") or [])
-    params = {}
-    for c, _ in _walk_controls(cat):
-        for p in c.get("params") or []:
-            params[p["id"]] = p
-    groups = {g["id"]: g.get("title") or g["id"] for g in cat.get("groups") or []}
-    reqs = []
-    for c, group in _walk_controls(cat):
+    cat = _load(catalog_path, "catalog")
+    wanted = _select(_load(profile_path, "profile"), cat) if profile_path is not None else None
+    params = _all_params(cat)
+    groups: dict[str, str] = {}
+    reqs, seen = [], set()
+    for c, group in _walk(cat, None, groups):
         if wanted is not None and c["id"] not in wanted:
             continue
-        if any(p.get("name") == "status" and p.get("value") in ("withdrawn", "Withdrawn") for p in c.get("props") or []):
+        if any(p.get("name") == "status" and str(p.get("value")).lower() in ("withdrawn", "moved")
+               for p in c.get("props") or []):
             continue
         rid = _label(c)
+        if rid in seen:
+            rid = c["id"]
+        seen.add(rid)
         intent = _params_text(_prose(c.get("parts")), params) or c.get("title") or rid
         reqs.append({"id": rid, "kind": "control", "category": "core", "group": group or "", "title": c.get("title") or rid,
                      "intent": " ".join(intent.split())[:4000], "evidence_examples": ["Policy or procedure", "Records showing it operates"],

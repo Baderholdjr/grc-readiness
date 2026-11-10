@@ -531,7 +531,7 @@ def cmd_oscal(args) -> int:
     if args.action == "export":
         model = _model(args)
         try:
-            written = oscal.export(model, Path(args.out))
+            written = oscal.export(model, Path(args.out), force=args.force)
         except oscal.OscalError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
@@ -548,8 +548,10 @@ def cmd_oscal(args) -> int:
                 from .safety import check_file
                 check_file(Path(f), max_bytes=80 * 1024 * 1024)
                 errs = oscal.validate(json.loads(Path(f).read_text(encoding="utf-8")))
+            except RecursionError:
+                errs = ["nested too deeply to be an OSCAL file"]
             except (ValueError, OSError) as exc:
-                errs = [str(exc)]
+                errs = [str(exc)[:300]]
             bad += bool(errs)
             print(f"{f}: " + ("valid OSCAL " + oscal.OSCAL_VERSION if not errs else f"{len(errs)} error(s)"))
             for e in errs[:20]:
@@ -769,7 +771,8 @@ def main(argv=None) -> int:
     os_.add_argument("--name", help="import: framework name")
     os_.add_argument("--short-name", help="import: short name for headings")
     os_.add_argument("--root", default=".", help="import: repository root (default .)")
-    os_.add_argument("--force", action="store_true", help="import: replace an existing imported catalog")
+    os_.add_argument("--force", action="store_true", help="export: a draft despite validation errors; "
+                     "import: replace an existing imported catalog")
     os_.set_defaults(fn=cmd_oscal)
 
     args = p.parse_args(argv)

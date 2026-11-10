@@ -294,7 +294,7 @@ def build(model: Engagement, out: Path, label: str = "package", force: bool = Fa
             shutil.copyfile(p, dest)
         from . import oscal
         try:
-            oscal.export(model, root / "09-oscal")
+            oscal.export(model, root / "09-oscal", force=force)
         except oscal.OscalError as exc:
             raise ValueError(f"could not export OSCAL: {str(exc)[:400]}") from exc
         files = {p.relative_to(root).as_posix(): {"bytes": p.stat().st_size, "sha256": _sha(p)}

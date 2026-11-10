@@ -76,9 +76,70 @@ def test_nothing_is_satisfied_or_implemented_without_the_record_saying_so(tmp_pa
     assert states == {"not-satisfied"}                      # a new record: nothing is Ready
     assert "not an independent assessment" in ar["results"][0]["description"]
     ssp = json.loads((out / "ssp.json").read_text())["system-security-plan"]
-    statuses = {p["value"] for r in ssp["control-implementation"]["implemented-requirements"]
-                for bc in r.get("by-components", []) for p in bc.get("props", []) if p["name"] == "implementation-status"}
-    assert "implemented" not in statuses
+    statuses = {bc["implementation-status"]["state"] for r in ssp["control-implementation"]["implemented-requirements"]
+                for bc in r["by-components"]}
+    assert statuses == {"planned"}
+
+
+def _verify_all(root, rid, evidence):
+    f = root / "engagement" / "controls" / f"{rid}.yaml"
+    d = yaml.safe_load(f.read_text())
+    for leg in ("documented", "implemented", "evidenced", "tested"):
+        d.setdefault("test", {})[leg] = {"status": "verified", **({"evidence": evidence} if evidence else {})}
+    d["owner"] = "CISO"
+    f.write_text(yaml.safe_dump(d, sort_keys=False))
+
+
+def _finding(out, rid):
+    ar = json.loads((out / "assessment-results.json").read_text())["assessment-results"]
+    f = next(x for x in ar["results"][0]["findings"] if x["title"].startswith(rid + ":"))
+    ssp = json.loads((out / "ssp.json").read_text())["system-security-plan"]
+    r = next(x for x in ssp["control-implementation"]["implemented-requirements"]
+             if x["props"][0]["value"] == rid)
+    return f["target"]["status"]["state"], r["by-components"][0]["implementation-status"]["state"], ar
+
+
+def test_verified_without_evidence_is_refused_or_shown_unmet(tmp_path):
+    root = _new(tmp_path, "soc2")
+    _verify_all(root, "CC1.1", None)                 # E005: verified with no evidence
+    m = load(root / "engagement")
+    with pytest.raises(oscal.OscalError, match="validation error"):
+        oscal.export(m, tmp_path / "o")
+    oscal.export(m, tmp_path / "o", force=True)
+    target, impl, ar = _finding(tmp_path / "o", "CC1.1")
+    assert (target, impl) == ("not-satisfied", "partial")
+    assert ar["metadata"]["remarks"].startswith("DRAFT")
+
+
+def test_ready_requirement_is_satisfied_and_points_at_its_evidence(tmp_path):
+    from grc.rules import validate
+    root = _new(tmp_path, "soc2")
+    idx = root / "engagement" / "evidence" / "index.yaml"
+    ev = [{"id": "EV-901", "title": "Code of conduct", "type": "document", "location": "https://example.invalid/coc",
+           "owner": "CISO", "collected": "2026-11-01", "approved_by": "CEO"},
+          {"id": "EV-902", "title": "Signed acknowledgements", "type": "record", "location": "https://example.invalid/ack",
+           "owner": "CISO", "collected": "2026-11-01"},
+          {"id": "EV-903", "title": "Acknowledgement sample test", "type": "test", "location": "https://example.invalid/t",
+           "owner": "CISO", "collected": "2026-11-02"}]
+    idx.write_text(yaml.safe_dump({"evidence": ev}, sort_keys=False))
+    f = root / "engagement" / "controls" / "CC1.1.yaml"
+    d = yaml.safe_load(f.read_text())
+    d["owner"] = "CISO"
+    d["test"] = {"documented": {"status": "verified", "evidence": ["EV-901"]},
+                 "implemented": {"status": "verified", "evidence": ["EV-902"]},
+                 "evidenced": {"status": "verified", "evidence": ["EV-902"]},
+                 "tested": {"status": "verified", "evidence": ["EV-903"]}}
+    f.write_text(yaml.safe_dump(d, sort_keys=False))
+    m = load(root / "engagement", today=__import__("datetime").date(2026, 11, 9))
+    assert [x for x in validate(m) if x.severity == "error"] == []
+    oscal.export(m, tmp_path / "o")
+    target, impl, ar = _finding(tmp_path / "o", "CC1.1")
+    assert (target, impl) == ("satisfied", "implemented")
+    obs = {o["props"][0]["value"]: o for o in ar["results"][0]["observations"]}
+    assert sorted(obs) == ["EV-901", "EV-902", "EV-903"]
+    assert obs["EV-903"]["methods"] == ["TEST"] and obs["EV-901"]["collected"] == "2026-11-01T00:00:00Z"
+    others = {x["target"]["status"]["state"] for x in ar["results"][0]["findings"] if not x["title"].startswith("CC1.1:")}
+    assert others == {"not-satisfied"}
 
 
 def test_open_gaps_become_poam_items(tmp_path):
@@ -143,6 +204,52 @@ def test_import_refuses_bad_input(tmp_path):
         oscal.import_catalog(bad, None, "example-y", "x")
     with pytest.raises(oscal.OscalError, match="not an OSCAL catalog"):
         oscal.import_catalog(FIX / "profile.json", None, "example-y", "x")
+
+
+def _profile(tmp_path, imp, **extra):
+    d = json.loads((FIX / "profile.json").read_text())
+    d["profile"]["imports"] = [{"href": "catalog.json", **imp}]
+    d["profile"].update(extra)
+    p = tmp_path / "p.json"
+    p.write_text(json.dumps(d))
+    return p
+
+
+def test_profile_selection(tmp_path):
+    ids = lambda imp, **kw: [r["id"] for r in oscal.import_catalog(FIX / "catalog.json", _profile(tmp_path, imp, **kw),
+                                                                     "example-x", "x")["requirements"]]
+    assert ids({"include-all": {}, "exclude-controls": [{"with-ids": ["xa-1"]}]}) == ["XA-1(1)", "XB-1", "XB-2"]
+    assert ids({"include-controls": [{"with-ids": ["xa-1"], "with-child-controls": "yes"}]}) == ["XA-1", "XA-1(1)"]
+    assert ids({"include-controls": [{"matching": [{"pattern": "xb-*"}]}]}) == ["XB-1", "XB-2"]
+    with pytest.raises(oscal.OscalError, match="doesn't have"):
+        ids({"include-controls": [{"with-ids": ["zz-9"]}]})
+    with pytest.raises(oscal.OscalError, match="resolved catalog"):
+        ids({"include-all": {}}, modify={"set-parameters": [{"param-id": "xa-01_odp", "values": ["yearly"]}]})
+
+
+def test_nested_groups_without_ids_and_selection_parameters(tmp_path):
+    d = json.loads((FIX / "catalog.json").read_text())
+    xa, xb = d["catalog"]["groups"]
+    del xb["id"]
+    d["catalog"]["groups"] = [{"id": "fam", "title": "Families", "groups": [xa, xb]}]   # a group holds groups or controls
+    xa["controls"][0]["params"] = [{"id": "xa-01_odp", "select": {"how-many": "one-or-more",
+                                                                     "choice": ["yearly", "after a change"]}}]
+    p = tmp_path / "c.json"
+    p.write_text(json.dumps(d))
+    cat = oscal.import_catalog(p, None, "example-x", "x")
+    groups = {g["id"]: g["title"] for g in cat["groups"]}
+    xb1 = next(r for r in cat["requirements"] if r["id"] == "XB-1")
+    assert groups[xb1["group"]] == "Families: Example Backup" and xb1["group"] == "group-1-2"
+    xa = next(r for r in cat["requirements"] if r["id"] == "XA-1")
+    assert xa["intent"] == "Review the access policy [selection (one or more of): yearly; after a change]."
+
+
+def test_hostile_json_is_refused_not_crashed(tmp_path):
+    deep = tmp_path / "deep.json"
+    deep.write_text('{"catalog": ' + "[" * 100_000 + "]" * 100_000 + "}")
+    with pytest.raises(oscal.OscalError, match="nested too deeply|not valid"):
+        oscal.import_catalog(deep, None, "example-y", "x")
+    assert main(["oscal", "validate", str(deep)]) == 1
 
 
 def test_validate_command(tmp_path, capsys):
