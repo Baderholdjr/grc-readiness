@@ -1,2 +1,5 @@
 # Test tools, locked with the engine's dependencies (grc/resources/locks/dev.txt).
 pytest
+# simulated AWS for the collector tests (tests/test_collectors_aws_moto.py); boto3 is what the aws extra installs
+boto3
+moto[s3]

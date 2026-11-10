@@ -6,3 +6,13 @@ __pycache__/
 *.tmp
 ~$*.docx
 docs/manual/_build/
+
+# never commit local tool settings or secrets (Claude Code keeps permission rules, which can hold tokens, here)
+.claude/settings.local.json
+CLAUDE.local.md
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx

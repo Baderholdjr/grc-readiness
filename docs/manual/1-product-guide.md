@@ -380,6 +380,17 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - **Sharing:** give the auditor the zip (or the index PDF), not access to the Release page. The release notes carry the full validation summary, including budget warnings.
 > - **Contents:** PDFs (ReportLab), `manifest.json`, `SHA256SUMS` and a deterministic zip.
 > - **Excluded:** the timesheet, hours and budget figures, the client view and `submissions.md`.
+> - **Machine-readable copy:** `09-oscal/` holds the same record in NIST OSCAL 1.2.3 JSON (system security plan, assessment results, POA&M), for an assessor's or a GRC tool's OSCAL import.
+
+### OSCAL: the record for machines
+
+> **In plain terms:** Some assessors, government buyers and GRC tools want the security plan and the open-items list as data files rather than documents. The tool writes them in OSCAL, the government's standard format, and can read a published control set (for example NIST's 800-53 Moderate baseline) to start an engagement on it.
+
+> **For GRC practitioners:** The export is the SSP, assessment plan and results, and POA&M, each validated against NIST's schema before it is written. It never overstates readiness: a requirement is *satisfied* only when the record shows it Ready, and the results say they are not an independent assessment. Imported catalogs keep NIST's control ids, so a downstream tool lines them up.
+
+> **Under the hood:**
+> - `python -m grc oscal export --out out/oscal`, `python -m grc oscal validate FILE…`, `python -m grc oscal import --catalog … --profile … --id … --name …`.
+> - Ids and UUIDs are stable: the same record exports the same bytes. See [OSCAL.md](../OSCAL.md).
 
 ![Auditor index: traceability table](images/aidx-02.png)
 
@@ -393,14 +404,14 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - **Pinning:** client `requirements.txt` pins `engine-vX.Y.Z`, and the workflow wrappers call `@engine-v0`.
 > - **Releasing:** *Release GRC engine* (`engine-release.yml`) tests, tags and moves `engine-v0`. Each client's weekly *Upgrade GRC engine* opens the bump PR.
 > - **New clients:** `python -m grc bootstrap` writes a new client repository, and *New engagement* resets the record with phases computed from your dates.
-> - **Engine access:** client repos read the private engine with the `GRC_ENGINE_TOKEN` secret.
+> - **Engine access:** the engine repository is public (PolyForm Noncommercial), so client installs need no token; `GRC_ENGINE_TOKEN` is still supported if the engine is made private.
 > - **New workflow files** in a client repo are added by a person; GitHub's built-in token can't add them.
 
 ### Security of the engine (DevSecOps)
 
 > **In plain terms:** The tool is built and run the way we'd expect a client to run theirs: every change is reviewed, every change is scanned for security problems, the outside code it depends on is pinned so it can't be swapped, and files clients upload are treated as possibly hostile.
 
-> **For GRC practitioners:** The [threat model](../THREAT-MODEL.md) lists what is protected, the trust boundaries, the controls and the accepted risks; [SECURITY.md](../../SECURITY.md) says how to report a vulnerability. The **Security** workflow runs on every engine PR, on `main` and weekly: bandit (code), pip-audit (known vulnerabilities in every locked dependency), zizmor (workflow security), and a check that the dependency locks are current.
+> **For GRC practitioners:** The [threat model](../THREAT-MODEL.md) lists what is protected, the trust boundaries, the controls and the accepted risks; [SECURITY.md](../../SECURITY.md) says how to report a vulnerability. The **Security** workflow runs on every engine PR, on `main` and weekly: bandit (code), pip-audit (known vulnerabilities in every locked dependency), zizmor (workflow security), and a check that the dependency locks are current. CodeQL scans the Python and the workflows, and every release's files carry signed build-provenance attestations.
 
 > **Under the hood:**
 > - **Supply chain:** every third-party action is pinned to a commit, with its version in a comment. Dependencies install from the hash-locked files in `grc/resources/locks/` (`python -m grc.locks engine` prints the path). An engine older than 0.25.0 has no locks; its workflows warn and install unlocked until the upgrade is merged.
@@ -408,6 +419,8 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - **Uploads:** `grc/safety.py` refuses symbolic links, oversized files, zip bombs, Office parts with paths outside the package, and XML with a DTD; PDFs are read to 600 pages. A refused or damaged file is listed in the ingest comment, never a crash.
 > - **Outputs:** text that would start a spreadsheet formula stays text in every workbook and CSV.
 > - **Credentials:** the GitHub token goes only to the GitHub API; collectors call `https://` only; cloud access is OIDC to read-only roles.
+> - **Secret files:** `.gitignore` keeps `.claude/settings.local.json`, `CLAUDE.local.md`, `.env*` and key files out of every repository, and `validate` fails with E090 if one is committed.
+> - **Releases:** `gh attestation verify <file> --repo <engine repo>` checks a release's wheel or source archive came from the release workflow.
 
 ![Engine and client repositories](images/engine-repos.svg)
 
@@ -606,6 +619,7 @@ Run from a client repository (or the engine repo) with the engine installed. Two
 | `python -m grc docs new\|fill\|approve …` | Policies and procedures |
 | `python -m grc review new DATE` / `review pack MR-…` | Management review |
 | `python -m grc package --out dist --label stage1` | Auditor package |
+| `python -m grc oscal export\|validate\|import` | OSCAL 1.2.3 JSON: export the record (`--out`), check files, or import a catalog and profile as a framework (`--catalog`, `--profile`, `--id`, `--name`) |
 | `python -m grc hours import FILES… [--match …]` / `hours log …` | Timesheet |
 | `python -m grc portal --out _portal [--repo OWNER/REPO] [--also DIR]` | Client site bundle (other records become tabs automatically) |
 | `python -m grc engagements` | List the records in this repository (`engagement/`, `engagement-*/`) |
@@ -693,6 +707,7 @@ In the engine repository, **Release GRC engine** publishes a new engine version,
 | W172 | warning | Submission lists evidence that isn't in the index |
 | I180 | info | Reuse opportunity: the other framework's record has verified a mapped leg; its evidence could be cited here |
 | I201 | info | Client claim not yet backed by evidence (the follow-up list) |
+| E090 | error | The repository tracks a file that can hold secrets (`.claude/settings.local.json`, `.env`, a key): remove it, rotate what was in it |
 | P101–P110 | | Program: common control catalog (schema, duplicates, unknown frameworks or requirements, evidence, owners, coverage, expired evidence) |
 | P202–P209 | | Program: governance calendar (completions without evidence, wrong periods, overdue occurrences, future dates) |
 | P301–P312 | | Program: owner certification (pending answers, missing notes, wrong signer or signing commit, another owner's control, overdue) |

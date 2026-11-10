@@ -117,6 +117,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
+| E090 | error | The repository tracks a file that can hold secrets (`.claude/settings.local.json`, `.env`, a key) |
 
 ## GitOps workflow
 
@@ -164,7 +165,16 @@ Eight are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 6
 
 ### Adding a framework
 
-Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id>` in `engagement.yaml`. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
+Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id>` in `engagement.yaml`. For a
+control catalog published in OSCAL (NIST SP 800-53 baselines, FedRAMP Rev. 5, an organisation's own),
+`grc oscal import` writes both files for you. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
+
+## OSCAL
+
+`grc oscal export` writes the record as NIST OSCAL 1.2.3 JSON: catalog, profile, system security plan,
+assessment plan, assessment results and POA&M, each checked against NIST's schema (also in the auditor package,
+`09-oscal/`). `grc oscal validate` checks any OSCAL file, and `grc oscal import` turns an OSCAL catalog and
+baseline into a framework. See [docs/OSCAL.md](docs/OSCAL.md).
 
 ## The compliance program and ITGC tests
 

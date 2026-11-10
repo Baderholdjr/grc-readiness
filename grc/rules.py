@@ -1018,7 +1018,16 @@ def check_mappings(model: Engagement) -> list[Finding]:
     return out
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings)
+def check_secret_files(model: Engagement) -> list[Finding]:
+    """E090: the repository tracks a file that holds local settings or secrets (.claude/settings.local.json, .env,
+    a key). Remove it from git, rotate anything in it, and keep the .gitignore entries."""
+    from .safety import tracked_secret_files
+    return [Finding("error", "E090", f"{n} is committed: it can hold secrets. Remove it from the repository "
+                                     "(git rm --cached), rotate any token or key in it, and keep it in .gitignore", n)
+            for n in tracked_secret_files(model.root)]
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings, check_secret_files)
 
 
 def validate(model: Engagement) -> list[Finding]:

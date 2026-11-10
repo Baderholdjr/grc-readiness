@@ -21,15 +21,21 @@ The [threat model](docs/THREAT-MODEL.md) lists what we protect, the trust bounda
 - Every change is a reviewed pull request; nothing automated marks evidence verified or an answer approved.
 - The **Security** workflow runs on every pull request, on `main` and weekly:
   - bandit (code), pip-audit (known vulnerabilities in every locked dependency), and zizmor (workflow security);
+  - CodeQL runs separately on the Python and the workflows (results under **Security → Code scanning**);
   - it also checks that the hash-locked dependency files match `pyproject.toml`. Run it by hand with
     **upgrade** to re-resolve the locks to the latest versions; it prints the new files to commit.
 - Third-party actions are pinned to commits; dependencies install from hash-locked files.
+- Every release's wheel and source archive have signed build-provenance attestations:
+  `gh attestation verify <file> --repo <engine repo>`.
+- Local settings and secret files (`.claude/settings.local.json`, `.env`, keys) are in `.gitignore`, and
+  `grc validate` fails if one is committed.
 - Workflows declare least-privilege permissions; cloud access uses OIDC, never stored keys.
 - Uploaded client files and the text inside them are treated as untrusted (`grc/safety.py`).
 
 ## Repository settings to keep on
 
-- Branch protection on `main`: pull requests required, the *Validate* and *Security* checks required.
+- Branch protection on `main` (a ruleset): pull requests required, the *Validate* and *Security* checks required.
+  CodeQL can be added as a required check once it has run on `main`.
 - Secret scanning and push protection.
 - Dependabot alerts and security updates.
 - Private vulnerability reporting.

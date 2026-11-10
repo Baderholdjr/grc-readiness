@@ -6,6 +6,10 @@ name: Release GRC engine
 # Creates tag + release engine-vX.Y.Z (what client repos pin) and moves the
 # engine-v<MAJOR> tag (what client workflow wrappers call). Client repos then get
 # an "Upgrade GRC engine" PR from their weekly upgrade check.
+#
+# The release carries the engine as a wheel and a source archive with SHA256SUMS, each with a signed GitHub
+# build-provenance attestation (Sigstore), so anyone can check a file came from this workflow at this commit:
+#   gh attestation verify grc_readiness-X.Y.Z-py3-none-any.whl --repo OWNER/grc-readiness
 on:
   workflow_dispatch:
     inputs:
@@ -14,20 +18,27 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: engine-release
   cancel-in-progress: false
 
 jobs:
-  release:
+  test:
+    # tests and checks run third-party code, so they get a read-only token and no signing rights
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      major: ${{ steps.v.outputs.major }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
@@ -46,11 +57,41 @@ jobs:
             echo "::error::engine-v$V already exists - bump the version first"; exit 1; fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "major=${V%%.*}" >> "$GITHUB_OUTPUT"
+
+  release:
+    # builds from hash-locked build tools only, then signs, tags and publishes
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # tags and the release
+      id-token: write       # sign the provenance attestations (Sigstore, keyless)
+      attestations: write   # store them with the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Build the release files
+        env:
+          V: ${{ needs.test.outputs.version }}
+        run: |
+          # setuptools and wheel from the hash-locked security lock; no build isolation, so nothing unpinned is fetched
+          pip install -q --require-hashes -r grc/resources/locks/security.txt
+          mkdir -p dist
+          pip wheel -q --no-deps --no-build-isolation . -w dist
+          git archive --format=tar.gz --prefix="grc-readiness-$V/" -o "dist/grc-readiness-$V.tar.gz" HEAD
+          (cd dist && sha256sum -- *.whl *.tar.gz > SHA256SUMS && cat SHA256SUMS)
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
       - name: Tag and release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          V: ${{ steps.v.outputs.version }}
-          MAJOR: ${{ steps.v.outputs.major }}
+          V: ${{ needs.test.outputs.version }}
+          MAJOR: ${{ needs.test.outputs.major }}
           NOTES: ${{ inputs.notes }}
         run: |
           git config user.name "grc-bot"
@@ -61,4 +102,7 @@ jobs:
           git push -f origin "engine-v$MAJOR"
           printf '%s\n\nPin in a client repo'"'"'s requirements.txt:\n\n```\ngrc-readiness @ git+https://github.com/%s@engine-v%s\n```\n' \
             "$NOTES" "$GITHUB_REPOSITORY" "$V" > notes.md
-          gh release create "engine-v$V" --title "GRC engine $V" --notes-file notes.md --latest=false
+          printf '\nEach file below has a signed build-provenance attestation:\n\n```\ngh attestation verify <file> --repo %s\n```\n' \
+            "$GITHUB_REPOSITORY" >> notes.md
+          gh release create "engine-v$V" --title "GRC engine $V" --notes-file notes.md --latest=false \
+            dist/*.whl dist/*.tar.gz dist/SHA256SUMS

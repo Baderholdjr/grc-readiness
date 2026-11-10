@@ -126,3 +126,35 @@ def cell_text(v):
     if isinstance(v, str) and v.lstrip(" \n\u3000").startswith(FORMULA_START):
         return "'" + v
     return v
+
+
+# Files that hold local settings or secrets and must never be in a repository: Claude Code's local settings keep
+# permission rules (which can include a pasted token), .env files hold keys, and key or certificate files are keys.
+SECRET_FILE_NAMES = {"settings.local.json": ".claude", "CLAUDE.local.md": None}
+SECRET_FILE_RE = re.compile(r"(^|/)(\.env(\..*)?|[^/]*\.(pem|key|p12|pfx))$")
+SECRET_FILE_OK = re.compile(r"(^|/)\.env\.(example|sample|template)$")
+
+
+def secret_files(names) -> list[str]:
+    """The paths, from a list of tracked files, that look like local settings or secrets."""
+    out = []
+    for n in names:
+        n = str(n).replace("\\", "/")
+        base, parent = n.rsplit("/", 1)[-1], (n.rsplit("/", 2)[-2] if n.count("/") else "")
+        if base in SECRET_FILE_NAMES and SECRET_FILE_NAMES[base] in (None, parent):
+            out.append(n)
+        elif SECRET_FILE_RE.search(n) and not SECRET_FILE_OK.search(n):
+            out.append(n)
+    return out
+
+
+def tracked_secret_files(repo: Path) -> list[str]:
+    """secret_files() over what git tracks in `repo` ([] outside a git repository)."""
+    import subprocess  # nosec B404 - fixed argv, no shell
+    try:
+        r = subprocess.run(["git", "-C", str(repo), "ls-files", "-z"], capture_output=True, timeout=20)  # nosec B603 B607
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if r.returncode != 0:
+        return []
+    return secret_files(x for x in r.stdout.decode("utf-8", "replace").split("\0") if x)

@@ -216,3 +216,39 @@ def test_symlinked_timesheet_is_not_imported(tmp_path):
 
 def test_formula_guard_ignores_leading_space_and_full_width():
     assert safety.cell_text(" =1+1") == "' =1+1" and safety.cell_text("＝1") == "'＝1"
+
+
+# ------------------------------------------------------------------ files that must never be committed
+def test_secret_files_are_recognised():
+    names = [".claude/settings.local.json", ".claude/settings.json", "x/CLAUDE.local.md", ".env", "a/.env.prod",
+             ".env.example", "certs/tls.key", "keyboard.md", "grc/key.py", "a.pem", "id.p12"]
+    assert safety.secret_files(names) == [".claude/settings.local.json", "x/CLAUDE.local.md", ".env", "a/.env.prod",
+                                          "certs/tls.key", "a.pem", "id.p12"]
+
+
+def test_engine_repository_tracks_no_secret_files():
+    assert safety.tracked_secret_files(ROOT) == []
+
+
+def test_gitignores_keep_local_settings_out():
+    for f in (ROOT / ".gitignore", ROOT / "grc" / "resources" / "client" / "dot-gitignore"):
+        lines = f.read_text().splitlines()
+        for pat in (".claude/settings.local.json", "CLAUDE.local.md", ".env", ".env.*", "*.pem", "*.key"):
+            assert pat in lines, (f.name, pat)
+
+
+def test_validate_fails_when_a_secret_file_is_committed(tmp_path):
+    import subprocess
+    edir, _ = _new(tmp_path)
+    root = edir.parent
+    git = lambda *a: subprocess.run(["git", "-C", str(root), *a], check=True, capture_output=True)
+    git("init", "-q")
+    (root / ".claude").mkdir()
+    (root / ".claude" / "settings.local.json").write_text('{"permissions": {"allow": []}}')
+    git("add", "-f", ".claude/settings.local.json")
+    from grc.model import load
+    from grc.rules import validate
+    found = [f for f in validate(load(edir)) if f.code == "E090"]
+    assert found and found[0].file == ".claude/settings.local.json"
+    git("rm", "-q", "--cached", ".claude/settings.local.json")
+    assert not [f for f in validate(load(edir)) if f.code == "E090"]
