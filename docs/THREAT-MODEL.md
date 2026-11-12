@@ -152,7 +152,8 @@ people can never be let into another client's pages by a policy mistake on a sha
   same review and checks as anyone's, and nothing merges without a person.
 - What each role may change is decided in the Worker, field by field, from an allow-list in the engine (for
   example: client staff may answer requests, update an owner's contact or an implementation statement, add an
-  evidence link; they may not touch status, legs, gaps' severity, approvals or anything another client owns).
+  evidence link; they may not touch status, legs, gaps' severity, approvals or anything another client owns;
+  agreed 12 November 2026).
   The Worker writes the file itself from validated fields; the browser never sends a file or a path.
 - Nothing in the UI can set a leg to `verified` or an answer to `approved`; that stays a reviewer's edit in the
   pull request, and `grc validate` runs on every pull request as today.
@@ -197,7 +198,7 @@ pull requests per person and per client (as the client site has), and request si
 | The App's key can open pull requests on every installed client repository | Mitigated by per-repository tokens and a signing Worker; a separate App per client is the stronger option if a client requires it |
 | Cloudflare sees the pages and the Access identities | A data-processing agreement with Cloudflare before real data; no protected health information, ever |
 | A reviewer could merge a bad pull request opened through the UI | Same as today: the review is the control; the UI shows the reviewer which fields changed |
-| Does the auditor room need downloads of the package? | Proposed yes, the signed package zip, with its manifest checksums |
+| The auditor room offers the auditor package as a download | Decided: yes, the package zip with its manifest checksums, under the same window and stamping |
 
 ## Accepted risks and gaps
 
