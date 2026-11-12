@@ -117,6 +117,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
+| E091 | error | Two sites (client site, executive dashboard, auditor room) share one Access application |
 | W180 | warning | The auditor room is enabled without dates or auditors, or closes before it opens |
 | W181 | warning | The auditor room stays open more than 120 days |
 | E090 | error | The repository tracks a file that can hold secrets (`.claude/settings.local.json`, `.env`, a key) |

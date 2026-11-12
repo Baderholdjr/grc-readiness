@@ -129,9 +129,50 @@ def test_auditor_window_warnings(tmp_path):
     assert any(f.severity == "error" for f in validate(load(edir, today=TODAY)))
 
 
+def test_broken_history_week_is_skipped(tmp_path):
+    edir = _new(tmp_path)
+    repo = edir.parent
+    run = lambda *a, date: subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True,
+                                          env={"GIT_AUTHOR_DATE": date, "GIT_COMMITTER_DATE": date, "GIT_AUTHOR_NAME": "t",
+                                               "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
+                                               "GIT_COMMITTER_EMAIL": "t@example.invalid", "PATH": "/usr/bin:/bin",
+                                               "HOME": str(tmp_path)})
+    run("init", "-q", date="2026-10-01T00:00:00Z")
+    good = (edir / "gaps.yaml").read_text()
+    (edir / "gaps.yaml").write_text("gaps: [unclosed")
+    (edir / "link.yaml").symlink_to("/etc/passwd")
+    run("add", "-A", date="2026-10-20T10:00:00Z")
+    run("commit", "-qm", "broken", date="2026-10-20T10:00:00Z")
+    (edir / "gaps.yaml").write_text(good)
+    (edir / "link.yaml").unlink()
+    run("add", "-A", date="2026-11-03T10:00:00Z")
+    run("commit", "-qm", "fixed", date="2026-11-03T10:00:00Z")
+    pts = rooms.trend(load(edir, today=TODAY), weeks=4)
+    assert [p["week"] for p in pts] == ["2026-11-05", "2026-11-12"]       # the broken weeks are left out
+
+
+def test_sites_need_their_own_access_application(tmp_path):
+    edir = _new(tmp_path)
+    _set_rooms(edir, {"executive": {"access_aud": "d" * 64}, "auditor": {"access_aud": "d" * 64}})
+    assert any(f.code == "E091" for f in validate(load(edir, today=TODAY)))
+
+
+def test_only_enabled_rooms_are_built_and_each_on_its_own(tmp_path, capsys):
+    edir = _new(tmp_path)
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "rooms", "--out", str(tmp_path / "a")]) == 0
+    assert (tmp_path / "a" / "executive").exists() and not (tmp_path / "a" / "auditor").exists()   # preview only
+    _set_rooms(edir, {"executive": {"enabled": True}, "auditor": {"enabled": True, "opens": "2027-01-25",
+                                                                     "closes": "2027-02-12", "auditors": ["a@x.example"]}})
+    _gaps(edir, [{"id": "GAP-01", "area": "x", "finding": "y", "requirements": ["NOPE-1"], "status": "open"}])  # an error
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "rooms", "--out", str(tmp_path / "b")]) == 1
+    assert (tmp_path / "b" / "executive" / "wrangler.toml").exists()       # the dashboard still built
+    assert not (tmp_path / "b" / "auditor").exists()
+    assert "the auditor room was not built" in capsys.readouterr().err
+
+
 def test_rooms_command(tmp_path, capsys):
     edir = _new(tmp_path)
-    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "rooms", "--out", str(tmp_path / "r")]) == 0
+    assert main(["--engagement", str(edir), "--today", TODAY.isoformat(), "rooms", "--room", "all", "--out", str(tmp_path / "r")]) == 0
     out = capsys.readouterr().out
     assert "executive dashboard written" in out and "auditor room written" in out
     assert "refuses everyone" in out

@@ -84,6 +84,18 @@ test("files download, never render in the room's origin", async () => {
   assert.equal(r.headers.get("X-Content-Type-Options"), "nosniff");
 });
 
+test("anything that isn't one of the room's own page files is a download", async () => {
+  for (const path of ["/files/pkg/brief.html", "/%66iles/pkg/brief.html", "//files/pkg/brief.html", "/files//pkg/brief.html"]) {
+    const r = await get(path, env());
+    if (r.status === 200) {
+      assert.equal(r.headers.get("Content-Disposition"), "attachment", path);
+      assert.equal(r.headers.get("Content-Type"), "application/octet-stream", path);
+    }
+  }
+  const page = await get("/index.html", env());
+  assert.equal(page.headers.get("Content-Disposition"), null);
+});
+
 test("the rooms are read only", async () => {
   for (const m of ["POST", "PUT", "DELETE", "PATCH"]) {
     assert.equal((await get("/api/me", env(), { method: m })).status, 405, m);
@@ -96,6 +108,7 @@ test("the executive dashboard: any Access-approved person, no date window, and n
   assert.equal((await get("/", e, { email: "ceo@client.example" })).status, 200);
   assert.equal((await get("/data.json", e, { email: "ceo@client.example" })).status, 200);
   assert.equal((await get("/files/pkg/brief.html", e, { email: "ceo@client.example" })).status, 404);
+  assert.equal((await get("/%66iles/pkg/brief.html", e, { email: "ceo@client.example" })).status, 404);
   const domain = env({ ROOM: "executive", ALLOWED_EMAIL_DOMAINS: "client.example" });
   assert.equal((await get("/", domain, { email: "ceo@elsewhere.example" })).status, 403);
 });

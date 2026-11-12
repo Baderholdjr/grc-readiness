@@ -7,7 +7,9 @@
 //
 //   GET /            the room's page (static files in public/)
 //   GET /api/me      who is signed in, for the stamp on every page
-//   GET /files/...   auditor room only: the auditor package's files, downloaded (never rendered here)
+//   GET /files/...   auditor room only: the auditor package's files, always downloaded (never rendered here)
+//
+// Every authorised request is logged (Worker logs) with the signed-in email.
 //
 // The auditor room also checks, on every request:
 //   - the signed-in email is on AUDITORS (the named auditors from engagement.yaml), and
@@ -21,6 +23,7 @@ import { authenticate, json, plain, withHeaders } from "./access.js";
 export { _resetCertCache } from "./access.js";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const PAGE_FILES = new Set(["/", "/index.html", "/rooms.css", "/executive.js", "/auditor.js", "/data.json", "/room.json"]);
 
 export default {
   async fetch(request, env) {
@@ -61,21 +64,22 @@ async function handle(request, env) {
   if (!who.ok) return isApi ? json({ error: who.reason }, who.status) : plain(who.reason, who.status);
   const room = roomCheck(env, who.email);
   if (!room.ok) return isApi ? json({ error: room.reason }, room.status) : plain(room.reason, room.status);
+  // every authorised request is logged with who made it (not just page views the script reports)
+  console.log(JSON.stringify({ event: "request", room: room.room, email: who.email, path: url.pathname }));
   if (isApi) {
     if (url.pathname === "/api/me") {
-      console.log(JSON.stringify({ event: "view", room: room.room, email: who.email }));
       return json({ email: who.email, room: room.room, opens: room.opens || null, closes: room.closes || null,
         at: new Date().toISOString() });
     }
     return json({ error: "Not found." }, 404);
   }
-  const isFile = url.pathname.startsWith("/files/");
-  if (isFile && room.room !== "auditor") return plain("Not found.", 404);
-  if (isFile) console.log(JSON.stringify({ event: "download", room: room.room, email: who.email, path: url.pathname }));
+  // Only the room's own page files render here; anything else is a download, whatever the path looks like
+  // (encoded, doubled slashes), so a report can never run script in the room's origin.
+  const page = PAGE_FILES.has(url.pathname);
+  if (!page && room.room !== "auditor") return plain("Not found.", 404);
   const res = await env.ASSETS.fetch(request);
   const out = withHeaders(new Response(res.body, res));
-  if (isFile && res.ok) {
-    // never rendered in the room's origin: a report can't run script here, whatever it contains
+  if (!page && res.ok) {
     out.headers.set("Content-Disposition", "attachment");
     out.headers.set("Content-Type", "application/octet-stream");
   }

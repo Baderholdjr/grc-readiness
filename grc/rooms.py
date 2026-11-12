@@ -110,26 +110,43 @@ def trend(model: Engagement, weeks: int = 12) -> list[dict]:
         sha = _git(top_p, "rev-list", "-1", f"--before={day.isoformat()}T23:59:59Z", "HEAD")
         if not sha:
             continue
-        with tempfile.TemporaryDirectory() as tmp:
-            tar = Path(tmp) / "r.tar"
-            paths = [rel] + [p for p in ("frameworks",) if _git(top_p, "cat-file", "-e", f"{sha}:{p}") is not None]
-            if _git(top_p, "cat-file", "-e", f"{sha}:{rel}/engagement.yaml") is None:
-                continue
-            if _git(top_p, "archive", "--format=tar", "-o", str(tar), sha, "--", *paths) is None:
-                continue
-            with tarfile.open(tar) as t:
-                t.extractall(Path(tmp) / "x", filter="data")
-            try:
-                past = load(Path(tmp) / "x" / rel, today=day)
-                s = summary(past)
-            except Exception:  # noqa: BLE001 - an old record that no longer loads is simply not a point
-                continue
+        s = _past_summary(top_p, sha, rel, day)
+        if s is None:     # a week whose record can't be read (malformed, or before it existed) is not a point
+            continue
         points.append({"week": day.isoformat(), "ready_pct": s["ready_pct"], "checks_pct": s["checks_pct"],
                        "gaps_open": s["gaps_open"]})
     now = summary(model)
     points.append({"week": model.today.isoformat(), "ready_pct": now["ready_pct"], "checks_pct": now["checks_pct"],
                    "gaps_open": now["gaps_open"]})
     return points
+
+
+def _safe_members(t: tarfile.TarFile):
+    for m in t.getmembers():
+        name = m.name
+        if (m.isfile() or m.isdir()) and not name.startswith("/") and ".." not in name.split("/"):
+            yield m
+
+
+def _past_summary(top: Path, sha: str, rel: str, day: dt.date) -> dict | None:
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            if _git(top, "cat-file", "-e", f"{sha}:{rel}/engagement.yaml") is None:
+                return None
+            paths = [rel] + [p for p in ("frameworks",) if _git(top, "cat-file", "-e", f"{sha}:{p}") is not None]
+            tar = Path(tmp) / "r.tar"
+            if _git(top, "archive", "--format=tar", "-o", str(tar), sha, "--", *paths) is None:
+                return None
+            with tarfile.open(tar) as t:
+                # regular files and folders only (no links), inside the folder: whatever was committed then
+                members = list(_safe_members(t))
+                if hasattr(tarfile, "data_filter"):
+                    t.extractall(Path(tmp) / "x", members=members, filter="data")
+                else:                                             # Python before 3.10.12 / 3.11.4
+                    t.extractall(Path(tmp) / "x", members=members)  # nosec B202 - members filtered above
+            return summary(load(Path(tmp) / "x" / rel, today=day))
+        except (Exception, SystemExit):  # noqa: BLE001 - load() raises SystemExit on a bad record
+            return None
 
 
 # ------------------------------------------------------------------ bundles
@@ -195,6 +212,15 @@ def auditor_window(model: Engagement) -> tuple[str, str, list[str]]:
 def build_auditor(model: Engagement, out: Path, force: bool = False) -> list[str]:
     from . import package
     out = Path(out)
+    try:
+        return _build_auditor(model, out, force)
+    except Exception:
+        shutil.rmtree(out, ignore_errors=True)       # never leave a half-built room behind
+        raise
+
+
+def _build_auditor(model: Engagement, out: Path, force: bool) -> list[str]:
+    from . import package
     pub = _common(out, "auditor")
     files = pub / "files"
     with tempfile.TemporaryDirectory() as tmp:
@@ -209,6 +235,10 @@ def build_auditor(model: Engagement, out: Path, force: bool = False) -> list[str
         # each file of the package too, so an auditor can take one without the whole archive
         shutil.copytree(Path(tmp) / zip_path.stem, files / zip_path.stem)
         manifest = json.loads((files / zip_path.stem / "manifest.json").read_text(encoding="utf-8"))
+    big = [p.relative_to(pub).as_posix() for p in pub.rglob("*") if p.is_file() and p.stat().st_size > ASSET_LIMIT]
+    if big:
+        raise ValueError(f"Cloudflare serves files up to 25 MiB, and these are larger: {', '.join(big)}. "
+                         "Share the package another way for this engagement")
     opens, closes, auditors = auditor_window(model)
     d = {"client": model.client, "framework": model.catalog["framework"]["short_name"], "as_of": model.today.isoformat(),
          "opens": opens, "closes": closes, "package": {"name": dest_zip.name, "bytes": dest_zip.stat().st_size,
@@ -221,9 +251,6 @@ def build_auditor(model: Engagement, out: Path, force: bool = False) -> list[str
         encoding="utf-8")
     log = [f"auditor room written to {out}/ (worker {worker_name(model, 'auditor')}): {dest_zip.name}, "
            f"{len(d['files'])} file(s) listed; open {opens or '?'} to {closes or '?'} for {len(auditors)} auditor(s)"]
-    big = [p.relative_to(pub).as_posix() for p in pub.rglob("*") if p.is_file() and p.stat().st_size > ASSET_LIMIT]
-    if big:
-        log.append(f"  note: Cloudflare serves files up to 25 MiB; too large to deploy: {', '.join(big)}")
     if not (opens and closes and auditors):
         log.append("  note: rooms.auditor needs opens, closes and auditors - the deployed room refuses everyone until set")
     if not _cfg(model, "auditor").get("access_aud"):
@@ -231,10 +258,27 @@ def build_auditor(model: Engagement, out: Path, force: bool = False) -> list[str
     return log
 
 
+def enabled(model: Engagement) -> list[str]:
+    return [r for r in ("executive", "auditor") if _cfg(model, r).get("enabled")]
+
+
 def check(model: Engagement) -> list:
-    """W180/W181: auditor-room settings that would leave it shut or open too long."""
+    """E091: two sites share one Access application. W180/W181: auditor-room settings that would leave it shut
+    or open too long."""
     from .rules import Finding
     out = []
+    auds = {"portal": (model.engagement.get("portal") or {}).get("access_aud"),
+            "rooms.executive": _cfg(model, "executive").get("access_aud"),
+            "rooms.auditor": _cfg(model, "auditor").get("access_aud")}
+    seen: dict[str, str] = {}
+    for where, aud in auds.items():
+        if not aud:
+            continue
+        if aud in seen:
+            out.append(Finding("error", "E091", f"{where}.access_aud is the same as {seen[aud]}.access_aud: each site "
+                                                "needs its own Access application, so one's policy can't let people "
+                                                "into another", "engagement.yaml"))
+        seen.setdefault(aud, where)
     cfg = _cfg(model, "auditor")
     if not cfg.get("enabled"):
         return out

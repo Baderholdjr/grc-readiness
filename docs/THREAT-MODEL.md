@@ -164,14 +164,17 @@ people can never be let into another client's pages by a policy mistake on a sha
 
 **Repudiation (denying a change).** Each pull request from a client person names the verified email from the
 Access token in its body and in a commit trailer (`Submitted-by:`); consultants' pull requests carry their own
-GitHub identity. Access and Worker logs are exported and kept with the engagement record for its retention period.
+GitHub identity. The rooms log every request they let through with the email. Worker logs last a few days on
+Cloudflare: exporting them (Logpush) to keep with the engagement record is a production step, not yet built.
 
 **Information disclosure (the wrong person reading something).**
 - Installation tokens are minted per request for the one repository that client's Worker serves (the
   `repositories` parameter), with the least permissions that request needs, and expire within an hour.
-- The auditor room opens and closes on the dates in `engagement.yaml` (checked in the Worker as well as in the
-  Access policy), lists auditors by name, and stamps each page with the viewer's email and the date. It shows the
-  evidence index (where evidence lives), not the evidence.
+- The auditor room opens and closes on the dates in `engagement.yaml` (checked in the Worker on every request;
+  Access policies can't hold dates), lets in only the auditors listed by name (in the Worker, whatever the Access
+  policy allows), and stamps each page with the viewer's email and the date. It holds the auditor package (reports,
+  policies, collector snapshots, the source record); evidence kept in the client's systems stays there. Deploys run
+  from `main` only, and the package is never put in a workflow artifact.
 - The executive dashboard is built at publish time as summary numbers only; the record's text never reaches the
   executive's browser, so it can't be read from the page source.
 - Pages are built with DOM text nodes (no `innerHTML`), under a strict Content-Security-Policy with no
