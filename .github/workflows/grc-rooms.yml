@@ -1,0 +1,108 @@
+name: Read-only rooms (reusable)
+
+# Builds the executive dashboard and the auditor room from the merged record and, for each room that is
+# enabled in engagement.yaml (rooms.<room>.enabled) when the Cloudflare secrets are set, deploys it as its own
+# Worker behind its own Cloudflare Access application. See docs/ROOMS.md.
+#   - The rooms are read only: no GitHub token is given to them.
+#   - The executive dashboard's trend is read from the repository's history, so the checkout is a full clone.
+#   - An engine older than 0.27 has no rooms: the job says so and stops.
+on:
+  workflow_call:
+    # Only these secrets reach this workflow (callers pass them by name, not `secrets: inherit`).
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: {required: false}
+      CLOUDFLARE_API_TOKEN: {required: false}
+      GRC_ENGINE_TOKEN: {required: false}
+    inputs:
+      engine:
+        type: string
+        default: pinned
+
+env:
+  WRANGLER: wrangler@4.20.0
+
+# Permissions come from the caller (the wrapper in each repository), which sets the most this may use.
+
+jobs:
+  rooms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0              # the trend reads the record's history
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install the GRC engine
+        env:
+          ENGINE: ${{ inputs.engine }}
+          GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+        run: |
+          if [ "$ENGINE" = "local" ]; then
+            pip install -q --require-hashes -r grc/resources/locks/engine.txt
+            pip install -q --no-deps .
+          else
+            if [ -n "$GRC_ENGINE_TOKEN" ]; then
+              export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.https://x-access-token:${GRC_ENGINE_TOKEN}@github.com/.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/"
+            fi
+            # The engine first, without its dependencies; then its dependencies from the engine's own hash-locked
+            # file; then anything else the client's requirements.txt lists.
+            grep -E '^grc-readiness' requirements.txt > "$RUNNER_TEMP/engine-pin.txt"
+            pip install -q --no-deps -r "$RUNNER_TEMP/engine-pin.txt"
+            if LOCK=$(python -I -m grc.locks engine 2>/dev/null); then
+              pip install -q --require-hashes -r "$LOCK"
+            else
+              if python -I -c "import grc,sys; sys.exit(0 if tuple(map(int, grc.__version__.split('.')[:2])) < (0, 25) else 1)"; then
+                echo "::warning::This engine version has no lock files (added in 0.25.0), so its dependencies are not hash-checked. Merge the engine upgrade PR."
+                pip install -q -r "$RUNNER_TEMP/engine-pin.txt"     # its dependencies, resolved the old way
+              else
+                echo "::error::The engine's lock file is missing; refusing to install unchecked dependencies."; exit 1
+              fi
+            fi
+            unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GRC_ENGINE_TOKEN   # not needed past here
+            grep -vE '^grc-readiness' requirements.txt > "$RUNNER_TEMP/other-requirements.txt" || true
+            pip install -q -r "$RUNNER_TEMP/other-requirements.txt"
+          fi
+          python -I -c "import grc; print('GRC engine', grc.__version__)"
+      - name: Build the rooms
+        id: build
+        shell: bash   # -o pipefail: a failed build fails the step, even through tee
+        run: |
+          if [ ! -f engagement/engagement.yaml ]; then
+            echo "No engagement record in this repository yet, so there is nothing to build." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "built=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! python -I -c "import grc.rooms" 2>/dev/null; then
+            echo "This engine version has no read-only rooms (added in 0.27.0). Merge the engine upgrade PR." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "built=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          python -I -m grc rooms --out _rooms | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "built=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.build.outputs.built == 'true'
+        with:
+          name: rooms-${{ github.sha }}
+          path: _rooms/
+          retention-days: 7
+      - name: Deploy the enabled rooms to Cloudflare
+        if: steps.build.outputs.built == 'true'
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          for room in executive auditor; do
+            enabled=$(python -I -c "import sys, yaml; e=yaml.safe_load(open('engagement/engagement.yaml')) or {}; print(str(bool(((e.get('rooms') or {}).get(sys.argv[1]) or {}).get('enabled'))).lower())" "$room")
+            if [ "$enabled" != "true" ]; then
+              echo "The $room room is not deployed: set rooms.$room.enabled: true in engagement.yaml (docs/ROOMS.md)." >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+              echo "::warning title=Rooms::rooms.$room.enabled is true but the Cloudflare secrets are missing - not deployed."
+              continue
+            fi
+            (cd "_rooms/$room" && npx --yes "$WRANGLER" deploy | tee deploy.log)
+            url=$(grep -Eo 'https://[a-z0-9.-]+\.workers\.dev' "_rooms/$room/deploy.log" | head -1 || true)
+            echo "Deployed the $room room: ${url:-see the Cloudflare dashboard}" >> "$GITHUB_STEP_SUMMARY"
+          done

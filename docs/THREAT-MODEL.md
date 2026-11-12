@@ -110,9 +110,10 @@ shares a pip cache. These rules are tested and scanned (zizmor).
 - Clients pin the engine to a release tag and call its reusable workflows at a major-version tag
   (`engine-v0`). That tag is a deliberate trust in the engine's maintainer; protect it (below).
 
-## The friendlier UI (design; not built yet)
+## The friendlier UI
 
-Status: proposed, for review before any code is written. Three surfaces sit in front of each client repository.
+Status: design agreed 12 November 2026. Built so far: the executive dashboard and the auditor room
+([ROOMS.md](ROOMS.md), engine 0.27.0). The workspace is next. Three surfaces sit in front of each client repository.
 **GitHub stays the system of record**: the UI keeps no data of its own beyond a login session; every change is a
 pull request reviewed and merged as today, and every page is built from the merged record.
 

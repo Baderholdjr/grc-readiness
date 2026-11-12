@@ -304,6 +304,7 @@ def build(model: Engagement, out: Path, repo: str = "", extra: list[Engagement] 
     for name in ("index.html", "app.js", "app.css"):
         shutil.copyfile(SITE / "site" / name, pub / name)
     shutil.copyfile(SITE / "worker.js", out / "worker.js")
+    shutil.copyfile(SITE / "access.js", out / "access.js")
     d = data(model, extra)
     (pub / "portal.json").write_text(json.dumps(d, indent=1, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     (out / "wrangler.toml").write_text(wrangler_toml(model, repo), encoding="utf-8")
