@@ -117,6 +117,9 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 | W108 / W109 | warning | A collector check is failing / could not run |
 | W110 / W111 | warning | Client claims with no owner yet / an owner not listed in owners.yaml |
 | I201 | info | Client claim not yet backed by evidence (the analyst's follow-up list) |
+| E091 | error | Two sites (client site, executive dashboard, auditor room) share one Access application |
+| W180 | warning | The auditor room is enabled without dates or auditors, or closes before it opens |
+| W181 | warning | The auditor room stays open more than 120 days |
 | E090 | error | The repository tracks a file that can hold secrets (`.claude/settings.local.json`, `.env`, a key) |
 
 ## GitOps workflow
@@ -168,6 +171,12 @@ Eight are built in: **ISO/IEC 42001:2023** (`iso42001`, AI management systems; 6
 Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id>` in `engagement.yaml`. For a
 control catalog published in OSCAL (NIST SP 800-53 baselines, FedRAMP Rev. 5, an organisation's own),
 `grc oscal import` writes both files for you. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
+
+## Read-only rooms
+
+`grc rooms` builds an executive dashboard (summary numbers and a trend, nothing else) and an auditor room (the
+auditor package as downloads, for named auditors between two dates), each a Cloudflare Worker behind its own
+Access application. See [docs/ROOMS.md](docs/ROOMS.md).
 
 ## OSCAL
 

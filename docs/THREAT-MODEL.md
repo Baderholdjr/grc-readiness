@@ -4,7 +4,7 @@ Scope: the engine (this repository, public under the PolyForm Noncommercial lice
 (private) built from it, their GitHub Actions workflows, the
 client site on Cloudflare, and the services they call (the Anthropic API for AI drafting; AWS, Azure, GCP and
 identity providers for evidence collectors). Reviewed when the architecture changes, and at least yearly. The
-friendlier UI (workspace, auditor room, executive dashboard) gets its own section before it is built.
+friendlier UI (workspace, auditor room, executive dashboard) has its own section below, written before it is built.
 
 ## What we protect
 
@@ -109,6 +109,100 @@ shares a pip cache. These rules are tested and scanned (zizmor).
   signing job installs only hash-locked build tools and builds without fetching anything else.
 - Clients pin the engine to a release tag and call its reusable workflows at a major-version tag
   (`engine-v0`). That tag is a deliberate trust in the engine's maintainer; protect it (below).
+
+## The friendlier UI
+
+Status: design agreed 12 November 2026. Built so far: the executive dashboard and the auditor room
+([ROOMS.md](ROOMS.md), engine 0.27.0). The workspace is next. Three surfaces sit in front of each client repository.
+**GitHub stays the system of record**: the UI keeps no data of its own beyond a login session; every change is a
+pull request reviewed and merged as today, and every page is built from the merged record.
+
+| Surface | Who | Sign-in | Can do |
+|---|---|---|---|
+| **Workspace** | Our consultants | GitHub (OAuth through our GitHub App), MFA enforced by GitHub | Read the record; propose edits as pull requests under their own GitHub name |
+| **Workspace** | Client staff (no GitHub account) | Cloudflare Access, email code (SSO with MFA in production) | Read their record; answer requests and propose edits to fields their role allows; the App opens the pull request and names them in it |
+| **Auditor room** | Named auditors | Cloudflare Access, email code, only between the dates the engagement sets | Read only: the reports, the OSCAL export, the evidence index (evidence stays in the client's systems), and the auditor package |
+| **Executive dashboard** | Client executives | Cloudflare Access, email code (SSO in production) | Read only: readiness %, days to the audit, top risks and gaps, trend. No evidence, no document text, no requirement detail |
+
+Each client gets its own Worker and its own Cloudflare Access application for each surface, so one client's
+people can never be let into another client's pages by a policy mistake on a shared app.
+
+### New assets
+
+| Asset | Why it matters |
+|---|---|
+| The GitHub App's private key | It mints tokens for every client repository the App is installed on |
+| Consultants' GitHub user tokens | They act as that consultant on GitHub |
+| Login sessions (Access tokens, the workspace session cookie) | Whoever holds one is that person to the UI |
+| The auditor-room access list and window | It decides who outside the client sees the record, and until when |
+| The pages' content | The record's text, read by people with different rights |
+
+### Threats and controls
+
+**Spoofing (someone acting as someone else).**
+- Every request needs a Cloudflare Access login, and the Worker verifies the Access token itself: signature,
+  audience, issuer and expiry, failing closed if Access isn't configured (as the client site does today).
+- Consultants sign in with GitHub through the App's OAuth flow (state and PKCE checked); their user token expires
+  after 8 hours and lives only in an encrypted, `HttpOnly`, `Secure`, `SameSite=Strict` session cookie, never in
+  storage the page's script can read. A consultant must also be on the engagement's list of consultants.
+- Email codes can be phished or a mailbox taken over. Proof of concept only; production uses the client's SSO with
+  MFA through Access, and our own SSO for consultants who use email.
+
+**Tampering (changing the record wrongly).**
+- The UI can only open pull requests. The App is not on any ruleset's bypass list, so its pull requests need the
+  same review and checks as anyone's, and nothing merges without a person.
+- What each role may change is decided in the Worker, field by field, from an allow-list in the engine (for
+  example: client staff may answer requests, update an owner's contact or an implementation statement, add an
+  evidence link; they may not touch status, legs, gaps' severity, approvals or anything another client owns;
+  agreed 12 November 2026).
+  The Worker writes the file itself from validated fields; the browser never sends a file or a path.
+- Nothing in the UI can set a leg to `verified` or an answer to `approved`; that stays a reviewer's edit in the
+  pull request, and `grc validate` runs on every pull request as today.
+- Every write is schema-checked in the Worker, and again by `validate` in CI.
+- Cross-site request forgery: writes are same-origin JSON only, the Worker checks `Origin`, and cookies are
+  `SameSite=Strict`.
+
+**Repudiation (denying a change).** Each pull request from a client person names the verified email from the
+Access token in its body and in a commit trailer (`Submitted-by:`); consultants' pull requests carry their own
+GitHub identity. The rooms log every request they let through with the email. Worker logs last a few days on
+Cloudflare: exporting them (Logpush) to keep with the engagement record is a production step, not yet built.
+
+**Information disclosure (the wrong person reading something).**
+- Installation tokens are minted per request for the one repository that client's Worker serves (the
+  `repositories` parameter), with the least permissions that request needs, and expire within an hour.
+- The auditor room opens and closes on the dates in `engagement.yaml` (checked in the Worker on every request;
+  Access policies can't hold dates), lets in only the auditors listed by name (in the Worker, whatever the Access
+  policy allows), and stamps each page with the viewer's email and the date. It holds the auditor package (reports,
+  policies, collector snapshots, the source record); evidence kept in the client's systems stays there. Deploys run
+  from `main` only, and the package is never put in a workflow artifact.
+- The executive dashboard is built at publish time as summary numbers only; the record's text never reaches the
+  executive's browser, so it can't be read from the page source.
+- Pages are built with DOM text nodes (no `innerHTML`), under a strict Content-Security-Policy with no
+  third-party script, as today. Responses that depend on the person are `Cache-Control: private, no-store`.
+- No uploads in the first version: links to documents in the client's systems, with the "no patient or personal
+  data" confirmation kept. Uploads (to a private, per-client store with scanning) are a later, separate design.
+
+**Denial of service and cost.** Cloudflare rate-limiting rules keyed on the signed-in identity, limits on open
+pull requests per person and per client (as the client site has), and request size limits.
+
+**Elevation of privilege.**
+- The App asks for: Contents (write), Pull requests (write), Metadata (read). No administration, workflows,
+  secrets or members permissions. It can't change rulesets or workflows, so it can't weaken the review it relies
+  on. Edits to `.github/` are refused in the Worker as well.
+- The private key lives only as a Worker secret (per client Worker, or in one signing Worker that client Workers
+  call over a service binding, so a client Worker never holds the key). Rotated on a schedule and on any doubt.
+- The engine's allow-list of fields per role is code reviewed like the rest of the engine; a client repository
+  can narrow it, not widen it.
+
+### Accepted risks and open questions
+
+| Item | Position |
+|---|---|
+| Email codes in the proof of concept | Accepted for fictional test data only; SSO with MFA before real client data |
+| The App's key can open pull requests on every installed client repository | Mitigated by per-repository tokens and a signing Worker; a separate App per client is the stronger option if a client requires it |
+| Cloudflare sees the pages and the Access identities | A data-processing agreement with Cloudflare before real data; no protected health information, ever |
+| A reviewer could merge a bad pull request opened through the UI | Same as today: the review is the control; the UI shows the reviewer which fields changed |
+| The auditor room offers the auditor package as a download | Decided: yes, the package zip with its manifest checksums, under the same window and stamping |
 
 ## Accepted risks and gaps
 

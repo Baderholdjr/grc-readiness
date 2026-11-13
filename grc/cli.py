@@ -16,6 +16,7 @@
   package       Auditor package: PDFs, auditor index, checksums and a reproducible zip
   hours         Timesheet: import time-tracker exports, log hours
   portal        Client site: build the deployable bundle (site, data, Cloudflare Worker)
+  rooms         Read-only rooms: the executive dashboard and the auditor room (Cloudflare Workers)
   engagements   List the engagement records in this repository (one per framework)
 """
 from __future__ import annotations
@@ -526,6 +527,27 @@ def cmd_itgc(args) -> int:
     return 0
 
 
+def cmd_rooms(args) -> int:
+    from . import rooms
+    model = _model(args)
+    out = Path(args.out)
+    if args.room == "enabled":
+        which = rooms.enabled(model) or ["executive"]     # nothing enabled: the dashboard alone, to preview
+    else:
+        which = ["executive", "auditor"] if args.room == "all" else [args.room]
+    failed = 0
+    for room in which:             # each room on its own: one that can't be built doesn't stop the other
+        try:
+            log = (rooms.build_executive(model, out / room) if room == "executive"
+                   else rooms.build_auditor(model, out / room, force=args.force))
+            for line in log:
+                print(line)
+        except ValueError as exc:
+            failed += 1
+            print(f"error: the {room} room was not built: {exc}", file=sys.stderr)
+    return 1 if failed else 0
+
+
 def cmd_oscal(args) -> int:
     from . import oscal
     if args.action == "export":
@@ -759,6 +781,13 @@ def main(argv=None) -> int:
     qu.add_argument("--root", default=".", help="repository root (default .)")
     qu.add_argument("--format", choices=["text", "text-verbose", "github", "json"], default="text")
     qu.set_defaults(fn=cmd_questionnaire)
+
+    ro = sub.add_parser("rooms", help="read-only rooms: build the executive dashboard and the auditor room")
+    ro.add_argument("--out", default="_rooms")
+    ro.add_argument("--room", choices=["enabled", "all", "executive", "auditor"], default="enabled",
+                    help="enabled (default): the rooms enabled in engagement.yaml")
+    ro.add_argument("--force", action="store_true", help="auditor room: build a draft package despite validation errors")
+    ro.set_defaults(fn=cmd_rooms)
 
     os_ = sub.add_parser("oscal", help="OSCAL: export the record (SSP, assessment results, POA&M), validate, "
                          "or import a control catalog and baseline")

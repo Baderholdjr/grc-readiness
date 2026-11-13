@@ -108,7 +108,8 @@ jobs:
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Deploy to Cloudflare
-        if: steps.cfg.outputs.deploy == 'true'
+        # main only: a run started by hand on another branch must not publish an unreviewed site
+        if: steps.cfg.outputs.deploy == 'true' && github.ref == 'refs/heads/main'
         shell: bash   # -o pipefail: a failed deploy fails the step, even through tee
         working-directory: _portal
         env:

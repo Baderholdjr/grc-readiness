@@ -1,0 +1,27 @@
+name: Read-only rooms
+
+# Rebuilds the executive dashboard and the auditor room after every merge, and daily (so the auditor room's
+# window, the days to the audits and the trend stay current). See docs/ROOMS.md.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "47 13 * * *"   # daily 13:47 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rooms
+  cancel-in-progress: true
+
+jobs:
+  rooms:
+    uses: __ENGINE_REPO__/.github/workflows/grc-rooms.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

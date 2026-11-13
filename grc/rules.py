@@ -1027,7 +1027,12 @@ def check_secret_files(model: Engagement) -> list[Finding]:
             for n in tracked_secret_files(model.root)]
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings, check_secret_files)
+def check_rooms(model: Engagement) -> list[Finding]:
+    from .rooms import check
+    return check(model)
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings, check_secret_files, check_rooms)
 
 
 def validate(model: Engagement) -> list[Finding]:

@@ -33,12 +33,12 @@ export async function mint(keys, claims = {}, header = {}) {
   return `${h}.${p}.${Buffer.from(sig).toString("base64url")}`;
 }
 
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".zip": "application/zip", ".pdf": "application/pdf" };
 
 export function assets(publicDir) {
   return {
     async fetch(req) {
-      let path = new URL(req.url).pathname;
+      let path = decodeURIComponent(new URL(req.url).pathname);
       if (path === "/") path = "/index.html";
       const file = normalize(join(publicDir, path));
       if (!file.startsWith(normalize(publicDir))) return new Response("nope", { status: 404 });
@@ -115,12 +115,15 @@ export function installFetch(keys, gh, opts = {}) {
   };
 }
 
-export async function loadWorker() {
-  // worker.js is an ES module without a package.json "type"; copy it under .mjs for Node.
-  const src = fileURLToPath(new URL("../../grc/resources/portal/worker.js", import.meta.url));
+export async function loadWorker(name = "portal/worker.js") {
+  // The Workers are ES modules without a package.json "type": copy them, and the shared access.js they import,
+  // into a folder that says "type": "module", as the bundle does for Cloudflare.
+  const res = fileURLToPath(new URL("../../grc/resources/", import.meta.url));
   const dir = await mkdtemp(join(tmpdir(), "grc-worker-"));
-  await copyFile(src, join(dir, "worker.mjs"));
-  return import(pathToFileURL(join(dir, "worker.mjs")).href);
+  await writeFile(join(dir, "package.json"), '{"type": "module"}');
+  await copyFile(join(res, "portal", "access.js"), join(dir, "access.js"));
+  await copyFile(join(res, name), join(dir, "worker.js"));
+  return import(pathToFileURL(join(dir, "worker.js")).href);
 }
 
 export function env(publicDir, extra = {}) {
@@ -154,4 +157,24 @@ async function serve(bundle, port, email, stateFile) {
   }).listen(Number(port), "127.0.0.1", () => console.log(`serving ${bundle} on http://localhost:${port}`));
 }
 
+// node harness.mjs serve-room <bundle-dir> <port> <email> : a built room, with the [vars] from its wrangler.toml
+async function serveRoom(bundle, port, email) {
+  const W = await loadWorker("rooms/worker.js");
+  const keys = await makeKeys();
+  installFetch(keys, fakeGitHub());
+  const vars = {};
+  for (const m of (await readFile(join(bundle, "wrangler.toml"), "utf8")).matchAll(/^([A-Z_]+) = (".*")$/gm)) vars[m[1]] = JSON.parse(m[2]);
+  const e = { ...vars, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD, ASSETS: assets(join(bundle, "public")) };
+  createServer(async (req, res) => {
+    const headers = new Headers();
+    headers.set("Cf-Access-Jwt-Assertion", await mint(keys, { email }));
+    const out = await W.default.fetch(new Request(`http://localhost:${port}${req.url}`, { method: req.method, headers }), e);
+    const outHeaders = {};
+    out.headers.forEach((v, k) => { outHeaders[k] = v; });
+    res.writeHead(out.status, outHeaders);
+    res.end(Buffer.from(await out.arrayBuffer()));
+  }).listen(Number(port), "127.0.0.1", () => console.log(`serving ${bundle} on http://localhost:${port}`));
+}
+
 if (process.argv[2] === "serve") serve(process.argv[3], process.argv[4], process.argv[5], process.argv[6]);
+if (process.argv[2] === "serve-room") serveRoom(process.argv[3], process.argv[4], process.argv[5]);

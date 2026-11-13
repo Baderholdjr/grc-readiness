@@ -328,6 +328,99 @@
           "description": "Warn when a submission waits longer than this (default 5)"
         }
       }
+    },
+    "rooms": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Read-only rooms (grc rooms): executive dashboard and auditor room, each a Cloudflare Worker behind its own Access application. See docs/ROOMS.md.",
+      "properties": {
+        "executive": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Build and deploy this room from the rooms workflow"
+            },
+            "worker_name": {
+              "type": "string",
+              "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
+              "description": "Cloudflare Worker name (default: grc-<room>-<client>)"
+            },
+            "access_team": {
+              "type": "string",
+              "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
+              "description": "Cloudflare Zero Trust team (default: portal.access_team)"
+            },
+            "access_aud": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "description": "Audience (AUD) tag of this room's own Access application"
+            },
+            "allowed_email_domains": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"
+              },
+              "description": "Optional second check after Access"
+            }
+          }
+        },
+        "auditor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Build and deploy this room from the rooms workflow"
+            },
+            "worker_name": {
+              "type": "string",
+              "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
+              "description": "Cloudflare Worker name (default: grc-<room>-<client>)"
+            },
+            "access_team": {
+              "type": "string",
+              "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$",
+              "description": "Cloudflare Zero Trust team (default: portal.access_team)"
+            },
+            "access_aud": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "description": "Audience (AUD) tag of this room's own Access application"
+            },
+            "allowed_email_domains": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"
+              },
+              "description": "Optional second check after Access"
+            },
+            "opens": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "First day (UTC) the room lets the auditors in"
+            },
+            "closes": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Last day (UTC) the room lets the auditors in"
+            },
+            "auditors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+              },
+              "description": "The named auditors' email addresses; nobody else is let in, whatever the Access policy says"
+            }
+          }
+        }
+      }
     }
   }
 }
