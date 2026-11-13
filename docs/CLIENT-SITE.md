@@ -15,7 +15,9 @@ It is the interactive version of the [client view](CLIENT-VIEW.md), built from t
 | **Overview** | Days to the Stage 1 audit, how many requests are open, the path to certification (phases, today, Stage 1 and Stage 2), the next four requests, key figures and other dated events. |
 | **Requests** | Every request, grouped by when it's due, filterable by person. "Needs action" hides what's already been sent or needs nothing right now. |
 | **One request** | What we need, why it matters, and what good evidence looks like. A short form takes an answer, up to five links and a "no patient or personal data" confirmation. |
-| **Progress** | Each area of the standard with a done / under way / not started bar. Areas open to show each requirement in plain words, with an optional technical layer: requirement numbers and the four evidence checks. |
+| **Progress** | Each area of the standard with a done / under way / not started bar. Areas open to show each requirement in plain words, with an optional technical layer: requirement numbers and the four evidence checks. Each requirement opens a page where the client can propose a change (below). |
+| **One requirement** | A form to describe how it's done, and a form to add an evidence link. The record's current wording is shown only when `portal.share_implementation: true` (it is often our working notes). |
+| **Owners** | The roles marked `client: true` in `owners.yaml`, with a contact email each; the client can propose an updated email. No other role is shown. |
 | **Help** | Each term in plain language, with the technical term underneath. |
 
 When an engagement covers more than one framework, each framework appears as a tab: run `grc portal --also <other engagement dir>`.
@@ -53,6 +55,41 @@ evidence: [EV-031]
 ```
 
 Then merge.
+
+## How proposed changes are handled
+
+Client staff can propose three kinds of change (agreed 12 November 2026; see the threat model):
+
+| Change | Where | What the pull request changes |
+|---|---|---|
+| How a requirement is done | One requirement page | `implementation:` in `engagement/controls/<id>.yaml` |
+| An evidence link | One requirement page | A new item at the end of `engagement/evidence/index.yaml`, linked to the requirement, with a note saying who added it and that it isn't reviewed yet. Types: document, record, screenshot, config, log (never a test: testing is ours) |
+| An owner's contact email | Owners | `email:` on that role in `engagement/owners.yaml` |
+
+```
+client proposes ──► Worker checks the login, and that portal.json allows this change on this item
+                ──► reads the record file from main, changes that one value (other lines, comments and
+                    line endings stay as they were)
+                ──► pull request: the record file + engagement/submissions/SUB-....yaml (who, when, what)
+                                                              │
+     analyst reviews "Files changed", sets the submission to accepted, merges ◄─┘
+```
+
+- The browser sends only a request key and the new value. The file and the field come from `portal.json`,
+  built by the engine from the merged record, so a client can't name a file, a path or a field.
+- No change sets any status: nothing becomes verified because of it. Validate runs on the pull request as on
+  any other.
+- `portal.edits` in `engagement.yaml` narrows what clients may change (for example `edits: [evidence]`); it can't
+  add anything the engine doesn't offer.
+- If a record file isn't laid out the way the engine writes it (a key written twice, flow style, a value over
+  several lines), the site refuses the change and asks the client to contact the engagement team; nothing is
+  changed.
+- Each commit carries a `Submitted-by:` trailer with the verified email.
+- Two evidence links proposed at the same time get the same new id; the second pull request then needs the id
+  changed by hand before it merges (validate says so, E011).
+- Changes are proposed from the Progress page of the main engagement only; other frameworks' tabs are read only.
+- Changes count toward the same limits as answers (a few a minute per person, at most 15 waiting per person and
+  40 for the site).
 
 ## Security model
 

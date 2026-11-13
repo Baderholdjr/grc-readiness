@@ -67,6 +67,7 @@ async function boot() {
   document.getElementById("client").textContent = S.data.client;
   document.title = `${S.data.client}: readiness`;
   document.getElementById("sandbox").hidden = !S.data.sandbox;
+  document.getElementById("nav-owners").hidden = !(S.data.owners && S.data.owners.roles && S.data.owners.roles.length);
   document.getElementById("asof").textContent = `Information as of ${fmt(S.data.as_of, true)}.`;
   document.getElementById("contact").textContent = S.data.contact ? `Questions: ${S.data.contact}` : "";
   window.addEventListener("hashchange", render);
@@ -114,12 +115,13 @@ function render() {
   const nc = document.getElementById("navcount");
   nc.hidden = !open;
   nc.textContent = open;
-  const name = page === "request" ? "requests" : (page || "overview");
+  const name = page === "request" ? "requests" : page === "req" ? "progress" : (page || "overview");
   for (const a of document.querySelectorAll("nav a")) {
     if (a.dataset.nav === name) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   }
   const m = main();
-  const routes = { "": overview, requests, request: () => request(safeDecode(arg || "")), progress, help };
+  const routes = { "": overview, requests, request: () => request(safeDecode(arg || "")), progress, help,
+    req: () => requirementPage(safeDecode(arg || "")), owners: ownersPage };
   const view = Object.prototype.hasOwnProperty.call(routes, page || "") ? routes[page || ""] : overview;
   const keepScroll = m.dataset.route === route;
   m.dataset.route = route;
@@ -275,7 +277,8 @@ function request(key) {
       r.also && r.also.length ? h("span", {}, "Also counts toward ", h("b", {}, r.also.join(", "))) : null),
     h("div", { class: "block" }, h("h3", {}, "What we need"), h("ul", {}, r.asks.map((a) => h("li", {}, a)))),
     r.why ? h("div", { class: "block" }, h("h3", {}, "Why this matters"), h("p", {}, r.why)) : null,
-    r.examples.length ? h("div", { class: "block" }, h("h3", {}, "What good evidence looks like"), h("ul", {}, r.examples.map((x) => h("li", {}, x)))) : null);
+    r.examples.length ? h("div", { class: "block" }, h("h3", {}, "What good evidence looks like"), h("ul", {}, r.examples.map((x) => h("li", {}, x)))) : null,
+    changeLink(r));
   return [h("a", { class: "back", href: "#/requests" }, "Back to requests"), h("div", { class: "detail" }, left, answerPanel(r, st))];
 }
 
@@ -380,12 +383,168 @@ function progress() {
             h("span", { class: "r", style: { width: (100 * a.ready) / total + "%" } }), h("span", { class: "u", style: { width: (100 * a.underway) / total + "%" } })),
           h("span", { class: "area-count" }, a.total ? `${a.ready} of ${a.total} done` : "Not applicable")),
         h("ul", { class: "reqs" }, a.requirements.map((q) => h("li", {},
-          h("span", {}, showTech ? `${q.id} ` : "", q.title),
+          h("span", {}, showTech ? `${q.id} ` : "", q.edit ? h("a", { href: `#/req/${encodeURIComponent(q.key)}` }, q.title) : q.title),
           h("span", { class: q.state === "Ready" ? "pill ok" : "pill" }, q.plain),
           showTech ? h("span", { class: "tech" }, `${q.kind_label || q.kind} · state: ${q.state} · ` +
             Object.entries(q.legs).map(([k, v]) => `${LEG_NAMES[k]}: ${v}`).join("; ")) : null)))));
     })));
   }
+  return out;
+}
+
+// ------------------------------------------------------------------ proposing changes (POST api/edit)
+// What a client may change comes from portal.json (the engine decides); the Worker checks it again.
+function findReq(key) {
+  for (const f of S.data.frameworks) {
+    for (const a of f.areas || []) for (const q of a.requirements || []) if (q.key === key) return Object.assign({ fwName: f.name, fw: f.key }, q);
+  }
+  return null;
+}
+
+function changeLink(r) {
+  if (r.kind !== "Requirement") return null;
+  const f = S.data.frameworks.find((x) => x.key === r.framework) || fwData();
+  const q = (f.areas || []).flatMap((a) => a.requirements || []).find((x) => x.id === r.ref && x.edit);
+  return q ? h("p", { class: "block" }, h("a", { href: `#/req/${encodeURIComponent(q.key)}` }, "Update how this is done, or add an evidence link")) : null;
+}
+
+function noDataBox(id) {
+  return h("input", { type: "checkbox", id });
+}
+
+async function sendChange(payload, msg, button) {
+  button.disabled = true;
+  msg.className = "msg";
+  msg.textContent = "Sending…";
+  try {
+    const res = await fetch("api/edit", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({ no_sensitive_data: true }, payload)) });
+    let body = {};
+    try { body = await res.json(); } catch (_) { /* not JSON */ }
+    if (!res.ok || !body.ok) throw new Error(body.error || "We couldn't send your change. Nothing was saved. Try again in a minute.");
+    S.pending.set(payload.key, { key: payload.key, id: body.id, at: body.at });
+    return true;
+  } catch (err) {
+    button.disabled = false;
+    msg.className = "msg err";
+    msg.textContent = err.message === "Failed to fetch" ? "You appear to be offline. Nothing was sent; try again when you're connected." : err.message;
+    return false;
+  }
+}
+
+function sentBox(title) {
+  return h("div", { class: "done-panel" }, h("h2", { tabindex: "-1" }, title),
+    h("p", {}, "Your engagement team will review it. The record changes only when they accept it."));
+}
+
+function requirementPage(key) {
+  const q = findReq(key);
+  const back = h("a", { class: "back", href: "#/progress" }, "Back to progress");
+  if (!q || !q.edit) return [back, h("p", { class: "empty" }, "This requirement can't be changed from the site.")];
+  const pend = S.pending.get(key);
+  const left = h("div", {},
+    h("p", { class: "ref" }, `Requirement ${q.id}${S.data.frameworks.length > 1 ? " · " + q.fwName : ""}`),
+    h("h1", {}, q.title),
+    h("p", { class: "facts" }, h("span", {}, "Status ", h("b", {}, q.plain))),
+    pend ? h("div", { class: "status-box sent" }, h("b", {}, `Change sent on ${fmt(pend.at, true)}`), h("p", {}, "Waiting for your engagement team's review.")) : null,
+    q.edit.shared ? h("div", { class: "block" }, h("h3", {}, "How it's done today, according to the record"),
+      q.edit.implementation ? h("p", { class: "current" }, q.edit.implementation) : h("p", { class: "empty" }, "Nothing recorded yet.")) : null,
+    h("p", { class: "hint" }, "Changes you send here don't mark anything as done. Your engagement team reviews each one and checks the evidence."));
+  const forms = h("section", { class: "answer", "aria-label": "Propose a change" });
+  if (q.edit.path) {
+    const ta = h("textarea", { id: "impl", maxlength: "4000" });
+    ta.value = q.edit.shared ? (q.edit.implementation || "") : "";
+    const ok = noDataBox("nophi-impl");
+    const msg = h("p", { class: "msg", role: "status", "aria-live": "polite" });
+    const send = h("button", { type: "submit", class: "primary" }, "Send the update");
+    const form = h("form", { novalidate: true },
+      h("h2", {}, "How is this done?"),
+      h("label", { for: "impl" }, "Describe it in your own words", h("span", { class: "hint" }, q.edit.shared
+        ? "Who does it, how often, with which system, and where the records are kept."
+        : "Who does it, how often, with which system, and where the records are kept. Your engagement team merges it into the record's wording.")),
+      ta,
+      h("label", { class: "confirm", for: "nophi-impl" }, ok, h("span", {}, "This contains no patient data or other personal information.")),
+      send, msg);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.className = "msg err";
+      if (!ta.value.trim()) { msg.textContent = "Write how this is done before sending."; ta.focus(); return; }
+      if (q.edit.shared && ta.value.trim() === (q.edit.implementation || "").trim()) { msg.textContent = "That's what the record already says."; return; }
+      if (!ok.checked) { msg.textContent = "Confirm there's no patient or personal data before sending."; ok.focus(); return; }
+      if (await sendChange({ kind: "implementation", key, value: ta.value }, msg, send)) {
+        form.replaceWith(sentBox("Update sent"));
+        forms.querySelector("h2[tabindex]").focus();
+      }
+    });
+    forms.append(form);
+  }
+  if (q.edit.evidence) {
+    const title = h("input", { id: "ev-title", type: "text", maxlength: "200" });
+    const type = h("select", { id: "ev-type" },
+      h("option", { value: "" }, "Choose…"),
+      h("option", { value: "document" }, "A policy, procedure or plan"),
+      h("option", { value: "record" }, "A record that it happened (sign-offs, tickets, minutes)"),
+      h("option", { value: "screenshot" }, "A screenshot"),
+      h("option", { value: "config" }, "A system setting or export of one"),
+      h("option", { value: "log" }, "A log"));
+    const link = h("input", { id: "ev-link", type: "url", inputmode: "url", placeholder: "https://" });
+    const ok = noDataBox("nophi-ev");
+    const msg = h("p", { class: "msg", role: "status", "aria-live": "polite" });
+    const send = h("button", { type: "submit", class: "primary" }, "Add the link");
+    const form = h("form", { novalidate: true },
+      h("h2", {}, "Add an evidence link"),
+      h("p", { class: "hint" }, "A link to where the evidence lives in your own systems. Don't upload files here."),
+      h("label", { for: "ev-title" }, "What is it?"), title,
+      h("label", { for: "ev-type" }, "What kind of evidence"), type,
+      h("label", { for: "ev-link" }, "Link"), link,
+      h("label", { class: "confirm", for: "nophi-ev" }, ok, h("span", {}, "The link and its title contain no patient data or other personal information.")),
+      send, msg);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.className = "msg err";
+      if (!title.value.trim()) { msg.textContent = "Give the evidence a short title."; title.focus(); return; }
+      if (!type.value) { msg.textContent = "Choose what kind of evidence it is."; type.focus(); return; }
+      if (!/^https:\/\/\S+$/i.test(link.value.trim())) { msg.textContent = "The link must be a full address starting with https://"; link.focus(); return; }
+      if (!ok.checked) { msg.textContent = "Confirm there's no patient or personal data before sending."; ok.focus(); return; }
+      if (await sendChange({ kind: "evidence", key, title: title.value, type: type.value, link: link.value.trim() }, msg, send)) {
+        form.replaceWith(sentBox("Link sent"));
+        forms.querySelector("h2[tabindex]").focus();
+      }
+    });
+    forms.append(form);
+  }
+  return [back, h("div", { class: "detail" }, left, forms)];
+}
+
+function ownersPage() {
+  const o = S.data.owners;
+  const out = [h("h1", {}, "Owners"),
+    h("p", { class: "lede" }, "Each area of work has an accountable owner at your organization. Keep their contact email current so reminders and questions reach the right person.")];
+  if (!o || !o.roles || !o.roles.length) return out.concat(h("p", { class: "empty" }, "Owners are managed by your engagement team."));
+  out.push(h("ul", { class: "owners" }, o.roles.map((r) => {
+    const input = h("input", { type: "email", inputmode: "email", value: r.email || "", "aria-label": `Email for ${r.role}`, maxlength: "254" });
+    const ok = noDataBox(`nophi-${r.key}`);
+    const msg = h("p", { class: "msg", role: "status", "aria-live": "polite" });
+    const send = h("button", { type: "submit" }, "Update");
+    const pend = S.pending.get(r.key);
+    const form = h("form", { novalidate: true, class: "owner-row" },
+      h("b", {}, r.role), input,
+      h("label", { class: "confirm small", for: `nophi-${r.key}` }, ok, h("span", {}, "A work email only")),
+      send, msg, pend ? h("p", { class: "hint" }, `Change sent on ${fmt(pend.at, true)}, waiting for review.`) : null);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.className = "msg err";
+      const v = input.value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { msg.textContent = "Enter an email address, like name@example.com."; input.focus(); return; }
+      if (v.toLowerCase() === (r.email || "").toLowerCase()) { msg.textContent = "That's what the record already says."; return; }
+      if (!ok.checked) { msg.textContent = "Confirm it's a work email."; ok.focus(); return; }
+      if (await sendChange({ kind: "owner_email", key: r.key, value: v }, msg, send)) {
+        msg.className = "msg";
+        msg.textContent = "Sent. It changes once your engagement team accepts it.";
+      }
+    });
+    return h("li", {}, form);
+  })));
   return out;
 }
 

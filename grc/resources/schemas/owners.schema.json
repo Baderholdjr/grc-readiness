@@ -30,6 +30,10 @@
           },
           "email": {
             "type": "string"
+          },
+          "client": {
+            "type": "boolean",
+            "description": "A role at the client's organization: client staff may propose its contact email from the client site"
           }
         }
       }

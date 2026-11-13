@@ -63,10 +63,32 @@ def read_yaml(path: Path) -> Any:
         return yaml.safe_load(fh) or {}
 
 
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """SafeLoader that refuses a mapping with the same key twice. YAML parsers keep the last one, so a
+    duplicated key would let a reviewed change to the first copy do nothing."""
+
+
+def _unique_mapping(loader, node, deep=False):
+    seen = set()
+    for k, _ in node.value:
+        key = loader.construct_object(k, deep=deep)
+        try:
+            dup = key in seen
+        except TypeError:
+            continue
+        if dup:
+            raise yaml.constructor.ConstructorError(None, None, f"the key {key!r} appears twice", k.start_mark)
+        seen.add(key)
+    return yaml.SafeLoader.construct_mapping(loader, node, deep=deep)
+
+
+_UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _unique_mapping)
+
+
 def load_yaml(path: Path) -> Any:
     with open(path, encoding="utf-8") as fh:
         try:
-            return yaml.safe_load(fh) or {}
+            return yaml.load(fh, Loader=_UniqueKeyLoader) or {}  # nosec B506 - a SafeLoader subclass
         except yaml.YAMLError as exc:
             mark = getattr(exc, "problem_mark", None)
             where = f" at line {mark.line + 1}" if mark else ""

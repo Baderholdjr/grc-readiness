@@ -205,3 +205,14 @@ select, input[type="url"], textarea { font: inherit; color: var(--ink); backgrou
   .top nav, .filters, .answer, .skip { display: none; }
   body { background: #fff; }
 }
+
+/* proposing changes */
+.current { white-space: pre-wrap; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px; }
+.answer form + form, .answer .done-panel + form, .answer form + .done-panel { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--rule); }
+.answer select, .answer input[type="text"] { width: 100%; font: inherit; padding: 9px 10px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); }
+.owners { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.owner-row { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(180px, 2fr) auto auto; gap: 8px 12px; align-items: center; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px; }
+.owner-row input[type="email"] { font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--radius); min-width: 0; }
+.owner-row .msg, .owner-row .hint { grid-column: 1 / -1; margin: 0; }
+.confirm.small { font-size: 13px; }
+@media (max-width: 640px) { .owner-row { grid-template-columns: 1fr; } }
