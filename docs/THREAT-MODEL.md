@@ -213,6 +213,7 @@ pull requests per person and per client (as the client site has), and request si
 
 | Item | Position |
 |---|---|
+| A copied workspace session cookie works until it expires (at most 8 hours) | Sessions are stateless; the cookie is `HttpOnly`, `Secure`, `SameSite=Strict`; signing out revokes the GitHub token; removing a consultant from the list takes effect on the next deploy |
 | Email codes in the proof of concept | Accepted for fictional test data only; SSO with MFA before real client data |
 | The App's key can open pull requests on every installed client repository | Mitigated by per-repository tokens and a signing Worker; a separate App per client is the stronger option if a client requires it |
 | Cloudflare sees the pages and the Access identities | A data-processing agreement with Cloudflare before real data; no protected health information, ever |

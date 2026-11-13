@@ -22,6 +22,7 @@
 import { json, plain, withHeaders } from "./access.js";
 import { EditError, WORKSPACE_STATUSES, setLegField, setRequirementField } from "./yamledit.js";
 import { CORE_SCHEMA, load as yamlLoad } from "./js-yaml.mjs";
+import { checkEdit } from "./recordcheck.js";
 
 const SESSION_COOKIE = "__Host-ws_session";
 const OAUTH_COOKIE = "__Host-ws_oauth";
@@ -60,6 +61,8 @@ async function handle(request, env) {
   if (url.pathname === "/auth/callback" && request.method === "GET") return callback(request, url, env);
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     if (!sameOrigin(request, url)) return json({ error: "Sign out from the workspace itself." }, 403);
+    const s = await unseal(env, "session", cookies(request)[SESSION_COOKIE]);
+    if (s && typeof s.token === "string") await revoke(env, s.token);   // the token stops working at GitHub too
     return withCookie(json({ ok: true }), clearCookie(SESSION_COOKIE));
   }
   const session = await readSession(request, env);
@@ -178,6 +181,20 @@ function page(title, body, status = 200) {
   return withHeaders(new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }));
 }
 
+async function revoke(env, token) {
+  try {
+    const res = await fetch(`https://api.github.com/applications/${encodeURIComponent(env.GITHUB_CLIENT_ID)}/token`, {
+      method: "DELETE",
+      headers: { Authorization: `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`, Accept: "application/vnd.github+json",
+        "Content-Type": "application/json", "User-Agent": "seshat-workspace" },
+      body: JSON.stringify({ access_token: token }),
+    });
+    if (!res.ok && res.status !== 404) console.error("revoke", res.status);
+  } catch (err) {
+    console.error("revoke", String(err));
+  }
+}
+
 async function callback(request, url, env) {
   const fail = (why) => withCookie(page("Sign-in didn't complete", `<p>${why}</p><p><a class="btn" href="/auth/login">Try again</a></p>`, 400),
     clearCookie(OAUTH_COOKIE));
@@ -196,6 +213,11 @@ async function callback(request, url, env) {
   if (!tok.access_token || typeof tok.access_token !== "string") {
     console.error("token exchange", res.status, tok.error || "");
     return fail("GitHub didn't accept the sign-in.");
+  }
+  if (!(Number(tok.expires_in) > 0)) {
+    // a token that never expires means the App's "Expire user authorization tokens" setting is off
+    await revoke(env, tok.access_token);
+    return fail("The GitHub App must have <b>Expire user authorization tokens</b> turned on.");
   }
   const me = await gh(tok.access_token, "GET", "/user");
   const user = me.ok ? await me.json() : null;
@@ -221,13 +243,27 @@ async function gh(token, method, path, body) {
   });
 }
 
+// whether this consultant may push to one repository (GitHub also refuses any write the App isn't installed for)
+async function canPush(token, repo) {
+  const r = await gh(token, "GET", `/repos/${repo}`);
+  if (!r.ok) return false;
+  const d = await r.json();
+  return !!(d && d.permissions && d.permissions.push) && String(d.full_name || "").toLowerCase() === repo.toLowerCase();
+}
+
 // the client repositories this consultant may use: where the App is installed and they can push
 export async function reachableRepos(token) {
   const out = [];
-  const inst = await gh(token, "GET", "/user/installations?per_page=100");
-  if (!inst.ok) return null;
-  for (const i of (await inst.json()).installations || []) {
-    for (let page = 1; page <= 3; page++) {
+  const installs = [];
+  for (let page = 1; page <= 10; page++) {
+    const inst = await gh(token, "GET", `/user/installations?per_page=100&page=${page}`);
+    if (!inst.ok) return null;
+    const batch = (await inst.json()).installations || [];
+    installs.push(...batch);
+    if (batch.length < 100) break;
+  }
+  for (const i of installs) {
+    for (let page = 1; page <= 10; page++) {
       const r = await gh(token, "GET", `/user/installations/${encodeURIComponent(i.id)}/repositories?per_page=100&page=${page}`);
       if (!r.ok) return null;
       const batch = (await r.json()).repositories || [];
@@ -264,8 +300,9 @@ async function readRecord(token, repo, base) {
   return body && body.data && body.data.repository ? body.data.repository : null;
 }
 
+// text from the record: only plain values (an object or a list of aliases is never turned into text)
 function str(v, max = MAX_TEXT) {
-  return v == null ? "" : String(v).slice(0, max);
+  return ["string", "number", "boolean"].includes(typeof v) ? String(v).slice(0, max) : "";
 }
 
 export function recordView(repo, r) {
@@ -289,12 +326,16 @@ export function recordView(repo, r) {
     });
   }
   reqs.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+  const seen = new Set();
+  const dupes = new Set(reqs.filter((x) => (seen.has(x.id) ? true : (seen.add(x.id), false))).map((x) => x.id));
   const gaps = ((parseYaml(r.gaps && r.gaps.text) || {}).gaps || []).filter((g) => g && typeof g === "object").map((g) => ({
     id: str(g.id, 40), area: str(g.area, 200), severity: str(g.severity, 20), status: str(g.status, 20), due: str(g.due, 20),
     owner: str(g.owner, 200), requirements: Array.isArray(g.requirements) ? g.requirements.map((x) => str(x, 120)) : [] }));
   const owners = ((parseYaml(r.owners && r.owners.text) || {}).owners || []).filter((o) => o && o.role).map((o) => str(o.role, 200));
   const evidence = ((parseYaml(r.evidence && r.evidence.text) || {}).evidence || []).filter((x) => x && x.id)
     .map((x) => ({ id: str(x.id, 40), title: str(x.title, 200), type: str(x.type, 20) }));
+  // a requirement written in two files is shown, but can't be changed here: which file is meant is unclear
+  for (const x of reqs) if (dupes.has(x.id)) x.duplicate = true;
   return { repo, client: str(eng.client, 200), framework: str(eng.framework, 40), base: r.ref && r.ref.target ? r.ref.target.oid : null,
     requirements: reqs, gaps, owners, evidence };
 }
@@ -322,6 +363,7 @@ function cleanText(s, max) {
 export function parseChange(b, view) {
   const req = view.requirements.find((r) => r.id === String(b.requirement || ""));
   if (!req) return { error: "That requirement isn't in the record." };
+  if (req.duplicate) return { error: `${req.id} is written in more than one file. Fix that in GitHub first.` };
   const field = String(b.field || "");
   if (field === "implementation") {
     const v = cleanText(b.value, MAX_TEXT + 1);
@@ -336,6 +378,9 @@ export function parseChange(b, view) {
   if (!["status", "note", "evidence"].includes(field)) return { error: "That can't be changed from the workspace." };
   const leg = String(b.leg || "");
   if (!LEGS.includes(leg)) return { error: "Choose an evidence check." };
+  if (req.legs[leg].status === "verified") {
+    return { error: "This check is verified. Its status, evidence and note change only in a reviewer's edit in GitHub." };
+  }
   if (field === "status") {
     const v = String(b.value || "");
     if (!WORKSPACE_STATUSES.includes(v)) return { error: "From the workspace a check can be not started, claimed or partial. Verified is set by the reviewer in the pull request." };
@@ -366,8 +411,7 @@ async function api(request, env, url, session) {
   if (url.pathname === "/api/engagement" && request.method === "GET") {
     const repo = String(url.searchParams.get("repo") || "");
     if (!REPO_RE.test(repo)) return json({ error: "Unknown engagement." }, 400);
-    const repos = await reachableRepos(session.token);
-    if (!repos || !repos.includes(repo)) return json({ error: "You don't have access to that engagement." }, 403);
+    if (!(await canPush(session.token, repo))) return json({ error: "You don't have access to that engagement." }, 403);
     const r = await readRecord(session.token, repo, base);
     if (!r || !r.engagement) return json({ error: "That repository has no engagement record." }, 404);
     return json(recordView(repo, r));
@@ -379,10 +423,9 @@ async function api(request, env, url, session) {
     if (!b) return json({ error: "Expected JSON." }, 400);
     const repo = String(b.repo || "");
     if (!REPO_RE.test(repo)) return json({ error: "Unknown engagement." }, 400);
-    const repos = await reachableRepos(session.token);
-    if (!repos || !repos.includes(repo)) return json({ error: "You don't have access to that engagement." }, 403);
+    if (!(await canPush(session.token, repo))) return json({ error: "You don't have access to that engagement." }, 403);
     const r = await readRecord(session.token, repo, base);
-    if (!r || !r.engagement) return json({ error: "That repository has no engagement record." }, 404);
+    if (!r || !r.engagement || !r.ref) return json({ error: "That repository has no engagement record." }, 404);
     const view = recordView(repo, r);
     const c = parseChange(b, view);
     if (c.error) return json({ error: c.error }, 400);
@@ -405,10 +448,10 @@ function md(s) {
 async function change(session, repo, base, view, c) {
   const t = session.token;
   const enc2 = (p) => p.split("/").map(encodeURIComponent).join("/");
-  let res = await gh(t, "GET", `/repos/${repo}/git/ref/heads/${base}`);
-  if (!res.ok) return json({ error: `GitHub refused (${res.status}) reading the main branch.` }, 502);
-  const sha = (await res.json()).object.sha;
-  res = await gh(t, "GET", `/repos/${repo}/contents/${enc2(c.req.path)}?ref=${sha}`);
+  // the commit the record was read and checked at, so the edit applies to exactly what was checked
+  const sha = view.base;
+  if (!/^[0-9a-f]{40}$/.test(String(sha))) return json({ error: "Couldn't read the main branch." }, 502);
+  let res = await gh(t, "GET", `/repos/${repo}/contents/${enc2(c.req.path)}?ref=${sha}`);
   if (!res.ok) return json({ error: `GitHub refused (${res.status}) reading ${c.req.path}.` }, 502);
   const file = await res.json();
   const before = dec.decode(Uint8Array.from(atob(String(file.content || "").replace(/\n/g, "")), (ch) => ch.charCodeAt(0)));
@@ -420,6 +463,12 @@ async function change(session, repo, base, view, c) {
     throw err;
   }
   if (after === before) return json({ error: "That's what the record already says." }, 409);
+  const allowed = c.leg ? [`test.${c.leg}.${c.field}`, ...(c.field === "evidence" ? [`test.${c.leg}.evidence.`] : [])] : [c.field];
+  const why = checkEdit(before, after, allowed);
+  if (why) {
+    console.error("edit refused by the record check", why);
+    return json({ error: `${c.req.path} isn't laid out the way the workspace can change it (${why}). Edit it in GitHub.` }, 409);
+  }
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const branch = `workspace/${session.login}/${stamp}-${b64u(crypto.getRandomValues(new Uint8Array(3)))}`;
   res = await gh(t, "POST", `/repos/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha });

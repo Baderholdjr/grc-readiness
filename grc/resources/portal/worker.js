@@ -23,6 +23,7 @@
 
 import { authenticate, json, plain, withHeaders } from "./access.js";
 import { EditError, addEvidence, setImplementation, setOwnerEmail } from "./yamledit.js";
+import { checkEdit, parsed } from "./recordcheck.js";
 export { authenticate, _resetCertCache } from "./access.js";
 
 const MAX_BODY = 16 * 1024;
@@ -551,6 +552,22 @@ async function createChange(env, cfg, e, target, email, open) {
     throw err;
   }
   if (after === before) return json({ error: "That's what the record already says." }, 409);
+  // second check: the file, parsed, differs only where this change is meant to (and nothing became verified)
+  const doc = parsed(before) || {};
+  let allowed;
+  if (e.kind === "implementation") allowed = ["implementation"];
+  else if (e.kind === "owner_email") {
+    const i = (Array.isArray(doc.owners) ? doc.owners : []).findIndex((o) => o && o.role === target.role);
+    allowed = [`owners.${i}.email`];
+  } else {
+    const n = Array.isArray(doc.evidence) ? doc.evidence.length : 0;
+    allowed = [`evidence.${n}`, `evidence.${n}.`, ...(n ? [] : ["evidence"])];   // the new item only
+  }
+  const why = checkEdit(before, after, allowed);
+  if (why) {
+    console.error("edit refused by the record check", why);
+    return json({ error: "That record file isn't laid out the way the site can change it. Ask your engagement team to make this change." }, 409);
+  }
 
   const sub = submissionYaml({
     id,

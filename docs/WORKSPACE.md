@@ -13,6 +13,9 @@ own except a sign-in session.
 | The evidence a check cites | Ids from the evidence index |
 | A check's note | Up to 1,000 characters |
 
+A check that is already verified can't be changed from the workspace at all (status, evidence or note): changing
+what it rests on is the reviewer's edit in GitHub.
+
 Open gaps are shown read-only. Client staff use the [client site](CLIENT-SITE.md); executives and auditors use
 the [rooms](ROOMS.md).
 
@@ -20,18 +23,26 @@ the [rooms](ROOMS.md).
 
 - **The Seshat Workspace GitHub App** signs consultants in (OAuth, with a random `state` and PKCE). It has no
   private key: the workspace never acts as the App, only as the signed-in consultant.
-- **The consultant's token** is a GitHub user token that expires within 8 hours. GitHub limits it to the
+- **The consultant's token** is a GitHub user token that expires within 8 hours: a sign-in whose token doesn't
+  expire (the App's *Expire user authorization tokens* setting off) is refused and the token revoked. GitHub limits it to the
   repositories that both the consultant can reach and the App is installed on (Contents and Pull requests,
   read and write; nothing else). It lives only in an encrypted (AES-GCM), `HttpOnly`, `Secure`,
   `SameSite=Strict` cookie; the page's script can't read it, and the workspace stores it nowhere else.
-- **Only listed consultants** get in: `consultants` in `workspace.yaml`. Taking someone off the list ends their
-  session at once, even before it expires.
+- **Only listed consultants** get in: `consultants` in `workspace.yaml`, checked at sign-in and on every request.
+  Taking someone off the list ends their session as soon as the change is deployed. **Sign out** revokes the token
+  at GitHub as well as clearing the cookie. A copied session cookie would otherwise work until it expires (at
+  most 8 hours); it is `HttpOnly` and `SameSite=Strict`, so page script and other sites can't read or send it.
 - **Pull requests are authored by the consultant**, so the review, `CODEOWNERS`, the rulesets and the Validate
   check apply exactly as for an edit made in GitHub. The App is on no ruleset's bypass list.
 - **The browser never names a file.** It sends a requirement id and a value; the Worker finds the file in the
-  record it reads from `main`, changes that one value (everything else in the file stays as it was), and
-  refuses files laid out differently.
-- Writes are same-origin JSON only. Every page is built with DOM text nodes, under the same strict
+  record it read from `main` and changes that one value at that same commit (everything else in the file stays as
+  it was).
+- **A second check on every change**: the Worker parses the file before and after the edit and refuses unless the
+  only difference is the value asked for and no check became verified. A file laid out unusually (a value
+  carried over several lines, a key written twice) is refused, with a pointer to edit it in GitHub. The client
+  site's changes go through the same check.
+- Writes are same-origin JSON only. The workspace's pages are built with DOM text nodes (the two short sign-in
+  pages the Worker writes itself contain only fixed text and the GitHub login), under the same strict
   Content-Security-Policy as the client site.
 
 ## Setting it up
@@ -51,7 +62,9 @@ the [rooms](ROOMS.md).
      consultants' GitHub logins.
    - `.github/workflows/workspace.yml` (from `grc/resources/workspace/repo/dot-github/workflows/`, with the engine
      repository and `engine-v0` filled in), and `requirements.txt` pinning the engine, as in a client repository.
-   - Secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (the same kind as the client site's).
+   - An **environment** named `cloudflare` (Settings → Environments → New environment) with *Deployment branches*
+     limited to `main`, holding the secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. Keeping them in the
+     environment rather than as repository secrets means a workflow edited on another branch can't reach them.
 3. **First deploy**: run the *Consultant workspace* workflow. Its summary shows the address.
 4. **Set the Worker's two secrets on Cloudflare** (Workers & Pages → the workspace → Settings → Variables and
    Secrets → Add, type *Secret*). Never put them in GitHub or in chat.

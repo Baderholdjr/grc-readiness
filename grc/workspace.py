@@ -62,6 +62,7 @@ def build(cfg: dict, out: Path) -> list[str]:
     shutil.copyfile(SITE / "worker.js", out / "worker.js")
     shutil.copyfile(ENGINE / "portal" / "access.js", out / "access.js")
     shutil.copyfile(ENGINE / "portal" / "yamledit.js", out / "yamledit.js")
+    shutil.copyfile(ENGINE / "portal" / "recordcheck.js", out / "recordcheck.js")
     shutil.copyfile(SITE / "vendor" / "js-yaml.mjs", out / "js-yaml.mjs")
     for f in (SITE / "site").iterdir():
         shutil.copyfile(f, pub / f.name)

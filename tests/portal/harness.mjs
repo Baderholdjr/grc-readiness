@@ -129,6 +129,7 @@ export async function loadWorker(name = "portal/worker.js") {
   await writeFile(join(dir, "package.json"), '{"type": "module"}');
   await copyFile(join(res, "portal", "access.js"), join(dir, "access.js"));
   await copyFile(join(res, "portal", "yamledit.js"), join(dir, "yamledit.js"));
+  await copyFile(join(res, "portal", "recordcheck.js"), join(dir, "recordcheck.js"));
   await copyFile(join(res, "workspace", "vendor", "js-yaml.mjs"), join(dir, "js-yaml.mjs"));
   await copyFile(join(res, name), join(dir, "worker.js"));
   return import(pathToFileURL(join(dir, "worker.js")).href);

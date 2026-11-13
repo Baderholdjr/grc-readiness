@@ -22,6 +22,9 @@ env:
 jobs:
   workspace:
     runs-on: ubuntu-latest
+    # The Cloudflare secrets live in this environment, which only main may deploy from (its deployment branch rule),
+    # so a workflow edited on another branch can't reach them.
+    environment: cloudflare
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

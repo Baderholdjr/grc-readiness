@@ -126,11 +126,14 @@ export function setLegField(text, leg, field, value) {
     const rest = ls[at].replace(/^    [a-z]+:/, "").trim();
     const next = ls[at + 1] || "";
     // one line only: a value carried on to the next lines (a block list, folded text) is refused
-    if (!rest || /^[|>]/.test(rest) || (rest.startsWith("[") && !rest.includes("]")) || /^      /.test(next) || /^    - /.test(next)) {
+    if (!rest || /^[|>]/.test(rest) || (rest.startsWith("[") && !rest.includes("]")) || (/^["']/.test(rest) && scalar(rest) === null) ||
+        /^     /.test(next) || /^    - /.test(next)) {
       throw new EditError("that field is written over more than one line");
     }
     ls[at] = line;
   } else {
+    // only insert into a check whose fields are all one line each (no block lists or carried-over values)
+    for (let i = legAt + 1; i < end; i++) if (/^     /.test(ls[i]) || /^    - /.test(ls[i])) throw new EditError("that check has values over more than one line");
     // keep the order the engine writes: status, evidence, note
     const order = ["status", "evidence", "note"];
     let insertAt = legAt + 1;

@@ -380,6 +380,8 @@ def build(model: Engagement, out: Path, repo: str = "", extra: list[Engagement] 
     shutil.copyfile(SITE / "worker.js", out / "worker.js")
     shutil.copyfile(SITE / "access.js", out / "access.js")
     shutil.copyfile(SITE / "yamledit.js", out / "yamledit.js")
+    shutil.copyfile(SITE / "recordcheck.js", out / "recordcheck.js")
+    shutil.copyfile(ENGINE / "workspace" / "vendor" / "js-yaml.mjs", out / "js-yaml.mjs")
     d = data(model, extra)
     (pub / "portal.json").write_text(json.dumps(d, indent=1, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     (out / "wrangler.toml").write_text(wrangler_toml(model, repo), encoding="utf-8")

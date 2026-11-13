@@ -146,4 +146,34 @@ test("evidence and owner changes, and sign-out", async () => {
   assert.match(gh.files["engagement/controls/A.5.15.yaml"], /^owner: "CISO"$/m);
   const out = await call("/auth/logout", session, { method: "POST", body: {} });
   assert.match(out.headers.get("Set-Cookie"), /__Host-ws_session=; .*Max-Age=0/);
+  assert.deepEqual(gh.revoked, { access_token: "ghu_user_token" });          // revoked at GitHub, not just forgotten
+});
+
+test("review cases: verified checks are left alone, hidden keys are caught, tokens must expire", async () => {
+  const { session } = await signIn();
+  for (const b of [{ field: "evidence", leg: "documented", value: ["EV-002"] }, { field: "note", leg: "documented", value: "x" },
+    { field: "status", leg: "documented", value: "claimed" }]) {
+    const r = await call("/api/change", session, { method: "POST", body: { repo: REPO, requirement: "A.5.15", ...b } });
+    assert.equal(r.status, 400, JSON.stringify(b));
+    assert.match((await r.json()).error, /verified/);
+  }
+  const R = await import(new URL("../../grc/resources/portal/recordcheck.js", import.meta.url).href).catch(() => null);
+  const Y = await import(new URL("../../grc/resources/portal/yamledit.js", import.meta.url).href);
+  const hidden = 'id: X\ntest:\n  documented:\n    status: not_started\n  implemented:\n    status: not_started\n  evidenced:\n    status: not_started\n  tested:\n    note: "Waiting on the\n    status: verified\n    #"\n';
+  assert.throws(() => Y.setLegField(hidden, "tested", "note", "Scan uploaded"), /more than one line/);
+  const legLines = 'id: X\ntest:\n  documented:\n    status: not_started\n    evidence:\n    - EV-001\n  implemented: {status: not_started}\n  evidenced:\n    status: not_started\n  tested:\n    status: not_started\n';
+  assert.throws(() => Y.setLegField(legLines, "documented", "note", "x"), /more than one line/);
+  if (R) {
+    assert.match(R.checkEdit("a: 1\ntest: {t: {status: claimed}}\n", "a: 2\ntest: {t: {status: verified}}\n", ["a", "test.t.status"]), /verified/);
+    assert.match(R.checkEdit("a: 1\nb: 1\n", "a: 2\nb: 2\n", ["a"]), /also change b/);
+    assert.equal(R.checkEdit("a: 1\nb: 1\n", "a: 2\nb: 1\n", ["a"]), null);
+  }
+  // a token that never expires (the App setting is off) is refused and revoked
+  gh = fakeGitHub();
+  const start = await W.default.fetch(new Request(`${ORIGIN}/auth/login`), env());
+  const state = new URL(start.headers.get("Location")).searchParams.get("state");
+  const cb = await W.default.fetch(new Request(`${ORIGIN}/auth/callback?code=forever-code-1&state=${state}`, { headers: { Cookie: cookieOf(start, "__Host-ws_oauth") } }), env());
+  assert.equal(cb.status, 400);
+  assert.match(await cb.text(), /Expire user authorization tokens/);
+  assert.deepEqual(gh.revoked, { access_token: "ghu_user_token" });
 });
