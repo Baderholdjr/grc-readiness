@@ -13,7 +13,8 @@ from grc.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = sorted((ROOT / ".github" / "workflows").glob("*.yml")) + \
-    sorted((ROOT / "grc" / "resources" / "client" / "dot-github" / "workflows").glob("*.yml"))
+    sorted((ROOT / "grc" / "resources" / "client" / "dot-github" / "workflows").glob("*.yml")) + \
+    sorted((ROOT / "grc" / "resources" / "workspace" / "repo" / "dot-github" / "workflows").glob("*.yml"))
 
 
 def _new(tmp_path):

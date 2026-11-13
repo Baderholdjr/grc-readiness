@@ -115,7 +115,9 @@ shares a pip cache. These rules are tested and scanned (zizmor).
 Status: design agreed 12 November 2026. Built so far: the executive dashboard and the auditor room
 ([ROOMS.md](ROOMS.md), engine 0.27.0), and client staff's proposed changes on the client site
 ([CLIENT-SITE.md](CLIENT-SITE.md#how-proposed-changes-are-handled), engine 0.28.0), which use the client site's
-fine-grained token for now. The consultants' workspace and the GitHub App are next. Three surfaces sit in front of each client repository.
+fine-grained token for now; and the consultants' workspace ([WORKSPACE.md](WORKSPACE.md), engine 0.29.0), which is
+one Worker for the practice rather than one per client: consultants work across clients, and GitHub already limits
+each consultant's token to the client repositories they can reach. Three surfaces sit in front of each client repository.
 **GitHub stays the system of record**: the UI keeps no data of its own beyond a login session; every change is a
 pull request reviewed and merged as today, and every page is built from the merged record.
 
@@ -133,8 +135,9 @@ people can never be let into another client's pages by a policy mistake on a sha
 
 | Asset | Why it matters |
 |---|---|
-| The GitHub App's private key | It mints tokens for every client repository the App is installed on |
-| Consultants' GitHub user tokens | They act as that consultant on GitHub |
+| The GitHub App's client secret | With a stolen authorization code it could complete a sign-in. The App has no private key: the workspace never acts as the App |
+| `SESSION_KEY` | It seals the session cookies; whoever has it could forge a session (but not a GitHub token) |
+| Consultants' GitHub user tokens | They act as that consultant on GitHub, within the App's permissions and the consultant's own access |
 | Login sessions (Access tokens, the workspace session cookie) | Whoever holds one is that person to the UI |
 | The auditor-room access list and window | It decides who outside the client sees the record, and until when |
 | The pages' content | The record's text, read by people with different rights |
@@ -145,8 +148,9 @@ people can never be let into another client's pages by a policy mistake on a sha
 - Every request needs a Cloudflare Access login, and the Worker verifies the Access token itself: signature,
   audience, issuer and expiry, failing closed if Access isn't configured (as the client site does today).
 - Consultants sign in with GitHub through the App's OAuth flow (state and PKCE checked); their user token expires
-  after 8 hours and lives only in an encrypted, `HttpOnly`, `Secure`, `SameSite=Strict` session cookie, never in
-  storage the page's script can read. A consultant must also be on the engagement's list of consultants.
+  after 8 hours and lives only in an AES-GCM-sealed, `HttpOnly`, `Secure`, `SameSite=Strict` cookie (`__Host-`
+  prefix), never in storage the page's script can read. A consultant must be on the workspace's `consultants`
+  list, checked at sign-in and on every request.
 - Email codes can be phished or a mailbox taken over. Proof of concept only; production uses the client's SSO with
   MFA through Access, and our own SSO for consultants who use email.
 
@@ -196,9 +200,12 @@ pull requests per person and per client (as the client site has), and request si
 **Elevation of privilege.**
 - The App asks for: Contents (write), Pull requests (write), Metadata (read). No administration, workflows,
   secrets or members permissions. It can't change rulesets or workflows, so it can't weaken the review it relies
-  on. Edits to `.github/` are refused in the Worker as well.
-- The private key lives only as a Worker secret (per client Worker, or in one signing Worker that client Workers
-  call over a service binding, so a client Worker never holds the key). Rotated on a schedule and on any doubt.
+  on. The workspace only edits files under `engagement/controls/` that it found in the record.
+- The App has no private key. Its client secret and `SESSION_KEY` are Cloudflare Worker secrets, set in
+  Cloudflare and never passed through GitHub or a workflow. Rotate both on any doubt; rotating `SESSION_KEY`
+  signs everyone out.
+- The workspace's YAML parser is vendored (js-yaml 4.1.1, the release with the merge-key prototype-pollution
+  fix), its hash checked by the tests, and used with the core schema only.
 - The engine's allow-list of fields per role is code reviewed like the rest of the engine; a client repository
   can narrow it, not widen it.
 
@@ -206,6 +213,7 @@ pull requests per person and per client (as the client site has), and request si
 
 | Item | Position |
 |---|---|
+| A copied workspace session cookie works until it expires (at most 8 hours) | Sessions are stateless; the cookie is `HttpOnly`, `Secure`, `SameSite=Strict`; signing out revokes the GitHub token; removing a consultant from the list takes effect on the next deploy |
 | Email codes in the proof of concept | Accepted for fictional test data only; SSO with MFA before real client data |
 | The App's key can open pull requests on every installed client repository | Mitigated by per-repository tokens and a signing Worker; a separate App per client is the stronger option if a client requires it |
 | Cloudflare sees the pages and the Access identities | A data-processing agreement with Cloudflare before real data; no protected health information, ever |

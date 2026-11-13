@@ -1,0 +1,25 @@
+name: Consultant workspace
+
+# Rebuilds and deploys the Seshat consultant workspace after every change to workspace.yaml. See the engine's
+# docs/WORKSPACE.md.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workspace
+  cancel-in-progress: true
+
+jobs:
+  workspace:
+    uses: __ENGINE_REPO__/.github/workflows/grc-workspace.yml@engine-v__ENGINE_MAJOR__
+    with:
+      engine: pinned
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      GRC_ENGINE_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}

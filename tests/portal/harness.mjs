@@ -129,6 +129,8 @@ export async function loadWorker(name = "portal/worker.js") {
   await writeFile(join(dir, "package.json"), '{"type": "module"}');
   await copyFile(join(res, "portal", "access.js"), join(dir, "access.js"));
   await copyFile(join(res, "portal", "yamledit.js"), join(dir, "yamledit.js"));
+  await copyFile(join(res, "portal", "recordcheck.js"), join(dir, "recordcheck.js"));
+  await copyFile(join(res, "workspace", "vendor", "js-yaml.mjs"), join(dir, "js-yaml.mjs"));
   await copyFile(join(res, name), join(dir, "worker.js"));
   return import(pathToFileURL(join(dir, "worker.js")).href);
 }
@@ -192,5 +194,40 @@ async function serveRoom(bundle, port, email) {
   }).listen(Number(port), "127.0.0.1", () => console.log(`serving ${bundle} on http://localhost:${port}`));
 }
 
+// node harness.mjs serve-workspace <bundle-dir> <port> <control-yaml-file> : the workspace against a fake GitHub,
+// already signed in as dana-lead (the session cookie is set by GET /__test/session)
+async function serveWorkspace(bundle, port, controlFile) {
+  const W = await loadWorker("workspace/worker.js");
+  const { installWorkspaceFake } = await import("./wsfake.mjs");
+  const REPO = "acme/test-larch-grc";
+  const st = installWorkspaceFake({ CONTROL: await readFile(controlFile, "utf8"), REPO });
+  const e = { GITHUB_CLIENT_ID: "Iv23liEXAMPLE0001", GITHUB_CLIENT_SECRET: "test", SESSION_KEY: "k".repeat(40), CONSULTANTS: "dana-lead",
+    BASE_BRANCH: "main", ASSETS: assets(join(bundle, "public")) };
+  createServer(async (req, res) => {
+    if (req.url === "/__test/state") { res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify({ pulls: st.pulls, files: st.files })); return; }
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    const headers = new Headers();
+    for (const [k, v] of Object.entries(req.headers)) if (typeof v === "string") headers.set(k, v);
+    let out;
+    if (req.url === "/__test/session") {
+      const sealed = await W.seal(e, "session", { token: "ghu_user_token", login: "dana-lead", exp: Date.now() + 3600_000 });
+      out = new Response("ok", { headers: { "Set-Cookie": `__Host-ws_session=${sealed}; Path=/; HttpOnly; Secure; SameSite=Strict` } });
+    } else {
+      // the browser talks plain http to this test server; the Worker sees https, as on Cloudflare
+      if (headers.get("origin")) headers.set("origin", `https://localhost:${port}`);
+      out = await W.default.fetch(new Request(`https://localhost:${port}${req.url}`, { method: req.method, headers,
+        body: ["GET", "HEAD"].includes(req.method) ? undefined : Buffer.concat(chunks) }), e);
+    }
+    const outHeaders = {};
+    out.headers.forEach((v, k) => { outHeaders[k] = v; });
+    const cookies = out.headers.getSetCookie ? out.headers.getSetCookie() : [];
+    if (cookies.length) outHeaders["set-cookie"] = cookies;   // Chromium treats http://localhost as secure
+    res.writeHead(out.status, outHeaders);
+    res.end(Buffer.from(await out.arrayBuffer()));
+  }).listen(Number(port), "127.0.0.1", () => console.log(`serving ${bundle} on http://localhost:${port}`));
+}
+
+if (process.argv[2] === "serve-workspace") serveWorkspace(process.argv[3], process.argv[4], process.argv[5]);
 if (process.argv[2] === "serve") serve(process.argv[3], process.argv[4], process.argv[5], process.argv[6], process.argv[7]);
 if (process.argv[2] === "serve-room") serveRoom(process.argv[3], process.argv[4], process.argv[5]);
