@@ -9,21 +9,63 @@
     "branch": "main",
     "days": 30
   },
-  "collected_at": "2026-11-08T18:29:44+00:00",
+  "collected_at": "2026-11-13T20:38:49+00:00",
   "result": "pass",
-  "summary": "Baderholdjr/grc-readiness validate.yml: 37 runs, 0 failed (30d)",
+  "summary": "Baderholdjr/grc-readiness validate.yml: 24 runs, 0 failed (30d)",
   "findings": [],
   "details": {
     "repo": "Baderholdjr/grc-readiness",
     "workflow": "validate.yml",
     "branch": "main",
     "window_days": 30,
-    "runs": 37,
+    "runs": 24,
     "failures": 0,
     "latest_conclusion": "success",
-    "latest_run_url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/42341981363",
-    "latest_head_sha": "59498a98b4b867601f410b2b49bf163e3f937f4f",
+    "latest_run_url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/43488807641",
+    "latest_head_sha": "49fd0e9f837b49105e49dbca783999eeb277406e",
     "items": [
+      {
+        "id": "run-43488807641",
+        "conclusion": "success",
+        "created_at": "2026-11-13T19:05:08Z",
+        "head_sha": "49fd0e9f837b49105e49dbca783999eeb277406e",
+        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/43488807641"
+      },
+      {
+        "id": "run-43472405588",
+        "conclusion": "success",
+        "created_at": "2026-11-13T17:23:57Z",
+        "head_sha": "d58dcd88ac9cf07a994df9f36f12b4c397468866",
+        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/43472405588"
+      },
+      {
+        "id": "run-42917257321",
+        "conclusion": "success",
+        "created_at": "2026-11-10T22:44:09Z",
+        "head_sha": "a16dc0db8c0f1721a33632d0abd8d1ac4eecdd80",
+        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/42917257321"
+      },
+      {
+        "id": "run-42708222729",
+        "conclusion": "success",
+        "created_at": "2026-11-09T22:03:04Z",
+        "head_sha": "09df0029dae3fb8fcc8ba7479fcdfa0afe73ff8b",
+        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/42708222729"
+      },
+      {
+        "id": "run-42679196260",
+        "conclusion": "success",
+        "created_at": "2026-11-09T19:00:36Z",
+        "head_sha": "82405dd47778f30bf5df04ba374a49107ba0f981",
+        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/42679196260"
+      },
+      {
+        "id": "run-42668152203",
+        "conclusion": "success",
+        "created_at": "2026-11-09T17:48:12Z",
+        "head_sha": "57dd6a4ffdc0a8ea8f8527f085a4ff77442c6747",
+        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/42668152203"
+      },
       {
         "id": "run-42341981363",
         "conclusion": "success",
@@ -149,142 +191,9 @@
         "created_at": "2026-10-14T01:53:30Z",
         "head_sha": "b97528c709e7203b8d22ce46f6a1ca952e79314d",
         "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38498132904"
-      },
-      {
-        "id": "run-38480246455",
-        "conclusion": "success",
-        "created_at": "2026-10-13T22:48:39Z",
-        "head_sha": "3039cdfed071b6bc5607ed3cc275181414d662fa",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38480246455"
-      },
-      {
-        "id": "run-38478170718",
-        "conclusion": "success",
-        "created_at": "2026-10-13T22:29:46Z",
-        "head_sha": "1616ca0a4ef58b0f8abf525425336c2d43ee5fc8",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38478170718"
-      },
-      {
-        "id": "run-38460572604",
-        "conclusion": "success",
-        "created_at": "2026-10-13T20:09:26Z",
-        "head_sha": "3de37da3bdfff75d0990b72892ae9999518f7c80",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38460572604"
-      },
-      {
-        "id": "run-38366018071",
-        "conclusion": "success",
-        "created_at": "2026-10-13T07:57:27Z",
-        "head_sha": "6b88f44eb73a3c456bd7c9ba8d882b0368609dc4",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38366018071"
-      },
-      {
-        "id": "run-38361547996",
-        "conclusion": "success",
-        "created_at": "2026-10-13T07:15:41Z",
-        "head_sha": "7fc6662c57d68d137bcc605efb701b7ea2f29abb",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38361547996"
-      },
-      {
-        "id": "run-38320764967",
-        "conclusion": "success",
-        "created_at": "2026-10-12T23:10:56Z",
-        "head_sha": "dd08a36bcb378992182bcdc46042cc76101e5d7a",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38320764967"
-      },
-      {
-        "id": "run-38316866664",
-        "conclusion": "success",
-        "created_at": "2026-10-12T22:28:34Z",
-        "head_sha": "96d8f17ae3ad95524d7b7e791ef5f8b6e6ae1384",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38316866664"
-      },
-      {
-        "id": "run-38313480437",
-        "conclusion": "success",
-        "created_at": "2026-10-12T21:54:00Z",
-        "head_sha": "57e646ef28be302e18acd7a14b659e7cb791aa0b",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38313480437"
-      },
-      {
-        "id": "run-38308268926",
-        "conclusion": "success",
-        "created_at": "2026-10-12T21:04:01Z",
-        "head_sha": "2a101435ebf7c7a557811416a862a5db40abf260",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38308268926"
-      },
-      {
-        "id": "run-38305446615",
-        "conclusion": "success",
-        "created_at": "2026-10-12T20:37:41Z",
-        "head_sha": "07e3b133aeffdeb2958ef3093f7a56ba09075725",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38305446615"
-      },
-      {
-        "id": "run-38297955564",
-        "conclusion": "success",
-        "created_at": "2026-10-12T19:29:09Z",
-        "head_sha": "7b185b6b60247553f71cb353ed498cd356a805d6",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38297955564"
-      },
-      {
-        "id": "run-38076221929",
-        "conclusion": "success",
-        "created_at": "2026-10-10T18:32:56Z",
-        "head_sha": "862d76aed8592794fcb7c238e02b5361ae4c0d3a",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38076221929"
-      },
-      {
-        "id": "run-38072296672",
-        "conclusion": "success",
-        "created_at": "2026-10-10T17:34:33Z",
-        "head_sha": "8abe248a6b56f04f70eaaff8af35ecf7ee12d005",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/38072296672"
-      },
-      {
-        "id": "run-37874183565",
-        "conclusion": "success",
-        "created_at": "2026-10-09T02:21:26Z",
-        "head_sha": "d1ee9335795fbc5b65217fcf936dd61370bbb90a",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37874183565"
-      },
-      {
-        "id": "run-37873224731",
-        "conclusion": "success",
-        "created_at": "2026-10-09T02:09:30Z",
-        "head_sha": "59f7496444b9a84d2911424f0d542723eb45f869",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37873224731"
-      },
-      {
-        "id": "run-37867695320",
-        "conclusion": "success",
-        "created_at": "2026-10-09T01:01:14Z",
-        "head_sha": "f964e05f374e9f0dbdc3529d8b26de33c3545d61",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37867695320"
-      },
-      {
-        "id": "run-37866104384",
-        "conclusion": "success",
-        "created_at": "2026-10-09T00:42:08Z",
-        "head_sha": "bf276fe16293f92be53d0284fcce0819734ef74e",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37866104384"
-      },
-      {
-        "id": "run-37863717326",
-        "conclusion": "success",
-        "created_at": "2026-10-09T00:14:06Z",
-        "head_sha": "3f8a3b1d64986846956c235f53ea59acc79f905b",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37863717326"
-      },
-      {
-        "id": "run-37862811617",
-        "conclusion": "success",
-        "created_at": "2026-10-09T00:03:52Z",
-        "head_sha": "ceff5cce09036c0e1808ca9b0e2bc85d9e6be5ff",
-        "url": "https://github.com/Baderholdjr/grc-readiness/actions/runs/37862811617"
       }
     ],
     "truncated": false
   },
-  "sha256": "66bbdc589038454fe09d5860a88791de6de84c93920fc9431ca192026aa07d30"
+  "sha256": "b777d6d3659f144f446bd7ef3075ed9e806704947cf953ccf9e2d9285a40080a"
 }
