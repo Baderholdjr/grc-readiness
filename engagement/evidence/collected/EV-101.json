@@ -12,9 +12,9 @@
       "validate"
     ]
   },
-  "collected_at": "2026-11-08T18:29:44+00:00",
+  "collected_at": "2026-11-13T20:38:49+00:00",
   "result": "pass",
-  "summary": "Baderholdjr/grc-readiness@main: 1 approval(s), checks=['validate']",
+  "summary": "Baderholdjr/grc-readiness@main: 1 approval(s), checks=['Code scan (bandit)', 'Dependency locks are current', 'Dependency vulnerabilities (pip-audit)', 'Workflow scan (zizmor)', 'validate']",
   "findings": [],
   "details": {
     "repo": "Baderholdjr/grc-readiness",
@@ -22,6 +22,10 @@
     "required_approvals": 1,
     "code_owner_review": true,
     "required_checks": [
+      "Code scan (bandit)",
+      "Dependency locks are current",
+      "Dependency vulnerabilities (pip-audit)",
+      "Workflow scan (zizmor)",
       "validate"
     ],
     "force_push_blocked": true,
@@ -29,5 +33,5 @@
       "rulesets"
     ]
   },
-  "sha256": "c52411c31afdab3a5896a3537468518a21629db2e74549daf478559e0742d777"
+  "sha256": "d98a1b0c37dad3d6c717e8f48c12b0c755e45004c9cbc67ce7dbb1b89cac94e2"
 }
