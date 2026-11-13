@@ -326,6 +326,18 @@
           "type": "integer",
           "minimum": 1,
           "description": "Warn when a submission waits longer than this (default 5)"
+        },
+        "edits": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "implementation",
+              "owner_email",
+              "evidence"
+            ]
+          },
+          "description": "What client staff may propose from the client site (default: all three). Can only narrow what the engine allows."
         }
       }
     },

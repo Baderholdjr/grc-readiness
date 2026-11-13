@@ -8,7 +8,7 @@
 // serves the bundle as a signed-in user would see it (the "Access edge" adds the login token)
 // and writes the fake GitHub's state to <state-file> after every change.
 import { createServer } from "node:http";
-import { readFile, copyFile, writeFile, mkdtemp } from "node:fs/promises";
+import { readFile, readdir, copyFile, writeFile, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, extname, normalize } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -53,7 +53,7 @@ export function assets(publicDir) {
 
 // In-memory GitHub: refs, files and pull requests for one repository.
 export function fakeGitHub(repo = REPO) {
-  const st = { refs: { "heads/main": "base0sha" }, files: {}, pulls: [], labels: {}, deleted: [], calls: [], fail: {} };
+  const st = { refs: { "heads/main": "base0sha" }, files: {}, base: {}, pulls: [], labels: {}, deleted: [], calls: [], fail: {}, puts: [] };
   st.handle = async (method, url, body) => {
     const u = new URL(url);
     const path = u.pathname;
@@ -79,7 +79,13 @@ export function fakeGitHub(repo = REPO) {
       st.deleted.push(name);
       return new Response(null, { status: 204 });
     }
+    if (method === "GET" && rest.startsWith("/contents/")) {
+      const p = decodeURIComponent(rest.slice("/contents/".length));
+      if (!(p in st.base)) return res(404, { message: "Not Found" });
+      return res(200, { type: "file", sha: "blob-" + p, content: Buffer.from(st.base[p], "utf8").toString("base64").replace(/(.{60})/g, "$1\n") });
+    }
     if (method === "PUT" && rest.startsWith("/contents/")) {
+      st.puts.push({ path: decodeURIComponent(rest.slice("/contents/".length)), sha: body.sha || null, branch: body.branch });
       st.files[`${body.branch}:${decodeURIComponent(rest.slice("/contents/".length))}`] = Buffer.from(body.content, "base64").toString("utf8");
       return res(201, {});
     }
@@ -122,6 +128,7 @@ export async function loadWorker(name = "portal/worker.js") {
   const dir = await mkdtemp(join(tmpdir(), "grc-worker-"));
   await writeFile(join(dir, "package.json"), '{"type": "module"}');
   await copyFile(join(res, "portal", "access.js"), join(dir, "access.js"));
+  await copyFile(join(res, "portal", "yamledit.js"), join(dir, "yamledit.js"));
   await copyFile(join(res, name), join(dir, "worker.js"));
   return import(pathToFileURL(join(dir, "worker.js")).href);
 }
@@ -132,10 +139,19 @@ export function env(publicDir, extra = {}) {
 }
 
 // ------------------------------------------------------------------ serve for the browser test
-async function serve(bundle, port, email, stateFile) {
+async function serve(bundle, port, email, stateFile, repoRoot) {
   const W = await loadWorker();
   const keys = await makeKeys();
   const gh = fakeGitHub();
+  if (repoRoot) {     // the record the site was built from, as the fake GitHub's main branch
+    const walk = async (dir, rel) => {
+      for (const ent of await readdir(dir, { withFileTypes: true })) {
+        if (ent.isDirectory()) await walk(join(dir, ent.name), `${rel}${ent.name}/`);
+        else if (ent.name.endsWith(".yaml")) gh.base[`${rel}${ent.name}`] = await readFile(join(dir, ent.name), "utf8");
+      }
+    };
+    await walk(join(repoRoot, "engagement"), "engagement/");
+  }
   installFetch(keys, gh);
   const e = env(join(bundle, "public"));
   const save = () => writeFile(stateFile, JSON.stringify({ files: gh.files, pulls: gh.pulls, labels: gh.labels }, null, 1));
@@ -176,5 +192,5 @@ async function serveRoom(bundle, port, email) {
   }).listen(Number(port), "127.0.0.1", () => console.log(`serving ${bundle} on http://localhost:${port}`));
 }
 
-if (process.argv[2] === "serve") serve(process.argv[3], process.argv[4], process.argv[5], process.argv[6]);
+if (process.argv[2] === "serve") serve(process.argv[3], process.argv[4], process.argv[5], process.argv[6], process.argv[7]);
 if (process.argv[2] === "serve-room") serveRoom(process.argv[3], process.argv[4], process.argv[5]);

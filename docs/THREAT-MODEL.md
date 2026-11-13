@@ -113,7 +113,9 @@ shares a pip cache. These rules are tested and scanned (zizmor).
 ## The friendlier UI
 
 Status: design agreed 12 November 2026. Built so far: the executive dashboard and the auditor room
-([ROOMS.md](ROOMS.md), engine 0.27.0). The workspace is next. Three surfaces sit in front of each client repository.
+([ROOMS.md](ROOMS.md), engine 0.27.0), and client staff's proposed changes on the client site
+([CLIENT-SITE.md](CLIENT-SITE.md#how-proposed-changes-are-handled), engine 0.28.0), which use the client site's
+fine-grained token for now. The consultants' workspace and the GitHub App are next. Three surfaces sit in front of each client repository.
 **GitHub stays the system of record**: the UI keeps no data of its own beyond a login session; every change is a
 pull request reviewed and merged as today, and every page is built from the merged record.
 
