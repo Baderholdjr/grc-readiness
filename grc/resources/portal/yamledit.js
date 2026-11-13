@@ -8,13 +8,36 @@ export class EditError extends Error {}
 
 const q = (s) => JSON.stringify(String(s));
 
+// The file's own line endings and final newline are kept, so the pull request shows only the changed lines.
 function lines(text) {
-  const t = String(text).replace(/\r\n?/g, "\n");
-  return (t.endsWith("\n") ? t.slice(0, -1) : t).split("\n");
+  const raw = String(text);
+  const eol = /\r\n/.test(raw) ? "\r\n" : "\n";
+  const t = raw.replace(/\r\n?/g, "\n");
+  const final = t.endsWith("\n");
+  const ls = (final ? t.slice(0, -1) : t).split("\n");
+  ls.eol = eol;
+  ls.final = final || t === "";
+  return ls;
 }
 
 function join(ls) {
-  return ls.join("\n") + "\n";
+  return ls.join(ls.eol) + (ls.final ? ls.eol : "");
+}
+
+function topLevelKeys(ls) {
+  const keys = [];
+  for (const l of ls) {
+    const m = /^([A-Za-z_][A-Za-z0-9_-]*):(\s|$)/.exec(l);
+    if (m) keys.push(m[1]);
+  }
+  return keys;
+}
+
+// a key written twice would let a reviewed change to the first copy do nothing (YAML keeps the last)
+function refuseDuplicates(ls) {
+  const keys = topLevelKeys(ls);
+  if (new Set(keys).size !== keys.length) throw new EditError("a top-level key appears twice");
+  if (ls.some((l) => /^\{/.test(l))) throw new EditError("flow-style file");
 }
 
 // a top-level `key:` line, and the lines its value runs over (indented lines and blank lines between them)
@@ -24,7 +47,7 @@ function topLevelSpan(ls, key) {
   if (at < 0) return null;
   let end = at + 1;
   let last = at;
-  while (end < ls.length && (ls[end] === "" || /^\s/.test(ls[end]))) {
+  while (end < ls.length && (ls[end] === "" || /^\s/.test(ls[end]) || /^#/.test(ls[end]))) {
     if (ls[end].trim() && !/^\s*#/.test(ls[end])) last = end;
     end++;
   }
@@ -47,6 +70,7 @@ export function setImplementation(text, value) {
   if (!ls.some((l) => /^id:\s/.test(l)) || !ls.some((l) => /^test:(\s|$)/.test(l))) {
     throw new EditError("not a requirement file");
   }
+  refuseDuplicates(ls);
   const line = `implementation: ${q(value)}`;
   const span = topLevelSpan(ls, "implementation");
   if (span) {
@@ -61,8 +85,10 @@ export function setImplementation(text, value) {
 // owners.yaml: set `email:` on the entry whose role matches exactly
 export function setOwnerEmail(text, role, email) {
   const ls = lines(text);
+  refuseDuplicates(ls);
   const list = topLevelSpan(ls, "owners");
   if (!list) throw new EditError("no owners list");
+  if (ls.slice(list.at, list.end).some((l) => /^\s*-\s*\{/.test(l) || /^owners:\s*\[/.test(l))) throw new EditError("flow-style owners");
   let item = -1;
   let indent = "";
   for (let i = list.at + 1; i < list.end; i++) {
@@ -78,10 +104,18 @@ export function setOwnerEmail(text, role, email) {
   let end = item + 1;
   while (end < list.end && !new RegExp(`^${indent}- `).test(ls[end]) && (ls[end] === "" || ls[end].startsWith(keyIndent) || /^\s*#/.test(ls[end]))) end++;
   const line = `${keyIndent}email: ${q(email)}`;
-  const at = ls.slice(item + 1, end).findIndex((l) => l.startsWith(keyIndent + "email:"));
-  if (at >= 0) {
-    if (/^\s*email:\s*[|>]/.test(ls[item + 1 + at])) throw new EditError("email is written as a block");
-    ls[item + 1 + at] = line;
+  const hits = [];
+  ls.slice(item + 1, end).forEach((l, i) => { if (l.startsWith(keyIndent + "email:")) hits.push(item + 1 + i); });
+  if (hits.length > 1) throw new EditError("email appears twice");
+  if (/^\s*email:\s*role:/.test(ls[item])) throw new EditError("unexpected layout");
+  if (hits.length) {
+    const at = hits[0];
+    const v = ls[at].slice((keyIndent + "email:").length).trim();
+    // one line only: a block, an empty value (continued below) or an unclosed quote spans more lines
+    if (!v || /^[|>]/.test(v) || scalar(v) === null || (ls[at + 1] || "").startsWith(keyIndent + " ")) {
+      throw new EditError("email is written over more than one line");
+    }
+    ls[at] = line;
   } else {
     ls.splice(item + 1, 0, line);
   }
@@ -91,12 +125,14 @@ export function setOwnerEmail(text, role, email) {
 // evidence/index.yaml: add an item at the end of the `evidence:` list, with the next free EV id
 export function nextEvidenceId(text) {
   let max = 0;
-  for (const m of String(text).matchAll(/^\s*-?\s*id:\s*["']?EV-(\d+)["']?\s*$/gm)) max = Math.max(max, Number(m[1]));
+  // any `id: EV-n`, in block or flow style, with or without quotes or a comment after it
+  for (const m of String(text).matchAll(/\bid:\s*["']?EV-(\d+)/g)) max = Math.max(max, Number(m[1]));
   return `EV-${String(max + 1).padStart(3, "0")}`;
 }
 
 export function addEvidence(text, item) {
   const ls = lines(text);
+  refuseDuplicates(ls);
   const list = topLevelSpan(ls, "evidence");
   if (!list) throw new EditError("no evidence list");
   const inline = /^evidence:\s*\[\s*\]\s*(#.*)?$/.test(ls[list.at]);

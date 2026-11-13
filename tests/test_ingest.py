@@ -256,7 +256,10 @@ def _record(root, name, framework):
     assert main(["--engagement", str(e), "new-engagement", "--client", "Larch & Finch", "--start", "2026-11-02",
                  "--stage1", "2027-02-01", "--stage2", "2027-05-01", "--framework", framework, "--intake", str(i),
                  "--confirm-reset"]) == 0
-    (e / "engagement.yaml").write_text((e / "engagement.yaml").read_text() + "\ningest:\n  ai_drafting: true\n")
+    import yaml
+    d = yaml.safe_load((e / "engagement.yaml").read_text())
+    d.setdefault("ingest", {})["ai_drafting"] = True
+    (e / "engagement.yaml").write_text(yaml.safe_dump(d, sort_keys=False))
     return e, i
 
 

@@ -447,19 +447,21 @@ function requirementPage(key) {
     h("h1", {}, q.title),
     h("p", { class: "facts" }, h("span", {}, "Status ", h("b", {}, q.plain))),
     pend ? h("div", { class: "status-box sent" }, h("b", {}, `Change sent on ${fmt(pend.at, true)}`), h("p", {}, "Waiting for your engagement team's review.")) : null,
-    h("div", { class: "block" }, h("h3", {}, "How it's done today, according to the record"),
-      q.edit.implementation ? h("p", { class: "current" }, q.edit.implementation) : h("p", { class: "empty" }, "Nothing recorded yet.")),
+    q.edit.shared ? h("div", { class: "block" }, h("h3", {}, "How it's done today, according to the record"),
+      q.edit.implementation ? h("p", { class: "current" }, q.edit.implementation) : h("p", { class: "empty" }, "Nothing recorded yet.")) : null,
     h("p", { class: "hint" }, "Changes you send here don't mark anything as done. Your engagement team reviews each one and checks the evidence."));
   const forms = h("section", { class: "answer", "aria-label": "Propose a change" });
   if (q.edit.path) {
     const ta = h("textarea", { id: "impl", maxlength: "4000" });
-    ta.value = q.edit.implementation || "";
+    ta.value = q.edit.shared ? (q.edit.implementation || "") : "";
     const ok = noDataBox("nophi-impl");
     const msg = h("p", { class: "msg", role: "status", "aria-live": "polite" });
     const send = h("button", { type: "submit", class: "primary" }, "Send the update");
     const form = h("form", { novalidate: true },
       h("h2", {}, "How is this done?"),
-      h("label", { for: "impl" }, "Describe it in your own words", h("span", { class: "hint" }, "Who does it, how often, with which system, and where the records are kept.")),
+      h("label", { for: "impl" }, "Describe it in your own words", h("span", { class: "hint" }, q.edit.shared
+        ? "Who does it, how often, with which system, and where the records are kept."
+        : "Who does it, how often, with which system, and where the records are kept. Your engagement team merges it into the record's wording.")),
       ta,
       h("label", { class: "confirm", for: "nophi-impl" }, ok, h("span", {}, "This contains no patient data or other personal information.")),
       send, msg);
@@ -467,7 +469,7 @@ function requirementPage(key) {
       e.preventDefault();
       msg.className = "msg err";
       if (!ta.value.trim()) { msg.textContent = "Write how this is done before sending."; ta.focus(); return; }
-      if (ta.value.trim() === (q.edit.implementation || "").trim()) { msg.textContent = "That's what the record already says."; return; }
+      if (q.edit.shared && ta.value.trim() === (q.edit.implementation || "").trim()) { msg.textContent = "That's what the record already says."; return; }
       if (!ok.checked) { msg.textContent = "Confirm there's no patient or personal data before sending."; ok.focus(); return; }
       if (await sendChange({ kind: "implementation", key, value: ta.value }, msg, send)) {
         form.replaceWith(sentBox("Update sent"));

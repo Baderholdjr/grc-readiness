@@ -22,10 +22,9 @@ async function portal(edits = ["implementation", "owner_email", "evidence"]) {
   await writeFile(join(pub, "portal.json"), JSON.stringify({ edits,
     owners: { path: "engagement/owners.yaml", roles: [{ key: OK, role: "Head of Platform", email: "" }] },
     frameworks: [{ key: "iso27001", requests: [
-      { key: RK, kind: "Requirement", ref: "A.5.15", title: "Access control", framework: "iso27001", answerable: true,
-        edit: { path: "engagement/controls/A.5.15.yaml", implementation: "", evidence: true } },
       { key: NOEDIT, kind: "Gap", ref: "GAP-01", title: "x", framework: "iso27001", answerable: true, edit: null },
-    ], areas: [{ id: "A.5", requirements: [{ id: "A.5.16", key: "dddddddddddd", title: "Identity",
+    ], areas: [{ id: "A.5", requirements: [{ id: "A.5.15", key: RK, title: "Access control",
+      edit: { path: "engagement/controls/A.5.15.yaml", implementation: "", evidence: true } }, { id: "A.5.16", key: "dddddddddddd", title: "Identity",
       edit: { path: "engagement/controls/A.5.16.yaml", implementation: "", evidence: true } }] }] }] }));
 }
 await portal();
@@ -163,4 +162,24 @@ test("yamledit: block scalars, comments and quoting", () => {
   assert.equal(Y.addEvidence("evidence: []\n", { title: "t" }).text, 'evidence:\n\n  - id: EV-001\n    title: "t"\n');
   assert.equal(Y.scalar("'it''s'"), "it's");
   assert.equal(Y.scalar('"a\\"b" # c'), 'a"b');
+});
+
+test("review cases: $ patterns stay literal, duplicates and odd layouts are refused, line endings kept", async () => {
+  let r = await post({ kind: "implementation", key: RK, value: "costs $& and $` and $' and $$", no_sensitive_data: true });
+  assert.equal(r.status, 200);
+  const [, sub] = Object.entries(gh.files).find(([k]) => k.includes("engagement/submissions/"));
+  assert.match(sub, /value: "costs \$& and \$` and \$' and \$\$"\nstatus: received\n$/);
+  assert.throws(() => Y.setImplementation("id: X\nimplementation: a\ntest: {}\nimplementation: b\n", "n"), /twice/);
+  const own = "owners:\n  - role: CISO\n# a note at column 0\n    email: old@x.example\n";
+  assert.equal(Y.setOwnerEmail(own, "CISO", "new@x.example"), 'owners:\n  - role: CISO\n# a note at column 0\n    email: "new@x.example"\n');
+  assert.throws(() => Y.setOwnerEmail("owners:\n  - role: CISO\n    email: a@x.example\n    email: b@x.example\n", "CISO", "c@x.example"), /twice/);
+  assert.throws(() => Y.setOwnerEmail("owners:\n  - role: CISO\n    email:\n      a@x.example\n", "CISO", "c@x.example"), /more than one line/);
+  assert.throws(() => Y.setOwnerEmail("owners:\n  - {role: CISO}\n  - role: CISO\n", "CISO", "c@x.example"), /flow/);
+  assert.equal(Y.nextEvidenceId("evidence:\n  - id: EV-009  # note\n  - {id: EV-012, title: x}\n"), "EV-013");
+  const crlf = "id: X\r\nowner: A\r\ntest: {}\r\n";
+  assert.equal(Y.setImplementation(crlf, "n"), 'id: X\r\nowner: A\r\nimplementation: "n"\r\ntest: {}\r\n');
+  assert.equal(Y.setImplementation("id: X\ntest: {}", "n"), 'id: X\nimplementation: "n"\ntest: {}');   // no final newline added
+  // a request card's key isn't a change key
+  r = await post({ kind: "implementation", key: NOEDIT, value: "x", no_sensitive_data: true });
+  assert.equal(r.status, 409);
 });

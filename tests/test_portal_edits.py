@@ -41,10 +41,13 @@ def test_client_site_offers_only_allowed_changes(tmp_path):
     assert len({r["key"] for r in reqs}) == len(reqs)
     assert all(r["edit"] is None for r in d["frameworks"][0]["requests"] if r["kind"] != "Requirement")
     assert d["owners"]["path"] == "engagement/owners.yaml"
-    assert [r["role"] for r in d["owners"]["roles"]] == []          # only the engagement lead so far: ours, not offered
-    (edir / "owners.yaml").write_text("owners:\n  - role: Engagement Lead\n    github: []\n  - role: Head of IT\n    github: []\n"
-                                      "  - role: Platform\n    github: [plat-lead]\n")
+    assert [r["role"] for r in d["owners"]["roles"]] == []          # no role is marked as the client's yet
+    (edir / "owners.yaml").write_text("owners:\n  - role: Engagement Lead\n    github: []\n  - role: Head of IT\n    client: true\n"
+                                      "  - role: Lead Implementer\n")
     assert [r["role"] for r in portal.data(load(edir))["owners"]["roles"]] == ["Head of IT"]
+    r0 = d["frameworks"][0]["areas"][0]["requirements"][0]
+    assert r0["edit"]["implementation"] is None and r0["edit"]["shared"] is False      # our notes stay ours by default
+    assert all(r["edit"] is None for r in d["frameworks"][0]["requests"])
     f = edir / "engagement.yaml"
     e = yaml.safe_load(f.read_text())
     e.setdefault("portal", {})["edits"] = ["evidence", "status"]           # "status" isn't something the engine allows
@@ -55,7 +58,7 @@ def test_client_site_offers_only_allowed_changes(tmp_path):
     d = portal.data(load(edir))
     assert d["edits"] == ["evidence"] and d["owners"] is None
     r = d["frameworks"][0]["areas"][0]["requirements"][0]
-    assert r["edit"] == {"path": None, "implementation": None, "evidence": True}
+    assert r["edit"] == {"path": None, "implementation": None, "shared": False, "evidence": True}
 
 
 def _node(script: str, payload: dict) -> dict:
@@ -126,7 +129,7 @@ def test_change_pages_in_a_browser(tmp_path):
     import time
     sync_api = pytest.importorskip("playwright.sync_api")
     edir = _new(tmp_path)
-    (edir / "owners.yaml").write_text("owners:\n  - role: Engagement Lead\n    github: []\n  - role: Head of IT\n    github: []\n")
+    (edir / "owners.yaml").write_text("owners:\n  - role: Engagement Lead\n    github: []\n  - role: Head of IT\n    client: true\n")
     site = tmp_path / "site"
     with contextlib.redirect_stdout(io.StringIO()):
         assert main(["--engagement", str(edir), "portal", "--out", str(site), "--repo", "acme/client-repo"]) == 0
@@ -170,3 +173,25 @@ def test_change_pages_in_a_browser(tmp_path):
     files = {k.split(":", 1)[1]: v for k, v in st["files"].items()}
     assert yaml.safe_load(files["engagement/controls/CC1.1.yaml"])["implementation"] == "Okta SSO; quarterly access reviews."
     assert yaml.safe_load(files["engagement/owners.yaml"])["owners"][1]["email"] == "it@client.example"
+
+
+def test_a_record_file_with_a_key_twice_is_refused(tmp_path):
+    from grc.model import RecordError
+    edir = _new(tmp_path)
+    f = next((edir / "controls").glob("*.yaml"))
+    f.write_text(f.read_text() + "implementation: first\nimplementation: second\n")
+    with pytest.raises(RecordError, match="appears twice"):
+        load(edir)
+
+
+def test_changes_are_not_answers(tmp_path):
+    edir = _new(tmp_path)
+    (edir / "submissions").mkdir(exist_ok=True)
+    (edir / "submissions" / "SUB-20261113-abcdef.yaml").write_text(
+        'id: "SUB-20261113-abcdef"\nrequest:\n  key: "aaaaaaaaaaaa"\n  kind: "Change"\n  ref: "CC1.1"\n'
+        'submitted_by: "a@client.example"\nsubmitted_at: "2026-11-13T10:00:00Z"\nanswer: "Proposed x."\nlinks: []\n'
+        'no_sensitive_data: true\nchange:\n  kind: "implementation"\n  file: "engagement/controls/CC1.1.yaml"\n'
+        'target: "CC1.1"\nstatus: accepted\nreviewed_by: lead\n'.replace("target:", "  target:"))
+    m = load(edir)
+    assert not [f for f in validate(m) if f.severity == "error"]
+    assert portal.submissions_by_key(m) == {}

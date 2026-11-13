@@ -408,10 +408,9 @@ export function findTarget(data, kind, key) {
     return r && PATH_RE.test(o.path) && !o.path.includes("..") ? { path: o.path, role: r.role, ref: r.role, title: `Owner: ${r.role}` } : null;
   }
   for (const fw of data.frameworks || []) {
-    // a requirement's card in the request list, or its row on the Progress page
-    const cards = (fw.requests || []).filter((r) => r.kind === "Requirement");
+    // only a requirement's own change key (from the Progress page), never a request's answer key
     const rows = (fw.areas || []).flatMap((a) => (a.requirements || []).map((x) => ({ ...x, ref: x.id, framework: fw.key })));
-    for (const r of [...cards, ...rows]) {
+    for (const r of rows) {
       if (r.key !== key || !r.edit) continue;
       if (kind === "implementation" && r.edit.path && PATH_RE.test(r.edit.path) && !r.edit.path.includes("..")) {
         return { path: r.edit.path, ref: r.ref, title: r.title, framework: r.framework };
@@ -559,17 +558,19 @@ async function createChange(env, cfg, e, target, email, open) {
       framework: cleanText(target.framework || "", 40) },
     submitted_by: email, submitted_at: at,
     answer: `Proposed ${summary}.`, links: e.kind === "evidence" ? [e.link] : [],
-  }).replace("status: received\n", `change:\n  kind: ${q(e.kind)}\n  file: ${q(target.path)}\n  target: ${q(cleanText(targetName, 200))}\n  value: ${q(value)}\nstatus: received\n`);
+  }).replace("status: received\n", () =>   // a function: "$&" or "$`" in the client's text must stay literal
+    `change:\n  kind: ${q(e.kind)}\n  file: ${q(target.path)}\n  target: ${q(cleanText(targetName, 200))}\n  value: ${q(value)}\nstatus: received\n`);
+  const trailer = `\n\nSubmitted-by: ${email.replace(/[\r\n]/g, "")}`;
 
   res = await gh(env, "POST", `/repos/${cfg.repo}/git/refs`, { ref: `refs/heads/${branch}`, sha });
   if (!res.ok) return ghFail("create branch", res);
   const cleanup = () => gh(env, "DELETE", `/repos/${cfg.repo}/git/refs/heads/${branch}`).catch(() => {});
   res = await gh(env, "PUT", `/repos/${cfg.repo}/contents/${enc(target.path)}`, {
-    message: `Client change ${id}: ${summary}`.slice(0, 200), content: b64utf8(after), sha: file.sha, branch,
+    message: `Client change ${id}: ${summary}`.slice(0, 200) + trailer, content: b64utf8(after), sha: file.sha, branch,
   });
   if (!res.ok) { await cleanup(); return ghFail("write file", res); }
   res = await gh(env, "PUT", `/repos/${cfg.repo}/contents/engagement/submissions/${id}.yaml`, {
-    message: `Client change ${id}: who proposed it`.slice(0, 200), content: b64utf8(sub), branch,
+    message: `Client change ${id}: who proposed it`.slice(0, 200) + trailer, content: b64utf8(sub), branch,
   });
   if (!res.ok) { await cleanup(); return ghFail("write file", res); }
   const prBody = [

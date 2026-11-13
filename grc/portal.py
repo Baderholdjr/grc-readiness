@@ -76,6 +76,8 @@ def submissions_by_key(model: Engagement) -> dict[str, dict]:
         # withdrawn answers (duplicates, sent by mistake) never hide an earlier accepted one
         if not isinstance(s, dict) or s.get("_error") or s.get("status") not in SUB_STATUSES or s.get("status") == "withdrawn":
             continue
+        if s.get("change"):            # a proposed change, not an answer to a request
+            continue
         req = s.get("request") if isinstance(s.get("request"), dict) else {}
         key = str(req.get("key") or "")
         at = str(s.get("submitted_at") or "")
@@ -109,6 +111,12 @@ def _repo_path(model: Engagement, p: Path) -> str | None:
     return path if re.fullmatch(r"engagement/[A-Za-z0-9._()&,+ /-]+\.yaml", path) and ".." not in path else None
 
 
+def share_implementation(model: Engagement) -> bool:
+    """Whether the record's implementation statements are shown to client staff. Off by default: they are often
+    our working notes. Without it, a client can still propose a statement; the reviewer merges it."""
+    return bool((model.engagement.get("portal") or {}).get("share_implementation"))
+
+
 def _edit(model: Engagement, rid: str, kinds: list[str]) -> dict | None:
     """What a client may change on a requirement's card: its implementation statement, and evidence links."""
     if not {"implementation", "evidence"} & set(kinds):
@@ -118,7 +126,9 @@ def _edit(model: Engagement, rid: str, kinds: list[str]) -> dict | None:
         return None
     c = model.controls.get(rid) or {}
     return {"path": path if "implementation" in kinds else None,
-            "implementation": str(c.get("implementation") or "") if "implementation" in kinds else None,
+            "implementation": (str(c.get("implementation") or "") if share_implementation(model) else None)
+            if "implementation" in kinds else None,
+            "shared": share_implementation(model),
             "evidence": "evidence" in kinds and bool(_repo_path(model, model.engagement_dir / "evidence" / "index.yaml"))}
 
 
@@ -129,19 +139,17 @@ def _owners(model: Engagement, kinds: list[str]) -> dict | None:
     if not path or not (model.engagement_dir / "owners.yaml").exists():
         return None
     import hashlib
-    team = model.engagement.get("team") or {}
-    ours = {"Engagement Lead", str(team.get("engagement_lead") or "")} | {str(a) for a in team.get("analysts") or []}
-    # the client's own roles only: our team's roles, and roles tied to GitHub accounts, stay with the engagement team
-    roles = [o for o in model.owners if isinstance(o, dict) and o.get("role") and str(o["role"]) not in ours
-             and not o.get("github")] if isinstance(model.owners, list) else []
+    # only roles marked `client: true` in owners.yaml: an allow-list, so a role of ours is never offered by mistake
+    roles = [o for o in model.owners if isinstance(o, dict) and o.get("role") and o.get("client") is True] \
+        if isinstance(model.owners, list) else []
     return {"path": path, "roles": [{"key": hashlib.sha256(("role:" + str(o["role"])).encode()).hexdigest()[:12],
                                       "role": str(o["role"]), "email": str(o.get("email") or "")} for o in roles]}
 
 
-def _requests(model: Engagement, subs: dict[str, dict]) -> list[dict]:
+def _requests(model: Engagement, subs: dict[str, dict], primary: bool = True) -> list[dict]:
     fw = model.engagement.get("framework", "")
     req_index = model.requirement_index
-    kinds = edit_kinds(model)
+    kinds = edit_kinds(model) if primary else []
     out = []
     for i in client_view.items(model):
         asks = [str(a) for a in i["ask"] if a]
@@ -169,7 +177,7 @@ def _requests(model: Engagement, subs: dict[str, dict]) -> list[dict]:
             "due": i["due"].isoformat() if i["due"] else None, "overdue": i["overdue"], "asks": asks, "why": why,
             "examples": examples, "action": action, "answerable": not aggregate,
             "submission": {"status": sub["status"], "at": sub["at"][:10], "note": sub["note"]} if sub else None,
-            "edit": _edit(model, i["ref"], kinds) if r else None,
+            "edit": None,   # changes are proposed from the Progress page, under its own key
         })
     return out
 
@@ -179,9 +187,10 @@ def edit_key(model: Engagement, rid: str) -> str:
     return hashlib.sha256(f"edit:{model.engagement.get('framework', '')}:{rid}".encode()).hexdigest()[:12]
 
 
-def _areas(model: Engagement) -> list[dict]:
+def _areas(model: Engagement, primary: bool = True) -> list[dict]:
     from .rules import leg_effective, requirement_state
-    kinds = edit_kinds(model)
+    # the Worker writes only to the main engagement's repository: other frameworks' tabs are read only
+    kinds = edit_kinds(model) if primary else []
     groups = [g for g in model.catalog.get("groups") or [] if isinstance(g, dict)]
     out = []
     for g in groups:
@@ -240,12 +249,12 @@ def _path(model: Engagement) -> dict:
                          if not t.startswith("Phase starts") and t not in client_view.stage_names(model)]}
 
 
-def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> dict:
+def framework_data(model: Engagement, subs: dict[str, dict] | None = None, primary: bool = True) -> dict:
     """One framework tab. `subs`: submissions by request key; answers from every tab are stored in the
     main engagement (the Worker writes to one repository folder), so the caller passes those."""
     from .rules import metrics
     m = metrics(model)
-    reqs = _requests(model, submissions_by_key(model) if subs is None else subs)
+    reqs = _requests(model, submissions_by_key(model) if subs is None else subs, primary)
     needs = [r for r in reqs if r["action"]]
     overdue = sum(1 for r in needs if r["overdue"])
     fw = model.catalog["framework"]
@@ -261,7 +270,7 @@ def framework_data(model: Engagement, subs: dict[str, dict] | None = None) -> di
         "attention": bool(overdue or m.get("nc_open_major")), "overdue": overdue, "open_requests": len(needs),
         "nc_major_open": int(m.get("nc_open_major") or 0), "impact_assessments": model.uses_impact_assessments,
         "stats": [{"label": a, "value": b} for a, b in client_view.overview(model)],
-        "path": _path(model), "areas": _areas(model), "requests": reqs,
+        "path": _path(model), "areas": _areas(model, primary), "requests": reqs,
     }
 
 
@@ -280,7 +289,7 @@ def data(model: Engagement, extra: list[Engagement] | None = None) -> dict:
         "intro": str(cv.get("intro") or ""),
         "contact": str(cv.get("contact") or ""),
         "sandbox": bool((model.engagement.get("sandbox") or {}).get("enabled")),
-        "frameworks": _merge_shared(models, [framework_data(m, subs) for m in models]),
+        "frameworks": _merge_shared(models, [framework_data(m, subs, primary=(m is model)) for m in models]),
         "owners": _owners(model, edit_kinds(model)),
         "edits": edit_kinds(model),
     }

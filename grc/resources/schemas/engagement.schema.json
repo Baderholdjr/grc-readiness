@@ -338,6 +338,11 @@
             ]
           },
           "description": "What client staff may propose from the client site (default: all three). Can only narrow what the engine allows."
+        },
+        "share_implementation": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the record's implementation statements to client staff on the client site (off by default: they are often the team's working notes)"
         }
       }
     },

@@ -160,16 +160,22 @@ people can never be let into another client's pages by a policy mistake on a sha
   The Worker writes the file itself from validated fields; the browser never sends a file or a path.
 - Nothing in the UI can set a leg to `verified` or an answer to `approved`; that stays a reviewer's edit in the
   pull request, and `grc validate` runs on every pull request as today.
-- Every write is schema-checked in the Worker, and again by `validate` in CI.
+- The Worker changes one value in the file as the engine wrote it, refusing files laid out otherwise (keys
+  written twice, flow style, values over several lines); every value is checked and written as a quoted
+  string. `validate` checks the whole record on the pull request, and the engine refuses any record file with a
+  key written twice (YAML would keep the last copy, so a reviewed change to the first could do nothing).
 - Cross-site request forgery: writes are same-origin JSON only, the Worker checks `Origin`, and cookies are
   `SameSite=Strict`.
 
 **Repudiation (denying a change).** Each pull request from a client person names the verified email from the
-Access token in its body and in a commit trailer (`Submitted-by:`); consultants' pull requests carry their own
+Access token in its body, in its submission file and in each commit's `Submitted-by:` trailer; consultants' pull requests carry their own
 GitHub identity. The rooms log every request they let through with the email. Worker logs last a few days on
 Cloudflare: exporting them (Logpush) to keep with the engagement record is a production step, not yet built.
 
 **Information disclosure (the wrong person reading something).**
+- Implementation statements are often the team's working notes, so the client site shows them to client staff
+  only when the engagement turns `portal.share_implementation` on. Owner roles are offered for a contact-email
+  change only when marked `client: true` in `owners.yaml` (an allow-list, so a role of ours is never offered).
 - Installation tokens are minted per request for the one repository that client's Worker serves (the
   `repositories` parameter), with the least permissions that request needs, and expire within an hour.
 - The auditor room opens and closes on the dates in `engagement.yaml` (checked in the Worker on every request;
