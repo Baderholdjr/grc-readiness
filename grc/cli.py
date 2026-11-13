@@ -527,6 +527,18 @@ def cmd_itgc(args) -> int:
     return 0
 
 
+def cmd_workspace(args) -> int:
+    from . import workspace
+    try:
+        cfg = workspace.load_config(Path(args.config))
+        for line in workspace.build(cfg, Path(args.out)):
+            print(line)
+    except workspace.WorkspaceError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_rooms(args) -> int:
     from . import rooms
     model = _model(args)
@@ -781,6 +793,11 @@ def main(argv=None) -> int:
     qu.add_argument("--root", default=".", help="repository root (default .)")
     qu.add_argument("--format", choices=["text", "text-verbose", "github", "json"], default="text")
     qu.set_defaults(fn=cmd_questionnaire)
+
+    ws = sub.add_parser("workspace", help="consultant workspace: build the Cloudflare Worker bundle from workspace.yaml")
+    ws.add_argument("--config", default="workspace.yaml")
+    ws.add_argument("--out", default="_workspace")
+    ws.set_defaults(fn=cmd_workspace)
 
     ro = sub.add_parser("rooms", help="read-only rooms: build the executive dashboard and the auditor room")
     ro.add_argument("--out", default="_rooms")

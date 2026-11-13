@@ -172,6 +172,12 @@ Add `frameworks/<id>/catalog.yaml` and `playbook.yaml`, then set `framework: <id
 control catalog published in OSCAL (NIST SP 800-53 baselines, FedRAMP Rev. 5, an organisation's own),
 `grc oscal import` writes both files for you. The rules and renderers are framework-agnostic. For cross-framework reuse (for example, a SOC 2 control satisfying ISO 42001 requirements), see [`mappings/README.md`](mappings/README.md).
 
+## Consultant workspace
+
+Consultants sign in with GitHub and change requirements (implementation statements, owners, evidence checks
+short of verified) from a website; every save is a pull request in their own name. See
+[docs/WORKSPACE.md](docs/WORKSPACE.md).
+
 ## Read-only rooms
 
 `grc rooms` builds an executive dashboard (summary numbers and a trend, nothing else) and an auditor room (the

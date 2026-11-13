@@ -64,20 +64,81 @@ export function scalar(raw) {
   return s;
 }
 
-// controls/<id>.yaml: set `implementation:`; added after `owner:` (or `id:`) when it isn't there yet
-export function setImplementation(text, value) {
+function requirementLines(text) {
   const ls = lines(text);
   if (!ls.some((l) => /^id:\s/.test(l)) || !ls.some((l) => /^test:(\s|$)/.test(l))) {
     throw new EditError("not a requirement file");
   }
   refuseDuplicates(ls);
-  const line = `implementation: ${q(value)}`;
-  const span = topLevelSpan(ls, "implementation");
+  return ls;
+}
+
+// controls/<id>.yaml: set a top-level text value (`implementation`, `owner`), added after `owner:` or `id:`
+export function setRequirementField(text, key, value) {
+  if (!["implementation", "owner"].includes(key)) throw new EditError("not a field the site changes");
+  const ls = requirementLines(text);
+  const line = `${key}: ${q(value)}`;
+  const span = topLevelSpan(ls, key);
   if (span) {
     ls.splice(span.at, span.end - span.at, line);
   } else {
-    const after = topLevelSpan(ls, "owner") || topLevelSpan(ls, "id");
+    const after = (key === "implementation" && topLevelSpan(ls, "owner")) || topLevelSpan(ls, "id");
     ls.splice(after.end, 0, line);
+  }
+  return join(ls);
+}
+
+export function setImplementation(text, value) {
+  return setRequirementField(text, "implementation", value);
+}
+
+const LEGS = ["documented", "implemented", "evidenced", "tested"];
+// what the workspace may set a check's status to: never "verified", which stays a reviewer's own edit
+export const WORKSPACE_STATUSES = ["not_started", "claimed", "partial"];
+
+// controls/<id>.yaml: one field of one evidence check under `test:` (status, note, or the evidence it cites)
+export function setLegField(text, leg, field, value) {
+  if (!LEGS.includes(leg)) throw new EditError("no such check");
+  if (field === "status" && !WORKSPACE_STATUSES.includes(value)) throw new EditError("that status is set by a reviewer");
+  if (!["status", "note", "evidence"].includes(field)) throw new EditError("not a field the site changes");
+  const ls = requirementLines(text);
+  const test = topLevelSpan(ls, "test");
+  if (/^test:\s*\{/.test(ls[test.at])) throw new EditError("flow-style test");
+  const legAt = ls.findIndex((l, i) => i > test.at && i < test.end && new RegExp(`^  ${leg}:\\s*$`).test(l));
+  if (legAt < 0) throw new EditError("that check isn't written as a block");
+  let end = legAt + 1;
+  while (end < test.end && (ls[end] === "" || /^    /.test(ls[end]) || /^\s*#/.test(ls[end]))) end++;
+  const hits = [];
+  for (let i = legAt + 1; i < end; i++) if (new RegExp(`^    ${field}:`).test(ls[i])) hits.push(i);
+  if (hits.length > 1) throw new EditError("that field appears twice");
+  let line;
+  if (field === "evidence") {
+    const ids = Array.isArray(value) ? value : [];
+    if (!ids.every((x) => /^([a-z0-9]+:)?(EV-[0-9]{3,}|AUD-\d{4}-\d{2}\/WP-\d{2,3}|IA-\d{3,}|DOC-[A-Z0-9]+(-[A-Z0-9]+)*|MR-\d{4}-\d{2})$/.test(x))) {
+      throw new EditError("not an evidence reference");
+    }
+    line = `    evidence: [${ids.map(q).join(", ")}]`;
+  } else {
+    line = `    ${field}: ${q(value)}`;
+  }
+  if (hits.length) {
+    const at = hits[0];
+    const rest = ls[at].replace(/^    [a-z]+:/, "").trim();
+    const next = ls[at + 1] || "";
+    // one line only: a value carried on to the next lines (a block list, folded text) is refused
+    if (!rest || /^[|>]/.test(rest) || (rest.startsWith("[") && !rest.includes("]")) || /^      /.test(next) || /^    - /.test(next)) {
+      throw new EditError("that field is written over more than one line");
+    }
+    ls[at] = line;
+  } else {
+    // keep the order the engine writes: status, evidence, note
+    const order = ["status", "evidence", "note"];
+    let insertAt = legAt + 1;
+    for (let i = legAt + 1; i < end; i++) {
+      const m = /^    ([a-z]+):/.exec(ls[i]);
+      if (m && order.indexOf(m[1]) < order.indexOf(field)) insertAt = i + 1;
+    }
+    ls.splice(insertAt, 0, line);
   }
   return join(ls);
 }
