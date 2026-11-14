@@ -1,4 +1,4 @@
-// Seshat workspace. Built with DOM text nodes only: nothing from the record is ever parsed as HTML.
+// Yata workspace. Built with DOM text nodes only: nothing from the record is ever parsed as HTML.
 "use strict";
 
 const LEGS = { documented: "Documented", implemented: "Implemented", evidenced: "Evidence exists", tested: "Tested" };
@@ -66,7 +66,7 @@ async function engagements() {
   main().replaceChildren(h("h1", {}, "Engagements"),
     repos.length
       ? h("ul", { class: "cards" }, repos.map((r) => h("li", {}, h("a", { href: `#/e/${r}` }, r.split("/")[1], h("small", {}, r)))))
-      : h("p", { class: "muted" }, "No engagements yet. The Seshat Workspace GitHub App needs to be installed on a client repository you can push to."));
+      : h("p", { class: "muted" }, "No engagements yet. The Yata Workspace GitHub App needs to be installed on a client repository you can push to."));
 }
 
 async function engagement(repo) {

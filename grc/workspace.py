@@ -1,12 +1,12 @@
 """The consultant workspace (docs/WORKSPACE.md): one Cloudflare Worker for the practice's consultants, who sign in
-with GitHub through the Seshat Workspace GitHub App and propose changes to client records as pull requests in
+with GitHub through the Yata Workspace GitHub App and propose changes to client records as pull requests in
 their own name. `grc workspace --config workspace.yaml` builds the bundle; its workflow deploys it.
 
 workspace.yaml (in the practice's own workspace repository; no secrets in it):
 
     github_client_id: Iv23li...      # the App's Client ID (not a secret)
     consultants: [Baderholdjr]       # GitHub logins allowed to sign in
-    worker_name: seshat-workspace    # optional
+    worker_name: yata-workspace    # optional
     base_branch: main                # optional
 
 Secrets, set on the Worker (never in the repository): GITHUB_CLIENT_SECRET, SESSION_KEY.
@@ -43,7 +43,7 @@ def load_config(path: Path) -> dict:
     people = [str(x) for x in cfg.get("consultants") or []]
     if not people or not all(LOGIN.fullmatch(x) for x in people):
         raise WorkspaceError("consultants: a list of GitHub logins allowed to sign in")
-    name = str(cfg.get("worker_name") or "seshat-workspace")
+    name = str(cfg.get("worker_name") or "yata-workspace")
     if not re.fullmatch(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?", name):
         raise WorkspaceError("worker_name: lower-case letters, digits and hyphens")
     base = str(cfg.get("base_branch") or "main")

@@ -201,10 +201,10 @@ def build(out: Path) -> Path:
         nav.append("</li>")
     nav.append("</ol></nav>")
     version = re.search(r"Engine version ([0-9.]+)", (HERE / "README.md").read_text()).group(1)
-    # Seshat logo (docs/brand/): dark wordmark in the light theme, light wordmark in the dark theme.
+    # Yata logo (docs/brand/): dark wordmark in the light theme, light wordmark in the dark theme.
     logo_html = ('<div class="brand">'
-                 '<img class="logo logo-light" src="images/seshat-logo-light.png" alt="Seshat" width="366" height="72">'
-                 '<img class="logo logo-dark" src="images/seshat-logo-dark.png" alt="Seshat" width="366" height="72">'
+                 '<img class="logo logo-light" src="images/yata-logo-light.png" alt="Yata" width="282" height="72">'
+                 '<img class="logo logo-dark" src="images/yata-logo-dark.png" alt="Yata" width="282" height="72">'
                  '</div>')
     page = f"""<title>GRC Readiness Manual</title>
 <meta name="description" content="User manual for the GRC Readiness Engine: product guide, training guide and troubleshooting.">
@@ -214,7 +214,7 @@ def build(out: Path) -> Path:
 <div class="wrap">
 {''.join(nav)}
 <main>
-<header class="cover">{logo_html}<p class="kicker">Seshat GRC readiness engine · AI does the work, people decide · ISO/IEC 42001 · ISO/IEC 27001 · SOC 2</p><h1>User manual</h1>
+<header class="cover">{logo_html}<p class="kicker">Yata GRC readiness engine · AI does the work, people decide · ISO/IEC 42001 · ISO/IEC 27001 · SOC 2</p><h1>User manual</h1>
 <p class="meta">Engine version {version} · Product guide, training guide and troubleshooting guide</p></header>
 {html_body}
 </main></div>"""
