@@ -1,6 +1,6 @@
 # (Example Client) — readiness for ISO 42001
 
-As of 2026-11-13. What has been done, what is coming up, and what we need from you.
+As of 2026-11-14. What has been done, what is coming up, and what we need from you.
 
 ## Where things stand
 
@@ -24,7 +24,7 @@ As of 2026-11-13. What has been done, what is coming up, and what we need from y
 
 ## What we need from you
 
-77 open item(s) across 6 owner(s).
+77 open item(s) across 6 owner(s), 1 overdue.
 
 ### Head of Platform — 21 item(s)
 
@@ -254,7 +254,7 @@ As of 2026-11-13. What has been done, what is coming up, and what we need from y
 
 ### VP Engineering — 16 item(s)
 
-- **Gap GAP-11** Roles — due 2026-11-13
+- **Gap GAP-11** Roles — due 2026-11-13 **(overdue)**
   - AIMS roles and responsibilities are not documented in a RACI.
 - **Gap GAP-01** AIMS governance — due 2026-11-20
   - No producer-scope AIMS AI policy yet; scope draft still needs leadership approval.

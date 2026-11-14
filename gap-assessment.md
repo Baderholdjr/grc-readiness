@@ -1,6 +1,6 @@
 # (Example Client) — ISO 42001 gap assessment
 
-As of 2026-11-13. Prepared from the information (Example Client) provided: its existing controls, policies and earlier assessments. What it reports as in place is its own statement until the engagement team has tested it.
+As of 2026-11-14. Prepared from the information (Example Client) provided: its existing controls, policies and earlier assessments. What it reports as in place is its own statement until the engagement team has tested it.
 
 ## 1. Summary
 
