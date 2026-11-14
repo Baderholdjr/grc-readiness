@@ -203,8 +203,8 @@ def build(out: Path) -> Path:
     version = re.search(r"Engine version ([0-9.]+)", (HERE / "README.md").read_text()).group(1)
     # Yata logo (docs/brand/): dark wordmark in the light theme, light wordmark in the dark theme.
     logo_html = ('<div class="brand">'
-                 '<img class="logo logo-light" src="images/yata-logo-light.png" alt="Yata" width="282" height="72">'
-                 '<img class="logo logo-dark" src="images/yata-logo-dark.png" alt="Yata" width="282" height="72">'
+                 '<img class="logo logo-light" src="images/yata-logo-light.png" alt="Yata" width="187" height="72">'
+                 '<img class="logo logo-dark" src="images/yata-logo-dark.png" alt="Yata" width="187" height="72">'
                  '</div>')
     page = f"""<title>GRC Readiness Manual</title>
 <meta name="description" content="User manual for the GRC Readiness Engine: product guide, training guide and troubleshooting.">
