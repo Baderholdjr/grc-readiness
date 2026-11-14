@@ -21,7 +21,7 @@ the [rooms](ROOMS.md).
 
 ## How sign-in works, and why it's safe
 
-- **The Seshat Workspace GitHub App** signs consultants in (OAuth, with a random `state` and PKCE). It has no
+- **The Yata Workspace GitHub App** signs consultants in (OAuth, with a random `state` and PKCE). It has no
   private key: the workspace never acts as the App, only as the signed-in consultant.
 - **The consultant's token** is a GitHub user token that expires within 8 hours: a sign-in whose token doesn't
   expire (the App's *Expire user authorization tokens* setting off) is refused and the token revoked. GitHub limits it to the
@@ -48,7 +48,7 @@ the [rooms](ROOMS.md).
 ## Setting it up
 
 1. **Create the GitHub App** (once): github.com → Settings → Developer settings → GitHub Apps → New GitHub App.
-   - Name: *Seshat Workspace*. Homepage: the engine repository.
+   - Name: *Yata Workspace*. Homepage: the engine repository.
    - Callback URL: the workspace's address plus `/auth/callback` (use a placeholder until the first deploy,
      then change it).
    - *Expire user authorization tokens*: on. *Request user authorization during installation*: off.
@@ -57,7 +57,7 @@ the [rooms](ROOMS.md).
      others, no account permissions. *Only on this account*.
    - Don't generate a private key: the workspace doesn't use one.
    - Install it on the client repositories only (*Only select repositories*), not on the engine.
-2. **Create the workspace repository** (private), for example `seshat-workspace`, with:
+2. **Create the workspace repository** (private), for example `yata-workspace`, with:
    - `workspace.yaml` (from `grc/resources/workspace/repo/workspace.yaml`): the App's **Client ID** and the
      consultants' GitHub logins.
    - `.github/workflows/workspace.yml` (from `grc/resources/workspace/repo/dot-github/workflows/`, with the engine

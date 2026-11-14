@@ -1,6 +1,6 @@
 name: Consultant workspace
 
-# Rebuilds and deploys the Seshat consultant workspace after every change to workspace.yaml. See the engine's
+# Rebuilds and deploys the Yata consultant workspace after every change to workspace.yaml. See the engine's
 # docs/WORKSPACE.md.
 on:
   push:

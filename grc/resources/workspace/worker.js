@@ -1,6 +1,6 @@
-// Seshat consultant workspace - Cloudflare Worker.
+// Yata consultant workspace - Cloudflare Worker.
 //
-// Consultants sign in with GitHub (through the Seshat Workspace GitHub App: OAuth with state and PKCE). Their
+// Consultants sign in with GitHub (through the Yata Workspace GitHub App: OAuth with state and PKCE). Their
 // short-lived user token, which GitHub limits to the repositories both they and the App can reach, is kept only
 // in an encrypted, HttpOnly, Secure, SameSite=Strict session cookie. Every change is a pull request opened with
 // that token, so it is authored by the consultant, and needs the same review and checks as any other.
@@ -186,7 +186,7 @@ async function revoke(env, token) {
     const res = await fetch(`https://api.github.com/applications/${encodeURIComponent(env.GITHUB_CLIENT_ID)}/token`, {
       method: "DELETE",
       headers: { Authorization: `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`, Accept: "application/vnd.github+json",
-        "Content-Type": "application/json", "User-Agent": "seshat-workspace" },
+        "Content-Type": "application/json", "User-Agent": "yata-workspace" },
       body: JSON.stringify({ access_token: token }),
     });
     if (!res.ok && res.status !== 404) console.error("revoke", res.status);
@@ -205,7 +205,7 @@ async function callback(request, url, env) {
   if (!/^[A-Za-z0-9_-]{8,80}$/.test(code)) return fail("GitHub didn't send a sign-in code.");
   const res = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "seshat-workspace" },
+    headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "yata-workspace" },
     body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code,
       redirect_uri: `${url.origin}/auth/callback`, code_verifier: pending.verifier }),
   });
@@ -238,7 +238,7 @@ async function gh(token, method, path, body) {
   return fetch(`https://api.github.com${path}`, {
     method,
     headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": "seshat-workspace", ...(body ? { "Content-Type": "application/json" } : {}) },
+      "User-Agent": "yata-workspace", ...(body ? { "Content-Type": "application/json" } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
 }
@@ -292,7 +292,7 @@ async function readRecord(token, repo, base) {
     ref(qualifiedName:"refs/heads/${base}"){target{oid}}}}`;
   const res = await fetch("https://api.github.com/graphql", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": "seshat-workspace" },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": "yata-workspace" },
     body: JSON.stringify({ query, variables: { o: owner, n: name, c: `${base}:engagement/controls`, e: `${base}:engagement/engagement.yaml`,
       g: `${base}:engagement/gaps.yaml`, w: `${base}:engagement/owners.yaml`, v: `${base}:engagement/evidence/index.yaml` } }),
   });
@@ -479,7 +479,7 @@ async function change(session, repo, base, view, c) {
   if (!res.ok) { await cleanup(); return json({ error: `GitHub refused (${res.status}) writing the change.` }, 502); }
   res = await gh(t, "POST", `/repos/${repo}/pulls`, {
     title: `Workspace: ${c.summary}`.slice(0, 200), head: branch, base,
-    body: [`Proposed from the Seshat workspace by @${session.login}.`, "", `- Change: ${md(c.summary)}`, `- File: \`${c.req.path}\``, "",
+    body: [`Proposed from the Yata workspace by @${session.login}.`, "", `- Change: ${md(c.summary)}`, `- File: \`${c.req.path}\``, "",
       "**Files changed** shows exactly what would change. Review it like any other change; merging applies it.",
       "Nothing here marks a check verified: that is the reviewer's own edit."].join("\n") });
   if (!res.ok) { await cleanup(); return json({ error: `GitHub refused (${res.status}) opening the pull request.` }, 502); }

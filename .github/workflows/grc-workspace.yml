@@ -1,6 +1,6 @@
 name: Consultant workspace (reusable)
 
-# Builds the Seshat consultant workspace from workspace.yaml and deploys it to Cloudflare from main. See
+# Builds the Yata consultant workspace from workspace.yaml and deploys it to Cloudflare from main. See
 # docs/WORKSPACE.md. The Worker's own secrets (GITHUB_CLIENT_SECRET, SESSION_KEY) are set on Cloudflare, never
 # passed through GitHub; this workflow only needs the Cloudflare deploy token.
 on:

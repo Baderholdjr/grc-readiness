@@ -30,7 +30,7 @@ def _cfg(tmp_path, text):
 def test_settings_are_checked(tmp_path):
     ok = workspace.load_config(_cfg(tmp_path, "github_client_id: Iv23liEXAMPLE0001\nconsultants: [Baderholdjr, sam-x]\n"))
     assert ok == {"github_client_id": "Iv23liEXAMPLE0001", "consultants": ["Baderholdjr", "sam-x"],
-                  "worker_name": "seshat-workspace", "base_branch": "main"}
+                  "worker_name": "yata-workspace", "base_branch": "main"}
     for bad, msg in [("consultants: [a]\n", "github_client_id"), ("github_client_id: Iv23liEXAMPLE0001\n", "consultants"),
                      ("github_client_id: Iv23liEXAMPLE0001\nconsultants: ['a b']\n", "consultants"),
                      ("github_client_id: Iv23liEXAMPLE0001\nconsultants: [a]\nbase_branch: ../x\n", "base_branch"),

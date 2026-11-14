@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="512" height="512" role="img" aria-label="Yata"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34D399"/><stop offset="1" stop-color="#14B8A6"/></linearGradient><filter id="gl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="120" height="120" rx="28" fill="#0E201C"/><g transform="translate(10 12) scale(0.84)" filter="url(#gl)"><g>
+<path d="M79.29 20.45 A44 44 0 1 1 40.71 20.45" fill="none" stroke="url(#lg)" stroke-width="6" stroke-linecap="round"/>
+<path d="M35.75 74.0 A28 28 0 1 1 60.0 88.0" fill="none" stroke="url(#lg)" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+<circle cx="60" cy="88" r="3.4" fill="#14B8A6"/>
+<polygon points="60.0,50.0 62.55,59.45 72.0,62.0 62.55,64.55 60.0,74.0 57.45,64.55 48.0,62.0 57.45,59.45" fill="#ECFDF5"/>
+<circle cx="60" cy="12.5" r="5.6" fill="#D9F99D"/>
+<path d="M48.5 30.5 C48.5 20.5 71.5 20.5 71.5 30.5 Z" fill="#D9F99D"/>
+</g></g></svg>

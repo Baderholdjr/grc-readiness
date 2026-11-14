@@ -1,7 +1,7 @@
-# Seshat consultant workspace settings. No secrets here: GITHUB_CLIENT_SECRET and SESSION_KEY are set on the
+# Yata consultant workspace settings. No secrets here: GITHUB_CLIENT_SECRET and SESSION_KEY are set on the
 # Cloudflare Worker itself (docs/WORKSPACE.md in the engine).
-github_client_id: Iv23liREPLACEME0  # the Seshat Workspace GitHub App's Client ID (not a secret)
+github_client_id: Iv23liREPLACEME0  # the Yata Workspace GitHub App's Client ID (not a secret)
 consultants:                        # GitHub logins allowed to sign in
   - Baderholdjr
-# worker_name: seshat-workspace
+# worker_name: yata-workspace
 # base_branch: main
