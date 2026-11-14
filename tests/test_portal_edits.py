@@ -147,9 +147,11 @@ def test_change_pages_in_a_browser(tmp_path):
             pg = b.new_page(viewport={"width": 390, "height": 844})
             pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
             pg.on("pageerror", lambda e: errs.append(str(e)))
-            pg.goto(f"http://localhost:{port}/#/progress")
+            pg.goto(f"http://localhost:{port}/#/")
+            pg.click("text=Propose a change to a requirement")              # the overview points to Progress
+            pg.wait_for_selector("text=open an area and choose Propose a change")
             pg.click("details.area summary")
-            pg.click("ul.reqs a >> nth=0")
+            pg.click("ul.reqs a.change-btn >> nth=0")
             pg.fill("#impl", "Okta SSO; quarterly access reviews.")
             pg.click("form:has(#impl) button.primary")
             assert "no patient or personal data" in pg.inner_text("form:has(#impl) .msg")      # confirmation needed

@@ -130,6 +130,11 @@ function render() {
 }
 
 // ------------------------------------------------------------------ overview
+// whether client staff can propose a change to any requirement in this framework
+function canChange(f) {
+  return (f.areas || []).some((a) => (a.requirements || []).some((q) => q.edit));
+}
+
 function overview() {
   const f = fwData();
   const reqs = f.requests.filter(needsAction);
@@ -155,6 +160,11 @@ function overview() {
     if (reqs.length > 4) out.push(h("p", {}, h("a", { href: "#/requests" }, `See all ${reqs.length} requests`)));
   } else {
     out.push(h("p", { class: "empty" }, "You're all caught up. New requests appear here when the engagement team adds them."));
+  }
+  if (canChange(f)) {
+    out.push(h("p", { class: "change-hint" }, "Has something changed in how your team works? ",
+      h("a", { href: "#/progress" }, "Propose a change to a requirement"),
+      " on the Progress page: update how it's done or add an evidence link. Your engagement team reviews it first."));
   }
   out.push(h("h2", {}, "At a glance"));
   out.push(h("dl", { class: "stats" }, f.stats.map((s) => h("div", {}, h("dt", {}, s.label), h("dd", {}, s.value)))));
@@ -371,6 +381,7 @@ function progress() {
     h("p", { class: "lede" }, `${f.ready} of ${f.applicable} requirements are fully ready, and ${f.checks_pct}% of the evidence checks are complete. Open an area to see each requirement.`),
     h("p", { class: "legend" }, h("span", {}, h("i", { style: { background: "var(--pine)" } }), "Done"), h("span", {}, h("i", { style: { background: "var(--pine-mid)" } }), "Under way"), h("span", {}, h("i", { style: { background: "var(--paper)", border: "1px solid var(--rule)" } }), "Not started")),
     h("label", { class: "toggle" }, tech, "Show technical detail (requirement numbers and the four evidence checks)")];
+  if (canChange(f)) out.push(h("p", { class: "section-note" }, "To update how something is done or add an evidence link, open an area and choose Propose a change next to the requirement."));
   for (const [title, areas, note] of groups) {
     if (!areas.length) continue;
     out.push(h("h2", {}, title));
@@ -384,7 +395,8 @@ function progress() {
           h("span", { class: "area-count" }, a.total ? `${a.ready} of ${a.total} done` : "Not applicable")),
         h("ul", { class: "reqs" }, a.requirements.map((q) => h("li", {},
           h("span", {}, showTech ? `${q.id} ` : "", q.edit ? h("a", { href: `#/req/${encodeURIComponent(q.key)}` }, q.title) : q.title),
-          h("span", { class: q.state === "Ready" ? "pill ok" : "pill" }, q.plain),
+          h("span", { class: "req-side" }, h("span", { class: q.state === "Ready" ? "pill ok" : "pill" }, q.plain),
+            q.edit ? h("a", { class: "change-btn", href: `#/req/${encodeURIComponent(q.key)}`, "aria-label": `Propose a change to ${q.title}` }, "Propose a change") : null),
           showTech ? h("span", { class: "tech" }, `${q.kind_label || q.kind} · state: ${q.state} · ` +
             Object.entries(q.legs).map(([k, v]) => `${LEG_NAMES[k]}: ${v}`).join("; ")) : null)))));
     })));

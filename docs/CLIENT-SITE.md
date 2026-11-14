@@ -15,7 +15,7 @@ It is the interactive version of the [client view](CLIENT-VIEW.md), built from t
 | **Overview** | Days to the Stage 1 audit, how many requests are open, the path to certification (phases, today, Stage 1 and Stage 2), the next four requests, key figures and other dated events. |
 | **Requests** | Every request, grouped by when it's due, filterable by person. "Needs action" hides what's already been sent or needs nothing right now. |
 | **One request** | What we need, why it matters, and what good evidence looks like. A short form takes an answer, up to five links and a "no patient or personal data" confirmation. |
-| **Progress** | Each area of the standard with a done / under way / not started bar. Areas open to show each requirement in plain words, with an optional technical layer: requirement numbers and the four evidence checks. Each requirement opens a page where the client can propose a change (below). |
+| **Progress** | Each area of the standard with a done / under way / not started bar. Areas open to show each requirement in plain words, with an optional technical layer: requirement numbers and the four evidence checks. Each requirement has a **Propose a change** button that opens a page where the client can propose a change (below); the Overview points there too. |
 | **One requirement** | A form to describe how it's done, and a form to add an evidence link. The record's current wording is shown only when `portal.share_implementation: true` (it is often our working notes). |
 | **Owners** | The roles marked `client: true` in `owners.yaml`, with a contact email each; the client can propose an updated email. No other role is shown. |
 | **Help** | Each term in plain language, with the technical term underneath. |
