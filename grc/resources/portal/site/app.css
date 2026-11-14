@@ -178,6 +178,11 @@ select, input[type="url"], textarea { font: inherit; color: var(--ink); backgrou
 .reqs li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 8px 0; border-bottom: 1px dashed var(--rule); }
 .reqs li:last-child { border-bottom: 0; }
 .tech { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.req-side { display: inline-flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.change-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--pine); border-radius: 8px; color: var(--pine); font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.change-btn:hover, .change-btn:focus-visible { background: var(--pine-soft); }
+.change-hint { margin: 14px 0 0; color: var(--muted); }
+@media (max-width: 640px) { .reqs li { grid-template-columns: 1fr; } .req-side { justify-content: flex-start; } }
 .legend { display: flex; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 14px; margin: 18px 0 8px; }
 .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .toggle { font-size: 14px; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; margin: 0 0 12px; }
