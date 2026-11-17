@@ -37,6 +37,10 @@ def _one_line(s) -> str:
     return re.sub(r"[\r\n\x0b\x0c\x85\u2028\u2029]+", " ", str(s or "")).strip()
 
 
+class IngestError(ValueError):
+    """Drafts can't be added without damaging a record file: nothing is written."""
+
+
 def _next_id(prefix: str, used: set[str], width: int, skip: range | None = None) -> str:
     """Next id after the highest one in use (never reuses freed ids)."""
     nums = [int(m.group(1)) for u in used if (m := re.fullmatch(rf"{prefix}-(\d+)", u))]
@@ -55,7 +59,23 @@ def _dump_item(item: dict, indent: int = 2) -> str:
     return "".join(" " * indent + line if line.strip() else line for line in body.splitlines(keepends=True))
 
 
+def _list_indent(text: str, key: str) -> int:
+    """How far the existing items of the top-level `key:` list are indented (2 when it has none yet)."""
+    lines = text.splitlines()
+    start = next((i for i, l in enumerate(lines) if re.match(rf"^{re.escape(key)}:", l)), None)
+    if start is not None:
+        for l in lines[start + 1:]:
+            if re.match(r"^[^\s#-]", l):         # the next top-level key: the list has no items
+                break
+            m = re.match(r"^( *)- ", l)
+            if m:
+                return len(m.group(1))
+    return 2
+
+
 def _append_items(path: Path, key: str, items: list[tuple[dict, str]], header: str = "") -> None:
+    """Append drafted items to the `key:` list, indented like the items already there. The result must read as
+    YAML with every item in that list; otherwise nothing is written and IngestError says why."""
     if not items:
         return
     text = path.read_text(encoding="utf-8") if path.exists() else header + f"{key}:\n"
@@ -64,10 +84,29 @@ def _append_items(path: Path, key: str, items: list[tuple[dict, str]], header: s
         text += f"\n{key}:\n"
     if not text.endswith("\n"):
         text += "\n"
-    text += "\n  # --- drafted by `grc ingest` " + dt.date.today().isoformat() + " (review before merging)\n"
+    try:
+        before = (yaml.safe_load(text) or {}).get(key) or []
+    except yaml.YAMLError as exc:
+        raise IngestError(f"{path.name} doesn't read as YAML, so nothing was added to it: {str(exc).splitlines()[0]}") from exc
+    pad = " " * _list_indent(text, key)
+    new = "\n" + pad + "# --- drafted by `grc ingest` " + dt.date.today().isoformat() + " (review before merging)\n"
     for item, source in items:
-        text += f"  # source: {_one_line(source)[:200]}\n" + _dump_item(item)
-    path.write_text(text, encoding="utf-8")
+        new += f"{pad}# source: {_one_line(source)[:200]}\n" + _dump_item(item, len(pad))
+    # insert at the end of the key's block (before the next top-level key, if any), not at the end of the file
+    lines = text.splitlines(keepends=True)
+    start = next(i for i, l in enumerate(lines) if re.match(rf"^{re.escape(key)}:", l))
+    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^[^\s#-]", lines[i])), len(lines))
+    while end - 1 > start and (not lines[end - 1].strip() or lines[end - 1].startswith("#")):
+        end -= 1                                              # leave comments that introduce the next key in place
+    out = "".join(lines[:end]) + new + ("\n" + "".join(lines[end:]) if end < len(lines) else "")
+    try:
+        after = (yaml.safe_load(out) or {}).get(key) or []
+    except yaml.YAMLError as exc:
+        raise IngestError(f"adding drafts to {path.name} would leave it unreadable, so nothing was added: "
+                          f"{str(exc).splitlines()[0]}") from exc
+    if not isinstance(after, list) or len(after) != len(before) + len(items):
+        raise IngestError(f"adding drafts to {path.name} wouldn't append them to its {key} list, so nothing was added")
+    path.write_text(out, encoding="utf-8")
 
 
 def replace_top_block(text: str, key: str, value) -> str:
@@ -95,6 +134,13 @@ def apply(model: Engagement, d: dict, label: str, files: list[str] | None = None
     from .draft import EVIDENCE_TYPES, INVENTORY_KINDS
     files = files or []
     edir = model.engagement_dir
+    for target in (edir / "gaps.yaml", edir / "evidence" / "index.yaml"):   # check before writing anything
+        if target.exists():
+            try:
+                yaml.safe_load(target.read_text(encoding="utf-8"))
+            except yaml.YAMLError as exc:
+                raise IngestError(f"{target.relative_to(edir.parent)} doesn't read as YAML, so no drafts were added: "
+                                  f"{str(exc).splitlines()[0]}") from exc
     req_ids = set(model.requirement_index)
     rep = {"added_gaps": [], "added_evidence": [], "claims": [], "kept": [], "inventory": [], "narrative": [],
            "suggested": [], "dropped": []}

@@ -327,3 +327,36 @@ def test_other_files_in_the_upload_are_named_to_each_batch(tmp_path):
     assert len(prompts) == 2 and "<other_files_in_this_upload>" in prompts[0]
     listed = [p.split("<other_files_in_this_upload>")[1].split("</other_files_in_this_upload>")[0] for p in prompts]
     assert ("Pen-Test-Report-2026.docx" in listed[0]) != ("Pen-Test-Report-2026.docx" in listed[1])
+
+
+def test_append_matches_the_lists_own_indentation(tmp_path):
+    """A list written at the left margin (as yaml.safe_dump writes it) gets drafts at the left margin too: YAML
+    can't mix the two indentations in one list."""
+    import yaml as _yaml
+    from grc.ingest.apply import _append_items
+    for pad in ("", "  ", "    "):
+        p = tmp_path / f"gaps{len(pad)}.yaml"
+        p.write_text(f"# header\ngaps:\n{pad}- id: GAP-01\n{pad}  finding: first\n{pad}  status: open\n")
+        _append_items(p, "gaps", [({"id": "GAP-02", "finding": "second"}, "doc.docx, p.1")])
+        data = _yaml.safe_load(p.read_text())
+        assert [g["id"] for g in data["gaps"]] == ["GAP-01", "GAP-02"], pad
+    empty = tmp_path / "empty.yaml"
+    empty.write_text("evidence: []\nother: 1\n")
+    _append_items(empty, "evidence", [({"id": "EV-001"}, "s")])
+    assert _yaml.safe_load(empty.read_text())["evidence"] == [{"id": "EV-001"}]
+
+
+def test_append_never_writes_unreadable_yaml(tmp_path):
+    import pytest as _pytest
+    from grc.ingest.apply import IngestError, _append_items
+    p = tmp_path / "gaps.yaml"
+    broken = "gaps:\n- id: GAP-01\n  - id: GAP-02\n"
+    p.write_text(broken)
+    with _pytest.raises(IngestError, match="doesn't read as YAML"):
+        _append_items(p, "gaps", [({"id": "GAP-03"}, "s")])
+    assert p.read_text() == broken
+    q = tmp_path / "odd.yaml"
+    q.write_text("gaps:\n  - id: GAP-01\nnotes: |\n  text\n")
+    _append_items(q, "gaps", [({"id": "GAP-02"}, "s")])     # the list isn't last in the file
+    data = __import__("yaml").safe_load(q.read_text())
+    assert [g["id"] for g in data["gaps"]] == ["GAP-01", "GAP-02"] and data["notes"] == "text\n"
