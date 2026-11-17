@@ -191,6 +191,13 @@ assessment plan, assessment results and POA&M, each checked against NIST's schem
 `09-oscal/`). `grc oscal validate` checks any OSCAL file, and `grc oscal import` turns an OSCAL catalog and
 baseline into a framework. See [docs/OSCAL.md](docs/OSCAL.md).
 
+## FedRAMP 20x documents
+
+For a FedRAMP 20x record, `grc fedramp export` writes the Certification Package Overview, Security Decision
+Record, Ongoing Certification Report, vulnerability reports, incident reports and Significant Change Notifications
+in FedRAMP's own JSON formats, each checked against FedRAMP's schema, with a readable copy of each (also in the
+auditor package, `10-fedramp20x/`). See [docs/FEDRAMP20X.md](docs/FEDRAMP20X.md).
+
 ## The compliance program and ITGC tests
 
 Above the framework records, an optional `program/` folder runs the organization's compliance program:

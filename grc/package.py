@@ -14,6 +14,8 @@ Produces dist/<client>-<framework>-<label>-<as-of>/ and the same as a .zip:
     07-management-review/           review records and frozen input packs
     08-source-record/               the engagement YAML/Markdown the reports were generated from
     09-oscal/                       the same record in NIST OSCAL 1.2.3 JSON (SSP, assessment results, POA&M)
+    10-fedramp20x/                  FedRAMP 20x records only: the certification package overview, Security Decision
+                                    Record and reports in FedRAMP's JSON formats, with readable copies
     manifest.json, SHA256SUMS       every file with its SHA-256
 
 The same commit always produces the same bytes (fixed timestamps; deterministic PDF, Word and zip),
@@ -131,7 +133,7 @@ def where_in_package(eid: str, files: set[str]) -> str | None:
     return None
 
 
-def index_markdown(model: Engagement, findings, files: dict[str, dict], label: str, sha: str, pdf_lib: str = "") -> str:
+def index_markdown(model: Engagement, findings, files: dict[str, dict], label: str, sha: str, pdf_lib: str = "", fedramp_note: str | None = None) -> str:
     from .rules import leg_effective, metrics, requirement_state
     m = metrics(model)
     e = model.engagement
@@ -215,6 +217,13 @@ def index_markdown(model: Engagement, findings, files: dict[str, dict], label: s
         L.append("**Machine-readable (NIST OSCAL 1.2.3)** (`09-oscal/`): " + ", ".join(f"`{n}`" for n in oscal_files)
                  + ". The same record as the reports, for a GRC tool or an assessor's OSCAL tooling; it is the client's "
                  "readiness record, not an independent assessment.\n\n")
+    fr_files = sorted(n.split("/", 1)[1] for n in names if n.startswith("10-fedramp20x/") and n.endswith(".json"))
+    if fr_files:
+        L.append("**FedRAMP 20x, in FedRAMP's JSON formats** (`10-fedramp20x/`): " + ", ".join(f"`{n}`" for n in fr_files)
+                 + ". Each is checked against FedRAMP's schema and has a readable `.md` copy beside it; statuses in the "
+                 "Security Decision Record come from the readiness review, not an independent assessment.\n\n")
+    elif fedramp_note:
+        L.append(f"**FedRAMP 20x JSON documents:** not included: {fedramp_note}\n\n")
     L.append("\n## 5. Known issues at packaging\n\n")
     if errors or warnings:
         L.append(_table(["Severity", "Code", "Finding"], [[f.severity, f.code, f.message] for f in errors + warnings]))
@@ -297,9 +306,17 @@ def build(model: Engagement, out: Path, label: str = "package", force: bool = Fa
             oscal.export(model, root / "09-oscal", force=force)
         except oscal.OscalError as exc:
             raise ValueError(f"could not export OSCAL: {str(exc)[:400]}") from exc
+        from . import fedramp
+        fedramp_note = None
+        if model.catalog["framework"]["id"] == "fedramp20x":
+            try:
+                fedramp.export(model, root / "10-fedramp20x", force=force)
+            except fedramp.FedrampError as exc:
+                shutil.rmtree(root / "10-fedramp20x", ignore_errors=True)
+                fedramp_note = str(exc)[:400]
         files = {p.relative_to(root).as_posix(): {"bytes": p.stat().st_size, "sha256": _sha(p)}
                  for p in sorted(root.rglob("*")) if p.is_file()}
-        idx = index_markdown(model, findings, files, safe_label, sha, reportlab.Version)
+        idx = index_markdown(model, findings, files, safe_label, sha, reportlab.Version, fedramp_note)
         (root / "00-auditor-index.md").write_text(idx, encoding="utf-8")
         render(idx, root / "00-auditor-index.pdf", f"{model.client} — auditor package ({safe_label})", footer)
         for extra in ("00-auditor-index.md", "00-auditor-index.pdf"):

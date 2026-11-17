@@ -392,6 +392,16 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > - `python -m grc oscal export --out out/oscal`, `python -m grc oscal validate FILE…`, `python -m grc oscal import --catalog … --profile … --id … --name …`.
 > - Ids and UUIDs are stable: the same record exports the same bytes. See [OSCAL.md](../OSCAL.md).
 
+### FedRAMP 20x: FedRAMP's own formats
+
+> **In plain terms:** FedRAMP 20x asks for its paperwork as data files in fixed formats. For a FedRAMP 20x client, the tool writes them all from the record: the package overview, the Security Decision Record, the 3-monthly report, and the vulnerability, incident and change reports, with a readable copy of each.
+
+> **For GRC practitioners:** Every document is checked against FedRAMP's published schema before it's written. The Security Decision Record says *Implemented* only when reviewers verified every check; a claim alone is *Not Implemented*. Vulnerabilities still open 192 days after evaluation are flagged as needing acceptance (VER-TFR-MAV).
+
+> **Under the hood:**
+> - `python -m grc fedramp init`, `python -m grc fedramp export --out out/fedramp20x`, `python -m grc fedramp validate FILE…`.
+> - The offering, vulnerabilities, incidents, changes and report notes live in `engagement/fedramp/`. See [FEDRAMP20X.md](../FEDRAMP20X.md).
+
 ![Auditor index: traceability table](images/aidx-02.png)
 
 ## 17. Engine, client repositories and upgrades
