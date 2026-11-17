@@ -375,7 +375,7 @@ def _vuln(v: dict, today: dt.date) -> dict:
                                    if nxt and v.get("disposition") not in FINISHED else None),
         "overdueStatus": overdue,
         "supplementaryRiskInformation": v.get("supplementary"),
-        "painReductionEvents": [{"reducedAt": _iso(r.get("on")), "rating": r.get("rating")}
+        "painReductionEvents": [{"reducedAt": _iso(r.get("date")), "rating": r.get("rating")}
                                 for r in v.get("reductions") or []] or None,
         "finalDisposition": v.get("disposition"),
     })
@@ -383,8 +383,8 @@ def _vuln(v: dict, today: dt.date) -> dict:
 
 def _active(v: dict, start: dt.date, end: dt.date) -> bool:
     """Any detection, evaluation, reduction, closure or acceptance in the period, or still open during it."""
-    dates = [v.get("detected"), v.get("evaluated"), v.get("closed"), (v.get("accepted") or {}).get("on")]
-    dates += [r.get("on") for r in v.get("reductions") or [] if isinstance(r, dict)]
+    dates = [v.get("detected"), v.get("evaluated"), v.get("closed"), (v.get("accepted") or {}).get("date")]
+    dates += [r.get("date") for r in v.get("reductions") or [] if isinstance(r, dict)]
     if any(_in(d, start, end) for d in dates):
         return True
     det, closed = _date(v.get("detected")), _date(v.get("closed"))
@@ -770,10 +770,10 @@ vulnerabilities: []
 #   likely_exploitable: false
 #   rating: 2                            # Potential Agency Impact N-rating, 0 to 5
 #   next_reduction: {by: 2026-11-20, rating: 1}
-#   reductions: [{on: 2026-11-10, rating: 2}]
+#   reductions: [{date: 2026-11-10, rating: 2}]
 #   # disposition: Remediated            # Fully Mitigated, Partially Mitigated, Remediated, False Positive
 #   # closed: 2026-11-21
-#   # accepted: {rationale: Why it won't be fully fixed within 192 days, on: 2026-11-30}
+#   # accepted: {rationale: Why it won't be fully fixed within 192 days, date: 2026-11-30}
 """,
     "incidents": """\
 # FedRAMP 20x: FedRAMP Reportable Incidents (IEC). Each gets a report at its current stage:

@@ -40,10 +40,10 @@ def _write(edir, name, data):
 VULNS = {"vulnerabilities": [
     {"id": "VULN-1", "detected": "2026-10-03T14:20:00Z", "source": "Image scan", "description": "Old OpenSSL in the API image",
      "evaluated": "2026-10-04T09:00:00Z", "internet_reachable": True, "likely_exploitable": False, "rating": 2,
-     "next_reduction": {"by": "2026-11-30", "rating": 1}, "reductions": [{"on": "2026-10-20", "rating": 2}]},
+     "next_reduction": {"by": "2026-11-30", "rating": 1}, "reductions": [{"date": "2026-10-20", "rating": 2}]},
     {"id": "VULN-2", "detected": "2026-02-01", "source": "Penetration test", "description": "Legacy cipher on an internal port",
      "evaluated": "2026-02-02", "internet_reachable": False, "likely_exploitable": False, "rating": 1,
-     "accepted": {"rationale": "Vendor appliance; replaced in Q2 2027", "on": "2026-09-01"}},
+     "accepted": {"rationale": "Vendor appliance; replaced in Q2 2027", "date": "2026-09-01"}},
     {"id": "VULN-3", "detected": "2026-03-01", "source": "Bug bounty", "description": "Verbose error page",
      "evaluated": "2026-03-02", "internet_reachable": True, "likely_exploitable": False, "rating": 1},
     {"id": "VULN-4", "detected": "2026-06-01", "source": "Image scan", "description": "Fixed long ago",
@@ -420,3 +420,22 @@ def test_next_report_date_is_never_in_the_past(tmp_path):
     cpo = fedramp.build_overview(m, fedramp.load(m)["package"], [{"from": "2025-01-01", "to": "2025-03-31"}])
     assert "nextOngoingCertificationReportDate" not in cpo["serviceProperties"]
     assert any(f.code == "W182" and "Ongoing Certification Report" in f.message for f in validate(m))
+
+
+def test_starter_examples_read_as_written(tmp_path):
+    """The commented examples in the starter files, uncommented, are valid as YAML users would type them (YAML 1.1
+    reads a bare `on`, `yes` or `no` key as a boolean, so no field may be named that)."""
+    import re
+    from grc.model import load_schema, read_yaml
+    from jsonschema import Draft202012Validator
+    for name, text in fedramp.STARTERS.items():
+        body = re.sub(r"^# ?(  |- )", r"\1", text, flags=re.M)          # uncomment the example entries
+        body = re.sub(r"^(\w+): \[\]\s*$", r"\1:", body, flags=re.M)     # the list now has them
+        body = re.sub(r"^(\s+)# ", r"\1", body, flags=re.M)               # optional fields too
+        p = tmp_path / f"{name}.yaml"
+        p.write_text(body)
+        data = fedramp.jsonable(read_yaml(p))
+        errs = list(Draft202012Validator(load_schema(f"fedramp-{name}")).iter_errors(data))
+        assert errs == [], (name, [e.message for e in errs][:3])
+        if name in fedramp.LIST_KEY:
+            assert data[fedramp.LIST_KEY[name]], name                          # the example really was read
