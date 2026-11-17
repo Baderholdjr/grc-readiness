@@ -141,7 +141,9 @@ def test_ready_indicator_is_implemented_with_its_evidence(tmp_path):
     k = next(x for x in fedramp.build_sdr(m, fedramp.load(m)["package"])["keySecurityIndicators"] if x["ksiId"] == "KSI-CNA-RNT")
     assert k["ksiImplementationStatus"] == "Implemented"
     assert k["ksiImplementation"] == ["Network traffic is restricted to what each service needs."]
-    assert k["ksiAssessment"][0].startswith("Readiness review by the engagement team (not an independent assessment)")
+    assert k["ksiAssessment"] == []                                       # the assessor's to fill, never the engine's
+    assert k["ksiValidation"][-1].startswith("Readiness review by the engagement team (not an independent assessment): "
+                                             "Tested: verified by a reviewer.")
     assert k["ksiTests"] == ["Segmentation test (test)"]
     ev = {e["evidenceDescription"]: e for e in k["ksiEvidence"]}
     assert ev["Network architecture standard"]["evidenceType"] == "Policy"
@@ -159,7 +161,8 @@ def test_claimed_only_is_not_implemented_and_says_so(tmp_path):
     m = _model(edir)
     k = next(x for x in fedramp.build_sdr(m, fedramp.load(m)["package"])["keySecurityIndicators"] if x["ksiId"] == "KSI-CNA-RNT")
     assert k["ksiImplementationStatus"] == "Not Implemented"
-    assert k["ksiValidation"] == ["Implemented: claimed by the provider, not yet verified."]
+    assert k["ksiValidation"] == ["Readiness review by the engagement team (not an independent assessment): "
+                                  "Implemented: claimed by the provider, not yet verified."]
 
 
 def test_record_with_errors_is_refused_unless_drafted(tmp_path):
@@ -322,3 +325,98 @@ def test_auditor_package_says_why_20x_documents_are_missing(tmp_path):
     root = next(p for p in (tmp_path / "dist").iterdir() if p.is_dir())
     assert not (root / "10-fedramp20x").exists()
     assert "FedRAMP 20x JSON documents:** not included: " in (root / "00-auditor-index.md").read_text()
+
+
+def test_claimed_tests_and_evidence_are_not_listed(tmp_path):
+    edir = _full(tmp_path)
+    (edir / "evidence" / "index.yaml").write_text(yaml.safe_dump({"evidence": [
+        {"id": "EV-903", "title": "Segmentation test", "type": "test", "location": "https://example.invalid/t",
+         "owner": "CISO", "collected": "2026-11-02"}]}, sort_keys=False))
+    f = edir / "controls" / "KSI-CNA-RNT.yaml"
+    d = yaml.safe_load(f.read_text())
+    d["owner"] = "CISO"
+    d["test"] = {"tested": {"status": "claimed", "evidence": ["EV-903"]}}
+    f.write_text(yaml.safe_dump(d, sort_keys=False))
+    m = _model(edir)
+    k = next(x for x in fedramp.build_sdr(m, fedramp.load(m)["package"])["keySecurityIndicators"] if x["ksiId"] == "KSI-CNA-RNT")
+    assert k["ksiTests"] == [] and k["ksiEvidence"] == []
+
+
+def test_ids_never_escape_the_output_folder_even_forced(tmp_path):
+    edir = _full(tmp_path)
+    _write(edir, "incidents", {"incidents": [{"id": "../../escaped", "description": "d", "detected": "2026-11-01"}]})
+    with pytest.raises(fedramp.FedrampError, match="can't be used as an id"):
+        fedramp.export(_model(edir), tmp_path / "o", force=True)
+    assert not (tmp_path / "escaped.json").exists() and not (tmp_path / "o").exists()
+    _write(edir, "incidents", {"incidents": [{"id": "INC-1", "description": "d", "detected": "2026-11-01"},
+                                              {"id": "inc-1", "description": "e", "detected": "2026-11-02"}]})
+    assert any(f.code == "E092" for f in validate(_model(edir)))
+    with pytest.raises(fedramp.FedrampError, match="appears twice"):
+        fedramp.export(_model(edir), tmp_path / "o", force=True)
+
+
+def test_missing_or_unreadable_registers_never_read_as_none(tmp_path):
+    edir = _full(tmp_path)
+    (edir / "fedramp" / "incidents.yaml").unlink()
+    m = _model(edir)
+    assert any(f.code == "W182" and "incidents.yaml" in f.message for f in validate(m))
+    with pytest.raises(fedramp.FedrampError, match="incidents.yaml is missing"):
+        fedramp.export(m, tmp_path / "o")
+    names = [n for n, _, _ in fedramp.export(m, tmp_path / "o", force=True)]
+    assert not any(n.startswith("ongoing-certification-report") for n in names)     # it would say "no incidents"
+    sdr = json.loads((tmp_path / "o" / "security-decision-record.json").read_text())
+    assert sdr["metadata"]["version"].startswith("DRAFT ")
+    assert "not for submission" in (tmp_path / "o" / "certification-package-overview.md").read_text()
+    (edir / "fedramp" / "vulnerabilities.yaml").write_text("vulnerabilities: [\n")
+    names = [n for n, _, _ in fedramp.export(_model(edir), tmp_path / "p", force=True)]
+    assert names == ["certification-package-overview.json", "security-decision-record.json", "significant-changes/SCN-1.json"]
+
+
+@pytest.mark.parametrize("name,data", [
+    ("vulnerabilities", {"vulnerabilities": [{"id": "V1", "detected": "2026-10-01", "source": "s", "description": "d",
+                                              "overdue": "late", "reductions": "abc", "accepted": True}]}),
+    ("changes", {"changes": [{"id": "C1", "date": "2026-10-01", "type": "Adaptive", "description": "d", "plan": "abc",
+                              "requirements": 5}]}),
+    ("package", {"provider": "P", "service": "hello", "contacts": 5, "assessor": {"name": "A"}, "third_party": "abc",
+                 "overview_url": "https://example.invalid/cpo.json"}),
+])
+def test_malformed_files_are_reported_not_crashed(tmp_path, name, data):
+    edir = _full(tmp_path)
+    _write(edir, name, data)
+    m = _model(edir)
+    found = validate(m)
+    assert any(f.code == "E001" for f in found) and not any(f.code == "E000" for f in found)
+    with pytest.raises(fedramp.FedrampError):
+        fedramp.export(m, tmp_path / "o")
+    try:
+        fedramp.export(m, tmp_path / "f", force=True)          # a draft, or a clear refusal: never a traceback
+    except fedramp.FedrampError:
+        pass
+
+
+def test_partially_mitigated_is_still_open_for_the_192_day_rule(tmp_path):
+    edir = _full(tmp_path)
+    _write(edir, "vulnerabilities", {"vulnerabilities": [
+        {"id": "V1", "detected": "2026-01-01", "source": "scan", "description": "d", "evaluated": "2026-01-02",
+         "rating": 2, "disposition": "Partially Mitigated"}]})
+    m = _model(edir)
+    assert [f.ref for f in validate(m) if f.code == "W183"] == ["V1"]
+    vdr = fedramp.build_vdr(m, {}, [fedramp.jsonable(v) for v in fedramp.load(m)["vulnerabilities"]["vulnerabilities"]],
+                            dt.date(2026, 8, 1), dt.date(2026, 10, 31))
+    assert vdr["vulnerabilities"][0]["overdueStatus"]["isOverdue"] is True
+
+
+def test_period_boundaries_are_utc(tmp_path):
+    v = {"id": "V1", "detected": "2026-11-01T01:00:00+05:00", "closed": "2026-11-01T01:00:00+05:00",
+         "disposition": "Remediated", "source": "s", "description": "d"}           # 2026-10-31T20:00Z
+    assert fedramp._active(v, dt.date(2026, 8, 1), dt.date(2026, 10, 31))
+    assert not fedramp._active(v, dt.date(2026, 11, 1), dt.date(2026, 11, 30))
+
+
+def test_next_report_date_is_never_in_the_past(tmp_path):
+    edir = _full(tmp_path)
+    _write(edir, "reports", {"reports": [{"from": "2025-01-01", "to": "2025-03-31"}]})
+    m = _model(edir)
+    cpo = fedramp.build_overview(m, fedramp.load(m)["package"], [{"from": "2025-01-01", "to": "2025-03-31"}])
+    assert "nextOngoingCertificationReportDate" not in cpo["serviceProperties"]
+    assert any(f.code == "W182" and "Ongoing Certification Report" in f.message for f in validate(m))

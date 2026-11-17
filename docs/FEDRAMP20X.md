@@ -29,12 +29,18 @@ FedRAMP asks for these in human-readable and JSON formats, so each JSON file has
 (`.md`), using the field names from FedRAMP's schema.
 
 **The period.** The report files cover one period. By default it is the latest entry in `fedramp/reports.yaml` that
-has ended; with no entry, the 3 months up to today. `--from` and `--to` choose another. A vulnerability has activity
-in a period if it was detected, evaluated, reduced, closed or accepted in it, or was still open during it.
+has ended; with no entry, the 3 months up to today. `--from` and `--to` choose another. Periods are in UTC. A
+vulnerability has activity in a period if it was detected, evaluated, reduced, closed or accepted in it, or was still
+open during it. The overview's next report date is 3 months after the latest period, and is left out once it has
+passed (the validator warns instead).
 
 **Nothing is written unless all of it is right.** The export stops, and writes nothing, when the record has
-validation errors, `package.yaml` is missing or has no `overview_url`, or any document doesn't match FedRAMP's
-schema; the message says what to fix. `--force` writes drafts anyway, marked as drafts in their Markdown copies.
+validation errors, `package.yaml` is missing or has no `overview_url`, `vulnerabilities.yaml` or `incidents.yaml` is
+missing (an empty list states there are none; a missing file says nothing), or any document doesn't match FedRAMP's
+schema. The message says what to fix. `--force` writes drafts anyway: each Markdown copy says it is a draft not for
+submission, and the Security Decision Record's version starts with `DRAFT`. Even then, a report whose source file is
+missing or unreadable isn't written (it would wrongly say there was nothing to report), and an id that isn't a plain
+token (letters, digits, `.`, `_`, `-`) or appears twice, ignoring case, stops the export: ids become file names.
 
 **In the auditor package.** For a FedRAMP 20x record, the auditor package carries the same files in
 `10-fedramp20x/`, with their checksums. If they can't be built yet, the package's index says why.
@@ -48,10 +54,10 @@ record's scope: 44 for Class A, 176 for Class B, 183 for Class C.
 |---|---|
 | Implementation status | **Implemented** only when the requirement is Ready (every check verified by a reviewer) and has no validation error. **Partially Implemented** when some checks are verified or partly in place. **Not Implemented** when nothing is verified, including when the provider has only claimed it. A SHOULD rule marked not applicable has no status. |
 | Implementation | The implementation statement. A SHOULD rule marked not applicable gives its justification (the reason and the resulting risk to customers); a gap with status `risk_accepted` adds a line saying the risk is accepted. |
-| Validation | The *Implemented* and *Evidence exists* checks: their status and the evidence they cite. |
-| Assessment | Filled only when the *Tested* check is verified, and labelled as a readiness review by the engagement team, not an independent assessment. The assessor's own assessment is theirs to add. |
-| Tests | Cited evidence that is a test or sample, or produced by a collector (with its latest result). |
-| Evidence | Each cited evidence item: its type, title and date. Its location is included only when it is a web address and the item isn't marked `confidential` or `restricted`. |
+| Validation | The *Implemented*, *Evidence exists* and *Tested* checks that have started: their status and the evidence they cite, each labelled as a readiness review by the engagement team, not an independent assessment. |
+| Assessment | Always empty: it is the independent assessor's to fill. |
+| Tests | Evidence cited by a verified check that is a test or sample, or produced by a collector (with its latest result). |
+| Evidence | Each item cited by a check that is verified or partly in place (never by a bare claim): its type, title and date. Its location is included only when it is a web address and the item isn't marked `confidential` or `restricted`. |
 
 Notes on the checks are working notes and are never copied into the record.
 
@@ -73,7 +79,7 @@ third-party information resources), `ports_and_protocols`, `agencies` (agencies 
 **`vulnerabilities.yaml`**: one entry per vulnerability, by your own tracking `id`: `detected` and `source`,
 `description`, `impact`, `evaluated`, `internet_reachable`, `likely_exploitable`, `rating` (the Potential Agency
 Impact N-rating, 0 to 5), `next_reduction`, `reductions` (completed reductions), `supplementary`, and once it's done,
-`disposition` and `closed`. An accepted vulnerability has `accepted: {rationale, on}`. A vulnerability that isn't
+`disposition` and `closed`. *Partially Mitigated* still counts as open. An accepted vulnerability has `accepted: {rationale, on}`. A vulnerability that isn't
 fully mitigated or remediated 192 days after evaluation must be an accepted vulnerability (VER-TFR-MAV): the
 reports show it as overdue and the validator warns (W183). `overdue: {explanation}` records any other overdue reason.
 
@@ -98,7 +104,7 @@ client site and the rooms never show them; the auditor package carries them for 
 |---|---|---|
 | E001 | error | A file in `engagement/fedramp/` doesn't match its format |
 | E092 | error | The same id twice in a file, or a change naming a KSI or rule that isn't in the catalog |
-| W182 | warning | `package.yaml` is missing, or still needs `overview_url`, a Security or Sales contact, or `trust_center` |
+| W182 | warning | `package.yaml`, `vulnerabilities.yaml` or `incidents.yaml` is missing, or the package still needs `overview_url`, a Security or Sales contact or `trust_center`, or the next Ongoing Certification Report is overdue |
 | W183 | warning | A vulnerability is still open 192 days after evaluation and isn't an accepted vulnerability (VER-TFR-MAV) |
 
 ## FedRAMP's schemas

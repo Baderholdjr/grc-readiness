@@ -44,8 +44,9 @@ LEG_LABEL = {"documented": "Documented", "implemented": "Implemented", "evidence
 STATUS_WORD = {"verified": "verified by a reviewer", "partial": "partly in place", "claimed": "claimed by the provider, not yet verified"}
 EVIDENCE_TYPE = {"document": "Policy", "record": "Audit Record", "config": "Configuration", "log": "Log", "test": "Report",
                  "sample": "Report", "interview": "Report", "screenshot": "Screenshot"}
+FINISHED = ("Fully Mitigated", "Remediated", "False Positive")   # "Partially Mitigated" is still open
 MAV_DAYS = 192   # VER-TFR-MAV: not fully mitigated or remediated within 192 days of evaluation -> accepted vulnerability
-READINESS = ("Readiness review by the engagement team (not an independent assessment)")
+READINESS = "Readiness review by the engagement team (not an independent assessment)"
 
 
 class FedrampError(ValueError):
@@ -110,12 +111,11 @@ def _iso(v) -> str | None:
 
 
 def _date(v) -> dt.date | None:
-    if isinstance(v, dt.datetime):
-        return v.date()
-    if isinstance(v, dt.date):
+    """The UTC date (report periods are stated in UTC)."""
+    if isinstance(v, dt.date) and not isinstance(v, dt.datetime):
         return v
     d = _dt(v)
-    return d.date() if d else None
+    return d.astimezone(dt.timezone.utc).date() if d else None
 
 
 def add_months(d: dt.date, n: int) -> dt.date:
@@ -205,10 +205,16 @@ def _status(model: Engagement, rid: str, flagged: set[str]) -> str | None:
     return "Not Implemented"
 
 
-def _cited(model: Engagement, c: dict) -> list[tuple[str, dict]]:
+def _cited(model: Engagement, c: dict, states=("verified", "partial")) -> list[tuple[str, dict]]:
+    """Evidence cited by the checks a reviewer has verified (or found partly in place): never by a bare claim."""
+    from .rules import leg_effective
     seen, out = set(), []
+    tests = c.get("test") if isinstance(c.get("test"), dict) else {}
     for leg in LEGS:
-        for eid in ((c.get("test") or {}).get(leg) or {}).get("evidence") or []:
+        data = tests.get(leg) if isinstance(tests.get(leg), dict) else {}
+        if leg_effective(model, data) not in states:
+            continue
+        for eid in data.get("evidence") or []:
             eid = str(eid).split(":")[-1]
             ev = model.evidence_index.get(eid)
             if ev and eid not in seen:
@@ -228,7 +234,8 @@ def _evidence_entry(ev: dict) -> dict:
 
 def _leg_line(model: Engagement, c: dict, leg: str) -> str | None:
     from .rules import leg_effective
-    data = (c.get("test") or {}).get(leg) or {}
+    tests = c.get("test") if isinstance(c.get("test"), dict) else {}
+    data = tests.get(leg) if isinstance(tests.get(leg), dict) else {}
     state = leg_effective(model, data)
     if state == "not_started":
         return None
@@ -254,24 +261,19 @@ def requirement_entry(model: Engagement, rid: str, flagged: set[str]) -> dict:
         impl = [f"Not applicable to this offering. Reason and resulting risk to customers: {why}"]
     else:
         impl = [_text(c.get("implementation")) or "Not yet described."] + _accepted_risk(model, rid)
-    validation = [x for x in (_leg_line(model, c, leg) for leg in ("implemented", "evidenced")) if x]
-    tested = _leg_line(model, c, "tested")
-    from .rules import leg_effective
-    assessment = []
-    if leg_effective(model, (c.get("test") or {}).get("tested") or {}) == "verified":
-        assessment.append(f"{READINESS}: {tested}")
+    # validation: what the readiness review found for each check that has started. Assessment (verification by an
+    # independent assessor) is left empty: the engine never fills it.
+    validation = [f"{READINESS}: {x}" for x in (_leg_line(model, c, leg) for leg in ("implemented", "evidenced", "tested")) if x]
     cited = _cited(model, c)
     tests = [f"{_text(ev.get('title'))} ({ev.get('collector') or ev.get('type')}"
              + (f", latest result {ev['result']}" if ev.get("result") else "") + ")"
-             for _, ev in cited if ev.get("type") in ("test", "sample") or ev.get("collector")]
+             for _, ev in _cited(model, c, ("verified",)) if ev.get("type") in ("test", "sample") or ev.get("collector")]
     if req.get("kind") == "indicator":
         return _clean({"ksiId": rid, "ksiImplementationStatus": status, "ksiImplementation": impl,
-                       "ksiValidation": validation + ([tested] if tested and not assessment else []),
-                       "ksiAssessment": assessment, "ksiTests": tests,
+                       "ksiValidation": validation, "ksiAssessment": [], "ksiTests": tests,
                        "ksiEvidence": [_evidence_entry(ev) for _, ev in cited]})
     return _clean({"frrID": rid, "frrImplementationStatus": status, "frrImplementation": impl,
-                   "frrValidation": (validation + ([tested] if tested and not assessment else [])) or None,
-                   "frrAssessment": assessment or None})
+                   "frrValidation": validation or None})
 
 
 # ------------------------------------------------------------------ the documents
@@ -290,7 +292,7 @@ def build_overview(model: Engagement, pkg: dict, reports: list[dict]) -> dict:
 
     nxt = None
     ends = [_date(r.get("to")) for r in reports if _date(r.get("to"))]
-    if ends:
+    if ends and add_months(max(ends), 3) >= model.today:
         nxt = add_months(max(ends), 3).isoformat()
     tp = pkg.get("third_party") or {}
     doc = {
@@ -354,7 +356,7 @@ def build_sdr(model: Engagement, pkg: dict) -> dict:
 def _vuln(v: dict, today: dt.date) -> dict:
     explanation = (v.get("overdue") or {}).get("explanation")
     ev = _date(v.get("evaluated"))
-    breach = bool(ev and not v.get("disposition") and not v.get("accepted") and (today - ev).days > MAV_DAYS)
+    breach = bool(ev and v.get("disposition") not in FINISHED and not v.get("accepted") and (today - ev).days > MAV_DAYS)
     overdue = {"isOverdue": True, "explanation": explanation} if explanation else (
         {"isOverdue": True, "explanation": f"Not fully mitigated or remediated within {MAV_DAYS} days of evaluation "
                                            "(VER-TFR-MAV): it should be an accepted vulnerability."}
@@ -370,7 +372,7 @@ def _vuln(v: dict, today: dt.date) -> dict:
         "isLikelyExploitable": v.get("likely_exploitable"),
         "currentRating": v.get("rating"),
         "projectedNextReduction": ({"estimatedAt": _iso(nxt.get("by")), "targetRating": nxt.get("rating")}
-                                   if nxt and not v.get("disposition") else None),
+                                   if nxt and v.get("disposition") not in FINISHED else None),
         "overdueStatus": overdue,
         "supplementaryRiskInformation": v.get("supplementary"),
         "painReductionEvents": [{"reducedAt": _iso(r.get("on")), "rating": r.get("rating")}
@@ -386,7 +388,7 @@ def _active(v: dict, start: dt.date, end: dt.date) -> bool:
     if any(_in(d, start, end) for d in dates):
         return True
     det, closed = _date(v.get("detected")), _date(v.get("closed"))
-    return bool(det and det <= end and (closed is None or closed >= start) and not v.get("disposition"))
+    return bool(det and det <= end and (closed is None or closed >= start) and v.get("disposition") not in FINISHED)
 
 
 def _period(start: dt.date, end: dt.date) -> dict:
@@ -591,6 +593,10 @@ def problems(model: Engagement, files: dict) -> list[str]:
     if errors:
         out.append(f"the record has {len(errors)} validation error(s) (first: {errors[0].code} {errors[0].message[:160]}); "
                    "fix them (`grc validate`) or use --force for a draft")
+    for name in ("vulnerabilities", "incidents"):
+        if files.get(name) is None:
+            out.append(f"engagement/fedramp/{name}.yaml is missing: the reports would say there are none. Create it "
+                       f"(`grc fedramp init`); `{name}: []` states that there are none")
     pkg = files.get("package")
     if not pkg:
         out.append("engagement/fedramp/package.yaml is missing: run `grc fedramp init` and fill it in")
@@ -608,12 +614,39 @@ def export(model: Engagement, out: Path, start: dt.date | None = None, end: dt.d
     stop = problems(model, files)
     if stop and not force:
         raise FedrampError("; ".join(stop))
+    try:
+        return _export(model, files, Path(out), start, end, force, bool(stop))
+    except (AttributeError, TypeError, KeyError, ValueError) as exc:
+        if isinstance(exc, FedrampError):
+            raise
+        raise FedrampError("the files in engagement/fedramp/ aren't laid out as expected "
+                           f"({exc.__class__.__name__}: {str(exc)[:120]}); run `grc validate` and fix what it reports") from exc
+
+
+def _safe_ids(rows: list[dict], name: str) -> None:
+    """Ids become file names: each must be a plain token and unique (ignoring case), even for a draft."""
+    import re
+    seen = set()
+    for r in rows:
+        rid = str(r.get("id") or "")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", rid) or ".." in rid:
+            raise FedrampError(f"engagement/fedramp/{name}.yaml: '{rid[:40]}' can't be used as an id (letters, digits, "
+                               "'.', '_' and '-' only)")
+        if rid.lower() in seen:
+            raise FedrampError(f"engagement/fedramp/{name}.yaml: {rid} appears twice")
+        seen.add(rid.lower())
+
+
+def _export(model: Engagement, files: dict, out: Path, start, end, force: bool, draft: bool) -> list:
     pkg = files.get("package") if isinstance(files.get("package"), dict) and not files["package"].get("_error") else {}
     pkg = jsonable(pkg)
     vulns = jsonable(_items(files.get("vulnerabilities"), "vulnerabilities"))
     incidents = jsonable(_items(files.get("incidents"), "incidents"))
     changes = jsonable(_items(files.get("changes"), "changes"))
     reports = jsonable(_items(files.get("reports"), "reports"))
+    _safe_ids(incidents, "incidents")
+    _safe_ids(changes, "changes")
+    usable = {n: isinstance(files.get(n), dict) and not files[n].get("_error") for n in ("vulnerabilities", "incidents")}
     p_start, p_end, report = default_period(model, reports)
     if start or end:
         p_start, p_end = start or p_start, end or p_end
@@ -624,15 +657,19 @@ def export(model: Engagement, out: Path, start: dt.date | None = None, end: dt.d
     docs: list[tuple[str, str, dict, str]] = [
         ("certification-package-overview.json", "overview", build_overview(model, pkg, reports), "Certification Package Overview"),
         ("security-decision-record.json", "sdr", build_sdr(model, pkg), "Security Decision Record"),
-        (f"ongoing-certification-report-{tag}.json", "ocr",
-         build_ocr(model, pkg, report, vulns, incidents, changes, p_start, p_end), f"Ongoing Certification Report, {p_start} to {p_end}"),
-        (f"vulnerability-detail-report-{tag}.json", "vdr", build_vdr(model, pkg, vulns, p_start, p_end),
-         f"Vulnerability Detail Report, {p_start} to {p_end}"),
-        (f"accepted-vulnerability-info-{tag}.json", "avi", build_avi(model, pkg, vulns, p_start, p_end),
-         f"Accepted Vulnerability Info, {p_start} to {p_end}"),
-        ("historical-vulnerability-activity.json", "history", build_history(model, pkg, vulns),
-         f"Vulnerability detection and response activity as of {model.today}"),
     ]
+    # a report whose source file is missing or unreadable would state "none": it isn't written, even as a draft
+    if usable["vulnerabilities"] and usable["incidents"]:
+        docs.append((f"ongoing-certification-report-{tag}.json", "ocr",
+                     build_ocr(model, pkg, report, vulns, incidents, changes, p_start, p_end),
+                     f"Ongoing Certification Report, {p_start} to {p_end}"))
+    if usable["vulnerabilities"]:
+        docs += [(f"vulnerability-detail-report-{tag}.json", "vdr", build_vdr(model, pkg, vulns, p_start, p_end),
+                  f"Vulnerability Detail Report, {p_start} to {p_end}"),
+                 (f"accepted-vulnerability-info-{tag}.json", "avi", build_avi(model, pkg, vulns, p_start, p_end),
+                  f"Accepted Vulnerability Info, {p_start} to {p_end}"),
+                 ("historical-vulnerability-activity.json", "history", build_history(model, pkg, vulns),
+                  f"Vulnerability detection and response activity as of {model.today}")]
     for i in incidents:
         docs.append((f"incidents/{i.get('id')}.json", "incident", build_incident(pkg, i),
                      f"Incident report {i.get('id')} ({incident_stage(i)})"))
@@ -644,7 +681,10 @@ def export(model: Engagement, out: Path, start: dt.date | None = None, end: dt.d
     if bad and not force:
         detail = "; ".join(f"{n}: {e[0]}" + (f" (and {len(e) - 1} more)" if len(e) > 1 else "") for n, e in bad[:6])
         raise FedrampError(f"{len(bad)} document(s) don't match FedRAMP's schema, so nothing was written: {detail}")
-    out = Path(out)
+    if draft:   # forced past a refusal: say so in the JSON where FedRAMP's format has a place for it
+        sdr = next(d for _, k, d, _ in docs if k == "sdr")
+        sdr["metadata"]["version"] = "DRAFT " + sdr["metadata"]["version"]
+    root = out.resolve()
     written = []
     note = "Generated from the engagement record by the GRC readiness engine."
     sdr_note = (" Statuses reflect what reviewers verified in a readiness review by the engagement team, not an "
@@ -652,13 +692,16 @@ def export(model: Engagement, out: Path, start: dt.date | None = None, end: dt.d
     who = pkg.get("provider") or model.client
     for name, kind, doc, title, errs in checked:
         path = out / name
+        if not path.resolve().is_relative_to(root):
+            raise FedrampError(f"{name}: would be written outside {out}")
         path.parent.mkdir(parents=True, exist_ok=True)
         text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
         path.write_text(text, encoding="utf-8")
         md = to_markdown(doc, kind, f"{who}: {title}")
         if kind == "sdr":
             md = md.replace("\n", "\n\n" + sdr_summary(doc) + "\n", 1)
-        md = md.replace("\n", f"\n\n_{note}{sdr_note if kind == 'sdr' else ''}_" + (" **Draft: this document does not yet match FedRAMP's schema.**" if errs else "")
+        md = md.replace("\n", f"\n\n_{note}{sdr_note if kind == 'sdr' else ''}_" + (" **Draft: this document does not yet match FedRAMP's schema.**" if errs else
+                         " **Draft: written with --force despite problems in the record; not for submission.**" if draft else "")
                         + "\n", 1)
         path.with_suffix(".md").write_text(md, encoding="utf-8")
         written.append((name, len(text.encode("utf-8")), errs))
@@ -807,12 +850,13 @@ def check(model: Engagement) -> list:
             seen = set()
             for item in _items(data, name):
                 key = str(item.get("id") or item.get("from"))
-                if key in seen and item.get("id"):
+                if key.lower() in seen and item.get("id"):
                     out.append(Finding("error", "E092", f"fedramp/{name}.yaml: {key} appears twice; each needs its own id.",
                                        _rel(model, path), key))
-                seen.add(key)
+                seen.add(key.lower())
     for c in _items(files.get("changes"), "changes"):
-        unknown = [str(x) for x in c.get("requirements") or [] if str(x) not in model.requirement_index]
+        reqs = c.get("requirements") if isinstance(c.get("requirements"), list) else []
+        unknown = [str(x) for x in reqs if str(x) not in model.requirement_index]
         if unknown:
             out.append(Finding("error", "E092", f"fedramp/changes.yaml: {c.get('id')} names {', '.join(unknown)}, not in "
                                "the FedRAMP 20x catalog.", _rel(model, folder(model) / "changes.yaml"), str(c.get("id"))))
@@ -826,16 +870,26 @@ def check(model: Engagement) -> list:
             missing = []
             if not pkg.get("overview_url"):
                 missing.append("overview_url")
-            types = {str((c or {}).get("type")) for c in pkg.get("contacts") or [] if isinstance(c, dict)}
+            contacts = pkg.get("contacts") if isinstance(pkg.get("contacts"), list) else []
+            types = {str(c.get("type")) for c in contacts if isinstance(c, dict)}
             missing += [f"a {t} contact" for t in ("Security", "Sales") if t not in types]
             if not pkg.get("trust_center"):
                 missing.append("trust_center (CDS-CSO-UTC)")
+            ends = [_date(r.get("to")) for r in _items(files.get("reports"), "reports") if _date(r.get("to"))]
+            if ends and add_months(max(ends), 3) < model.today:
+                missing.append(f"an Ongoing Certification Report: the last one in reports.yaml ended {max(ends)}, and the "
+                               f"next was due by {add_months(max(ends), 3)} (CCM-OCR-AVL)")
             if missing:
                 out.append(Finding("warning", "W182", f"fedramp/package.yaml: the Certification Package Overview still needs "
                                    f"{', '.join(missing)}.", ppath))
+        for name in ("vulnerabilities", "incidents"):
+            if files.get(name) is None:
+                out.append(Finding("warning", "W182", f"No engagement/fedramp/{name}.yaml yet: the reports can't say whether "
+                                   f"there are any. Create it; `{name}: []` states that there are none.",
+                                   _rel(model, folder(model) / f"{name}.yaml")))
         for v in _items(files.get("vulnerabilities"), "vulnerabilities"):
             ev = _date(v.get("evaluated"))
-            if ev and not v.get("disposition") and not v.get("accepted") and (model.today - ev).days > MAV_DAYS:
+            if ev and v.get("disposition") not in FINISHED and not v.get("accepted") and (model.today - ev).days > MAV_DAYS:
                 out.append(Finding("warning", "W183", f"fedramp/vulnerabilities.yaml: {v.get('id')} was evaluated on {ev} and "
                                    f"isn't fully mitigated or remediated after {MAV_DAYS} days: record it as an accepted "
                                    "vulnerability (VER-TFR-MAV), with the reason.",
