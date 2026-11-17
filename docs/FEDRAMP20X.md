@@ -78,8 +78,8 @@ third-party information resources), `ports_and_protocols`, `agencies` (agencies 
 
 **`vulnerabilities.yaml`**: one entry per vulnerability, by your own tracking `id`: `detected` and `source`,
 `description`, `impact`, `evaluated`, `internet_reachable`, `likely_exploitable`, `rating` (the Potential Agency
-Impact N-rating, 0 to 5), `next_reduction`, `reductions` (completed reductions), `supplementary`, and once it's done,
-`disposition` and `closed`. *Partially Mitigated* still counts as open. An accepted vulnerability has `accepted: {rationale, on}`. A vulnerability that isn't
+Impact N-rating, 0 to 5), `next_reduction`, `reductions` (completed reductions, each a `date` and `rating`), `supplementary`, and once it's done,
+`disposition` and `closed`. *Partially Mitigated* still counts as open. An accepted vulnerability has `accepted: {rationale, date}`. A vulnerability that isn't
 fully mitigated or remediated 192 days after evaluation must be an accepted vulnerability (VER-TFR-MAV): the
 reports show it as overdue and the validator warns (W183). `overdue: {explanation}` records any other overdue reason.
 
