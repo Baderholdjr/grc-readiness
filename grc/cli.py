@@ -609,6 +609,48 @@ def cmd_oscal(args) -> int:
     return 0
 
 
+def cmd_fedramp(args) -> int:
+    from . import fedramp
+    if args.action == "validate":
+        if not args.files:
+            print("error: name the FedRAMP 20x JSON files to check", file=sys.stderr)
+            return 2
+        bad = 0
+        for f in args.files:
+            try:
+                from .safety import check_file
+                check_file(Path(f), max_bytes=50 * 1024 * 1024)
+                errs = fedramp.validate(json.loads(Path(f).read_text(encoding="utf-8")))
+            except RecursionError:
+                errs = ["nested too deeply to be a FedRAMP document"]
+            except (ValueError, OSError) as exc:
+                errs = [str(exc)[:300]]
+            bad += bool(errs)
+            print(f"{f}: " + ("matches FedRAMP's schema" if not errs else f"{len(errs)} error(s)"))
+            for e in errs[:20]:
+                print(f"  {e}")
+        return 1 if bad else 0
+    model = _model(args)
+    if args.action == "init":
+        made = fedramp.init(model)
+        for p in made:
+            print(f"wrote {p}")
+        if not made:
+            print(f"nothing to do: {fedramp.folder(model)} already has every file")
+        return 0
+    try:
+        start = dt.date.fromisoformat(args.period_from) if args.period_from else None
+        end = dt.date.fromisoformat(args.period_to) if args.period_to else None
+        written = fedramp.export(model, Path(args.out), start, end, force=args.force)
+    except (fedramp.FedrampError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    for name, size, errs in written:
+        print(f"wrote {Path(args.out) / name} ({size:,} bytes, "
+              + ("matches FedRAMP's schema" if not errs else f"DRAFT: {len(errs)} schema error(s)") + ") and its .md copy")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="grc", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--engagement", default=os.environ.get("GRC_ENGAGEMENT") or "engagement",
@@ -820,6 +862,17 @@ def main(argv=None) -> int:
     os_.add_argument("--force", action="store_true", help="export: a draft despite validation errors; "
                      "import: replace an existing imported catalog")
     os_.set_defaults(fn=cmd_oscal)
+
+    fr = sub.add_parser("fedramp", help="FedRAMP 20x: export the certification package, Security Decision Record, "
+                        "Ongoing Certification Report, vulnerability and incident reports in FedRAMP's JSON formats")
+    fr.add_argument("action", choices=["export", "validate", "init"])
+    fr.add_argument("files", nargs="*", help="validate: FedRAMP 20x JSON files")
+    fr.add_argument("--out", default="out/fedramp20x", help="export: folder (default out/fedramp20x)")
+    fr.add_argument("--from", dest="period_from", help="export: report period start (YYYY-MM-DD); default: the latest "
+                    "period in fedramp/reports.yaml that has ended, else the 3 months to today")
+    fr.add_argument("--to", dest="period_to", help="export: report period end (YYYY-MM-DD)")
+    fr.add_argument("--force", action="store_true", help="export: write drafts despite missing information or schema errors")
+    fr.set_defaults(fn=cmd_fedramp)
 
     args = p.parse_args(argv)
     return args.fn(args)

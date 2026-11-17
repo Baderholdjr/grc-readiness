@@ -108,6 +108,8 @@ Class C adds to Class B, so `class_c` alone, or Class A with another class, is W
 
 **Dates and references.** `dates.stage1` is the independent assessment; `dates.stage2` the FedRAMP certification decision. The internal readiness review and corrective actions evidence KSI-SVC-EIS (evaluating and improving security), the leadership review KSI-PIY-RES (executive support), the repository's branch protection KSI-CMT-LMC (logging changes), and the scope document MAS-CSO-IIR. A Class A record, which has neither indicator, uses FRC-CSO-MRA (maintain responsibility and accountability) for the reviews. No management review is required.
 
+**FedRAMP's JSON documents.** `grc fedramp export` writes the Certification Package Overview, Security Decision Record, Ongoing Certification Report, vulnerability and incident reports and Significant Change Notifications in FedRAMP's own formats, from the record and the files in `engagement/fedramp/`; see [FEDRAMP20X.md](FEDRAMP20X.md).
+
 **Program controls.** Map program controls to the KSI and rule ids themselves (`maps: {fedramp20x: [KSI-IAM-ELP]}`). A KSI maps to dozens of NIST controls, so a control mapped to one NIST control is not counted for the KSI automatically.
 
 ## TX-RAMP

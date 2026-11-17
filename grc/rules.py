@@ -1032,7 +1032,12 @@ def check_rooms(model: Engagement) -> list[Finding]:
     return check(model)
 
 
-ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings, check_secret_files, check_rooms)
+def check_fedramp(model: Engagement) -> list[Finding]:
+    from .fedramp import check
+    return check(model)
+
+
+ALL_RULES = (check_schemas, check_structure, check_applicability, check_evidence_test, check_gaps, check_engagement, check_collected, check_owners, check_audit, check_impact, check_documents, check_reviews, check_hours, check_submissions, check_mappings, check_secret_files, check_rooms, check_fedramp)
 
 
 def validate(model: Engagement) -> list[Finding]:
