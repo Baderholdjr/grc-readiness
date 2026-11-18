@@ -42,6 +42,12 @@ submission, and the Security Decision Record's version starts with `DRAFT`. Even
 missing or unreadable isn't written (it would wrongly say there was nothing to report), and an id that isn't a plain
 token (letters, digits, `.`, `_`, `-`) or appears twice, ignoring case, stops the export: ids become file names.
 
+**In the published reports.** For a FedRAMP 20x record, the `reports` branch carries the current documents in
+`fedramp20x/`, rebuilt after every change to `main` and once a day, with an index (`fedramp20x/README.md`) linked
+from the reports' landing page. When something stops a clean export, the index says why and the documents are
+drafts, not for submission (a report whose source file is missing is left out, as above); when not even a draft can
+be made, the index says so and holds nothing else.
+
 **In the auditor package.** For a FedRAMP 20x record, the auditor package carries the same files in
 `10-fedramp20x/`, with their checksums. If they can't be built yet, the package's index says why.
 

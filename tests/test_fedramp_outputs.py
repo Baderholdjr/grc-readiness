@@ -439,3 +439,61 @@ def test_starter_examples_read_as_written(tmp_path):
         assert errs == [], (name, [e.message for e in errs][:3])
         if name in fedramp.LIST_KEY:
             assert data[fedramp.LIST_KEY[name]], name                          # the example really was read
+
+
+def _build(edir, out, today="2026-11-20"):
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert main(["--engagement", str(edir), "--today", today, "build", "--out", str(out), "--force", "--no-docx"]) == 0
+
+
+def test_published_reports_carry_the_20x_documents(tmp_path):
+    edir = _full(tmp_path)
+    out = tmp_path / "reports"
+    _build(edir, out)
+    readme = (out / "fedramp20x" / "README.md").read_text()
+    assert "| Security Decision Record | [security-decision-record.md]" in readme
+    assert "Ongoing Certification Report, 2026-08-01 to 2026-10-31" in readme and "Drafts" not in readme
+    assert readme.count("| matches |") == 9
+    assert "[FedRAMP 20x documents](fedramp20x/README.md)" in (out / "README.md").read_text()
+    for line in readme.splitlines():                       # every link in the index points at a file that exists
+        for link in __import__("re").findall(r"\]\(([^)]+)\)", line):
+            assert (out / "fedramp20x" / link).exists(), link
+
+
+def test_published_reports_mark_drafts_and_say_why(tmp_path):
+    edir = _full(tmp_path)
+    (edir / "fedramp" / "incidents.yaml").unlink()
+    out = tmp_path / "reports"
+    _build(edir, out)
+    readme = (out / "fedramp20x" / "README.md").read_text()
+    assert "Drafts, not for submission" in readme and "incidents.yaml is missing" in readme
+    assert (out / "fedramp20x" / "security-decision-record.json").exists()
+    assert not list((out / "fedramp20x").glob("ongoing-certification-report-*"))   # would wrongly say "no incidents"
+    assert "drafts: " in (out / "README.md").read_text()
+
+
+def test_published_reports_when_nothing_can_be_built(tmp_path):
+    edir = _full(tmp_path)
+    _write(edir, "incidents", {"incidents": [{"id": "../x", "description": "d", "detected": "2026-11-01"}]})
+    out = tmp_path / "reports"
+    _build(edir, out)
+    readme = (out / "fedramp20x" / "README.md").read_text()
+    assert "Not built" in readme and "can't be used as an id" in readme
+    assert sorted(p.name for p in (out / "fedramp20x").iterdir()) == ["README.md"]
+
+
+def test_rebuild_drops_documents_that_no_longer_exist(tmp_path):
+    edir = _full(tmp_path)
+    out = tmp_path / "reports"
+    _build(edir, out)
+    assert (out / "fedramp20x" / "incidents" / "INC-2.json").exists()
+    _write(edir, "incidents", {"incidents": [INCIDENTS["incidents"][0]]})
+    _build(edir, out)
+    assert not (out / "fedramp20x" / "incidents" / "INC-2.json").exists()
+
+
+def test_other_frameworks_publish_no_20x_section(tmp_path):
+    edir = _new(tmp_path, categories=None, fw="soc2")
+    out = tmp_path / "reports"
+    _build(edir, out)
+    assert not (out / "fedramp20x").exists() and "FedRAMP 20x documents" not in (out / "README.md").read_text()

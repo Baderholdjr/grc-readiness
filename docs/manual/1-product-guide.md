@@ -401,6 +401,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 > **Under the hood:**
 > - `python -m grc fedramp init`, `python -m grc fedramp export --out out/fedramp20x`, `python -m grc fedramp validate FILE…`.
 > - The offering, vulnerabilities, incidents, changes and report notes live in `engagement/fedramp/`. See [FEDRAMP20X.md](../FEDRAMP20X.md).
+> - The `reports` branch always has the current set in `fedramp20x/`, rebuilt after every change, and the auditor package carries them in `10-fedramp20x/`.
 
 ![Auditor index: traceability table](images/aidx-02.png)
 
