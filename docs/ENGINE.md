@@ -45,7 +45,8 @@ Breaking changes to workflows or data formats bump the **major** version (`engin
    ```
    Commit and push the result to `main`.
 3. In the client repo, follow its README's setup steps:
-   - Add the secret `GRC_ENGINE_TOKEN`: a fine-grained token with *Contents: Read* on the engine repo only.
+   - Only while the engine repository is private: add the secret `GRC_ENGINE_TOKEN`, a fine-grained token with
+     *Contents: Read* on the engine repo only. With a public engine no token is needed.
    - Allow GitHub Actions to create pull requests.
    - Protect `main`, requiring the **`validate / validate`** check.
    - Run **New engagement**.

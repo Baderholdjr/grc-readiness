@@ -138,7 +138,7 @@ docs/AUTOMATION.md    credentials and setup for ingestion and collectors
 
 In the client repository:
 
-1. Add the `GRC_ENGINE_TOKEN` secret, as described in its README.
+1. Only if the engine repository is private: add the `GRC_ENGINE_TOKEN` secret, as described in its README.
 2. Go to **Actions → New engagement → Run workflow**. Enter the client name, start date, and planned Stage 1 and Stage 2 dates. It opens a PR that replaces the example with a clean record: 65 blank control files, and phases computed from your dates. Merge it.
 3. List the client's people in `engagement/owners.yaml` (role → GitHub users), then run **`python -m grc codeowners`** so each owner is a required reviewer of their own controls. Gap Issues get assigned to them, and they're reminded when gaps go overdue.
 4. Upload client documents to `intake/` and point `engagement/collectors.yaml` at their systems. See [`docs/AUTOMATION.md`](docs/AUTOMATION.md).
