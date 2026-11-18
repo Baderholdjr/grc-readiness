@@ -610,6 +610,8 @@ def render_all(model: Engagement, findings: list[Finding], out: Path, brief_docx
     from . import gap_assessment
     extra = (client_view.render(model, out) + gap_assessment.report(model, out, docs_docx) + portal.report(model, out)
              + extra + mappings.report(model, out))
+    from . import fedramp
+    extra += fedramp.report(model, out)
     if workbook:
         extra = [("Excel workbook", f"{workbook}?raw=1", f"Control matrix, {model.term('applicability_short')}, gaps, evidence, findings, impact assessments, "
                   "documents and review actions (and hours, in the internal reports) in one workbook, with a live summary sheet")] + extra

@@ -895,3 +895,68 @@ def check(model: Engagement) -> list:
                                    "vulnerability (VER-TFR-MAV), with the reason.",
                                    _rel(model, folder(model) / "vulnerabilities.yaml"), str(v.get("id"))))
     return out
+
+
+# ------------------------------------------------------------------ the published reports
+TITLES = {"certification-package-overview": "Certification Package Overview", "security-decision-record": "Security Decision Record",
+          "ongoing-certification-report": "Ongoing Certification Report", "vulnerability-detail-report": "Vulnerability Detail Report",
+          "accepted-vulnerability-info": "Accepted Vulnerability Info",
+          "historical-vulnerability-activity": "Vulnerability activity, all time"}
+
+
+def doc_title(name: str) -> str:
+    stem = name.removesuffix(".json")
+    if stem.startswith("incidents/"):
+        return f"Incident report {stem.split('/', 1)[1]}"
+    if stem.startswith("significant-changes/"):
+        return f"Significant Change Notification {stem.split('/', 1)[1]}"
+    for key, title in TITLES.items():
+        if stem == key:
+            return title
+        if stem.startswith(key + "-"):
+            a, _, b = stem[len(key) + 1:].partition("_")
+            return f"{title}, {a} to {b}"
+    return stem
+def report(model: Engagement, out: Path) -> list[tuple[str, str, str]]:
+    """For a FedRAMP 20x record, write the documents to out/fedramp20x/ with a README listing them, so the
+    `reports` branch always carries the current set. Drafts (when something stops a clean export) are marked, with
+    the reason; nothing is written when even a draft can't be made. Internal reports only: the auditor package
+    builds its own copy (10-fedramp20x/)."""
+    if model.catalog["framework"]["id"] != "fedramp20x" or not getattr(model, "internal", True):
+        return []
+    folder_out = out / "fedramp20x"
+    import shutil
+    shutil.rmtree(folder_out, ignore_errors=True)
+    why = None
+    try:
+        written = export(model, folder_out)
+    except FedrampError as exc:
+        why = str(exc)
+        shutil.rmtree(folder_out, ignore_errors=True)
+        try:
+            written = export(model, folder_out, force=True)
+        except FedrampError as exc2:
+            shutil.rmtree(folder_out, ignore_errors=True)
+            written, why = [], f"{why} (and no draft could be made: {exc2})"
+    folder_out.mkdir(parents=True, exist_ok=True)
+    who = (load(model).get("package") or {}).get("provider") if not why else None
+    L = [f"# {who or model.client}: FedRAMP 20x documents\n",
+         "<!-- Published automatically from the main branch. Do not edit this branch. -->\n",
+         f"**As of {model.today}.** Rebuilt with the other reports after every change to `main`. Each JSON file is in "
+         "FedRAMP's own format and is checked against FedRAMP's schema; the `.md` beside it is the readable copy. "
+         "Statuses in the Security Decision Record come from the readiness review, not an independent assessment. "
+         "How each is built: `docs/FEDRAMP20X.md` in the GRC engine.\n"]
+    if why:
+        L.append(f"> **{'Drafts, not for submission' if written else 'Not built'}.** {why}\n")
+    if written:
+        L += ["| Document | Readable | JSON | FedRAMP's schema |", "|---|---|---|---|"]
+        for name, _size, errs in written:
+            title = doc_title(name)
+            md = name.removesuffix(".json") + ".md"
+            L.append(f"| {title} | [{md}]({md}) | [{name}]({name}) | {'matches' if not errs else f'{len(errs)} error(s)'} |")
+    (folder_out / "README.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    state = "drafts: " + why[:120] if why and written else ("not built: " + why[:120] if why else
+                                                           f"{len(written)} documents, each matching FedRAMP's schema")
+    return [("FedRAMP 20x documents", "fedramp20x/README.md",
+             f"Certification Package Overview, Security Decision Record, Ongoing Certification Report, vulnerability, "
+             f"incident and change reports in FedRAMP's JSON formats ({state})")]
