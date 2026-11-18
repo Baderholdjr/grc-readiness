@@ -153,7 +153,12 @@ def cmd_ingest(args) -> int:
             (out / f"report-{Path(e).name}.md").write_text(rep, encoding="utf-8")
             print(f"{Path(e).name}: {rep.splitlines()[0] if rep else ''}")
         return 0
-    report = ingest.run(args.engagement, intake_for(args), mode=args.mode, force=args.force)
+    from .ingest.apply import IngestError
+    try:
+        report = ingest.run(args.engagement, intake_for(args), mode=args.mode, force=args.force)
+    except IngestError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     print(report)
     if args.report:
         Path(args.report).write_text(report, encoding="utf-8")
