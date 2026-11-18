@@ -16,7 +16,7 @@ The 17 library documents cover all 65 ISO 42001 requirements exactly once: scope
 
 1. **Draft.** Run **Actions → Policies and procedures** with `new` and `all` (or one `DOC-…` id). Locally: `python -m grc docs new all`.
    Templates are filled from the engagement record: client, scope, owners, AI inventory, suppliers, and the engine's own methods (impact assessment scales and thresholds, audit sample sizes, the evidence test), so each procedure describes what the engine actually enforces. Each document's owner is suggested from the owners of the controls it supports. Whatever the record can't supply is left as a `[[TODO: …]]` marker.
-2. **AI fill (optional).** If AI drafting is on (`ingest: {ai_drafting: true}` and `ANTHROPIC_API_KEY`, or sandbox mode), `new` also asks Claude to fill the markers, and `fill` does it for drafts later. Safeguards, enforced in code:
+2. **AI fill (optional).** If AI drafting is on (`ingest: {ai_drafting: true}` and `ANTHROPIC_API_KEY` or workload identity, or sandbox mode), `new` also asks Claude to fill the markers, and `fill` does it for drafts later. Safeguards, enforced in code:
    - only `[[TODO]]` markers are replaced; every other character of the document, including the front matter, stays as it was. A marker can't span lines, so an unclosed `[[TODO` can't swallow text
    - each fill must cite its source (the engagement record or a named client document in `intake/`); unsourced fills are dropped
    - fills are flattened to one line of plain text: brackets, braces, `<`, `>` and backticks are removed (so no markers, placeholders, links, HTML or code), a fill that starts a line can't start a heading, list, quote or table, pipes are neutralised inside tables, and length is capped

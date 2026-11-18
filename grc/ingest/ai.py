@@ -68,6 +68,10 @@ def explain(exc: Exception) -> str:
         return ("the Anthropic account behind ANTHROPIC_API_KEY is out of credit. Add credit at console.anthropic.com "
                 "(Settings, Billing), then push any change to this pull request to retry")
     if "invalid x-api-key" in low or "authentication_error" in low or "401" in s[:40]:
+        from .. import anthropic_auth
+        if anthropic_auth.method() == "federation":
+            return ("the Anthropic API refused the workload identity token (the service account may lack access to "
+                    "this workspace or model)")
         return "ANTHROPIC_API_KEY was rejected (wrong, revoked or from another workspace). Replace the repository secret"
     if "rate_limit" in low or "429" in s[:40]:
         return "the Anthropic API rate limit was reached. Retry later, or load fewer documents per pull request"
@@ -102,9 +106,9 @@ def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[
           others: list[str] | None = None, frameworks: list[str] | None = None) -> dict:
     """frameworks: several framework names when one read serves several records (ids then carry a prefix)."""
     from .. import sandbox
-    key = "sandbox" if sandbox.active() else os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if not key and transport is None:
-        raise AIUnavailable("ANTHROPIC_API_KEY is not set")
+    from .. import anthropic_auth
+    if transport is None and not sandbox.active() and not anthropic_auth.method():
+        raise AIUnavailable(anthropic_auth.missing())
     body = {
         "model": model or os.environ.get("GRC_MODEL") or DEFAULT_MODEL,
         "max_tokens": 32000,
@@ -117,8 +121,11 @@ def draft(docs: list[tuple[str, str]], catalog: list[dict], existing_gaps: list[
         if transport:  # tests
             resp = transport(body)
         else:
-            resp = http.request("POST", API_URL, headers={"x-api-key": key, "anthropic-version": "2023-06-01"},
+            auth = {"x-api-key": "sandbox"} if sandbox.active() else anthropic_auth.headers(http)
+            resp = http.request("POST", API_URL, headers={**auth, "anthropic-version": "2023-06-01"},
                                 body=body, retries=4, timeout=600)
+    except anthropic_auth.AuthUnavailable as exc:
+        raise AIUnavailable(str(exc)) from exc
     except Exception as exc:  # HTTP 4xx/5xx, timeouts, DNS
         raise AIUnavailable(explain(exc)) from exc
     stop = resp.get("stop_reason")

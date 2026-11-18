@@ -152,7 +152,7 @@ What the GRC Readiness Engine does, feature by feature. Each section starts in p
 
 > **Under the hood:** Ingestion runs from `ingest.yml` on any pull request that adds files to `intake/`. It works in two ways:
 > - **Spreadsheet templates** (`templates/intake/*.csv`) are imported as written.
-> - **Other documents** (Word, PDF, Excel, Markdown, text) are drafted by Claude when `ingest.ai_drafting: true` is set and the `ANTHROPIC_API_KEY` secret is present.
+> - **Other documents** (Word, PDF, Excel, Markdown, text) are drafted by Claude when `ingest.ai_drafting: true` is set and the repository can reach the Anthropic API: through workload identity (no stored key) or the `ANTHROPIC_API_KEY` secret.
 >
 > In both cases:
 > - Narrative fields are only filled when they're empty.

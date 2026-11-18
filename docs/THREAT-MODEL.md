@@ -12,7 +12,7 @@ friendlier UI (workspace, auditor room, executive dashboard) has its own section
 |---|---|
 | The engagement record (controls, evidence index, gaps, approvals) | It is the audit trail. A silent change could make an unready client look ready |
 | Client documents in `intake/` | Confidential: policies, prior audit reports, registers |
-| Credentials: `ANTHROPIC_API_KEY`, `GRC_ENGINE_TOKEN`, the workflow `GITHUB_TOKEN`, cloud federation | Misuse reaches client cloud accounts, the engine, or spends API credit |
+| Credentials: `ANTHROPIC_API_KEY` (or its workload identity token), `GRC_ENGINE_TOKEN`, the workflow `GITHUB_TOKEN`, cloud federation | Misuse reaches client cloud accounts, the engine, or spends API credit |
 | The engine's code and releases | Every client runs it with write access to their record |
 | Client-facing outputs (briefs, gap assessments, workbooks, the client site) | Read by clients, auditors and executives |
 
