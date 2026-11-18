@@ -207,7 +207,7 @@ def cmd_bootstrap(args) -> int:
     from . import bootstrap
     for line in bootstrap.write(Path(args.dir), args.engine_repo, args.version, args.force):
         print(line)
-    print("\nNext: add the GRC_ENGINE_TOKEN secret, then run the New engagement workflow (see README.md).")
+    print("\nNext: run the New engagement workflow (see README.md). A private engine also needs the GRC_ENGINE_TOKEN secret.")
     return 0
 
 

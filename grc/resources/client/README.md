@@ -8,8 +8,8 @@ collects evidence and builds the reports lives in
 (engine __ENGINE_VERSION__ at setup). A weekly *Upgrade GRC engine* PR keeps it current.
 
 ## One-time setup
-1. **Secret `GRC_ENGINE_TOKEN`** (Settings → Secrets and variables → Actions): a fine-grained token with
-   *Contents: Read* on __ENGINE_REPO__ — lets workflows install the private engine.
+1. **Only if the engine repository is private:** secret `GRC_ENGINE_TOKEN` (Settings → Secrets and variables →
+   Actions), a fine-grained token with *Contents: Read* on __ENGINE_REPO__. A public engine needs no token.
 2. **Settings → Actions → General**: tick *Allow GitHub Actions to create and approve pull requests*.
 3. **Branch protection** on `main`: require the status check **`validate / validate`** and a CODEOWNERS review.
 4. **Actions → New engagement → Run workflow**: enter the client and audit dates; merge the PR it opens.

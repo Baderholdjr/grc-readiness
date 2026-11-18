@@ -28,9 +28,10 @@ jobs:
       - name: Compare pinned and latest engine versions
         id: check
         env:
-          GH_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN }}
+          # GRC_ENGINE_TOKEN is only needed while the engine repository is private; a public engine's releases are
+          # readable with the workflow's own token.
+          GH_TOKEN: ${{ secrets.GRC_ENGINE_TOKEN || github.token }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then echo "::error::GRC_ENGINE_TOKEN secret is not set"; exit 1; fi
           CURRENT=$(grep -oE 'engine-v[0-9]+\.[0-9]+\.[0-9]+' requirements.txt | head -1 | sed 's/engine-v//')
           LATEST=$(gh api "repos/$ENGINE_REPO/releases?per_page=50" \
             --jq '[.[] | select(.draft == false and .prerelease == false and (.tag_name | test("^engine-v[0-9]+\\.[0-9]+\\.[0-9]+$")))][].tag_name' \
