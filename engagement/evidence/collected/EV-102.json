@@ -8,21 +8,42 @@
     "base": "main",
     "days": 90
   },
-  "collected_at": "2026-11-08T18:29:44+00:00",
+  "collected_at": "2026-11-20T21:31:44+00:00",
   "result": "fail",
-  "summary": "Baderholdjr/grc-readiness: 0/47 merged PRs independently approved (90d)",
+  "summary": "Baderholdjr/grc-readiness: 0/68 merged PRs independently approved (90d)",
   "findings": [
-    "47 of 47 merged PRs had no independent approval: #68, #67, #66, #65, #64, #63, #62, #61, #60, #59, #58, #57, #51, #50, #49, #48, #47, #46, #45, #44"
+    "68 of 68 merged PRs had no independent approval: #85, #84, #83, #82, #81, #80, #79, #78, #77, #76, #75, #73, #74, #72, #55, #54, #53, #52, #28, #70"
   ],
   "details": {
     "repo": "Baderholdjr/grc-readiness",
     "base": "main",
     "window_days": 90,
     "label": null,
-    "population": 47,
+    "population": 68,
     "independently_approved": 0,
     "approval_rate": 0.0,
     "unapproved_prs": [
+      85,
+      84,
+      83,
+      82,
+      81,
+      80,
+      79,
+      78,
+      77,
+      76,
+      75,
+      73,
+      74,
+      72,
+      55,
+      54,
+      53,
+      52,
+      28,
+      70,
+      69,
       68,
       67,
       66,
@@ -51,27 +72,156 @@
       38,
       37,
       36,
-      34,
-      33,
-      32,
-      31,
-      30,
-      29,
-      27,
-      26,
-      25,
-      24,
-      23,
-      22,
-      21,
-      20,
-      19,
-      17,
-      16,
-      15,
-      14
+      34
     ],
     "items": [
+      {
+        "id": "#85",
+        "title": "Upgrade check works without GRC_ENGINE_TOKEN (0.31.1)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-18T02:52:37Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#84",
+        "title": "FedRAMP 20x documents in the published reports (0.31.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-18T01:52:46Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#83",
+        "title": "Ingest: match the list's indentation, never write unreadable YAML (0.30.2)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-18T00:19:17Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#82",
+        "title": "FedRAMP 20x: rename 'on' fields to 'date' (0.30.1)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-17T21:53:47Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#81",
+        "title": "FedRAMP 20x documents in FedRAMP's JSON formats (0.30.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-17T19:05:47Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#80",
+        "title": "Client site: make Propose a change easy to find (0.29.2)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-14T02:48:15Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#79",
+        "title": "Brand: Yata brush logo (D1, Ens\u014d loop)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-14T01:49:28Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#78",
+        "title": "Rename Seshat to Yata (0.29.1)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-14T01:28:22Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#77",
+        "title": "Consultant workspace: GitHub sign-in, changes as pull requests in the consultant's name (engine 0.29.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-13T22:13:27Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#76",
+        "title": "Brand: Seshat logo replaces ONI",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-13T21:24:53Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#75",
+        "title": "Workspace for client staff: propose implementation statements, evidence links and owner emails (engine 0.28.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-13T19:05:06Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#73",
+        "title": "Threat model for the friendlier UI (design review, no code)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-13T17:23:57Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#74",
+        "title": "Read-only rooms: executive dashboard and auditor room (engine 0.27.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-13T17:23:55Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#72",
+        "title": "OSCAL export, validate and import; moto collector tests; public-repo hardening (engine 0.26.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-10T22:44:06Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#55",
+        "title": "Bump aws-actions/configure-aws-credentials from 4.3.1 to 6.3.0",
+        "author": "dependabot[bot]",
+        "merged_at": "2026-11-09T22:03:01Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#54",
+        "title": "Bump azure/login from 2.3.1 to 3.1.0",
+        "author": "dependabot[bot]",
+        "merged_at": "2026-11-09T22:02:14Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#53",
+        "title": "Bump google-github-actions/auth from 2.1.13 to 3.0.0",
+        "author": "dependabot[bot]",
+        "merged_at": "2026-11-09T22:01:41Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#52",
+        "title": "Bump actions/upload-artifact from 6.0.0 to 7.0.2",
+        "author": "dependabot[bot]",
+        "merged_at": "2026-11-09T22:01:16Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#28",
+        "title": "Evidence refresh (automated)",
+        "author": "github-actions[bot]",
+        "merged_at": "2026-11-09T21:58:48Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#70",
+        "title": "Fix: reusable workflows take permissions from the caller (engine 0.25.1)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-09T19:00:33Z",
+        "independently_approved": false
+      },
+      {
+        "id": "#69",
+        "title": "Security hardening: DevSecOps checks, pinned and locked supply chain, hostile-input guards (engine 0.25.0)",
+        "author": "Baderholdjr",
+        "merged_at": "2026-11-09T17:48:09Z",
+        "independently_approved": false
+      },
       {
         "id": "#68",
         "title": "Gap analysis of a client's existing setup (engine 0.24.0)",
@@ -404,5 +554,5 @@
     ],
     "truncated": false
   },
-  "sha256": "73e57fef2a76adb035b96a08ef8093fcf8d8386680848415c4e379401178507f"
+  "sha256": "b800881cfb540bf3ebf431ac0ad8b66b57afd627c292032cfe814fbc386e7340"
 }
