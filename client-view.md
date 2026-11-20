@@ -1,6 +1,6 @@
 # (Example Client) — readiness for ISO 42001
 
-As of 2026-11-19. What has been done, what is coming up, and what we need from you.
+As of 2026-11-20. What has been done, what is coming up, and what we need from you.
 
 ## Where things stand
 
