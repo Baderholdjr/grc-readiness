@@ -1,6 +1,6 @@
 # (Example Client) — readiness for ISO 42001
 
-As of 2026-11-20. What has been done, what is coming up, and what we need from you.
+As of 2026-11-21. What has been done, what is coming up, and what we need from you.
 
 ## Where things stand
 
@@ -24,7 +24,7 @@ As of 2026-11-20. What has been done, what is coming up, and what we need from y
 
 ## What we need from you
 
-77 open item(s) across 6 owner(s), 1 overdue.
+77 open item(s) across 6 owner(s), 3 overdue.
 
 ### Head of Platform — 21 item(s)
 
@@ -193,7 +193,7 @@ As of 2026-11-20. What has been done, what is coming up, and what we need from y
 
 ### Security &amp; Compliance — 18 item(s)
 
-- **Gap GAP-10** Statement of Applicability — due 2026-11-20
+- **Gap GAP-10** Statement of Applicability — due 2026-11-20 **(overdue)**
   - No SoA exists; Annex A applicability and justifications must be decided and approved.
 - **Gap GAP-04** Data governance — due 2026-11-25
   - Existing classification taxonomy does not yet cover AI artifacts such as corpora, datasets, checkpoints, and delivered models.
@@ -256,7 +256,7 @@ As of 2026-11-20. What has been done, what is coming up, and what we need from y
 
 - **Gap GAP-11** Roles — due 2026-11-13 **(overdue)**
   - AIMS roles and responsibilities are not documented in a RACI.
-- **Gap GAP-01** AIMS governance — due 2026-11-20
+- **Gap GAP-01** AIMS governance — due 2026-11-20 **(overdue)**
   - No producer-scope AIMS AI policy yet; scope draft still needs leadership approval.
 - **Gap GAP-09** Management review — due 2027-01-29
   - AI is discussed in quarterly leadership review, but a dedicated standing AI/AIMS review structure needs to be formalized.
