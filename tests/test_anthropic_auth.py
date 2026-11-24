@@ -12,7 +12,8 @@ GH = {"ACTIONS_ID_TOKEN_REQUEST_URL": "https://pipelines.example.invalid/idtoken
 @pytest.fixture(autouse=True)
 def clean(monkeypatch):
     for v in ("ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "ANTHROPIC_IDENTITY_TOKEN_FILE", *FED, *GH):
-        monkeypatch.delenv(v, raising=False)
+        monkeypatch.setenv(v, "")          # recorded, so whatever a test sets is undone afterwards
+        monkeypatch.delenv(v)
     A._cache.clear()
 
 
@@ -120,3 +121,37 @@ def test_ingest_without_credentials_reports_why(monkeypatch):
     from grc.ingest import ai
     with pytest.raises(ai.AIUnavailable, match="no Anthropic credentials"):
         ai.draft([("a.txt", "text")], [], [], "Client")
+
+
+def test_ids_from_the_record_fill_only_what_the_environment_leaves_empty(monkeypatch):
+    rec = {"ai_drafting": True, "anthropic_identity": {
+        "federation_rule_id": "fdrl_fromrecord", "organization_id": "00000000-0000-0000-0000-000000000001",
+        "service_account_id": "svac_fromrecord", "workspace_id": "wrkspc_fromrecord"}}
+    monkeypatch.setenv("ANTHROPIC_SERVICE_ACCOUNT_ID", "svac_fromvariable")
+    monkeypatch.setenv("ANTHROPIC_FEDERATION_RULE_ID", "")             # an unset repository variable arrives empty
+    A.use_record_settings(rec)
+    import os
+    assert os.environ["ANTHROPIC_FEDERATION_RULE_ID"] == "fdrl_fromrecord"
+    assert os.environ["ANTHROPIC_SERVICE_ACCOUNT_ID"] == "svac_fromvariable"   # the repository variable wins
+    assert A.federation_configured()
+    A.use_record_settings({"anthropic_identity": "nonsense"})
+    A.use_record_settings(None)
+
+
+def test_record_ids_are_checked(tmp_path):
+    import contextlib, io, yaml
+    from grc.cli import main
+    from grc.model import load
+    from grc.rules import validate
+    root = tmp_path / "repo"
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert main(["--engagement", str(root / "engagement"), "new-engagement", "--client", "Larch & Finch",
+                     "--start", "2026-11-09", "--stage1", "2027-03-01", "--stage2", "2027-05-01", "--framework", "soc2",
+                     "--intake", str(root / "intake"), "--confirm-reset"]) == 0
+    f = root / "engagement" / "engagement.yaml"
+    d = yaml.safe_load(f.read_text())
+    d.setdefault("ingest", {})["anthropic_identity"] = {"federation_rule_id": "fdrl_ok", "organization_id": "not-a-uuid",
+                                                        "service_account_id": "svac_ok"}
+    f.write_text(yaml.safe_dump(d, sort_keys=False))
+    msgs = [x.message for x in validate(load(root / "engagement")) if x.code == "E001"]
+    assert any("organization_id" in m or "not-a-uuid" in m for m in msgs)

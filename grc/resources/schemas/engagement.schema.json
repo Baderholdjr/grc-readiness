@@ -256,6 +256,34 @@
         },
         "model": {
           "type": "string"
+        },
+        "anthropic_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Workload identity ids for signing in to the Anthropic API without a stored key (identifiers, not secrets). Repository variables of the same meaning take precedence.",
+          "required": [
+            "federation_rule_id",
+            "organization_id",
+            "service_account_id"
+          ],
+          "properties": {
+            "federation_rule_id": {
+              "type": "string",
+              "pattern": "^fdrl_[A-Za-z0-9]+$"
+            },
+            "organization_id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "service_account_id": {
+              "type": "string",
+              "pattern": "^svac_[A-Za-z0-9]+$"
+            },
+            "workspace_id": {
+              "type": "string",
+              "pattern": "^wrkspc_[A-Za-z0-9]+$"
+            }
+          }
         }
       }
     },

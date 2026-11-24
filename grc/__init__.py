@@ -1,2 +1,2 @@
 """grc-readiness: GRC-as-code engine for certification readiness engagements."""
-__version__ = "0.32.0"
+__version__ = "0.32.1"

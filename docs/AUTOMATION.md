@@ -55,12 +55,25 @@ still wins, so you can switch over and then delete the secret.
      common prefix, for example `repo:<owner>/test-` for test clients. Leave the event part open: ingestion runs
      on pull requests (`…:pull_request`), not only on `main`.
    - **Audience:** `https://api.anthropic.com`. **Claims:** `repository_owner` = `<owner>`.
-   - **Workspace** and **scope** `workspace:developer`; the token lifetime can stay at 10 minutes (the engine asks
-     again when it runs out).
-2. **In each repository:** **Settings → Secrets and variables → Actions → Variables** (variables, not secrets: these
-   are ids, not credentials): `ANTHROPIC_FEDERATION_RULE_ID` (`fdrl_…`), `ANTHROPIC_ORGANIZATION_ID`,
-   `ANTHROPIC_SERVICE_ACCOUNT_ID` (`svac_…`) and, if the rule covers more than one workspace,
-   `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`).
+   - **Allowed events:** not "only push": ingestion runs on `pull_request` and document fill on `workflow_dispatch`.
+     Use the advanced match with the subject prefix above, which allows any event for those repositories (GitHub
+     never gives fork pull-request runs an identity token).
+   - **Workspace:** the one the repositories' usage should count against; the token lifetime can stay at 10
+     minutes (the engine asks again when it runs out).
+2. **Give the repository the ids** (identifiers, not credentials), in either place:
+   - in `engagement/engagement.yaml`, through a reviewed pull request:
+     ```yaml
+     ingest:
+       ai_drafting: true
+       anthropic_identity:
+         federation_rule_id: fdrl_…
+         organization_id: 00000000-0000-0000-0000-000000000000
+         service_account_id: svac_…
+         workspace_id: wrkspc_…        # optional when the rule covers one workspace
+     ```
+   - or as repository **variables** (Settings → Secrets and variables → Actions → Variables):
+     `ANTHROPIC_FEDERATION_RULE_ID`, `ANTHROPIC_ORGANIZATION_ID`, `ANTHROPIC_SERVICE_ACCOUNT_ID`,
+     `ANTHROPIC_WORKSPACE_ID`. A variable that is set wins over the record.
 3. **The workflows** `ingest.yml` and `docs.yml` need `id-token: write` (client repositories made from engine 0.32.0
    on have it; older ones need that line added once, since the upgrade PR can't change workflow files).
 4. Run an ingestion. If Anthropic refuses the exchange, the report says so; the Console's **Authentication
