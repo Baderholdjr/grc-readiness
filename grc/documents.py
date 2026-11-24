@@ -356,6 +356,7 @@ def ai_enabled(model: Engagement) -> bool:
     from . import sandbox
     settings = model.engagement.get("ingest") or {}
     from . import anthropic_auth
+    anthropic_auth.use_record_settings(settings)
     return bool(settings.get("ai_drafting")) and (sandbox.active() or bool(anthropic_auth.method()))
 
 

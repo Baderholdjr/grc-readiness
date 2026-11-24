@@ -27,6 +27,21 @@ def _env(name: str) -> str:
     return os.environ.get(name, "").strip()
 
 
+RECORD_KEYS = {"federation_rule_id": "ANTHROPIC_FEDERATION_RULE_ID", "organization_id": "ANTHROPIC_ORGANIZATION_ID",
+               "service_account_id": "ANTHROPIC_SERVICE_ACCOUNT_ID", "workspace_id": "ANTHROPIC_WORKSPACE_ID"}
+
+
+def use_record_settings(ingest_settings: dict | None) -> None:
+    """Take the workload identity ids from the record (`ingest.anthropic_identity` in engagement.yaml) for any that
+    the environment (the repository's variables) doesn't already set. They are identifiers, not credentials."""
+    ids = (ingest_settings or {}).get("anthropic_identity") if isinstance(ingest_settings, dict) else None
+    if not isinstance(ids, dict):
+        return
+    for key, env in RECORD_KEYS.items():
+        if ids.get(key) and not _env(env):
+            os.environ[env] = str(ids[key]).strip()
+
+
 def federation_configured() -> bool:
     return all(_env(v) for v in FEDERATION_VARS)
 
@@ -57,7 +72,8 @@ def missing() -> str:
     if partial:
         absent = [v for v in FEDERATION_VARS if not _env(v)]
         return f"workload identity is only partly configured: {', '.join(absent)} not set"
-    return "no Anthropic credentials: set ANTHROPIC_API_KEY, or the workload identity variables (see docs/AUTOMATION.md)"
+    return ("no Anthropic credentials: set ANTHROPIC_API_KEY, or workload identity (ingest.anthropic_identity in "
+            "engagement.yaml, or the repository variables; see docs/AUTOMATION.md)")
 
 
 def _identity_token(http) -> str:

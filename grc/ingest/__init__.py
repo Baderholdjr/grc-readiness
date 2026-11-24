@@ -76,6 +76,8 @@ class _Record:
         sandbox.configure(self.model)
         self.todo = files if files is not None else pending(self.intake, force)
         self.settings = self.model.engagement.get("ingest", {}) or {}
+        from .. import anthropic_auth
+        anthropic_auth.use_record_settings(self.settings)
         self.mode = mode
         self.combined, self.notes, self.for_ai, self.ledger_updates = draft.empty(), [], [], {}
         self.register_rows: dict[str, list[dict]] = {}
