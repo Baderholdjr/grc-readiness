@@ -20,7 +20,9 @@ All credentials go in the repo under **Settings → Secrets and variables → Ac
 1. **Spreadsheet templates (no AI).** These work with no setup. Send the client the files in `templates/intake/`. Uploaded CSV or XLSX files with those headers are imported exactly as written.
 2. **AI drafting.** This is for any Word, PDF, Excel, Markdown or text document.
    - Get the client's agreement first. Document text is sent to the Anthropic API.
-   - Add a **secret** named `ANTHROPIC_API_KEY` (from console.anthropic.com).
+   - Give it access to the Anthropic API, in one of two ways:
+     - **Workload identity (recommended, no stored key):** see [Signing in to the Anthropic API without a key](#signing-in-to-the-anthropic-api-without-a-key) below.
+     - **API key:** add a **secret** named `ANTHROPIC_API_KEY` (from the Claude Console), one key per repository.
    - In `engagement/engagement.yaml`, set:
      ```yaml
      ingest:
@@ -38,6 +40,36 @@ All credentials go in the repo under **Settings → Secrets and variables → Ac
 - Moves a control leg from `not_started` to `claimed` when a document says the control exists. It never touches a leg that's already `partial` or `verified`, and it never sets `verified`.
 - Drops anything without a source citation, or that uses a requirement ID not in the catalog.
 - Records each processed file and its hash in `intake/.processed.yaml`. Uploading a changed version re-reads it.
+
+
+### Signing in to the Anthropic API without a key
+
+With Workload Identity Federation, GitHub proves which repository and event is running, and Anthropic gives the job
+a short-lived token for that run. There's no API key to store, rotate or leak. When `ANTHROPIC_API_KEY` is set it
+still wins, so you can switch over and then delete the secret.
+
+1. **In the Claude Console** (once): **Settings → Workload identity → Connect workload → GitHub Actions**. The
+   wizard registers GitHub as an issuer (`https://token.actions.githubusercontent.com`, discovery mode), creates a
+   service account and a federation rule:
+   - **Subject prefix:** `repo:<owner>/<repo>:` for one repository. Several repositories can share a rule with a
+     common prefix, for example `repo:<owner>/test-` for test clients. Leave the event part open: ingestion runs
+     on pull requests (`…:pull_request`), not only on `main`.
+   - **Audience:** `https://api.anthropic.com`. **Claims:** `repository_owner` = `<owner>`.
+   - **Workspace** and **scope** `workspace:developer`; the token lifetime can stay at 10 minutes (the engine asks
+     again when it runs out).
+2. **In each repository:** **Settings → Secrets and variables → Actions → Variables** (variables, not secrets: these
+   are ids, not credentials): `ANTHROPIC_FEDERATION_RULE_ID` (`fdrl_…`), `ANTHROPIC_ORGANIZATION_ID`,
+   `ANTHROPIC_SERVICE_ACCOUNT_ID` (`svac_…`) and, if the rule covers more than one workspace,
+   `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`).
+3. **The workflows** `ingest.yml` and `docs.yml` need `id-token: write` (client repositories made from engine 0.32.0
+   on have it; older ones need that line added once, since the upgrade PR can't change workflow files).
+4. Run an ingestion. If Anthropic refuses the exchange, the report says so; the Console's **Authentication
+   history** tab gives the reason (most often a subject prefix that doesn't match). Then delete the
+   `ANTHROPIC_API_KEY` secret and revoke the key.
+
+The repository variables are read by the engine's workflows only to request that token. A job with `id-token: write`
+can ask GitHub for an identity token for any audience, so keep each cloud's trust (AWS roles, for example) pinned to
+the repository and branch it is meant for.
 
 ---
 

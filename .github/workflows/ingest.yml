@@ -11,6 +11,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: write
+  id-token: write       # workload identity sign-in to the Anthropic API (no stored key)
 
 concurrency:
   group: ingest-${{ github.head_ref }}

@@ -355,7 +355,8 @@ INTAKE_BUDGET = 60_000
 def ai_enabled(model: Engagement) -> bool:
     from . import sandbox
     settings = model.engagement.get("ingest") or {}
-    return bool(settings.get("ai_drafting")) and (sandbox.active() or bool(os.environ.get("ANTHROPIC_API_KEY", "").strip()))
+    from . import anthropic_auth
+    return bool(settings.get("ai_drafting")) and (sandbox.active() or bool(anthropic_auth.method()))
 
 
 def _numbered(body: str) -> str:
@@ -415,15 +416,18 @@ def _call(model: Engagement, did: str, prompt: str, transport=None) -> dict:
     from . import sandbox
     from .collectors import http
     from .ingest.ai import API_URL, DEFAULT_MODEL, AIUnavailable, explain
-    key = "sandbox" if sandbox.active() else os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if not key and transport is None:
-        raise AIUnavailable("ANTHROPIC_API_KEY is not set")
+    from . import anthropic_auth
+    if transport is None and not sandbox.active() and not anthropic_auth.method():
+        raise AIUnavailable(anthropic_auth.missing())
     body = {"model": os.environ.get("GRC_MODEL") or DEFAULT_MODEL, "max_tokens": 16000, "system": SYSTEM.replace("{framework}", model.framework_name),
             "messages": [{"role": "user", "content": prompt}],
             "output_config": {"format": {"type": "json_schema", "schema": FILL_SCHEMA}}}
     try:
+        auth = {} if transport else ({"x-api-key": "sandbox"} if sandbox.active() else anthropic_auth.headers(http))
         resp = transport(body) if transport else http.request(
-            "POST", API_URL, headers={"x-api-key": key, "anthropic-version": "2023-06-01"}, body=body, retries=4, timeout=600)
+            "POST", API_URL, headers={**auth, "anthropic-version": "2023-06-01"}, body=body, retries=4, timeout=600)
+    except anthropic_auth.AuthUnavailable as exc:
+        raise AIUnavailable(str(exc)) from exc
     except Exception as exc:
         raise AIUnavailable(explain(exc)) from exc
     if resp.get("stop_reason") in ("max_tokens", "refusal"):
@@ -447,7 +451,7 @@ def fill(model: Engagement, targets: list[str] | str, mode: str = "ai", transpor
     from .ingest.ai import AIUnavailable
     sandbox.configure(model)
     if transport is None and not ai_enabled(model):
-        msg = "AI drafting is off (set ingest.ai_drafting: true and ANTHROPIC_API_KEY, or enable the sandbox)"
+        msg = "AI drafting is off (set ingest.ai_drafting: true and ANTHROPIC_API_KEY or workload identity, or enable the sandbox)"
         if mode == "ai":
             raise AIUnavailable(msg)
         return [f"(templates only: {msg})"]
