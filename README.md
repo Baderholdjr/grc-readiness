@@ -3,7 +3,7 @@
 
 <!-- Published automatically from the main branch. Do not edit this branch. -->
 
-**As of 2026-11-25.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
+**As of 2026-11-26.** Rebuilt automatically after every change to `main` and once a day. Use the branch history to see any earlier day; for a frozen copy to share with an auditor, publish a Release.
 
 | Report | What it shows |
 |---|---|
@@ -38,9 +38,9 @@
 | Evidence exists | 5 | 3 | 0 | 57 |
 | Tested | 0 | 1 | 0 | 64 |
 
-**Validation:** 0 errors · 11 warnings · 16 unverified claims
+**Validation:** 0 errors · 12 warnings · 16 unverified claims
 
-<details><summary>Warnings (11)</summary>
+<details><summary>Warnings (12)</summary>
 
 - `W102` A.6.2.4 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.4.yaml`
 - `W102` A.6.2.5 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.5.yaml`
@@ -49,6 +49,7 @@
 - `W102` A.6.2.8 operates in practice but is not codified in an approved document. — `engagement/controls/A.6.2.8.yaml`
 - `W102` A.7.5 operates in practice but is not codified in an approved document. — `engagement/controls/A.7.5.yaml`
 - `W104` GAP-01 is past due (2026-11-20). — `engagement/gaps.yaml`
+- `W104` GAP-04 is past due (2026-11-25). — `engagement/gaps.yaml`
 - `W104` GAP-10 is past due (2026-11-20). — `engagement/gaps.yaml`
 - `W104` GAP-11 is past due (2026-11-13). — `engagement/gaps.yaml`
 - `W108` EV-102 (Engagement repo: independent review of merged changes (90 days)) collector check is failing: Baderholdjr/grc-readiness: 0/47 merged PRs independently approved (90d) | 47 of 47 merged PRs had no independent approval: #68, #67, #66, #65, #64, #63, #62, #61, #60, #59, #58, #57, #51, #50, #49, # — `engagement/evidence/collected.yaml`

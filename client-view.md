@@ -1,6 +1,6 @@
 # (Example Client) — readiness for ISO 42001
 
-As of 2026-11-25. What has been done, what is coming up, and what we need from you.
+As of 2026-11-26. What has been done, what is coming up, and what we need from you.
 
 ## Where things stand
 
@@ -24,7 +24,7 @@ As of 2026-11-25. What has been done, what is coming up, and what we need from y
 
 ## What we need from you
 
-77 open item(s) across 6 owner(s), 3 overdue.
+77 open item(s) across 6 owner(s), 4 overdue.
 
 ### Head of Platform — 21 item(s)
 
@@ -195,7 +195,7 @@ As of 2026-11-25. What has been done, what is coming up, and what we need from y
 
 - **Gap GAP-10** Statement of Applicability — due 2026-11-20 **(overdue)**
   - No SoA exists; Annex A applicability and justifications must be decided and approved.
-- **Gap GAP-04** Data governance — due 2026-11-25
+- **Gap GAP-04** Data governance — due 2026-11-25 **(overdue)**
   - Existing classification taxonomy does not yet cover AI artifacts such as corpora, datasets, checkpoints, and delivered models.
 - **Gap GAP-05** AI suppliers — due 2026-12-18
   - AI-specific suppliers have not yet been run through the existing vendor program; supplier contract/DPA requirements are incomplete.
